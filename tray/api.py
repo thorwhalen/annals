@@ -210,7 +210,7 @@ def serve(
     data_dir: str | None = None,
     base_path: str = DFLT_BASE_PATH,
 ) -> None:
-    """Run the tray server with uvicorn (``pip install 'tray[server]'``)."""
+    """Run the tray server with uvicorn (``pip install 'intray[server]'``)."""
     import uvicorn
 
     app = mk_app(data_dir=data_dir or os.environ.get("TRAY_DATA_DIR"), base_path=base_path)

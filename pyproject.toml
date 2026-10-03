@@ -50,6 +50,10 @@ docs = [
 [tool.hatch.build]
 skip-excluded-dirs = true
 
+# The distribution is intray; the package (and the command) is tray.
+[tool.hatch.build.targets.wheel]
+packages = ["tray"]
+
 [tool.hatch.build.targets.sdist]
 exclude = [
     ".claude",
