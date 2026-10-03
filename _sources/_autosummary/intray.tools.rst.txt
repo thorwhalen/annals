@@ -1,0 +1,20 @@
+intray.tools
+============
+
+.. automodule:: intray.tools
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      configure
+      group
+      groups
+      ls
+      publish
+      restore
+      serve
+      show
+      trash
+   

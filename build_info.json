@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-03T15:28:19Z",
+  "built_at": "2026-10-03T15:31:49Z",
   "package": {
     "name": "intray",
     "version": "0.0.1",
@@ -9,24 +9,24 @@
   },
   "git": {
     "available": true,
-    "commit": "0359a32fbd3fd2fed75877883e2ca58abee4cfe6",
-    "short_commit": "0359a32",
+    "commit": "2924211ddeecc7bea24a539c04c14a29be279a55",
+    "short_commit": "2924211",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/tray",
-    "commit_url": "https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6",
+    "commit_url": "https://github.com/thorwhalen/tray/commit/2924211ddeecc7bea24a539c04c14a29be279a55",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/tray",
-    "sha": "0359a32fbd3fd2fed75877883e2ca58abee4cfe6",
+    "sha": "2924211ddeecc7bea24a539c04c14a29be279a55",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "37133278066",
-    "run_url": "https://github.com/thorwhalen/tray/actions/runs/37133278066",
+    "run_id": "37133470929",
+    "run_url": "https://github.com/thorwhalen/tray/actions/runs/37133470929",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -37,8 +37,8 @@
   },
   "config": {
     "theme": "auto",
-    "html_theme": "pydata_sphinx_theme",
-    "accent": "#765100",
+    "html_theme": "sphinxawesome_theme",
+    "accent": "#006d3f",
     "mode": "auto",
     "api_generator": "autosummary",
     "ignore": [
@@ -60,14 +60,16 @@
   },
   "pypi": {
     "checked": true,
-    "latest": null,
-    "relation": "unknown",
+    "latest": "0.0.2",
+    "relation": "behind",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/tray && cd tray\ngit checkout 0359a32fbd3fd2fed75877883e2ca58abee4cfe6\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/tray && cd tray\ngit checkout 2924211ddeecc7bea24a539c04c14a29be279a55\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": true,
-    "notes": []
+    "aligned": false,
+    "notes": [
+      "The documented version (0.0.1) is behind the latest release on PyPI (0.0.2): `pip install intray` gives newer code than these docs describe."
+    ]
   }
 }

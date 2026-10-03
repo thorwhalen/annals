@@ -19,7 +19,7 @@ Publish a markdown or html document (a report, an analysis, a rendered artifact,
 gh skill install thorwhalen/tray tray-publish --agent claude-code
 ```
 
-Source: [`tray/data/skills/tray-publish`](https://github.com/thorwhalen/tray/tree/HEAD/tray/data/skills/tray-publish) (bundled with the pip package).
+Source: [`intray/data/skills/tray-publish`](https://github.com/thorwhalen/tray/tree/HEAD/intray/data/skills/tray-publish) (bundled with the pip package).
 
 The bundled skills are also on disk after `pip install intray`, under the package's `data/skills/` directory; link them into an agent without network access with `skill link-skills <that directory>`.
 

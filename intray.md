@@ -1,4 +1,4 @@
-> built 2026-10-03 15:28 UTC from 0359a32 (main) · intray 0.0.1. Details: build_info.json
+> built 2026-10-03 15:31 UTC from 2924211 (main) · intray 0.0.1. Details: build_info.json
 
 # index.html.md
 
@@ -9,7 +9,7 @@
 An in-tray for AI agents. An agent publishes a markdown or html document with one command and gets back a link; the owner opens the tray on a phone and finds everything their agents left for them, newest first, searchable, with a recycle bin.
 
 ```bash
-pip install intray        # the PyPI name is intray (PyPI reserves `tray`); the command and the import are `tray`
+pip install intray        # the PyPI name is intray (PyPI reserves `tray`); the command is `tray`, the import is `intray`
 tray publish report.md --session my-agent
 # https://apps.example.com/tray/d/20261003-203301-quarterly-report-3f9a
 ```
@@ -31,7 +31,7 @@ tray trash <id>  /  tray restore <id>        # the recycle bin
 
 `--title` overrides the inferred title (first `# heading` or `<title>`), `--tags a,b` adds searchable tags, `--session name` records who published. Markdown renders on the page with a toggle to the raw, copyable source; html renders as-is.
 
-With `pip install 'intray[mcp]'`, the same operations are an MCP server: `python -m tray.mcp`.
+With `pip install 'intray[mcp]'`, the same operations are an MCP server: `python -m intray.mcp`.
 
 ## For the owner: where it goes and what link it prints
 
@@ -61,12 +61,12 @@ A systemd unit and a Traefik router for the first case are in `misc/deploy/`.
 ## Python API
 
 ```python
-from tray import DocStore, publish
+from intray import DocStore, publish
 meta = DocStore("~/.local/share/tray").publish("report.md", tags=["q3"])
 publish("report.md", tags="q3")["url"]          # same, through the configured target
 ```
 
-`tray.api.mk_app(data_dir=..., authorizer=...)` returns the FastAPI app for embedding.
+`intray.api.mk_app(data_dir=..., authorizer=...)` returns the FastAPI app for embedding.
 
 ## Design notes
 
@@ -78,29 +78,29 @@ Flat store with tags and groups, not a hierarchy: agents from many projects do n
 gh skill install thorwhalen/tray tray-publish
 ```
 
-The skill also ships inside the package at `tray/data/skills/tray-publish/`.
+The skill also ships inside the package at `intray/data/skills/tray-publish/`.
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="intray.md">intray.md</a> (Markdown, for agents).</p>
 
 
-# _autosummary/tray.auth.html.md
+# _autosummary/intray.auth.html.md
 
-# tray.auth
+# intray.auth
 
 The auth seam: who may read the tray.
 
 A tray is private by construction, so the server asks every request who is calling. The
-answer comes from one of three `Authorizer` callables, chosen by [`authorizer_from_env()`](_autosummary/tray.auth.html.md#tray.auth.authorizer_from_env)
-(or passed to `tray.api.mk_app()`):
+answer comes from one of three `Authorizer` callables, chosen by [`authorizer_from_env()`](_autosummary/intray.auth.html.md#intray.auth.authorizer_from_env)
+(or passed to `inintray.api.mk_app()`):
 
-* [`no_auth()`](_autosummary/tray.auth.html.md#tray.auth.no_auth): everyone is the owner. Right for `tray serve` bound to `127.0.0.1`,
+* [`no_auth()`](_autosummary/intray.auth.html.md#intray.auth.no_auth): everyone is the owner. Right for `tray serve` bound to `127.0.0.1`,
   wrong anywhere else.
-* [`CookieWhoami`](_autosummary/tray.auth.html.md#tray.auth.CookieWhoami): forward the request’s cookies to an identity endpoint that answers
+* [`CookieWhoami`](_autosummary/intray.auth.html.md#intray.auth.CookieWhoami): forward the request’s cookies to an identity endpoint that answers
   `{"email": ...}` (enlace_auth’s `/auth/whoami`), and allow the listed emails. This is
   how a tray sits behind an existing login without owning passwords: the login page, the
   session cookie and the logout belong to the platform; the tray only checks the allowlist.
   Env: `TRAY_WHOAMI_URL`, `TRAY_ALLOWED_USERS` (comma separated), `TRAY_LOGIN_URL`.
-* [`BasicAuth`](_autosummary/tray.auth.html.md#tray.auth.BasicAuth): one username and password (HTTP Basic). For a tray with no platform
+* [`BasicAuth`](_autosummary/intray.auth.html.md#intray.auth.BasicAuth): one username and password (HTTP Basic). For a tray with no platform
   login in front of it. Env: `TRAY_BASIC_USER`, `TRAY_BASIC_PASSWORD`.
 
 An authorizer returns the caller’s identity (a string) or `None`. The API turns `None`
@@ -109,43 +109,43 @@ what enlace_auth does so the two are indistinguishable from the phone.
 
 ### Functions
 
-| [`authorizer_from_env`](_autosummary/tray.auth.html.md#tray.auth.authorizer_from_env)([env])   | Pick the authorizer the environment describes; see the module docstring.   |
+| [`authorizer_from_env`](_autosummary/intray.auth.html.md#intray.auth.authorizer_from_env)([env])   | Pick the authorizer the environment describes; see the module docstring.   |
 |-------------------------------------------------------------------------------|----------------------------------------------------------------------------|
-| [`no_auth`](_autosummary/tray.auth.html.md#tray.auth.no_auth)(request)             | Everyone is `owner`.                                                       |
+| [`no_auth`](_autosummary/intray.auth.html.md#intray.auth.no_auth)(request)             | Everyone is `owner`.                                                       |
 
 ### Classes
 
-| [`BasicAuth`](_autosummary/tray.auth.html.md#tray.auth.BasicAuth)(username, password)                      | HTTP Basic with one username and password, compared in constant time.           |
+| [`BasicAuth`](_autosummary/intray.auth.html.md#intray.auth.BasicAuth)(username, password)                      | HTTP Basic with one username and password, compared in constant time.           |
 |-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| [`CookieWhoami`](_autosummary/tray.auth.html.md#tray.auth.CookieWhoami)(whoami_url, allowed_users, \*[, ...]) | Ask an identity endpoint who holds this request's cookies; allow listed emails. |
-| [`RequestLike`](_autosummary/tray.auth.html.md#tray.auth.RequestLike)(\*args, \*\*kwargs)                    | The two things an authorizer reads from a request.                              |
+| [`CookieWhoami`](_autosummary/intray.auth.html.md#intray.auth.CookieWhoami)(whoami_url, allowed_users, \*[, ...]) | Ask an identity endpoint who holds this request's cookies; allow listed emails. |
+| [`RequestLike`](_autosummary/intray.auth.html.md#intray.auth.RequestLike)(\*args, \*\*kwargs)                    | The two things an authorizer reads from a request.                              |
 
-### *class* tray.auth.BasicAuth(username, password)
+### *class* intray.auth.BasicAuth(username, password)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 HTTP Basic with one username and password, compared in constant time.
 
-### *class* tray.auth.CookieWhoami(whoami_url, allowed_users, , login_url='/auth/login')
+### *class* intray.auth.CookieWhoami(whoami_url, allowed_users, , login_url='/auth/login')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Ask an identity endpoint who holds this request’s cookies; allow listed emails.
 
-### *class* tray.auth.RequestLike(\*args, \*\*kwargs)
+### *class* intray.auth.RequestLike(\*args, \*\*kwargs)
 
 Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
 
 The two things an authorizer reads from a request.
 
-### tray.auth.authorizer_from_env(env=None)
+### intray.auth.authorizer_from_env(env=None)
 
 Pick the authorizer the environment describes; see the module docstring.
 
 * **Return type:**
-  [`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable)[[[`RequestLike`](_autosummary/tray.auth.html.md#tray.auth.RequestLike)], [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+  [`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable)[[[`RequestLike`](_autosummary/intray.auth.html.md#intray.auth.RequestLike)], [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
-### tray.auth.no_auth(request)
+### intray.auth.no_auth(request)
 
 Everyone is `owner`. Only for a server that listens on localhost.
 
@@ -153,9 +153,9 @@ Everyone is `owner`. Only for a server that listens on localhost.
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
-# _autosummary/tray.config.html.md
+# _autosummary/intray.config.html.md
 
-# tray.config
+# intray.config
 
 Settings: where documents are published and what link to print.
 
@@ -178,18 +178,18 @@ no configuration at all `tray publish` and `tray serve` meet in the same place.
 
 ### Functions
 
-| [`default_config_path`](_autosummary/tray.config.html.md#tray.config.default_config_path)()                              | `$TRAY_CONFIG`, else `$XDG_CONFIG_HOME/tray/config.toml`.                         |
+| [`default_config_path`](_autosummary/intray.config.html.md#intray.config.default_config_path)()                              | `$TRAY_CONFIG`, else `$XDG_CONFIG_HOME/tray/config.toml`.                         |
 |-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`default_data_dir`](_autosummary/tray.config.html.md#tray.config.default_data_dir)()                                 | The local data root: `$TRAY_DATA_DIR` or `~/.local/share/tray`.                   |
-| [`load_settings`](_autosummary/tray.config.html.md#tray.config.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults. |
-| [`write_config`](_autosummary/tray.config.html.md#tray.config.write_config)(settings, \*[, config_path])          | Write the config file (two string keys; no TOML writer dependency needed).        |
+| [`default_data_dir`](_autosummary/intray.config.html.md#intray.config.default_data_dir)()                                 | The local data root: `$TRAY_DATA_DIR` or `~/.local/share/tray`.                   |
+| [`load_settings`](_autosummary/intray.config.html.md#intray.config.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults. |
+| [`write_config`](_autosummary/intray.config.html.md#intray.config.write_config)(settings, \*[, config_path])          | Write the config file (two string keys; no TOML writer dependency needed).        |
 
 ### Classes
 
-| [`Settings`](_autosummary/tray.config.html.md#tray.config.Settings)(target, base_url)   | Where to publish and what link to print.   |
+| [`Settings`](_autosummary/intray.config.html.md#intray.config.Settings)(target, base_url)   | Where to publish and what link to print.   |
 |-------------------------------------------------------------------------------|--------------------------------------------|
 
-### *class* tray.config.Settings(target, base_url)
+### *class* intray.config.Settings(target, base_url)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -202,28 +202,28 @@ Plain dict, for the CLI and MCP surfaces.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.config.default_config_path()
+### intray.config.default_config_path()
 
 `$TRAY_CONFIG`, else `$XDG_CONFIG_HOME/tray/config.toml`.
 
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### tray.config.default_data_dir()
+### intray.config.default_data_dir()
 
 The local data root: `$TRAY_DATA_DIR` or `~/.local/share/tray`.
 
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### tray.config.load_settings(, target=None, base_url=None, config_path=None)
+### intray.config.load_settings(, target=None, base_url=None, config_path=None)
 
 Resolve settings: arguments, then env, then the config file, then local defaults.
 
 * **Return type:**
-  [`Settings`](_autosummary/tray.config.html.md#tray.config.Settings)
+  [`Settings`](_autosummary/intray.config.html.md#intray.config.Settings)
 
-### tray.config.write_config(settings, , config_path=None)
+### intray.config.write_config(settings, , config_path=None)
 
 Write the config file (two string keys; no TOML writer dependency needed).
 
@@ -231,40 +231,40 @@ Write the config file (two string keys; no TOML writer dependency needed).
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
 
-# _autosummary/tray.html.md
+# _autosummary/intray.html.md
 
-# tray
+# intray
 
 tray: an in-tray for AI agents. Publish markdown and html to a private page; get a link.
 
-Agents call [`tray.tools.publish()`](_autosummary/tray.tools.html.md#tray.tools.publish) (or `tray publish file.md` from a shell) and hand
+Agents call [`intray.tools.publish()`](_autosummary/intray.tools.html.md#intray.tools.publish) (or `tray publish file.md` from a shell) and hand
 the printed URL to their human, who opens it on a phone. The documents are plain files in a
-directory, local or on another machine over ssh; `tray.api.mk_app()` serves that
+directory, local or on another machine over ssh; `inintray.api.mk_app()` serves that
 directory as a private page with search, sort, groups and a recycle bin.
 
 ### Functions
 
-| [`configure`](_autosummary/tray.html.md#tray.configure)(\*[, target, base_url])                  | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
+| [`configure`](_autosummary/intray.html.md#intray.configure)(\*[, target, base_url])                  | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
 |-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`group`](_autosummary/tray.html.md#tray.group)(title, doc_ids, \*[, target, base_url])      | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
-| [`groups`](_autosummary/tray.html.md#tray.groups)(\*[, target, base_url])                     | List groups, newest first.                                                                                                                                        |
-| [`load_settings`](_autosummary/tray.html.md#tray.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults.                                                                                 |
-| [`ls`](_autosummary/tray.html.md#tray.ls)([q, trash, limit, target, base_url])            | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
-| [`parse_target`](_autosummary/tray.html.md#tray.parse_target)(spec)                                 | `host:/path` becomes an [`SshTarget`](_autosummary/tray.html.md#tray.SshTarget); anything else a [`LocalTarget`](_autosummary/tray.html.md#tray.LocalTarget). |
-| [`publish`](_autosummary/tray.html.md#tray.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                                                                                  |
-| [`restore`](_autosummary/tray.html.md#tray.restore)(doc_ids, \*[, target])                     | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](_autosummary/tray.html.md#tray.show)(doc_id, \*[, target, base_url])               | A document's metadata and link.                                                                                                                                   |
-| [`trash`](_autosummary/tray.html.md#tray.trash)(doc_ids, \*[, target])                       | Move documents to the recycle bin (restorable).                                                                                                                   |
+| [`group`](_autosummary/intray.html.md#intray.group)(title, doc_ids, \*[, target, base_url])      | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
+| [`groups`](_autosummary/intray.html.md#intray.groups)(\*[, target, base_url])                     | List groups, newest first.                                                                                                                                        |
+| [`load_settings`](_autosummary/intray.html.md#intray.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults.                                                                                 |
+| [`ls`](_autosummary/intray.html.md#intray.ls)([q, trash, limit, target, base_url])            | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
+| [`parse_target`](_autosummary/intray.html.md#intray.parse_target)(spec)                                 | `host:/path` becomes an [`SshTarget`](_autosummary/intray.html.md#intray.SshTarget); anything else a [`LocalTarget`](_autosummary/intray.html.md#intray.LocalTarget). |
+| [`publish`](_autosummary/intray.html.md#intray.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                                                                                  |
+| [`restore`](_autosummary/intray.html.md#intray.restore)(doc_ids, \*[, target])                     | Bring documents back from the recycle bin.                                                                                                                        |
+| [`show`](_autosummary/intray.html.md#intray.show)(doc_id, \*[, target, base_url])               | A document's metadata and link.                                                                                                                                   |
+| [`trash`](_autosummary/intray.html.md#intray.trash)(doc_ids, \*[, target])                       | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
 
-| [`DocStore`](_autosummary/tray.html.md#tray.DocStore)(target)           | Publish, list, read, trash, restore and group documents on a `Target`.      |
+| [`DocStore`](_autosummary/intray.html.md#intray.DocStore)(target)           | Publish, list, read, trash, restore and group documents on a `Target`.      |
 |-----------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| [`LocalTarget`](_autosummary/tray.html.md#tray.LocalTarget)(root)          | A directory on this machine.                                                |
-| [`Settings`](_autosummary/tray.html.md#tray.Settings)(target, base_url) | Where to publish and what link to print.                                    |
-| [`SshTarget`](_autosummary/tray.html.md#tray.SshTarget)(host, root)      | `host:path` on another machine, via the system ssh and rsync in batch mode. |
+| [`LocalTarget`](_autosummary/intray.html.md#intray.LocalTarget)(root)          | A directory on this machine.                                                |
+| [`Settings`](_autosummary/intray.html.md#intray.Settings)(target, base_url) | Where to publish and what link to print.                                    |
+| [`SshTarget`](_autosummary/intray.html.md#intray.SshTarget)(host, root)      | `host:path` on another machine, via the system ssh and rsync in batch mode. |
 
-### *class* tray.DocStore(target)
+### *class* intray.DocStore(target)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -289,14 +289,14 @@ One group, by id.
 Every document’s meta, newest first (ids sort by time; `created` breaks ties).
 
 * **Return type:**
-  [`list`](_autosummary/tray.html.md#tray.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+  [`list`](_autosummary/intray.html.md#intray.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### list_groups()
 
 Every group, newest first.
 
 * **Return type:**
-  [`list`](_autosummary/tray.html.md#tray.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+  [`list`](_autosummary/intray.html.md#intray.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### make_group(title, doc_ids, , gid=None)
 
@@ -349,7 +349,7 @@ Move a document out of the bin (idempotent).
 Case-insensitive match of every query word against title, tags, excerpt, source.
 
 * **Return type:**
-  [`list`](_autosummary/tray.html.md#tray.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+  [`list`](_autosummary/intray.html.md#intray.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### trash(doc_id)
 
@@ -358,13 +358,13 @@ Move a document into the bin (idempotent).
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### *class* tray.LocalTarget(root)
+### *class* intray.LocalTarget(root)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A directory on this machine.
 
-### *class* tray.Settings(target, base_url)
+### *class* intray.Settings(target, base_url)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -377,13 +377,13 @@ Plain dict, for the CLI and MCP surfaces.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### *class* tray.SshTarget(host, root)
+### *class* intray.SshTarget(host, root)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### tray.configure(, target=None, base_url=None)
+### intray.configure(, target=None, base_url=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -395,42 +395,42 @@ Write the publisher config (where to publish, what link to print) and show it.
 `tray configure --target tw:/root/.local/share/tray --base-url https://apps.example.com/tray`.
 With no arguments, shows the resolved settings without writing.
 
-### tray.group(title, doc_ids, , target=None, base_url=None)
+### intray.group(title, doc_ids, , target=None, base_url=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.groups(, target=None, base_url=None)
+### intray.groups(, target=None, base_url=None)
 
 List groups, newest first.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.load_settings(, target=None, base_url=None, config_path=None)
+### intray.load_settings(, target=None, base_url=None, config_path=None)
 
 Resolve settings: arguments, then env, then the config file, then local defaults.
 
 * **Return type:**
-  [`Settings`](_autosummary/tray.config.html.md#tray.config.Settings)
+  [`Settings`](_autosummary/intray.config.html.md#intray.config.Settings)
 
-### tray.ls(q='', , trash=False, limit=50, target=None, base_url=None)
+### intray.ls(q='', , trash=False, limit=50, target=None, base_url=None)
 
 List documents (newest first), optionally filtered by words or showing the bin.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.parse_target(spec)
+### intray.parse_target(spec)
 
-`host:/path` becomes an [`SshTarget`](_autosummary/tray.html.md#tray.SshTarget); anything else a [`LocalTarget`](_autosummary/tray.html.md#tray.LocalTarget).
+`host:/path` becomes an [`SshTarget`](_autosummary/intray.html.md#intray.SshTarget); anything else a [`LocalTarget`](_autosummary/intray.html.md#intray.LocalTarget).
 
 * **Return type:**
-  [`Target`](_autosummary/tray.target.html.md#tray.target.Target)
+  [`Target`](_autosummary/intray.target.html.md#intray.target.Target)
 
-### tray.publish(paths, , title=None, tags='', group=None, session=None, target=None, base_url=None)
+### intray.publish(paths, , title=None, tags='', group=None, session=None, target=None, base_url=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -442,21 +442,21 @@ names a group to create from the published documents; the reply then carries
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.restore(doc_ids, , target=None)
+### intray.restore(doc_ids, , target=None)
 
 Bring documents back from the recycle bin.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.show(doc_id, , target=None, base_url=None)
+### intray.show(doc_id, , target=None, base_url=None)
 
 A document’s metadata and link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.trash(doc_ids, , target=None)
+### intray.trash(doc_ids, , target=None)
 
 Move documents to the recycle bin (restorable).
 
@@ -465,41 +465,41 @@ Move documents to the recycle bin (restorable).
 
 ### Modules
 
-| [`auth`](_autosummary/tray.auth.html.md#module-tray.auth)     | The auth seam: who may read the tray.                                                                                                          |
-|----------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`config`](_autosummary/tray.config.html.md#module-tray.config) | Settings: where documents are published and what link to print.                                                                                |
-| [`mcp`](_autosummary/tray.mcp.html.md#module-tray.mcp)       | MCP surface: the same operations as the CLI, from [`tray.tools`](_autosummary/tray.tools.html.md#module-tray.tools), via `py2mcp`. |
-| [`store`](_autosummary/tray.store.html.md#module-tray.store)   | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                   |
-| [`target`](_autosummary/tray.target.html.md#module-tray.target) | The transport seam: a document tree lands in a directory, here or on another machine.                                                          |
-| [`tools`](_autosummary/tray.tools.html.md#module-tray.tools)   | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                               |
+| [`auth`](_autosummary/intray.auth.html.md#module-intray.auth)     | The auth seam: who may read the tray.                                                                                                              |
+|------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`config`](_autosummary/intray.config.html.md#module-intray.config) | Settings: where documents are published and what link to print.                                                                                    |
+| [`mcp`](_autosummary/intray.mcp.html.md#module-intray.mcp)       | MCP surface: the same operations as the CLI, from [`intray.tools`](_autosummary/intray.tools.html.md#module-intray.tools), via `py2mcp`. |
+| [`store`](_autosummary/intray.store.html.md#module-intray.store)   | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`target`](_autosummary/intray.target.html.md#module-intray.target) | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`tools`](_autosummary/intray.tools.html.md#module-intray.tools)   | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
 
 
-# _autosummary/tray.mcp.html.md
+# _autosummary/intray.mcp.html.md
 
-# tray.mcp
+# intray.mcp
 
-MCP surface: the same operations as the CLI, from [`tray.tools`](_autosummary/tray.tools.html.md#module-tray.tools), via `py2mcp`.
+MCP surface: the same operations as the CLI, from [`intray.tools`](_autosummary/intray.tools.html.md#module-intray.tools), via `py2mcp`.
 
-Run with `python -m tray.mcp` (needs `pip install 'intray[mcp]'`). String refs keep the
+Run with `python -m intray.mcp` (needs `pip install 'intray[mcp]'`). String refs keep the
 core free of any MCP import; the function list is the one the CLI dispatches.
 
 ### Functions
 
-| [`mk_server`](_autosummary/tray.mcp.html.md#tray.mcp.mk_server)()   | Build the MCP server over [`tray.tools`](_autosummary/tray.tools.html.md#module-tray.tools).   |
-|----------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| [`mk_server`](_autosummary/intray.mcp.html.md#intray.mcp.mk_server)()   | Build the MCP server over [`intray.tools`](_autosummary/intray.tools.html.md#module-intray.tools).   |
+|----------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------|
 
-### tray.mcp.mk_server()
+### intray.mcp.mk_server()
 
-Build the MCP server over [`tray.tools`](_autosummary/tray.tools.html.md#module-tray.tools).
+Build the MCP server over [`intray.tools`](_autosummary/intray.tools.html.md#module-intray.tools).
 
 
-# _autosummary/tray.store.html.md
+# _autosummary/intray.store.html.md
 
-# tray.store
+# intray.store
 
 The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
 
-Layout under the data root (local or remote, see [`tray.target`](_autosummary/tray.target.html.md#module-tray.target)):
+Layout under the data root (local or remote, see [`intray.target`](_autosummary/intray.target.html.md#module-intray.target)):
 
 ```default
 docs/<id>/meta.json         one document: metadata
@@ -518,24 +518,24 @@ and read by the server; there is no index to keep consistent.
 
 ### Module Attributes
 
-| [`KINDS`](_autosummary/tray.store.html.md#tray.store.KINDS)   | extension -> kind.   |
+| [`KINDS`](_autosummary/intray.store.html.md#intray.store.KINDS)   | extension -> kind.   |
 |----------------------------------------------------------|----------------------|
 
 ### Functions
 
-| [`check_id`](_autosummary/tray.store.html.md#tray.store.check_id)(doc_id)             | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/tray.store.html.md#tray.store.mk_id).   |
+| [`check_id`](_autosummary/intray.store.html.md#intray.store.check_id)(doc_id)             | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/intray.store.html.md#intray.store.mk_id).   |
 |-------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`kind_of`](_autosummary/tray.store.html.md#tray.store.kind_of)(filename)            | The rendering kind of a file, from its extension.                                                                     |
-| [`mk_id`](_autosummary/tray.store.html.md#tray.store.mk_id)(title, \*[, when])     | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
-| [`now_iso`](_autosummary/tray.store.html.md#tray.store.now_iso)()                    | UTC timestamp with second precision, the format every meta.json uses.                                                 |
-| [`slugify`](_autosummary/tray.store.html.md#tray.store.slugify)(text, \*[, max_len]) | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
+| [`kind_of`](_autosummary/intray.store.html.md#intray.store.kind_of)(filename)            | The rendering kind of a file, from its extension.                                                                     |
+| [`mk_id`](_autosummary/intray.store.html.md#intray.store.mk_id)(title, \*[, when])     | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
+| [`now_iso`](_autosummary/intray.store.html.md#intray.store.now_iso)()                    | UTC timestamp with second precision, the format every meta.json uses.                                                 |
+| [`slugify`](_autosummary/intray.store.html.md#intray.store.slugify)(text, \*[, max_len]) | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
 
 ### Classes
 
-| [`DocStore`](_autosummary/tray.store.html.md#tray.store.DocStore)(target)   | Publish, list, read, trash, restore and group documents on a `Target`.   |
+| [`DocStore`](_autosummary/intray.store.html.md#intray.store.DocStore)(target)   | Publish, list, read, trash, restore and group documents on a `Target`.   |
 |---------------------------------------------------------------------|--------------------------------------------------------------------------|
 
-### *class* tray.store.DocStore(target)
+### *class* intray.store.DocStore(target)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -560,14 +560,14 @@ One group, by id.
 Every document’s meta, newest first (ids sort by time; `created` breaks ties).
 
 * **Return type:**
-  [`list`](_autosummary/tray.store.html.md#tray.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+  [`list`](_autosummary/intray.store.html.md#intray.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### list_groups()
 
 Every group, newest first.
 
 * **Return type:**
-  [`list`](_autosummary/tray.store.html.md#tray.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+  [`list`](_autosummary/intray.store.html.md#intray.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### make_group(title, doc_ids, , gid=None)
 
@@ -620,7 +620,7 @@ Move a document out of the bin (idempotent).
 Case-insensitive match of every query word against title, tags, excerpt, source.
 
 * **Return type:**
-  [`list`](_autosummary/tray.store.html.md#tray.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+  [`list`](_autosummary/intray.store.html.md#intray.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### trash(doc_id)
 
@@ -629,40 +629,40 @@ Move a document into the bin (idempotent).
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.store.KINDS *= {'.csv': 'text', '.htm': 'html', '.html': 'html', '.json': 'text', '.log': 'text', '.markdown': 'md', '.md': 'md', '.py': 'text', '.toml': 'text', '.txt': 'text', '.yaml': 'text', '.yml': 'text'}*
+### intray.store.KINDS *= {'.csv': 'text', '.htm': 'html', '.html': 'html', '.json': 'text', '.log': 'text', '.markdown': 'md', '.md': 'md', '.py': 'text', '.toml': 'text', '.txt': 'text', '.yaml': 'text', '.yml': 'text'}*
 
 extension -> kind. `html` renders in a frame, `md` renders as markdown, `text` as
 preformatted text, anything else is a download.
 
-### tray.store.check_id(doc_id)
+### intray.store.check_id(doc_id)
 
-Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/tray.store.html.md#tray.store.mk_id).
+Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/intray.store.html.md#intray.store.mk_id).
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### tray.store.kind_of(filename)
+### intray.store.kind_of(filename)
 
 The rendering kind of a file, from its extension.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### tray.store.mk_id(title, , when=None)
+### intray.store.mk_id(title, , when=None)
 
 `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### tray.store.now_iso()
+### intray.store.now_iso()
 
 UTC timestamp with second precision, the format every meta.json uses.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### tray.store.slugify(text, , max_len=48)
+### intray.store.slugify(text, , max_len=48)
 
 Lowercase ascii words joined by hyphens; empty input becomes `doc`.
 
@@ -670,9 +670,9 @@ Lowercase ascii words joined by hyphens; empty input becomes `doc`.
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
-# _autosummary/tray.target.html.md
+# _autosummary/intray.target.html.md
 
-# tray.target
+# intray.target
 
 The transport seam: a document tree lands in a directory, here or on another machine.
 
@@ -680,86 +680,86 @@ A `Target` is the handful of filesystem verbs the store needs (put a directory, 
 remove, read and write a text file, list sub-directories, read every `meta.json` under a
 directory). Two implementations:
 
-* [`LocalTarget`](_autosummary/tray.target.html.md#tray.target.LocalTarget): a directory on this machine, plain `pathlib`/`shutil`.
-* [`SshTarget`](_autosummary/tray.target.html.md#tray.target.SshTarget): `host:path` on another machine, through the system `ssh` and
+* [`LocalTarget`](_autosummary/intray.target.html.md#intray.target.LocalTarget): a directory on this machine, plain `pathlib`/`shutil`.
+* [`SshTarget`](_autosummary/intray.target.html.md#intray.target.SshTarget): `host:path` on another machine, through the system `ssh` and
   `rsync` in batch mode (no prompts, so an agent never hangs). The host is whatever the
   user’s `~/.ssh/config` resolves, so an alias such as `tw` works.
 
-[`parse_target()`](_autosummary/tray.target.html.md#tray.target.parse_target) picks one from a string. An HTTP target (a bearer-token ingest
+[`parse_target()`](_autosummary/intray.target.html.md#intray.target.parse_target) picks one from a string. An HTTP target (a bearer-token ingest
 endpoint) is the declared replacement for the ssh one and is not built yet.
 
 ### Module Attributes
 
-| [`RECORD_SEP`](_autosummary/tray.target.html.md#tray.target.RECORD_SEP)   | Separator between concatenated meta.json files when reading many at once over ssh.   |
+| [`RECORD_SEP`](_autosummary/intray.target.html.md#intray.target.RECORD_SEP)   | Separator between concatenated meta.json files when reading many at once over ssh.   |
 |---------------------------------------------------------------|--------------------------------------------------------------------------------------|
 
 ### Functions
 
-| [`parse_target`](_autosummary/tray.target.html.md#tray.target.parse_target)(spec)   | `host:/path` becomes an [`SshTarget`](_autosummary/tray.target.html.md#tray.target.SshTarget); anything else a [`LocalTarget`](_autosummary/tray.target.html.md#tray.target.LocalTarget).   |
+| [`parse_target`](_autosummary/intray.target.html.md#intray.target.parse_target)(spec)   | `host:/path` becomes an [`SshTarget`](_autosummary/intray.target.html.md#intray.target.SshTarget); anything else a [`LocalTarget`](_autosummary/intray.target.html.md#intray.target.LocalTarget).   |
 |-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ### Classes
 
-| [`LocalTarget`](_autosummary/tray.target.html.md#tray.target.LocalTarget)(root)          | A directory on this machine.                                                |
+| [`LocalTarget`](_autosummary/intray.target.html.md#intray.target.LocalTarget)(root)          | A directory on this machine.                                                |
 |-----------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| [`SshTarget`](_autosummary/tray.target.html.md#tray.target.SshTarget)(host, root)      | `host:path` on another machine, via the system ssh and rsync in batch mode. |
-| [`Target`](_autosummary/tray.target.html.md#tray.target.Target)(\*args, \*\*kwargs) | What the store needs from wherever the documents live.                      |
+| [`SshTarget`](_autosummary/intray.target.html.md#intray.target.SshTarget)(host, root)      | `host:path` on another machine, via the system ssh and rsync in batch mode. |
+| [`Target`](_autosummary/intray.target.html.md#intray.target.Target)(\*args, \*\*kwargs) | What the store needs from wherever the documents live.                      |
 
-### *class* tray.target.LocalTarget(root)
+### *class* intray.target.LocalTarget(root)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A directory on this machine.
 
-### tray.target.RECORD_SEP *= '\\x1e'*
+### intray.target.RECORD_SEP *= '\\x1e'*
 
 Separator between concatenated meta.json files when reading many at once over ssh.
 
-### *class* tray.target.SshTarget(host, root)
+### *class* intray.target.SshTarget(host, root)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### *class* tray.target.Target(\*args, \*\*kwargs)
+### *class* intray.target.Target(\*args, \*\*kwargs)
 
 Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
 
 What the store needs from wherever the documents live.
 
-### tray.target.parse_target(spec)
+### intray.target.parse_target(spec)
 
-`host:/path` becomes an [`SshTarget`](_autosummary/tray.target.html.md#tray.target.SshTarget); anything else a [`LocalTarget`](_autosummary/tray.target.html.md#tray.target.LocalTarget).
+`host:/path` becomes an [`SshTarget`](_autosummary/intray.target.html.md#intray.target.SshTarget); anything else a [`LocalTarget`](_autosummary/intray.target.html.md#intray.target.LocalTarget).
 
 * **Return type:**
-  [`Target`](_autosummary/tray.target.html.md#tray.target.Target)
+  [`Target`](_autosummary/intray.target.html.md#intray.target.Target)
 
 
-# _autosummary/tray.tools.html.md
+# _autosummary/intray.tools.html.md
 
-# tray.tools
+# intray.tools
 
 The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 
 This module is the single source of truth for what a tray can do. The CLI
-(`tray.__main__`, via `cw`), the MCP server (`py2mcp` over string refs to these
+(`intray.__main__`, via `cw`), the MCP server (`py2mcp` over string refs to these
 names) and the shipped skill all describe the same functions, so there is nothing to keep
 in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](_autosummary/tray.tools.html.md#tray.tools.configure)(\*[, target, base_url])             | Write the publisher config (where to publish, what link to print) and show it.   |
+| [`configure`](_autosummary/intray.tools.html.md#intray.tools.configure)(\*[, target, base_url])             | Write the publisher config (where to publish, what link to print) and show it.   |
 |------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| [`group`](_autosummary/tray.tools.html.md#tray.tools.group)(title, doc_ids, \*[, target, base_url]) | Make a group (one URL for a set of documents) from existing document ids.        |
-| [`groups`](_autosummary/tray.tools.html.md#tray.tools.groups)(\*[, target, base_url])                | List groups, newest first.                                                       |
-| [`ls`](_autosummary/tray.tools.html.md#tray.tools.ls)([q, trash, limit, target, base_url])       | List documents (newest first), optionally filtered by words or showing the bin.  |
-| [`publish`](_autosummary/tray.tools.html.md#tray.tools.publish)(paths, \*[, title, tags, group, ...]) | Publish one document and print its link; several paths become several documents. |
-| [`restore`](_autosummary/tray.tools.html.md#tray.tools.restore)(doc_ids, \*[, target])                | Bring documents back from the recycle bin.                                       |
-| [`serve`](_autosummary/tray.tools.html.md#tray.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the tray page and API (needs `pip install 'intray[server]'`).              |
-| [`show`](_autosummary/tray.tools.html.md#tray.tools.show)(doc_id, \*[, target, base_url])          | A document's metadata and link.                                                  |
-| [`trash`](_autosummary/tray.tools.html.md#tray.tools.trash)(doc_ids, \*[, target])                  | Move documents to the recycle bin (restorable).                                  |
+| [`group`](_autosummary/intray.tools.html.md#intray.tools.group)(title, doc_ids, \*[, target, base_url]) | Make a group (one URL for a set of documents) from existing document ids.        |
+| [`groups`](_autosummary/intray.tools.html.md#intray.tools.groups)(\*[, target, base_url])                | List groups, newest first.                                                       |
+| [`ls`](_autosummary/intray.tools.html.md#intray.tools.ls)([q, trash, limit, target, base_url])       | List documents (newest first), optionally filtered by words or showing the bin.  |
+| [`publish`](_autosummary/intray.tools.html.md#intray.tools.publish)(paths, \*[, title, tags, group, ...]) | Publish one document and print its link; several paths become several documents. |
+| [`restore`](_autosummary/intray.tools.html.md#intray.tools.restore)(doc_ids, \*[, target])                | Bring documents back from the recycle bin.                                       |
+| [`serve`](_autosummary/intray.tools.html.md#intray.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the tray page and API (needs `pip install 'intray[server]'`).              |
+| [`show`](_autosummary/intray.tools.html.md#intray.tools.show)(doc_id, \*[, target, base_url])          | A document's metadata and link.                                                  |
+| [`trash`](_autosummary/intray.tools.html.md#intray.tools.trash)(doc_ids, \*[, target])                  | Move documents to the recycle bin (restorable).                                  |
 
-### tray.tools.configure(, target=None, base_url=None)
+### intray.tools.configure(, target=None, base_url=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -771,28 +771,28 @@ Write the publisher config (where to publish, what link to print) and show it.
 `tray configure --target tw:/root/.local/share/tray --base-url https://apps.example.com/tray`.
 With no arguments, shows the resolved settings without writing.
 
-### tray.tools.group(title, doc_ids, , target=None, base_url=None)
+### intray.tools.group(title, doc_ids, , target=None, base_url=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.tools.groups(, target=None, base_url=None)
+### intray.tools.groups(, target=None, base_url=None)
 
 List groups, newest first.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.tools.ls(q='', , trash=False, limit=50, target=None, base_url=None)
+### intray.tools.ls(q='', , trash=False, limit=50, target=None, base_url=None)
 
 List documents (newest first), optionally filtered by words or showing the bin.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.tools.publish(paths, , title=None, tags='', group=None, session=None, target=None, base_url=None)
+### intray.tools.publish(paths, , title=None, tags='', group=None, session=None, target=None, base_url=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -804,14 +804,14 @@ names a group to create from the published documents; the reply then carries
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.tools.restore(doc_ids, , target=None)
+### intray.tools.restore(doc_ids, , target=None)
 
 Bring documents back from the recycle bin.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/tray')
+### intray.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/tray')
 
 Serve the tray page and API (needs `pip install 'intray[server]'`).
 
@@ -822,14 +822,14 @@ nothing for an open server on localhost.
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### tray.tools.show(doc_id, , target=None, base_url=None)
+### intray.tools.show(doc_id, , target=None, base_url=None)
 
 A document’s metadata and link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### tray.tools.trash(doc_ids, , target=None)
+### intray.tools.trash(doc_ids, , target=None)
 
 Move documents to the recycle bin (restorable).
 
@@ -843,16 +843,18 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-03 15:28 UTC** from commit <a href="https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6"><code>0359a32</code></a> on branch <code>main</code>, for **intray 0.0.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-03 15:31 UTC** from commit <a href="https://github.com/thorwhalen/tray/commit/2924211ddeecc7bea24a539c04c14a29be279a55"><code>2924211</code></a> on branch <code>main</code>, for **intray 0.0.1** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.1) is behind the latest release on PyPI (0.0.2): `pip install intray` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6"><code>0359a32fbd3fd2fed75877883e2ca58abee4cfe6</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/tray/commit/2924211ddeecc7bea24a539c04c14a29be279a55"><code>2924211ddeecc7bea24a539c04c14a29be279a55</code></a> |
 | Branch              | <code>main</code>                                                                                                                                      |
 | Tags at this commit | none                                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                  |
@@ -863,9 +865,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/tray</code>                                                               |
-| Run          | <a href="https://github.com/thorwhalen/tray/actions/runs/37133278066">37133278066</a>      |
+| Run          | <a href="https://github.com/thorwhalen/tray/actions/runs/37133470929">37133470929</a>      |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>0359a32fbd3fd2fed75877883e2ca58abee4cfe6</code> (in the history of the built commit) |
+| Event commit | <code>2924211ddeecc7bea24a539c04c14a29be279a55</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -880,8 +882,8 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |               |                                                                   |
 |---------------|-------------------------------------------------------------------|
-| theme         | <code>auto</code> (Sphinx theme <code>pydata_sphinx_theme</code>) |
-| accent        | <code>#765100</code>                                              |
+| theme         | <code>auto</code> (Sphinx theme <code>sphinxawesome_theme</code>) |
+| accent        | <code>#006d3f</code>                                              |
 | api_generator | <code>autosummary</code>                                          |
 | ignore        | <code>tests/</code>, <code>scrap/</code>, <code>examples/</code>  |
 | agent_outputs | <code>true</code>                                                 |
@@ -890,13 +892,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-<code>intray</code> is not on PyPI.
+Latest release: <a href="https://pypi.org/project/intray/0.0.2/">0.0.2</a>, newer than the documented version (0.0.1).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/tray && cd tray
-git checkout 0359a32fbd3fd2fed75877883e2ca58abee4cfe6
+git checkout 2924211ddeecc7bea24a539c04c14a29be279a55
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
@@ -926,7 +928,7 @@ Publish a markdown or html document (a report, an analysis, a rendered artifact,
 gh skill install thorwhalen/tray tray-publish --agent claude-code
 ```
 
-Source: [`tray/data/skills/tray-publish`](https://github.com/thorwhalen/tray/tree/HEAD/tray/data/skills/tray-publish) (bundled with the pip package).
+Source: [`intray/data/skills/tray-publish`](https://github.com/thorwhalen/tray/tree/HEAD/intray/data/skills/tray-publish) (bundled with the pip package).
 
 The bundled skills are also on disk after `pip install intray`, under the package’s `data/skills/` directory; link them into an agent without network access with `skill link-skills <that directory>`.
 
@@ -944,7 +946,7 @@ This site publishes the same documentation in forms that fit an agent’s contex
 
 # API reference
 
-| [`tray`](_autosummary/tray.html.md#module-tray)   | tray: an in-tray for AI agents.   |
-|---------------------------------------------------------------------|-----------------------------------|
+| [`intray`](_autosummary/intray.html.md#module-intray)   | tray: an in-tray for AI agents.   |
+|-------------------------------------------------------------------------|-----------------------------------|
 
 

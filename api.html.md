@@ -1,4 +1,4 @@
 # API reference
 
-| [`tray`](_autosummary/tray.html.md#module-tray)   | tray: an in-tray for AI agents.   |
-|---------------------------------------------------------------------|-----------------------------------|
+| [`intray`](_autosummary/intray.html.md#module-intray)   | tray: an in-tray for AI agents.   |
+|-------------------------------------------------------------------------|-----------------------------------|

@@ -5,7 +5,7 @@
 An in-tray for AI agents. An agent publishes a markdown or html document with one command and gets back a link; the owner opens the tray on a phone and finds everything their agents left for them, newest first, searchable, with a recycle bin.
 
 ```bash
-pip install intray        # the PyPI name is intray (PyPI reserves `tray`); the command and the import are `tray`
+pip install intray        # the PyPI name is intray (PyPI reserves `tray`); the command is `tray`, the import is `intray`
 tray publish report.md --session my-agent
 # https://apps.example.com/tray/d/20261003-203301-quarterly-report-3f9a
 ```
@@ -27,7 +27,7 @@ tray trash <id>  /  tray restore <id>        # the recycle bin
 
 `--title` overrides the inferred title (first `# heading` or `<title>`), `--tags a,b` adds searchable tags, `--session name` records who published. Markdown renders on the page with a toggle to the raw, copyable source; html renders as-is.
 
-With `pip install 'intray[mcp]'`, the same operations are an MCP server: `python -m tray.mcp`.
+With `pip install 'intray[mcp]'`, the same operations are an MCP server: `python -m intray.mcp`.
 
 ## For the owner: where it goes and what link it prints
 
@@ -57,12 +57,12 @@ A systemd unit and a Traefik router for the first case are in `misc/deploy/`.
 ## Python API
 
 ```python
-from tray import DocStore, publish
+from intray import DocStore, publish
 meta = DocStore("~/.local/share/tray").publish("report.md", tags=["q3"])
 publish("report.md", tags="q3")["url"]          # same, through the configured target
 ```
 
-`tray.api.mk_app(data_dir=..., authorizer=...)` returns the FastAPI app for embedding.
+`intray.api.mk_app(data_dir=..., authorizer=...)` returns the FastAPI app for embedding.
 
 ## Design notes
 
@@ -74,6 +74,6 @@ Flat store with tags and groups, not a hierarchy: agents from many projects do n
 gh skill install thorwhalen/tray tray-publish
 ```
 
-The skill also ships inside the package at `tray/data/skills/tray-publish/`.
+The skill also ships inside the package at `intray/data/skills/tray-publish/`.
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="intray.md">intray.md</a> (Markdown, for agents).</p>

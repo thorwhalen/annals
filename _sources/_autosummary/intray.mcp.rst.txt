@@ -1,0 +1,12 @@
+intray.mcp
+==========
+
+.. automodule:: intray.mcp
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_server
+   
