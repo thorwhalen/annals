@@ -3,9 +3,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from tray.api import mk_app
-from tray.auth import BasicAuth, CookieWhoami, no_auth
-from tray.store import DocStore
+from intray.api import mk_app
+from intray.auth import BasicAuth, CookieWhoami, no_auth
+from intray.store import DocStore
 
 
 @pytest.fixture

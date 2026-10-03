@@ -1,5 +1,5 @@
 # PYTHON_ARGCOMPLETE_OK
-"""CLI entry point: ``tray publish report.md`` prints a link. Built by ``cw`` over :mod:`tray.tools`."""
+"""CLI entry point: ``tray publish report.md`` prints a link. Built by ``cw`` over :mod:`intray.tools`."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import sys
 
 import cw
 
-from tray.tools import _dispatch_funcs
+from intray.tools import _dispatch_funcs
 
 #: the shape ``publish`` returns for one document; only that shape prints as a bare link
 PUBLISH_KEYS = frozenset({"id", "title", "url", "group_id", "group_url"})

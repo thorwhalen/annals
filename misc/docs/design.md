@@ -16,7 +16,7 @@ tray is an in-tray for AI agents: an agent publishes a document with one command
 | 4 | base url for the printed link | `base_url` in the config file | per-target in the config |
 | 5 | markdown rendering | `marked.js` in the browser, vendored | server-side rendering (or PDF) if the page ever needs to serve a non-browser reader |
 
-Surfaces: the CLI (`cw` over `tray/tools.py`), the Python API, MCP (`py2mcp` over string refs to the same functions), the shipped skill, and the FastAPI app. All of them read one function list, so there is nothing to keep in parity.
+Surfaces: the CLI (`cw` over `intray/tools.py`), the Python API, MCP (`py2mcp` over string refs to the same functions), the shipped skill, and the FastAPI app. All of them read one function list, so there is nothing to keep in parity.
 
 NOT seams, written directly on purpose: the id format, the `meta.json` shape, the bin semantics (a move), the page's framework (none), the sort keys.
 

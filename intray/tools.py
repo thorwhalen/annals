@@ -1,7 +1,7 @@
 """The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 
 This module is the single source of truth for what a tray can do. The CLI
-(:mod:`tray.__main__`, via ``cw``), the MCP server (``py2mcp`` over string refs to these
+(:mod:`intray.__main__`, via ``cw``), the MCP server (``py2mcp`` over string refs to these
 names) and the shipped skill all describe the same functions, so there is nothing to keep
 in parity. Nothing here prints or exits; the surfaces do that.
 """
@@ -12,9 +12,9 @@ import os
 import socket
 from pathlib import Path
 
-from tray.config import Settings, default_data_dir, load_settings, write_config
-from tray.store import DocStore
-from tray.target import parse_target
+from intray.config import Settings, default_data_dir, load_settings, write_config
+from intray.store import DocStore
+from intray.target import parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
 
@@ -183,7 +183,7 @@ def serve(
     behind an existing login, ``TRAY_BASIC_USER`` + ``TRAY_BASIC_PASSWORD`` for HTTP Basic,
     nothing for an open server on localhost.
     """
-    from tray.api import serve as _serve
+    from intray.api import serve as _serve
 
     _serve(host=host, port=port, data_dir=data_dir, base_path=base_path)
 

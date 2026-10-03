@@ -25,7 +25,7 @@ Repository = "https://github.com/thorwhalen/tray"
 Documentation = "https://thorwhalen.github.io/tray"
 
 [project.scripts]
-tray = "tray.__main__:main"
+tray = "intray.__main__:main"
 
 [project.optional-dependencies]
 server = [
@@ -52,7 +52,7 @@ skip-excluded-dirs = true
 
 # The distribution is intray; the package (and the command) is tray.
 [tool.hatch.build.targets.wheel]
-packages = ["tray"]
+packages = ["intray"]
 
 [tool.hatch.build.targets.sdist]
 exclude = [

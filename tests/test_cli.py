@@ -4,8 +4,8 @@ import io
 import json
 import re
 
-from tray.__main__ import run
-from tray.config import load_settings, write_config, Settings
+from intray.__main__ import run
+from intray.config import load_settings, write_config, Settings
 
 
 def _run(argv, out):

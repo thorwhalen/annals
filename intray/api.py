@@ -1,4 +1,4 @@
-"""The HTTP surface: a FastAPI app over a :class:`tray.store.DocStore`, plus the page.
+"""The HTTP surface: a FastAPI app over a :class:`intray.store.DocStore`, plus the page.
 
 :func:`mk_app` builds one app that serves, under one base path (default ``/tray``):
 
@@ -9,9 +9,9 @@
   purge, groups, and raw files (``{base}/api/raw/{id}/{path}``) so an html document
   renders in a frame with its own assets.
 
-Every request passes the authorizer first (see :mod:`tray.auth`). The reader's actions are
+Every request passes the authorizer first (see :mod:`intray.auth`). The reader's actions are
 the three the recycle bin needs; publishing is not an HTTP operation here, it is a file
-write (see :mod:`tray.target`), which is what keeps this surface small and the tray private.
+write (see :mod:`intray.target`), which is what keeps this surface small and the tray private.
 """
 
 from __future__ import annotations
@@ -25,9 +25,9 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
-from tray.auth import Authorizer, authorizer_from_env, no_auth
-from tray.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
-from tray.store import DOCS, TRASH, DocStore, TEXT_KINDS, check_id
+from intray.auth import Authorizer, authorizer_from_env, no_auth
+from intray.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
+from intray.store import DOCS, TRASH, DocStore, TEXT_KINDS, check_id
 
 UI_DIR = Path(__file__).parent / "data" / "ui"
 DFLT_BASE_PATH = f"/{APP_NAME}"

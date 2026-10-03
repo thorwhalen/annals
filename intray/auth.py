@@ -2,7 +2,7 @@
 
 A tray is private by construction, so the server asks every request who is calling. The
 answer comes from one of three ``Authorizer`` callables, chosen by :func:`authorizer_from_env`
-(or passed to :func:`tray.api.mk_app`):
+(or passed to :func:`inintray.api.mk_app`):
 
 * :func:`no_auth`: everyone is the owner. Right for ``tray serve`` bound to ``127.0.0.1``,
   wrong anywhere else.

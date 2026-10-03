@@ -1,6 +1,6 @@
 """The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
 
-Layout under the data root (local or remote, see :mod:`tray.target`)::
+Layout under the data root (local or remote, see :mod:`intray.target`)::
 
     docs/<id>/meta.json         one document: metadata
     docs/<id>/<main file>       its content (index.html, report.md, ...), plus any assets
@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-from tray.target import LocalTarget, Target
+from intray.target import LocalTarget, Target
 
 DOCS = "docs"
 TRASH = "trash"

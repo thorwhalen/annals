@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from tray.store import DocStore, check_id, kind_of, mk_id, slugify
+from intray.store import DocStore, check_id, kind_of, mk_id, slugify
 
 
 def test_slugify_and_id_shape():
