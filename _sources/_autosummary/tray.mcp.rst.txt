@@ -1,0 +1,12 @@
+tray.mcp
+========
+
+.. automodule:: tray.mcp
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_server
+   

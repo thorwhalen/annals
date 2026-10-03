@@ -1,0 +1,20 @@
+tray.tools
+==========
+
+.. automodule:: tray.tools
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      configure
+      group
+      groups
+      ls
+      publish
+      restore
+      serve
+      show
+      trash
+   

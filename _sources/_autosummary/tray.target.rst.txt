@@ -1,0 +1,26 @@
+tray.target
+===========
+
+.. automodule:: tray.target
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      RECORD_SEP
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      parse_target
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LocalTarget
+      SshTarget
+      Target
+   

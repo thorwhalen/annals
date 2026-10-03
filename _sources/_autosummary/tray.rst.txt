@@ -1,0 +1,43 @@
+﻿tray
+====
+
+.. automodule:: tray
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      configure
+      group
+      groups
+      load_settings
+      ls
+      parse_target
+      publish
+      restore
+      show
+      trash
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DocStore
+      LocalTarget
+      Settings
+      SshTarget
+   
+.. rubric:: Modules
+
+.. autosummary::
+   :toctree:
+   :recursive:
+
+   api
+   auth
+   config
+   mcp
+   store
+   target
+   tools

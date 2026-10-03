@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<link rel="alternate" type="text/markdown" href="index.html.md">
+<link rel="describedby" href="llms.txt" type="text/markdown">
+<link rel="alternate" type="text/markdown" href="index.html.md">
+<link rel="describedby" href="llms.txt">
+    <title>tray &#8212; tray</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=64cc4de3f052d77215f0" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d75fae25" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/epythet.css?v=46d02628" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=64cc4de3f052d77215f0"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0" />
+
+    <script src="_static/documentation_options.js?v=d45e8c67"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=fd10adb8"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="API reference" href="api.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.0.1" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+  
+    <p class="title logo__title">tray</p>
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/tray" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="ai-agents.html">
+    For AI agents
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/thorwhalen/tray" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none"></div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- generated by epythet -->
+<section id="tray">
+<h1>tray<a class="headerlink" href="#tray" title="Link to this heading">#</a></h1>
+<p>An in-tray for AI agents. An agent publishes a markdown or html document with one command and gets back a link; the owner opens the tray on a phone and finds everything their agents left for them, newest first, searchable, with a recycle bin.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>tray
+tray<span class="w"> </span>publish<span class="w"> </span>report.md<span class="w"> </span>--session<span class="w"> </span>my-agent
+<span class="c1"># https://apps.example.com/tray/d/20261003-203301-quarterly-report-3f9a</span>
+</pre></div>
+</div>
+<p>Documents are plain files in a directory. The directory can be on this machine or on another one over ssh, and <code class="docutils literal notranslate"><span class="pre">tray</span> <span class="pre">serve</span></code> turns it into a private page. Nothing else is needed: no database, no build step, no API token.</p>
+<section id="for-agents">
+<h2>For agents<a class="headerlink" href="#for-agents" title="Link to this heading">#</a></h2>
+<p>Load the shipped skill, <code class="docutils literal notranslate"><span class="pre">tray-publish</span></code>, and you have the whole protocol: one command, one link, put the link in your reply.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tray<span class="w"> </span>publish<span class="w"> </span>report.md<span class="w">                       </span><span class="c1"># one document, prints its link</span>
+tray<span class="w"> </span>publish<span class="w"> </span>a.md<span class="w"> </span>b.md<span class="w"> </span>c.html<span class="w"> </span>--group<span class="w"> </span><span class="s2">"Review"</span><span class="w">   </span><span class="c1"># one link for a set (the group link prints first)</span>
+tray<span class="w"> </span>publish<span class="w"> </span>./artifact_dir<span class="w">                  </span><span class="c1"># an html page with its assets, as one document</span>
+some-command<span class="w"> </span><span class="p">|</span><span class="w"> </span>tray<span class="w"> </span>publish<span class="w"> </span>-<span class="w"> </span>--title<span class="w"> </span><span class="s2">"Log"</span><span class="w">  </span><span class="c1"># from stdin</span>
+tray<span class="w"> </span>ls<span class="w"> </span><span class="s2">"search words"</span><span class="w">                       </span><span class="c1"># what is there, newest first</span>
+tray<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>tray<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">        </span><span class="c1"># the recycle bin</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">--title</span></code> overrides the inferred title (first <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">heading</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>), <code class="docutils literal notranslate"><span class="pre">--tags</span> <span class="pre">a,b</span></code> adds searchable tags, <code class="docutils literal notranslate"><span class="pre">--session</span> <span class="pre">name</span></code> records who published. Markdown renders on the page with a toggle to the raw, copyable source; html renders as-is.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'tray[mcp]'</span></code>, the same operations are an MCP server: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">tray.mcp</span></code>.</p>
+</section>
+<section id="for-the-owner-where-it-goes-and-what-link-it-prints">
+<h2>For the owner: where it goes and what link it prints<a class="headerlink" href="#for-the-owner-where-it-goes-and-what-link-it-prints" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tray<span class="w"> </span>configure<span class="w"> </span>--target<span class="w"> </span>tw:/root/.local/share/tray<span class="w"> </span>--base-url<span class="w"> </span>https://apps.example.com/tray
+</pre></div>
+</div>
+<p>That writes <code class="docutils literal notranslate"><span class="pre">~/.config/tray/config.toml</span></code>. <code class="docutils literal notranslate"><span class="pre">target</span></code> is a directory, or <code class="docutils literal notranslate"><span class="pre">host:/path</span></code> for a directory on another machine reached by <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">host</span></code> (keys, no prompt; <code class="docutils literal notranslate"><span class="pre">host</span></code> can be an alias from <code class="docutils literal notranslate"><span class="pre">~/.ssh/config</span></code>). <code class="docutils literal notranslate"><span class="pre">TRAY_TARGET</span></code> and <code class="docutils literal notranslate"><span class="pre">TRAY_BASE_URL</span></code> override it per shell. With no configuration, documents go to <code class="docutils literal notranslate"><span class="pre">~/.local/share/tray</span></code> and the link points at a local <code class="docutils literal notranslate"><span class="pre">tray</span> <span class="pre">serve</span></code>.</p>
+</section>
+<section id="hosting-the-page">
+<h2>Hosting the page<a class="headerlink" href="#hosting-the-page" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'tray[server]'</span>
+<span class="nv">TRAY_DATA_DIR</span><span class="o">=</span>~/.local/share/tray<span class="w"> </span>tray<span class="w"> </span>serve<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span>--port<span class="w"> </span><span class="m">8765</span>
+</pre></div>
+</div>
+<p>The page is at <code class="docutils literal notranslate"><span class="pre">http://127.0.0.1:8765/tray/</span></code>; its JSON API under <code class="docutils literal notranslate"><span class="pre">/tray/api/</span></code>. Put a reverse proxy in front for https. Auth is chosen by environment variables:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Situation</p></th>
+<th class="head"><p>Set</p></th>
+<th class="head"><p>Effect</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Behind an existing login that exposes a who-am-I endpoint (enlace_auth’s <code class="docutils literal notranslate"><span class="pre">/auth/whoami</span></code>)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TRAY_WHOAMI_URL=http://127.0.0.1:8010/auth/whoami</span></code>, <code class="docutils literal notranslate"><span class="pre">TRAY_ALLOWED_USERS=me&#64;example.com</span></code>, optionally <code class="docutils literal notranslate"><span class="pre">TRAY_LOGIN_URL=/auth/login</span></code></p></td>
+<td><p>the tray forwards the browser’s cookies to that endpoint and allows the listed emails; anyone else is sent to the login page</p></td>
+</tr>
+<tr class="row-odd"><td><p>No platform login</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">TRAY_BASIC_USER</span></code>, <code class="docutils literal notranslate"><span class="pre">TRAY_BASIC_PASSWORD</span></code></p></td>
+<td><p>HTTP Basic</p></td>
+</tr>
+<tr class="row-even"><td><p>Localhost only</p></td>
+<td><p>nothing</p></td>
+<td><p>open</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>A systemd unit and a Traefik router for the first case are in <code class="docutils literal notranslate"><span class="pre">misc/deploy/</span></code>.</p>
+</section>
+<section id="python-api">
+<h2>Python API<a class="headerlink" href="#python-api" title="Link to this heading">#</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">tray</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">publish</span>
+<span class="n">meta</span> <span class="o">=</span> <span class="n">DocStore</span><span class="p">(</span><span class="s2">"~/.local/share/tray"</span><span class="p">)</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="s2">"report.md"</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="s2">"q3"</span><span class="p">])</span>
+<span class="n">publish</span><span class="p">(</span><span class="s2">"report.md"</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="s2">"q3"</span><span class="p">)[</span><span class="s2">"url"</span><span class="p">]</span>          <span class="c1"># same, through the configured target</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">tray.api.mk_app(data_dir=...,</span> <span class="pre">authorizer=...)</span></code> returns the FastAPI app for embedding.</p>
+</section>
+<section id="design-notes">
+<h2>Design notes<a class="headerlink" href="#design-notes" title="Link to this heading">#</a></h2>
+<p>Flat store with tags and groups, not a hierarchy: agents from many projects do not share one, and every placement decision costs tokens. A document is <code class="docutils literal notranslate"><span class="pre">docs/&lt;id&gt;/meta.json</span></code> plus its files; the bin is <code class="docutils literal notranslate"><span class="pre">trash/&lt;id&gt;/</span></code>; a group is <code class="docutils literal notranslate"><span class="pre">groups/&lt;gid&gt;.json</span></code>. Ids are <code class="docutils literal notranslate"><span class="pre">YYYYMMDD-HHMMSS-&lt;slug&gt;-&lt;4</span> <span class="pre">hex&gt;</span></code>, so a listing is already in time order and a URL says what it points to. The transport is a seam (<code class="docutils literal notranslate"><span class="pre">tray.target</span></code>): local directory, ssh, and later an http ingest endpoint. More in <code class="docutils literal notranslate"><span class="pre">misc/docs/design.md</span></code>.</p>
+</section>
+<section id="skills">
+<h2>Skills<a class="headerlink" href="#skills" title="Link to this heading">#</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>gh<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>thorwhalen/tray<span class="w"> </span>tray-publish
+</pre></div>
+</div>
+<p>The skill also ships inside the package at <code class="docutils literal notranslate"><span class="pre">tray/data/skills/tray-publish/</span></code>.</p>
+<p class="epythet-aggregates">This documentation as a single file: <a href="tray.md">tray.md</a> (Markdown, for agents).</p>
+<div class="toctree-wrapper compound">
+</div>
+</section>
+</section>
+
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-03 15:22 UTC from <a href="https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f">d701012</a> (main) · tray 0.0.1 · <a href="about-this-build.html">about this build</a></p>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="right-next"
+       href="api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#for-agents">For agents</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#for-the-owner-where-it-goes-and-what-link-it-prints">For the owner: where it goes and what link it prints</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hosting-the-page">Hosting the page</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#python-api">Python API</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#design-notes">Design notes</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#skills">Skills</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/index.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=64cc4de3f052d77215f0"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=64cc4de3f052d77215f0"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.22.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

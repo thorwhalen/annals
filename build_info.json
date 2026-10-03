@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "built_at": "2026-10-03T15:22:30Z",
+  "package": {
+    "name": "tray",
+    "version": "0.0.1",
+    "display_name": "tray",
+    "source": "pyproject.toml"
+  },
+  "git": {
+    "available": true,
+    "commit": "d701012cd72a5eda031b20d331bb41e76ea0bc5f",
+    "short_commit": "d701012",
+    "branch": "main",
+    "tags": [],
+    "dirty": false,
+    "remote_url": "https://github.com/thorwhalen/tray",
+    "commit_url": "https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f",
+    "error": null
+  },
+  "ci": {
+    "provider": "github",
+    "repository": "thorwhalen/tray",
+    "sha": "d701012cd72a5eda031b20d331bb41e76ea0bc5f",
+    "sha_in_history": true,
+    "ref": "refs/heads/main",
+    "ref_name": "main",
+    "run_id": "37132926189",
+    "run_url": "https://github.com/thorwhalen/tray/actions/runs/37132926189",
+    "server_url": "https://github.com"
+  },
+  "tools": {
+    "epythet": "0.2.12",
+    "sphinx": "9.1.0",
+    "docutils": "0.22.4",
+    "python": "3.12.14"
+  },
+  "config": {
+    "theme": "auto",
+    "html_theme": "pydata_sphinx_theme",
+    "accent": "#765100",
+    "mode": "auto",
+    "api_generator": "autosummary",
+    "ignore": [
+      "tests/",
+      "scrap/",
+      "examples/"
+    ],
+    "agent_outputs": true,
+    "aggregates": [
+      "md"
+    ],
+    "ai_artifacts": true,
+    "provenance": true,
+    "docs_dir": "docsrc"
+  },
+  "site": {
+    "modules_documented": 7,
+    "objects_documented": 72
+  },
+  "pypi": {
+    "checked": true,
+    "latest": null,
+    "relation": "unknown",
+    "error": null
+  },
+  "reproduce": "git clone https://github.com/thorwhalen/tray && cd tray\ngit checkout d701012cd72a5eda031b20d331bb41e76ea0bc5f\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "warnings": [],
+  "alignment": {
+    "aligned": true,
+    "notes": []
+  }
+}

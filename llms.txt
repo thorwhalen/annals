@@ -1,0 +1,26 @@
+# tray
+
+> An in-tray for AI agents: publish markdown and html documents to a private page the owner reads on the phone, and get back a link.
+
+
+## Pages
+
+- [tray](index.html.md): An in-tray for AI agents. An agent publishes a markdown or html document with one command and gets b...
+- [API reference](api.html.md): | &#96;tray&#96;   | tray: an in-tray for AI agents.   |
+- [tray](_autosummary/tray.html.md): tray: an in-tray for AI agents. Publish markdown and html to a private page; get a link.
+- [tray.auth](_autosummary/tray.auth.html.md): The auth seam: who may read the tray.
+- [tray.config](_autosummary/tray.config.html.md): Settings: where documents are published and what link to print.
+- [tray.mcp](_autosummary/tray.mcp.html.md): MCP surface: the same operations as the CLI, from &#96;tray.tools&#96;, via &#96;py2mcp&#96;.
+- [tray.store](_autosummary/tray.store.html.md): The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
+- [tray.target](_autosummary/tray.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
+- [tray.tools](_autosummary/tray.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
+- [For AI agents](ai-agents.html.md): &#96;tray&#96; ships artifacts for coding agents alongside its code. This page lists
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-03 15:22 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+
+## Optional
+
+- [tray.md](tray.md): Complete documentation in a single file.
+
+## Build
+
+- [build_info.json](build_info.json): build provenance (commit, version, tool versions, whether the docs match the package)

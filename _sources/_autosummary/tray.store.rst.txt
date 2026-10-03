@@ -1,0 +1,28 @@
+tray.store
+==========
+
+.. automodule:: tray.store
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      KINDS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_id
+      kind_of
+      mk_id
+      now_iso
+      slugify
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DocStore
+   
