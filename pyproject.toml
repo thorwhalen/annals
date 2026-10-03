@@ -5,7 +5,7 @@ requires = [
 build-backend = "hatchling.build"
 
 [project]
-name = "tray"
+name = "intray"
 version = "0.0.1"
 description = "An in-tray for AI agents: publish markdown and html documents to a private page the owner reads on the phone, and get back a link."
 readme = "README.md"

@@ -22,7 +22,7 @@ NOT seams, written directly on purpose: the id format, the `meta.json` shape, th
 
 ## Decisions
 
-**Python on PyPI.** The host that serves the page is Python, so one package holds the store layout, the server and the publisher: one implementation of the layout, no parity test between a JS publisher and a Python reader. `pip install tray` works wherever an agent runs.
+**Python on PyPI.** The host that serves the page is Python, so one package holds the store layout, the server and the publisher: one implementation of the layout, no parity test between a JS publisher and a Python reader. `pip install intray` works wherever an agent runs.
 
 **A file write is the publish operation.** Publishing is `rsync` (or a local copy) into the directory the server reads; there is no ingest API and no token to manage. The read side can therefore stay behind whatever login already protects the host, and a tray never becomes a way to post without credentials. An ingest endpoint is seam 1's declared replacement, not a v1 feature.
 

@@ -1,6 +1,6 @@
 """MCP surface: the same operations as the CLI, from :mod:`tray.tools`, via ``py2mcp``.
 
-Run with ``python -m tray.mcp`` (needs ``pip install 'tray[mcp]'``). String refs keep the
+Run with ``python -m tray.mcp`` (needs ``pip install 'intray[mcp]'``). String refs keep the
 core free of any MCP import; the function list is the one the CLI dispatches.
 """
 

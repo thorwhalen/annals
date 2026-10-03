@@ -8,7 +8,7 @@ After=network.target
 [Service]
 Type=simple
 User=root
-# The venv that holds `pip install 'tray[server]'`.
+# The venv that holds `pip install 'intray[server]'`.
 ExecStart=/opt/tray/venv/bin/tray serve --host 127.0.0.1 --port 8765 --base-path /tray
 Environment=TRAY_DATA_DIR=/root/.local/share/tray
 # Auth: forward the browser's cookies to the platform's who-am-I endpoint, allow these emails.

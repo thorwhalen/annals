@@ -177,7 +177,7 @@ def serve(
     data_dir: str | None = None,
     base_path: str = "/tray",
 ) -> None:
-    """Serve the tray page and API (needs ``pip install 'tray[server]'``).
+    """Serve the tray page and API (needs ``pip install 'intray[server]'``).
 
     Auth comes from the environment: ``TRAY_WHOAMI_URL`` + ``TRAY_ALLOWED_USERS`` to sit
     behind an existing login, ``TRAY_BASIC_USER`` + ``TRAY_BASIC_PASSWORD`` for HTTP Basic,
