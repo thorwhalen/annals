@@ -1,0 +1,22 @@
+# systemd unit for a tray server behind an existing platform login (enlace_auth).
+# Install: copy to /etc/systemd/system/tray.service, edit the Environment lines,
+# then `systemctl daemon-reload && systemctl enable --now tray`.
+[Unit]
+Description=tray: the owner's private in-tray for agent-published documents
+After=network.target
+
+[Service]
+Type=simple
+User=root
+# The venv that holds `pip install 'tray[server]'`.
+ExecStart=/opt/tray/venv/bin/tray serve --host 127.0.0.1 --port 8765 --base-path /tray
+Environment=TRAY_DATA_DIR=/root/.local/share/tray
+# Auth: forward the browser's cookies to the platform's who-am-I endpoint, allow these emails.
+Environment=TRAY_WHOAMI_URL=http://127.0.0.1:8010/auth/whoami
+Environment=TRAY_ALLOWED_USERS=owner@example.com
+Environment=TRAY_LOGIN_URL=/auth/login
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
