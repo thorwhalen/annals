@@ -6,7 +6,19 @@ core free of any MCP import; the function list is the one the CLI dispatches.
 
 from __future__ import annotations
 
-_REFS = [f"intray.tools:{name}" for name in ("publish", "ls", "show", "trash", "restore", "group", "groups", "configure")]
+_REFS = [
+    f"intray.tools:{name}"
+    for name in (
+        "publish",
+        "ls",
+        "show",
+        "trash",
+        "restore",
+        "group",
+        "groups",
+        "configure",
+    )
+]
 
 
 def mk_server():

@@ -13,7 +13,13 @@ from intray.tools import _dispatch_funcs
 #: the shape ``publish`` returns for one document; only that shape prints as a bare link
 PUBLISH_KEYS = frozenset({"id", "title", "url", "group_id", "group_url"})
 #: expected failures: one line on stderr and exit 1, no traceback
-EXPECTED_ERRORS = (ValueError, KeyError, FileNotFoundError, PermissionError, RuntimeError)
+EXPECTED_ERRORS = (
+    ValueError,
+    KeyError,
+    FileNotFoundError,
+    PermissionError,
+    RuntimeError,
+)
 
 
 def _egress(result, *, out=None, err=None) -> int:
@@ -38,7 +44,15 @@ def _egress(result, *, out=None, err=None) -> int:
 def run(argv=None, *, out=None, err=None) -> int:
     """Dispatch ``argv`` (default ``sys.argv[1:]``) and return the exit code."""
     try:
-        return cw.dispatch(_dispatch_funcs, argv, prog="tray", convention=cw.MODERN, egress=_egress, out=out, err=err)
+        return cw.dispatch(
+            _dispatch_funcs,
+            argv,
+            prog="tray",
+            convention=cw.MODERN,
+            egress=_egress,
+            out=out,
+            err=err,
+        )
     except EXPECTED_ERRORS as e:
         print(f"tray: {type(e).__name__}: {e}", file=err or sys.stderr)
         return 1

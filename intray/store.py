@@ -67,7 +67,11 @@ def slugify(text: str, *, max_len: int = MAX_SLUG_LEN) -> str:
     words = re.findall(r"[A-Za-z0-9]+", text.lower())
     slug = "-".join(words)
     if len(slug) > max_len:  # cut at a word boundary, never mid-word
-        slug = slug[:max_len].rsplit("-", 1)[0] if "-" in slug[:max_len] else slug[:max_len]
+        slug = (
+            slug[:max_len].rsplit("-", 1)[0]
+            if "-" in slug[:max_len]
+            else slug[:max_len]
+        )
     return slug.strip("-") or "doc"
 
 
@@ -183,7 +187,9 @@ class DocStore:
                     raise FileNotFoundError(", ".join(missing))
                 main, files = _stage(paths, tmp)
             kind = kind_of(main.name)
-            title = title or _title_from_content(main, kind) or main.stem.replace("_", " ")
+            title = (
+                title or _title_from_content(main, kind) or main.stem.replace("_", " ")
+            )
             doc_id = mk_id(title)
             meta = {
                 "id": doc_id,
@@ -206,7 +212,9 @@ class DocStore:
     def list(self, *, trash: bool = False) -> list[dict]:
         """Every document's meta, newest first (ids sort by time; ``created`` breaks ties)."""
         metas = self.target.read_metas(TRASH if trash else DOCS)
-        return sorted(metas, key=lambda m: (m.get("created", ""), m.get("id", "")), reverse=True)
+        return sorted(
+            metas, key=lambda m: (m.get("created", ""), m.get("id", "")), reverse=True
+        )
 
     def _where(self, doc_id: str) -> str:
         check_id(doc_id)
@@ -239,10 +247,17 @@ class DocStore:
 
         def haystack(m: dict) -> str:
             return " ".join(
-                [m.get("title", ""), " ".join(m.get("tags", [])), m.get("excerpt", ""), json.dumps(m.get("source", {}))]
+                [
+                    m.get("title", ""),
+                    " ".join(m.get("tags", [])),
+                    m.get("excerpt", ""),
+                    json.dumps(m.get("source", {})),
+                ]
             ).lower()
 
-        return [m for m in self.list(trash=trash) if all(w in haystack(m) for w in words)]
+        return [
+            m for m in self.list(trash=trash) if all(w in haystack(m) for w in words)
+        ]
 
     # -- the recycle bin --------------------------------------------------------------
 
@@ -253,7 +268,9 @@ class DocStore:
             self.target.move(f"{DOCS}/{doc_id}", f"{TRASH}/{doc_id}")
             meta["trashed"] = now_iso()
             meta.pop("in_trash", None)
-            self.target.write_text(f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1))
+            self.target.write_text(
+                f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1)
+            )
         meta["in_trash"] = True
         return meta
 
@@ -264,7 +281,9 @@ class DocStore:
             self.target.move(f"{TRASH}/{doc_id}", f"{DOCS}/{doc_id}")
             meta.pop("trashed", None)
             meta.pop("in_trash", None)
-            self.target.write_text(f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1))
+            self.target.write_text(
+                f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1)
+            )
         meta["in_trash"] = False
         return meta
 
@@ -277,7 +296,9 @@ class DocStore:
 
     # -- groups -----------------------------------------------------------------------
 
-    def make_group(self, title: str, doc_ids: Iterable[str], *, gid: str | None = None) -> dict:
+    def make_group(
+        self, title: str, doc_ids: Iterable[str], *, gid: str | None = None
+    ) -> dict:
         """Create (or overwrite) a group: a titled, ordered list of document ids."""
         ids = [check_id(i) for i in doc_ids]
         gid = check_id(gid) if gid else mk_id(title)
@@ -305,7 +326,9 @@ class DocStore:
     def list_groups(self) -> list[dict]:
         """Every group, newest first."""
         names = []
-        if hasattr(self.target, "root") and isinstance(getattr(self.target, "root"), Path):
+        if hasattr(self.target, "root") and isinstance(
+            getattr(self.target, "root"), Path
+        ):
             base = self.target.root / GROUPS  # type: ignore[union-attr]
             names = sorted(p.name for p in base.glob("*.json")) if base.is_dir() else []
         else:

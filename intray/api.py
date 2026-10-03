@@ -22,7 +22,13 @@ from pathlib import Path
 from urllib.parse import quote
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 
 from intray.auth import Authorizer, authorizer_from_env, no_auth
@@ -34,7 +40,9 @@ DFLT_BASE_PATH = f"/{APP_NAME}"
 NO_STORE = {"Cache-Control": "no-store"}
 # An html document is the agent's own code; a frame with this policy cannot read the
 # tray's cookies or call its API, which is all the isolation a private tray needs.
-RAW_HTML_CSP = "sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads"
+RAW_HTML_CSP = (
+    "sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads"
+)
 
 
 def _wants_html(request: Request) -> bool:
@@ -63,10 +71,23 @@ class _AuthGate:
     def _deny(self, request: Request):
         login_url = getattr(self.authorizer, "login_url", None)
         if login_url and _wants_html(request):
-            nxt = request.url.path + (f"?{request.url.query}" if request.url.query else "")
-            return RedirectResponse(f"{login_url}?login_required=1&next={quote(nxt, safe='')}", status_code=303)
-        headers = {"WWW-Authenticate": 'Basic realm="tray"'} if login_url is None and self.authorizer is not no_auth else {}
-        return JSONResponse({"detail": "Not authenticated", "auth": "user"}, status_code=401, headers=headers)
+            nxt = request.url.path + (
+                f"?{request.url.query}" if request.url.query else ""
+            )
+            return RedirectResponse(
+                f"{login_url}?login_required=1&next={quote(nxt, safe='')}",
+                status_code=303,
+            )
+        headers = (
+            {"WWW-Authenticate": 'Basic realm="tray"'}
+            if login_url is None and self.authorizer is not no_auth
+            else {}
+        )
+        return JSONResponse(
+            {"detail": "Not authenticated", "auth": "user"},
+            status_code=401,
+            headers=headers,
+        )
 
 
 def mk_app(
@@ -169,7 +190,11 @@ def mk_app(
 
     # -- the page --------------------------------------------------------------------
 
-    index_html = (UI_DIR / "index.html").read_text(encoding="utf-8").replace("/tray/ui/", base + "/ui/")
+    index_html = (
+        (UI_DIR / "index.html")
+        .read_text(encoding="utf-8")
+        .replace("/tray/ui/", base + "/ui/")
+    )
 
     @app.get(base + "/", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/d/{doc_id}", response_class=HTMLResponse, include_in_schema=False)
@@ -213,5 +238,7 @@ def serve(
     """Run the tray server with uvicorn (``pip install 'intray[server]'``)."""
     import uvicorn
 
-    app = mk_app(data_dir=data_dir or os.environ.get("TRAY_DATA_DIR"), base_path=base_path)
+    app = mk_app(
+        data_dir=data_dir or os.environ.get("TRAY_DATA_DIR"), base_path=base_path
+    )
     uvicorn.run(app, host=host, port=port, log_level="info")
