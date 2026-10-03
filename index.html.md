@@ -5,7 +5,7 @@
 An in-tray for AI agents. An agent publishes a markdown or html document with one command and gets back a link; the owner opens the tray on a phone and finds everything their agents left for them, newest first, searchable, with a recycle bin.
 
 ```bash
-pip install tray
+pip install intray        # the PyPI name is intray (PyPI reserves `tray`); the command and the import are `tray`
 tray publish report.md --session my-agent
 # https://apps.example.com/tray/d/20261003-203301-quarterly-report-3f9a
 ```
@@ -27,7 +27,7 @@ tray trash <id>  /  tray restore <id>        # the recycle bin
 
 `--title` overrides the inferred title (first `# heading` or `<title>`), `--tags a,b` adds searchable tags, `--session name` records who published. Markdown renders on the page with a toggle to the raw, copyable source; html renders as-is.
 
-With `pip install 'tray[mcp]'`, the same operations are an MCP server: `python -m tray.mcp`.
+With `pip install 'intray[mcp]'`, the same operations are an MCP server: `python -m tray.mcp`.
 
 ## For the owner: where it goes and what link it prints
 
@@ -40,7 +40,7 @@ That writes `~/.config/tray/config.toml`. `target` is a directory, or `host:/pat
 ## Hosting the page
 
 ```bash
-pip install 'tray[server]'
+pip install 'intray[server]'
 TRAY_DATA_DIR=~/.local/share/tray tray serve --host 127.0.0.1 --port 8765
 ```
 
@@ -76,4 +76,4 @@ gh skill install thorwhalen/tray tray-publish
 
 The skill also ships inside the package at `tray/data/skills/tray-publish/`.
 
-<p class="epythet-aggregates">This documentation as a single file: <a href="tray.md">tray.md</a> (Markdown, for agents).</p>
+<p class="epythet-aggregates">This documentation as a single file: <a href="intray.md">intray.md</a> (Markdown, for agents).</p>

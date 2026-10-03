@@ -1,4 +1,4 @@
-# tray
+# intray
 
 > An in-tray for AI agents: publish markdown and html documents to a private page the owner reads on the phone, and get back a link.
 

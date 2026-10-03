@@ -1,4 +1,4 @@
-> built 2026-10-03 15:22 UTC from d701012 (main) · tray 0.0.1. Details: build_info.json
+> built 2026-10-03 15:28 UTC from 0359a32 (main) · intray 0.0.1. Details: build_info.json
 
 # index.html.md
 
@@ -9,7 +9,7 @@
 An in-tray for AI agents. An agent publishes a markdown or html document with one command and gets back a link; the owner opens the tray on a phone and finds everything their agents left for them, newest first, searchable, with a recycle bin.
 
 ```bash
-pip install tray
+pip install intray        # the PyPI name is intray (PyPI reserves `tray`); the command and the import are `tray`
 tray publish report.md --session my-agent
 # https://apps.example.com/tray/d/20261003-203301-quarterly-report-3f9a
 ```
@@ -31,7 +31,7 @@ tray trash <id>  /  tray restore <id>        # the recycle bin
 
 `--title` overrides the inferred title (first `# heading` or `<title>`), `--tags a,b` adds searchable tags, `--session name` records who published. Markdown renders on the page with a toggle to the raw, copyable source; html renders as-is.
 
-With `pip install 'tray[mcp]'`, the same operations are an MCP server: `python -m tray.mcp`.
+With `pip install 'intray[mcp]'`, the same operations are an MCP server: `python -m tray.mcp`.
 
 ## For the owner: where it goes and what link it prints
 
@@ -44,7 +44,7 @@ That writes `~/.config/tray/config.toml`. `target` is a directory, or `host:/pat
 ## Hosting the page
 
 ```bash
-pip install 'tray[server]'
+pip install 'intray[server]'
 TRAY_DATA_DIR=~/.local/share/tray tray serve --host 127.0.0.1 --port 8765
 ```
 
@@ -80,7 +80,7 @@ gh skill install thorwhalen/tray tray-publish
 
 The skill also ships inside the package at `tray/data/skills/tray-publish/`.
 
-<p class="epythet-aggregates">This documentation as a single file: <a href="tray.md">tray.md</a> (Markdown, for agents).</p>
+<p class="epythet-aggregates">This documentation as a single file: <a href="intray.md">intray.md</a> (Markdown, for agents).</p>
 
 
 # _autosummary/tray.auth.html.md
@@ -480,7 +480,7 @@ Move documents to the recycle bin (restorable).
 
 MCP surface: the same operations as the CLI, from [`tray.tools`](_autosummary/tray.tools.html.md#module-tray.tools), via `py2mcp`.
 
-Run with `python -m tray.mcp` (needs `pip install 'tray[mcp]'`). String refs keep the
+Run with `python -m tray.mcp` (needs `pip install 'intray[mcp]'`). String refs keep the
 core free of any MCP import; the function list is the one the CLI dispatches.
 
 ### Functions
@@ -755,7 +755,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`ls`](_autosummary/tray.tools.html.md#tray.tools.ls)([q, trash, limit, target, base_url])       | List documents (newest first), optionally filtered by words or showing the bin.  |
 | [`publish`](_autosummary/tray.tools.html.md#tray.tools.publish)(paths, \*[, title, tags, group, ...]) | Publish one document and print its link; several paths become several documents. |
 | [`restore`](_autosummary/tray.tools.html.md#tray.tools.restore)(doc_ids, \*[, target])                | Bring documents back from the recycle bin.                                       |
-| [`serve`](_autosummary/tray.tools.html.md#tray.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the tray page and API (needs `pip install 'tray[server]'`).                |
+| [`serve`](_autosummary/tray.tools.html.md#tray.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the tray page and API (needs `pip install 'intray[server]'`).              |
 | [`show`](_autosummary/tray.tools.html.md#tray.tools.show)(doc_id, \*[, target, base_url])          | A document's metadata and link.                                                  |
 | [`trash`](_autosummary/tray.tools.html.md#tray.tools.trash)(doc_ids, \*[, target])                  | Move documents to the recycle bin (restorable).                                  |
 
@@ -813,7 +813,7 @@ Bring documents back from the recycle bin.
 
 ### tray.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/tray')
 
-Serve the tray page and API (needs `pip install 'tray[server]'`).
+Serve the tray page and API (needs `pip install 'intray[server]'`).
 
 Auth comes from the environment: `TRAY_WHOAMI_URL` + `TRAY_ALLOWED_USERS` to sit
 behind an existing login, `TRAY_BASIC_USER` + `TRAY_BASIC_PASSWORD` for HTTP Basic,
@@ -843,7 +843,7 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-03 15:22 UTC** from commit <a href="https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f"><code>d701012</code></a> on branch <code>main</code>, for **tray 0.0.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-03 15:28 UTC** from commit <a href="https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6"><code>0359a32</code></a> on branch <code>main</code>, for **intray 0.0.1** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -852,7 +852,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f"><code>d701012cd72a5eda031b20d331bb41e76ea0bc5f</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6"><code>0359a32fbd3fd2fed75877883e2ca58abee4cfe6</code></a> |
 | Branch              | <code>main</code>                                                                                                                                      |
 | Tags at this commit | none                                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                  |
@@ -863,9 +863,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/tray</code>                                                               |
-| Run          | <a href="https://github.com/thorwhalen/tray/actions/runs/37132926189">37132926189</a>      |
+| Run          | <a href="https://github.com/thorwhalen/tray/actions/runs/37133278066">37133278066</a>      |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>d701012cd72a5eda031b20d331bb41e76ea0bc5f</code> (in the history of the built commit) |
+| Event commit | <code>0359a32fbd3fd2fed75877883e2ca58abee4cfe6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -890,13 +890,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-<code>tray</code> is not on PyPI.
+<code>intray</code> is not on PyPI.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/tray && cd tray
-git checkout d701012cd72a5eda031b20d331bb41e76ea0bc5f
+git checkout 0359a32fbd3fd2fed75877883e2ca58abee4cfe6
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
@@ -910,7 +910,7 @@ The same data, for machines: <a href="build_info.json"><code>build_info.json</co
 
 # For AI agents
 
-`tray` ships artifacts for coding agents alongside its code. This page lists
+`intray` ships artifacts for coding agents alongside its code. This page lists
 them, says where each lives in the repository, and points at the
 machine-readable copies of this documentation.
 
@@ -928,14 +928,14 @@ gh skill install thorwhalen/tray tray-publish --agent claude-code
 
 Source: [`tray/data/skills/tray-publish`](https://github.com/thorwhalen/tray/tree/HEAD/tray/data/skills/tray-publish) (bundled with the pip package).
 
-The bundled skills are also on disk after `pip install tray`, under the package’s `data/skills/` directory; link them into an agent without network access with `skill link-skills <that directory>`.
+The bundled skills are also on disk after `pip install intray`, under the package’s `data/skills/` directory; link them into an agent without network access with `skill link-skills <that directory>`.
 
 ## Machine-readable documentation
 
 This site publishes the same documentation in forms that fit an agent’s context window:
 
 - [`llms.txt`](https://thorwhalen.github.io/tray/llms.txt): an index of every page with a one-line description ([llms.txt](https://llmstxt.org) format)
-- [`tray.md`](https://thorwhalen.github.io/tray/tray.md): the whole documentation as one Markdown file
+- [`intray.md`](https://thorwhalen.github.io/tray/intray.md): the whole documentation as one Markdown file
 - `<page>.html.md`: a rendered Markdown twin of every page, advertised from each page’s `<head>` with `<link rel="alternate" type="text/markdown">`
 - [`objects.inv`](https://thorwhalen.github.io/tray/objects.inv): the Sphinx inventory: a symbol-to-URL index (`sphobjinv convert plain objects.inv -`)
 

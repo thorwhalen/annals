@@ -11,7 +11,7 @@
 <link rel="describedby" href="llms.txt" type="text/markdown">
 <link rel="alternate" type="text/markdown" href="index.html.md">
 <link rel="describedby" href="llms.txt">
-    <title>tray &#8212; tray</title>
+    <title>tray &#8212; intray</title>
   
   
   
@@ -123,7 +123,7 @@
   
   
   
-    <p class="title logo__title">tray</p>
+    <p class="title logo__title">intray</p>
   
 </a></div>
     
@@ -336,7 +336,7 @@
 <section id="tray">
 <h1>tray<a class="headerlink" href="#tray" title="Link to this heading">#</a></h1>
 <p>An in-tray for AI agents. An agent publishes a markdown or html document with one command and gets back a link; the owner opens the tray on a phone and finds everything their agents left for them, newest first, searchable, with a recycle bin.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>tray
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>intray<span class="w">        </span><span class="c1"># the PyPI name is intray (PyPI reserves `tray`); the command and the import are `tray`</span>
 tray<span class="w"> </span>publish<span class="w"> </span>report.md<span class="w"> </span>--session<span class="w"> </span>my-agent
 <span class="c1"># https://apps.example.com/tray/d/20261003-203301-quarterly-report-3f9a</span>
 </pre></div>
@@ -354,7 +354,7 @@ tray<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">--title</span></code> overrides the inferred title (first <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">heading</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>), <code class="docutils literal notranslate"><span class="pre">--tags</span> <span class="pre">a,b</span></code> adds searchable tags, <code class="docutils literal notranslate"><span class="pre">--session</span> <span class="pre">name</span></code> records who published. Markdown renders on the page with a toggle to the raw, copyable source; html renders as-is.</p>
-<p>With <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'tray[mcp]'</span></code>, the same operations are an MCP server: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">tray.mcp</span></code>.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'intray[mcp]'</span></code>, the same operations are an MCP server: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">tray.mcp</span></code>.</p>
 </section>
 <section id="for-the-owner-where-it-goes-and-what-link-it-prints">
 <h2>For the owner: where it goes and what link it prints<a class="headerlink" href="#for-the-owner-where-it-goes-and-what-link-it-prints" title="Link to this heading">#</a></h2>
@@ -365,7 +365,7 @@ tray<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="
 </section>
 <section id="hosting-the-page">
 <h2>Hosting the page<a class="headerlink" href="#hosting-the-page" title="Link to this heading">#</a></h2>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'tray[server]'</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s1">'intray[server]'</span>
 <span class="nv">TRAY_DATA_DIR</span><span class="o">=</span>~/.local/share/tray<span class="w"> </span>tray<span class="w"> </span>serve<span class="w"> </span>--host<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span>--port<span class="w"> </span><span class="m">8765</span>
 </pre></div>
 </div>
@@ -414,13 +414,13 @@ tray<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="
 </pre></div>
 </div>
 <p>The skill also ships inside the package at <code class="docutils literal notranslate"><span class="pre">tray/data/skills/tray-publish/</span></code>.</p>
-<p class="epythet-aggregates">This documentation as a single file: <a href="tray.md">tray.md</a> (Markdown, for agents).</p>
+<p class="epythet-aggregates">This documentation as a single file: <a href="intray.md">intray.md</a> (Markdown, for agents).</p>
 <div class="toctree-wrapper compound">
 </div>
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-03 15:22 UTC from <a href="https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f">d701012</a> (main) · tray 0.0.1 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-03 15:28 UTC from <a href="https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6">0359a32</a> (main) · intray 0.0.1 · <a href="about-this-build.html">about this build</a></p>
 
                 </article>
               

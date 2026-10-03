@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-03T15:22:30Z",
+  "built_at": "2026-10-03T15:28:19Z",
   "package": {
-    "name": "tray",
+    "name": "intray",
     "version": "0.0.1",
-    "display_name": "tray",
+    "display_name": "intray",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "d701012cd72a5eda031b20d331bb41e76ea0bc5f",
-    "short_commit": "d701012",
+    "commit": "0359a32fbd3fd2fed75877883e2ca58abee4cfe6",
+    "short_commit": "0359a32",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/tray",
-    "commit_url": "https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f",
+    "commit_url": "https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/tray",
-    "sha": "d701012cd72a5eda031b20d331bb41e76ea0bc5f",
+    "sha": "0359a32fbd3fd2fed75877883e2ca58abee4cfe6",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "37132926189",
-    "run_url": "https://github.com/thorwhalen/tray/actions/runs/37132926189",
+    "run_id": "37133278066",
+    "run_url": "https://github.com/thorwhalen/tray/actions/runs/37133278066",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -64,7 +64,7 @@
     "relation": "unknown",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/tray && cd tray\ngit checkout d701012cd72a5eda031b20d331bb41e76ea0bc5f\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/tray && cd tray\ngit checkout 0359a32fbd3fd2fed75877883e2ca58abee4cfe6\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

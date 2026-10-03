@@ -11,7 +11,7 @@
 <link rel="describedby" href="../llms.txt" type="text/markdown">
 <link rel="alternate" type="text/markdown" href="tray.tools.html.md">
 <link rel="describedby" href="llms.txt">
-    <title>tray.tools &#8212; tray</title>
+    <title>tray.tools &#8212; intray</title>
   
   
   
@@ -124,7 +124,7 @@
   
   
   
-    <p class="title logo__title">tray</p>
+    <p class="title logo__title">intray</p>
   
 </a></div>
     
@@ -418,7 +418,7 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <td><p>Bring documents back from the recycle bin.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#tray.tools.serve" title="tray.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path])</p></td>
-<td><p>Serve the tray page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'tray[server]'</span></code>).</p></td>
+<td><p>Serve the tray page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'intray[server]'</span></code>).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#tray.tools.show" title="tray.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url])</p></td>
 <td><p>A document's metadata and link.</p></td>
@@ -505,7 +505,7 @@ names a group to create from the published documents; the reply then carries
 <dl class="py function">
 <dt class="sig sig-object py" id="tray.tools.serve">
 <span class="sig-prename descclassname"><span class="pre">tray.tools.</span></span><span class="sig-name descname"><span class="pre">serve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'127.0.0.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8765</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/tray'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/tray/tools.html#serve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#tray.tools.serve" title="Link to this definition">#</a></dt>
-<dd><p>Serve the tray page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'tray[server]'</span></code>).</p>
+<dd><p>Serve the tray page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'intray[server]'</span></code>).</p>
 <p>Auth comes from the environment: <code class="docutils literal notranslate"><span class="pre">TRAY_WHOAMI_URL</span></code> + <code class="docutils literal notranslate"><span class="pre">TRAY_ALLOWED_USERS</span></code> to sit
 behind an existing login, <code class="docutils literal notranslate"><span class="pre">TRAY_BASIC_USER</span></code> + <code class="docutils literal notranslate"><span class="pre">TRAY_BASIC_PASSWORD</span></code> for HTTP Basic,
 nothing for an open server on localhost.</p>

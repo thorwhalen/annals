@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-10-03 15:22 UTC** from commit <a href="https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f"><code>d701012</code></a> on branch <code>main</code>, for **tray 0.0.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-03 15:28 UTC** from commit <a href="https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6"><code>0359a32</code></a> on branch <code>main</code>, for **intray 0.0.1** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,7 +11,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                        |
 |---------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/tray/commit/d701012cd72a5eda031b20d331bb41e76ea0bc5f"><code>d701012cd72a5eda031b20d331bb41e76ea0bc5f</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/tray/commit/0359a32fbd3fd2fed75877883e2ca58abee4cfe6"><code>0359a32fbd3fd2fed75877883e2ca58abee4cfe6</code></a> |
 | Branch              | <code>main</code>                                                                                                                                      |
 | Tags at this commit | none                                                                                                                                                   |
 | Working tree        | clean                                                                                                                                                  |
@@ -22,9 +22,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/tray</code>                                                               |
-| Run          | <a href="https://github.com/thorwhalen/tray/actions/runs/37132926189">37132926189</a>      |
+| Run          | <a href="https://github.com/thorwhalen/tray/actions/runs/37133278066">37133278066</a>      |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>d701012cd72a5eda031b20d331bb41e76ea0bc5f</code> (in the history of the built commit) |
+| Event commit | <code>0359a32fbd3fd2fed75877883e2ca58abee4cfe6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -49,13 +49,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-<code>tray</code> is not on PyPI.
+<code>intray</code> is not on PyPI.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/tray && cd tray
-git checkout d701012cd72a5eda031b20d331bb41e76ea0bc5f
+git checkout 0359a32fbd3fd2fed75877883e2ca58abee4cfe6
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

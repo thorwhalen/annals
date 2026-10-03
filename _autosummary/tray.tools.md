@@ -16,7 +16,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`ls`](#tray.tools.ls)([q, trash, limit, target, base_url])       | List documents (newest first), optionally filtered by words or showing the bin.  |
 | [`publish`](#tray.tools.publish)(paths, \*[, title, tags, group, ...]) | Publish one document and print its link; several paths become several documents. |
 | [`restore`](#tray.tools.restore)(doc_ids, \*[, target])                | Bring documents back from the recycle bin.                                       |
-| [`serve`](#tray.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the tray page and API (needs `pip install 'tray[server]'`).                |
+| [`serve`](#tray.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the tray page and API (needs `pip install 'intray[server]'`).              |
 | [`show`](#tray.tools.show)(doc_id, \*[, target, base_url])          | A document's metadata and link.                                                  |
 | [`trash`](#tray.tools.trash)(doc_ids, \*[, target])                  | Move documents to the recycle bin (restorable).                                  |
 
@@ -74,7 +74,7 @@ Bring documents back from the recycle bin.
 
 ### tray.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/tray')
 
-Serve the tray page and API (needs `pip install 'tray[server]'`).
+Serve the tray page and API (needs `pip install 'intray[server]'`).
 
 Auth comes from the environment: `TRAY_WHOAMI_URL` + `TRAY_ALLOWED_USERS` to sit
 behind an existing login, `TRAY_BASIC_USER` + `TRAY_BASIC_PASSWORD` for HTTP Basic,
