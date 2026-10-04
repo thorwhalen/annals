@@ -2,20 +2,20 @@
 
 Two values matter to a publisher:
 
-* ``target``: where the documents go. A directory (``~/.local/share/tray``) or an ssh
-  destination (``tw:/root/.local/share/tray``). This is the data root the tray server
+* ``target``: where the documents go. A directory (``~/.local/share/annals``) or an ssh
+  destination (``tw:/root/.local/share/annals``). This is the data root the annals server
   reads, locally or on another machine.
-* ``base_url``: the public root of the tray app, so a publish can print the link the owner
-  opens (``https://apps.example.com/tray``).
+* ``base_url``: the public root of the annals app, so a publish can print the link the owner
+  opens (``https://apps.example.com/annals``).
 
 Resolution order, highest first: explicit keyword arguments, environment variables
-(``TRAY_TARGET``, ``TRAY_BASE_URL``), the config file (``$TRAY_CONFIG`` or
-``$XDG_CONFIG_HOME/tray/config.toml``, default ``~/.config/tray/config.toml``), then the
-local defaults (publish into the local data dir, link to a local ``tray serve``).
+(``ANNALS_TARGET``, ``ANNALS_BASE_URL``), the config file (``$ANNALS_CONFIG`` or
+``$XDG_CONFIG_HOME/annals/config.toml``, default ``~/.config/annals/config.toml``), then the
+local defaults (publish into the local data dir, link to a local ``annals serve``).
 
-The server side has one knob of its own, ``TRAY_DATA_DIR``: the directory the API reads.
-It defaults to ``~/.local/share/tray``, which is also the default publish target, so with
-no configuration at all ``tray publish`` and ``tray serve`` meet in the same place.
+The server side has one knob of its own, ``ANNALS_DATA_DIR``: the directory the API reads.
+It defaults to ``~/.local/share/annals``, which is also the default publish target, so with
+no configuration at all ``annals publish`` and ``annals serve`` meet in the same place.
 """
 
 from __future__ import annotations
@@ -25,18 +25,18 @@ import tomllib
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
-APP_NAME = "tray"
-ENV_TARGET = "TRAY_TARGET"
-ENV_BASE_URL = "TRAY_BASE_URL"
-ENV_DATA_DIR = "TRAY_DATA_DIR"
-ENV_CONFIG = "TRAY_CONFIG"
+APP_NAME = "annals"
+ENV_TARGET = "ANNALS_TARGET"
+ENV_BASE_URL = "ANNALS_BASE_URL"
+ENV_DATA_DIR = "ANNALS_DATA_DIR"
+ENV_CONFIG = "ANNALS_CONFIG"
 DFLT_SERVE_PORT = 8765
 # A document's content file is read whole into the API's JSON response; this is the cap.
 MAX_INLINE_TEXT_BYTES = 2_000_000
 
 
 def default_data_dir() -> Path:
-    """The local data root: ``$TRAY_DATA_DIR`` or ``~/.local/share/tray``."""
+    """The local data root: ``$ANNALS_DATA_DIR`` or ``~/.local/share/annals``."""
     env = os.environ.get(ENV_DATA_DIR)
     if env:
         return Path(env).expanduser()
@@ -46,7 +46,7 @@ def default_data_dir() -> Path:
 
 
 def default_config_path() -> Path:
-    """``$TRAY_CONFIG``, else ``$XDG_CONFIG_HOME/tray/config.toml``."""
+    """``$ANNALS_CONFIG``, else ``$XDG_CONFIG_HOME/annals/config.toml``."""
     env = os.environ.get(ENV_CONFIG)
     if env:
         return Path(env).expanduser()
@@ -101,7 +101,7 @@ def write_config(settings: Settings, *, config_path: Path | None = None) -> Path
     path = config_path or default_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     body = (
-        f"# {APP_NAME} publisher settings. `tray configure` rewrites this file.\n"
+        f"# {APP_NAME} publisher settings. `annals configure` rewrites this file.\n"
         f"[{APP_NAME}]\n"
         f'target = "{settings.target}"\n'
         f'base_url = "{settings.base_url}"\n'

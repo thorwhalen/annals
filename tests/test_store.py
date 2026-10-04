@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from intray.store import DocStore, check_id, kind_of, mk_id, slugify
+from annals.store import DocStore, check_id, kind_of, mk_id, slugify
 
 
 def test_slugify_and_id_shape():
@@ -21,7 +21,8 @@ def test_slugify_and_id_shape():
 
 def test_kind_of():
     assert kind_of("a.md") == "md" and kind_of("x.HTML") == "html"
-    assert kind_of("notes.txt") == "text" and kind_of("img.png") == "file"
+    assert kind_of("notes.txt") == "text" and kind_of("img.png") == "image" and kind_of("x.bin") == "file"
+    assert [kind_of(f) for f in ("a.mp4", "b.MP3", "c.pdf", "d.webp")] == ["video", "audio", "pdf", "image"]
 
 
 @pytest.fixture
@@ -94,3 +95,14 @@ def test_groups(store):
 def test_missing_source_raises(store, tmp_path):
     with pytest.raises(FileNotFoundError):
         store.publish(tmp_path / "absent.md")
+
+
+def test_directory_publish_skips_junk_unless_asked(tmp_path):
+    d = tmp_path / "out"
+    (d / "__pycache__").mkdir(parents=True)
+    (d / "page.md").write_text("# P")
+    (d / ".DS_Store").write_bytes(b"x")
+    (d / "__pycache__" / "m.cpython-312.pyc").write_bytes(b"x")
+    s = DocStore(tmp_path / "data")
+    assert s.publish(d)["files"] == ["page.md"]
+    assert len(s.publish(d, exclude=())["files"]) == 3

@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<title>{{TITLE}}</title>
+<!-- annals page shell: names where the page lives and where its API is; everything else
+     (style, script, markdown renderer) loads from the API, so it upgrades with the package. -->
+<script>window.ANNALS = { base: "{{BASE}}", api: "{{API}}", title: "{{TITLE}}" };</script>
+<link rel="stylesheet" href="{{API}}/ui/style.css">
+</head>
+<body>
+<div id="app" aria-live="polite"><p class="muted" style="padding:1rem">Loading…</p></div>
+<script src="{{API}}/ui/app.js"></script>
+</body>
+</html>
