@@ -24,12 +24,12 @@ import mimetypes
 import os
 import shutil
 import tempfile
-import threading
 import warnings
 from pathlib import Path
 from typing import Callable
 from urllib.parse import quote
 
+import anyio
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
@@ -75,48 +75,55 @@ Thumbnailer = Callable[[Path, Path, int], bool]
 
 #: at most this many thumbnails are made at once: the worker threads are the platform's
 THUMB_CONCURRENCY = 2
-#: refuse to decode images larger than this (pixels); Pillow alone only warns up to 2x
+#: refuse to decode images larger than this (pixels, after a JPEG's reduced-size draft)
 THUMB_MAX_PIXELS = 60_000_000
-_thumb_slots = threading.BoundedSemaphore(THUMB_CONCURRENCY)
+#: when a thumbnail cannot be made, the original is sent only if it is at most this big
+THUMB_FALLBACK_MAX_BYTES = 5_000_000
+_TOO_BIG_SVG = (
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160" fill="#888" '
+    'opacity=".25"/><text x="80" y="76" text-anchor="middle" font-family="sans-serif" '
+    'font-size="14" fill="#666">large image</text><text x="80" y="96" text-anchor="middle" font-family="sans-serif" '
+    'font-size="12" fill="#666">tap to open</text></svg>'
+)
 
 
 def pillow_thumbnailer(src: Path, dst: Path, width: int) -> bool:
     """Shrink ``src`` to ``width`` pixels wide as webp at ``dst``; ``False`` if it cannot.
 
-    Bounded on purpose, because it runs in the thread pool every app shares: at most
-    ``THUMB_CONCURRENCY`` at once, nothing over ``THUMB_MAX_PIXELS`` decoded, and JPEGs
-    decoded at reduced size (``draft``) before the full-size rotation could copy them.
+    Bounded, because it runs on threads every app shares: a JPEG is decoded at reduced
+    size (``draft``) before anything else, nothing over ``THUMB_MAX_PIXELS`` is decoded
+    after that, and it shrinks before rotating so the full-size image is never copied.
+    The caller bounds how many run at once (see ``mk_api``).
     """
     try:
         from PIL import Image, ImageOps
     except ImportError:
         return False
-    with _thumb_slots:
-        if dst.is_file():  # made by another request while this one waited
-            return True
-        try:
-            with warnings.catch_warnings():
-                warnings.simplefilter("error", Image.DecompressionBombWarning)
-                with Image.open(src) as im:
-                    if im.width * im.height > THUMB_MAX_PIXELS:
-                        return False
-                    im.draft("RGB", (width, width * 4))
-                    im.thumbnail((width, width * 4))
-                    im = ImageOps.exif_transpose(im)
-                    if im.mode not in ("RGB", "RGBA"):
-                        im = im.convert("RGBA")
-                    dst.parent.mkdir(parents=True, exist_ok=True)
-                    fd, tmp = tempfile.mkstemp(dir=dst.parent, suffix=".tmp")
-                    try:
-                        with os.fdopen(fd, "wb") as f:
-                            im.save(f, "WEBP", quality=80, method=4)
-                        os.replace(tmp, dst)
-                    finally:
-                        if os.path.exists(tmp):
-                            os.unlink(tmp)
-            return True
-        except (OSError, ValueError, Image.DecompressionBombError, Image.DecompressionBombWarning):
-            return False
+    if dst.is_file():  # made by another request while this one waited
+        return True
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", Image.DecompressionBombWarning)  # the cap below decides
+            with Image.open(src) as im:
+                im.draft("RGB", (width, width * 4))  # JPEG: decode at 1/2..1/8 scale
+                if im.width * im.height > THUMB_MAX_PIXELS:
+                    return False
+                im.thumbnail((width, width * 4))
+                im = ImageOps.exif_transpose(im)
+                if im.mode not in ("RGB", "RGBA"):
+                    im = im.convert("RGBA")
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                fd, tmp = tempfile.mkstemp(dir=dst.parent, suffix=".tmp")
+                try:
+                    with os.fdopen(fd, "wb") as f:
+                        im.save(f, "WEBP", quality=80, method=4)
+                    os.replace(tmp, dst)
+                finally:
+                    if os.path.exists(tmp):
+                        os.unlink(tmp)
+        return True
+    except (OSError, ValueError, Image.DecompressionBombError):
+        return False
 
 
 def _default_thumbnailer() -> Thumbnailer | None:
@@ -276,20 +283,29 @@ def mk_api(
             headers["Content-Security-Policy"] = RAW_SANDBOX_CSP
         return FileResponse(path, media_type=media_type, headers=headers)
 
-    @api.get("/thumb/{doc_id}/{rel:path}")
-    def thumb_file(doc_id: str, rel: str, w: int = 320) -> Response:
-        """A small webp of an image, made once and cached; the original when it cannot be.
+    # Waiting for a thumbnail slot must not hold one of the threads every app shares, so
+    # the endpoint is async and only the work itself goes to a thread, two at a time.
+    thumb_limiter = anyio.CapacityLimiter(THUMB_CONCURRENCY)
 
-        Sync on purpose: FastAPI runs it in a worker thread, so a burst of gallery tiles
-        never blocks the event loop the whole platform shares.
+    @api.get("/thumb/{doc_id}/{rel:path}")
+    async def thumb_file(doc_id: str, rel: str, w: int = 320) -> Response:
+        """A small webp of an image, made once and cached.
+
+        When none can be made, the original is sent if it is small, else a placeholder:
+        a phone never downloads a 60 MB photo for a 160 px tile.
         """
-        path = _file_path(doc_id, rel)
+        path = await anyio.to_thread.run_sync(_file_path, doc_id, rel)
         width = next((x for x in THUMB_WIDTHS if x >= w), THUMB_WIDTHS[-1])
         if thumbnailer and Path(rel).suffix.lower() in THUMBNAILABLE:
             key = hashlib.sha1(rel.encode("utf-8")).hexdigest()[:20]
             cached = _local_root() / THUMB_CACHE / doc_id / f"{key}.w{width}.webp"
-            if cached.is_file() or thumbnailer(path, cached, width):
+            made = cached.is_file() or await anyio.to_thread.run_sync(
+                thumbnailer, path, cached, width, limiter=thumb_limiter
+            )
+            if made:
                 return FileResponse(cached, media_type="image/webp", headers={"Cache-Control": RAW_CACHE})
+            if path.stat().st_size > THUMB_FALLBACK_MAX_BYTES:
+                return Response(_TOO_BIG_SVG, media_type="image/svg+xml", headers={"Cache-Control": RAW_CACHE})
         return raw_file(doc_id, rel)
 
     if UI_DIR.is_dir():  # never fail a host's import over a missing asset dir

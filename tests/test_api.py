@@ -218,3 +218,20 @@ def test_documents_from_before_media_kinds_show_inline(store, tmp_path):
     c = TestClient(mk_api(store=store))
     assert c.get(f"/docs/{m['id']}").json()["kind"] == "image"
     assert next(d for d in c.get("/docs").json()["docs"] if d["id"] == m["id"])["kind"] == "image"
+
+
+def test_refused_thumbnail_sends_a_placeholder_not_a_huge_original(store, tmp_path, monkeypatch):
+    Image = pytest.importorskip("PIL.Image")
+    import annals.api as api_mod
+
+    d = tmp_path / "huge"
+    d.mkdir()
+    Image.new("RGB", (400, 300), "navy").save(d / "photo.png")
+    m = store.publish(d)
+    monkeypatch.setattr(api_mod, "THUMB_MAX_PIXELS", 1000)  # "too many pixels to decode"
+    c = TestClient(mk_api(store=store))
+    monkeypatch.setattr(api_mod, "THUMB_FALLBACK_MAX_BYTES", 10**9)
+    assert c.get(f"/thumb/{m['id']}/photo.png").headers["content-type"] == "image/png"  # small: the original
+    monkeypatch.setattr(api_mod, "THUMB_FALLBACK_MAX_BYTES", 10)
+    r = c.get(f"/thumb/{m['id']}/photo.png")
+    assert r.headers["content-type"] == "image/svg+xml" and b"large image" in r.content

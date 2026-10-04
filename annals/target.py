@@ -200,7 +200,7 @@ class SshTarget:
 
     def list_files(self, rel: str) -> list[str]:
         base = shlex.quote(self._abs(rel))
-        out = self._ssh(f"[ -d {base} ] && find {base} -maxdepth 1 -type f -printf '%f\\n' || true")
+        out = self._ssh(f"[ -d {base} ] && ls -1p {base} | grep -v / || true")  # portable (no GNU find)
         return sorted(name for name in out.splitlines() if name)
 
     def local_path(self, rel: str) -> Path | None:
