@@ -1,4 +1,4 @@
-> built 2026-10-04 06:15 UTC from b87d473 (main) · annals 0.0.2. Details: build_info.json
+> built 2026-10-04 09:49 UTC from 537becd (main) · annals 0.0.3. Details: build_info.json
 
 # index.html.md
 
@@ -23,6 +23,7 @@ Load the shipped skill, `annals-publish`, and you have the whole protocol: one c
 ```bash
 annals publish report.md                          # one document, prints its link
 annals publish a.md b.md c.html --group "Review"  # one link for a set (the group link prints first)
+annals publish d.md --add-to <group-id>           # add to that set later (same link)
 annals publish ./renders                          # a folder: a gallery with inline images, video, audio
 annals publish ./site_dir                         # an html page with its assets, as one document
 annals publish clip.mp4                           # media plays inline (streamed, seekable)
@@ -483,7 +484,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](_autosummary/annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, session=None, all_files=False, target=None, base_url=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -491,7 +492,8 @@ Publish one document and print its link; several paths become several documents.
 directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`
 names a group to create from the published documents; the reply then carries
-`group_url` too. `session` records who published (the source shown on the page). A directory skips
+`group_url` too. `add_to` appends them to an existing group instead (its id, as
+printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 
 * **Return type:**
@@ -885,7 +887,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, session=None, all_files=False, target=None, base_url=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -893,7 +895,8 @@ Publish one document and print its link; several paths become several documents.
 directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`
 names a group to create from the published documents; the reply then carries
-`group_url` too. `session` records who published (the source shown on the page). A directory skips
+`group_url` too. `add_to` appends them to an existing group instead (its id, as
+printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 
 * **Return type:**
@@ -938,18 +941,16 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-04 06:15 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82"><code>b87d473</code></a> on branch <code>main</code>, for **annals 0.0.2** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-04 09:49 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594"><code>537becd</code></a> on branch <code>main</code>, for **annals 0.0.3** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.2) is behind the latest release on PyPI (0.0.3): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82"><code>b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594"><code>537becd3d683b1d72bf495b9ea40c49eb9b2c594</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -960,9 +961,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/37182189741">37182189741</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/37193299772">37193299772</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82</code> (in the history of the built commit) |
+| Event commit | <code>537becd3d683b1d72bf495b9ea40c49eb9b2c594</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -987,13 +988,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.3/">0.0.3</a>, newer than the documented version (0.0.2).
+Latest release: <a href="https://pypi.org/project/annals/0.0.3/">0.0.3</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82
+git checkout 537becd3d683b1d72bf495b9ea40c49eb9b2c594
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

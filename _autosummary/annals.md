@@ -211,7 +211,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](annals.target.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, session=None, all_files=False, target=None, base_url=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -219,7 +219,8 @@ Publish one document and print its link; several paths become several documents.
 directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`
 names a group to create from the published documents; the reply then carries
-`group_url` too. `session` records who published (the source shown on the page). A directory skips
+`group_url` too. `add_to` appends them to an existing group instead (its id, as
+printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 
 * **Return type:**

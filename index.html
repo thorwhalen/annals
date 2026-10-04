@@ -135,12 +135,13 @@ data-aria-dark="Switch to auto color mode">
 <p>Load the shipped skill, <code class="docutils literal notranslate"><span class="pre">annals-publish</span></code>, and you have the whole protocol: one command, one link, put the link in your reply.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">annals<span class="w"> </span>publish<span class="w"> </span>report.md<span class="w">                          </span><span class="c1"># one document, prints its link</span>
 </span><span data-line="2">annals<span class="w"> </span>publish<span class="w"> </span>a.md<span class="w"> </span>b.md<span class="w"> </span>c.html<span class="w"> </span>--group<span class="w"> </span><span class="s2">"Review"</span><span class="w">  </span><span class="c1"># one link for a set (the group link prints first)</span>
-</span><span data-line="3">annals<span class="w"> </span>publish<span class="w"> </span>./renders<span class="w">                          </span><span class="c1"># a folder: a gallery with inline images, video, audio</span>
-</span><span data-line="4">annals<span class="w"> </span>publish<span class="w"> </span>./site_dir<span class="w">                         </span><span class="c1"># an html page with its assets, as one document</span>
-</span><span data-line="5">annals<span class="w"> </span>publish<span class="w"> </span>clip.mp4<span class="w">                           </span><span class="c1"># media plays inline (streamed, seekable)</span>
-</span><span data-line="6">some-command<span class="w"> </span><span class="p">|</span><span class="w"> </span>annals<span class="w"> </span>publish<span class="w"> </span>-<span class="w"> </span>--title<span class="w"> </span><span class="s2">"Log"</span><span class="w">     </span><span class="c1"># from stdin</span>
-</span><span data-line="7">annals<span class="w"> </span>ls<span class="w"> </span><span class="s2">"search words"</span><span class="w">                          </span><span class="c1"># what is there, newest first</span>
-</span><span data-line="8">annals<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>annals<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">         </span><span class="c1"># the recycle bin</span>
+</span><span data-line="3">annals<span class="w"> </span>publish<span class="w"> </span>d.md<span class="w"> </span>--add-to<span class="w"> </span>&lt;group-id&gt;<span class="w">           </span><span class="c1"># add to that set later (same link)</span>
+</span><span data-line="4">annals<span class="w"> </span>publish<span class="w"> </span>./renders<span class="w">                          </span><span class="c1"># a folder: a gallery with inline images, video, audio</span>
+</span><span data-line="5">annals<span class="w"> </span>publish<span class="w"> </span>./site_dir<span class="w">                         </span><span class="c1"># an html page with its assets, as one document</span>
+</span><span data-line="6">annals<span class="w"> </span>publish<span class="w"> </span>clip.mp4<span class="w">                           </span><span class="c1"># media plays inline (streamed, seekable)</span>
+</span><span data-line="7">some-command<span class="w"> </span><span class="p">|</span><span class="w"> </span>annals<span class="w"> </span>publish<span class="w"> </span>-<span class="w"> </span>--title<span class="w"> </span><span class="s2">"Log"</span><span class="w">     </span><span class="c1"># from stdin</span>
+</span><span data-line="8">annals<span class="w"> </span>ls<span class="w"> </span><span class="s2">"search words"</span><span class="w">                          </span><span class="c1"># what is there, newest first</span>
+</span><span data-line="9">annals<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>annals<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">         </span><span class="c1"># the recycle bin</span>
 </span></pre></div>
 </div>
 <p>What each kind looks like on the page:</p>
@@ -252,7 +253,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-04 06:15 UTC from <a href="https://github.com/thorwhalen/annals/commit/b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82">b87d473</a> (main) · annals 0.0.2 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-04 09:49 UTC from <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594">537becd</a> (main) · annals 0.0.3 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -287,7 +288,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="_static/documentation_options.js?v=47de8214"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

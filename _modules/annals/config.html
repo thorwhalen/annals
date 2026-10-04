@@ -234,24 +234,28 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="100">        <span class="ow">or</span> <span class="sa">f</span><span class="s2">"http://127.0.0.1:</span><span class="si">{</span><span class="n">DFLT_SERVE_PORT</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2">"</span>
 </span><span data-line="101">    <span class="p">)</span>
 </span><span data-line="102">    <span class="n">configured</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">target</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">)</span> <span class="ow">or</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">))</span>
-</span><span data-line="103">    <span class="k">return</span> <span class="n">Settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">resolved_target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">resolved_base_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">),</span> <span class="n">configured</span><span class="o">=</span><span class="n">configured</span><span class="p">)</span></div>
+</span><span data-line="103">    <span class="k">return</span> <span class="n">Settings</span><span class="p">(</span>
+</span><span data-line="104">        <span class="n">target</span><span class="o">=</span><span class="n">resolved_target</span><span class="p">,</span>
+</span><span data-line="105">        <span class="n">base_url</span><span class="o">=</span><span class="n">resolved_base_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">),</span>
+</span><span data-line="106">        <span class="n">configured</span><span class="o">=</span><span class="n">configured</span><span class="p">,</span>
+</span><span data-line="107">    <span class="p">)</span></div>
 
-</span><span data-line="104">
-</span><span data-line="105">
+</span><span data-line="108">
+</span><span data-line="109">
 <div class="viewcode-block" id="write_config">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.write_config">[docs]</a>
-</span><span data-line="106"><span class="k">def</span><span class="w"> </span><span class="nf">write_config</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-</span><span data-line="107"><span class="w">    </span><span class="sd">"""Write the config file (two string keys; no TOML writer dependency needed)."""</span>
-</span><span data-line="108">    <span class="n">path</span> <span class="o">=</span> <span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">()</span>
-</span><span data-line="109">    <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span data-line="110">    <span class="n">body</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="111">        <span class="sa">f</span><span class="s2">"# </span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2"> publisher settings. `annals configure` rewrites this file.</span><span class="se">\n</span><span class="s2">"</span>
-</span><span data-line="112">        <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span>
-</span><span data-line="113">        <span class="sa">f</span><span class="s1">'target = "</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s1">"</span><span class="se">\n</span><span class="s1">'</span>
-</span><span data-line="114">        <span class="sa">f</span><span class="s1">'base_url = "</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s1">"</span><span class="se">\n</span><span class="s1">'</span>
-</span><span data-line="115">    <span class="p">)</span>
-</span><span data-line="116">    <span class="n">path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
-</span><span data-line="117">    <span class="k">return</span> <span class="n">path</span></div>
+</span><span data-line="110"><span class="k">def</span><span class="w"> </span><span class="nf">write_config</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+</span><span data-line="111"><span class="w">    </span><span class="sd">"""Write the config file (two string keys; no TOML writer dependency needed)."""</span>
+</span><span data-line="112">    <span class="n">path</span> <span class="o">=</span> <span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">()</span>
+</span><span data-line="113">    <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="114">    <span class="n">body</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="115">        <span class="sa">f</span><span class="s2">"# </span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2"> publisher settings. `annals configure` rewrites this file.</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="116">        <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="117">        <span class="sa">f</span><span class="s1">'target = "</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s1">"</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="118">        <span class="sa">f</span><span class="s1">'base_url = "</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s1">"</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="119">    <span class="p">)</span>
+</span><span data-line="120">    <span class="n">path</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+</span><span data-line="121">    <span class="k">return</span> <span class="n">path</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -280,7 +284,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../../_static/documentation_options.js?v=47de8214"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
