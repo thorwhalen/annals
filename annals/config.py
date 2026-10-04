@@ -61,6 +61,9 @@ class Settings:
 
     target: str
     base_url: str
+    #: False when nothing (argument, env, config file) named a target: publishing then lands
+    #: in the local data dir and the link points at a local server, which is rarely meant
+    configured: bool = True
 
     def as_dict(self) -> dict:
         """Plain dict, for the CLI and MCP surfaces."""
@@ -93,7 +96,8 @@ def load_settings(
         or file_values.get("base_url")
         or f"http://127.0.0.1:{DFLT_SERVE_PORT}/{APP_NAME}"
     )
-    return Settings(target=resolved_target, base_url=resolved_base_url.rstrip("/"))
+    configured = bool(target or os.environ.get(ENV_TARGET) or file_values.get("target"))
+    return Settings(target=resolved_target, base_url=resolved_base_url.rstrip("/"), configured=configured)
 
 
 def write_config(settings: Settings, *, config_path: Path | None = None) -> Path:

@@ -124,7 +124,7 @@ def test_media_kinds_folder_and_ranges(client, store, tmp_path):
     assert len(r.content) == 65536 and "content-encoding" not in r.headers
     assert r.headers["content-type"] == "video/mp4"
     img = client.get(f"/annals/api/raw/{m['id']}/a.png")
-    assert img.headers["content-type"] == "image/png" and "content-security-policy" not in img.headers
+    assert img.headers["content-type"] == "image/png" and img.headers["content-security-policy"].startswith("sandbox")
     svg = client.get(f"/annals/api/raw/{m['id']}/sub/b.svg")
     assert svg.headers["content-security-policy"].startswith("sandbox")
     assert client.get(f"/annals/api/raw/{m['id']}/notes.md").headers["content-type"].startswith("text/markdown")
@@ -163,10 +163,58 @@ def test_thumbnails_are_small_cached_webp(store, tmp_path):
     assert r.status_code == 200 and r.headers["content-type"] == "image/webp"
     from io import BytesIO
     assert Image.open(BytesIO(r.content)).size[0] == 320  # snapped up to a cached width
-    assert (store.target.root / "cache" / "thumbs" / m["id"] / "big.png.w320.webp").is_file()
+    assert len(list((store.target.root / "cache" / "thumbs" / m["id"]).glob("*.w320.webp"))) == 1
     assert c.get(f"/thumb/{m['id']}/v.svg").headers["content-type"].startswith("image/svg")
     no_pillow = TestClient(mk_api(store=store, thumbnailer=None))
     assert no_pillow.get(f"/thumb/{m['id']}/big.png").headers["content-type"] == "image/png"
     store.trash(m["id"])
     c.delete(f"/docs/{m['id']}")
     assert not (store.target.root / "cache" / "thumbs" / m["id"]).exists()
+
+
+def test_every_raw_type_but_pdf_is_sandboxed(store, tmp_path):
+    d = tmp_path / "feeds"
+    d.mkdir()
+    for name in ("feed.rss", "a.atom", "x.xhtml", "noext", "doc.pdf"):
+        (d / name).write_text("<x/>")
+    m = store.publish(d)
+    c = TestClient(mk_api(store=store))
+    for name in ("feed.rss", "a.atom", "x.xhtml", "noext"):
+        assert c.get(f"/raw/{m['id']}/{name}").headers["content-security-policy"].startswith("sandbox"), name
+    assert "content-security-policy" not in c.get(f"/raw/{m['id']}/doc.pdf").headers
+
+
+def test_crafted_meta_cannot_escape_the_document(store, tmp_path):
+    import json
+
+    (tmp_path / "data" / "secret.txt").write_text("root only")
+    m = store.publish(text="# x", title="x")
+    meta_path = store.target.root / "docs" / m["id"] / "meta.json"
+    meta = json.loads(meta_path.read_text())
+    meta["files"] += ["../../secret.txt", "../other/meta.json"]
+    meta_path.write_text(json.dumps(meta))
+    (store.target.root / "docs" / m["id"] / "link.png").symlink_to(tmp_path / "data" / "secret.txt")
+    (tmp_path / "outside.txt").write_text("root only")
+    (store.target.root / "docs" / m["id"] / "far.png").symlink_to(tmp_path / "outside.txt")
+    meta["files"] += ["link.png", "far.png"]
+    meta_path.write_text(json.dumps(meta))
+    c = TestClient(mk_api(store=store))
+    for rel in ("../../secret.txt", "..%2F..%2Fsecret.txt", "link.png", "far.png"):
+        r = c.get(f"/raw/{m['id']}/{rel}")
+        assert r.status_code == 404 and "root only" not in r.text, rel
+        assert c.get(f"/thumb/{m['id']}/{rel}").status_code == 404, rel
+
+
+def test_documents_from_before_media_kinds_show_inline(store, tmp_path):
+    import json
+
+    (tmp_path / "old.png").write_bytes(PNG)
+    m = store.publish(tmp_path / "old.png")
+    meta_path = store.target.root / "docs" / m["id"] / "meta.json"
+    meta = json.loads(meta_path.read_text())
+    meta["kind"] = "file"  # what the pre-media store wrote for an image
+    meta.pop("sizes")
+    meta_path.write_text(json.dumps(meta))
+    c = TestClient(mk_api(store=store))
+    assert c.get(f"/docs/{m['id']}").json()["kind"] == "image"
+    assert next(d for d in c.get("/docs").json()["docs"] if d["id"] == m["id"])["kind"] == "image"

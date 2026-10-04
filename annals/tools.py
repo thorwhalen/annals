@@ -88,6 +88,12 @@ def publish(
             )
         docs.append({"id": meta["id"], "title": meta["title"], "url": _doc_url(settings, meta["id"])})
     result: dict = docs[0] if len(docs) == 1 else {"docs": docs}
+    if not settings.configured:
+        result["warning"] = (
+            f"no annals config: published to the local {settings.target} and linked to a local "
+            f"server. To publish where the owner reads, run `annals configure --target "
+            f"host:/path --base-url https://.../annals` (see `annals configure`)."
+        )
     if group:
         g = store.make_group(group, [d["id"] for d in docs])
         result["group_id"] = g["id"]

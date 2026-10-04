@@ -19,9 +19,13 @@ small and the documents' lifecycle independent of whatever serves them.
 
 from __future__ import annotations
 
+import hashlib
 import mimetypes
 import os
 import shutil
+import tempfile
+import threading
+import warnings
 from pathlib import Path
 from typing import Callable
 from urllib.parse import quote
@@ -33,6 +37,7 @@ from fastapi.staticfiles import StaticFiles
 from annals.auth import Authorizer, authorizer_from_env, no_auth
 from annals.config import APP_NAME, DFLT_SERVE_PORT, ENV_DATA_DIR, MAX_INLINE_TEXT_BYTES, default_data_dir
 from annals.store import DOCS, TRASH, DocStore, TEXT_KINDS, kind_of
+from annals.target import check_rel
 
 UI_DIR = Path(__file__).parent / "data" / "ui"
 DFLT_BASE_PATH = f"/{APP_NAME}"
@@ -40,10 +45,11 @@ NO_STORE = {"Cache-Control": "no-store"}
 # A document never changes after it is published (a new publish is a new id), so its
 # files can be cached by the reader's browser; "private" keeps shared caches out of it.
 RAW_CACHE = "private, max-age=86400"
-# Types that run script when opened as a page. Such a file is the agent's own code: under
-# this policy it cannot read the app's cookies or call its API. Not applied to PDF, whose
-# built-in viewer refuses to run in a sandboxed document.
-ACTIVE_TYPES = frozenset({"text/html", "image/svg+xml", "application/xhtml+xml", "application/xml", "text/xml"})
+# Every raw file is served under a sandbox policy, so a file that a browser renders as a
+# document (html, svg, any +xml, whatever the host's mime table says) cannot read the
+# platform's cookies or call any app's API on this shared origin. Harmless for media used
+# by <img>/<video>. PDF alone is exempt: its built-in viewer refuses a sandboxed document.
+NO_SANDBOX_TYPES = frozenset({"application/pdf"})
 RAW_SANDBOX_CSP = "sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads"
 # Types a browser would otherwise download or mis-render; served as text so a viewer can
 # show them (markdown and friends are text to a reader).
@@ -67,25 +73,50 @@ class _RevalidatingStatic(StaticFiles):
 Thumbnailer = Callable[[Path, Path, int], bool]
 
 
+#: at most this many thumbnails are made at once: the worker threads are the platform's
+THUMB_CONCURRENCY = 2
+#: refuse to decode images larger than this (pixels); Pillow alone only warns up to 2x
+THUMB_MAX_PIXELS = 60_000_000
+_thumb_slots = threading.BoundedSemaphore(THUMB_CONCURRENCY)
+
+
 def pillow_thumbnailer(src: Path, dst: Path, width: int) -> bool:
-    """Shrink ``src`` to ``width`` pixels wide as webp at ``dst``; ``False`` if it cannot."""
+    """Shrink ``src`` to ``width`` pixels wide as webp at ``dst``; ``False`` if it cannot.
+
+    Bounded on purpose, because it runs in the thread pool every app shares: at most
+    ``THUMB_CONCURRENCY`` at once, nothing over ``THUMB_MAX_PIXELS`` decoded, and JPEGs
+    decoded at reduced size (``draft``) before the full-size rotation could copy them.
+    """
     try:
         from PIL import Image, ImageOps
     except ImportError:
         return False
-    try:
-        with Image.open(src) as im:
-            im = ImageOps.exif_transpose(im)
-            im.thumbnail((width, width * 4))
-            if im.mode not in ("RGB", "RGBA"):
-                im = im.convert("RGBA")
-            dst.parent.mkdir(parents=True, exist_ok=True)
-            tmp = dst.with_suffix(".tmp")
-            im.save(tmp, "WEBP", quality=80, method=4)
-            os.replace(tmp, dst)
-        return True
-    except (OSError, ValueError, Image.DecompressionBombError):
-        return False
+    with _thumb_slots:
+        if dst.is_file():  # made by another request while this one waited
+            return True
+        try:
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", Image.DecompressionBombWarning)
+                with Image.open(src) as im:
+                    if im.width * im.height > THUMB_MAX_PIXELS:
+                        return False
+                    im.draft("RGB", (width, width * 4))
+                    im.thumbnail((width, width * 4))
+                    im = ImageOps.exif_transpose(im)
+                    if im.mode not in ("RGB", "RGBA"):
+                        im = im.convert("RGBA")
+                    dst.parent.mkdir(parents=True, exist_ok=True)
+                    fd, tmp = tempfile.mkstemp(dir=dst.parent, suffix=".tmp")
+                    try:
+                        with os.fdopen(fd, "wb") as f:
+                            im.save(f, "WEBP", quality=80, method=4)
+                        os.replace(tmp, dst)
+                    finally:
+                        if os.path.exists(tmp):
+                            os.unlink(tmp)
+            return True
+        except (OSError, ValueError, Image.DecompressionBombError, Image.DecompressionBombWarning):
+            return False
 
 
 def _default_thumbnailer() -> Thumbnailer | None:
@@ -110,7 +141,13 @@ def _media_type(rel: str) -> str:
 
 
 def _with_thumb(meta: dict) -> dict:
-    """Add ``thumb``: the document's first image (its main file when it is one), or none."""
+    """Add ``thumb`` (the first image, main file first) and fix pre-media kinds.
+
+    Documents published before media kinds existed say ``file`` for an image or a video;
+    their kind is recomputed from the main file so they show inline too.
+    """
+    if meta.get("kind") == "file" and meta.get("main"):
+        meta["kind"] = kind_of(meta["main"])
     files = [meta["main"]] + meta.get("files", []) if meta.get("main") else meta.get("files", [])
     meta["thumb"] = next((f for f in files if kind_of(f) == "image"), None)
     return meta
@@ -202,18 +239,25 @@ def mk_api(
         return {**group, "items": docs}
 
     def _local_root() -> Path | None:
-        root = getattr(store.target, "root", None)
-        return root if isinstance(root, Path) else None
+        return store.target.local_path(".")
 
     def _file_path(doc_id: str, rel: str) -> Path:
+        """The file on disk, or a 404: it must be listed in the meta AND stay inside the
+        document's directory (meta.json is written by the publisher, so it is not trusted
+        to keep paths in bounds)."""
         meta = _meta_or_404(store, doc_id)
         if rel not in meta["files"]:
             raise HTTPException(404, "no such file in document")
-        root = _local_root()
-        if root is None:
+        try:
+            check_rel(rel)
+        except ValueError:
+            raise HTTPException(404, "no such file in document")
+        doc_rel = f"{TRASH if meta['in_trash'] else DOCS}/{doc_id}"
+        doc_dir = store.target.local_path(doc_rel)
+        path = store.target.local_path(f"{doc_rel}/{rel}")
+        if doc_dir is None:
             raise HTTPException(501, "raw files are served from a local data dir only")
-        path = root / (TRASH if meta["in_trash"] else DOCS) / doc_id / rel
-        if not path.is_file():
+        if path is None or not path.is_relative_to(doc_dir) or not path.is_file():
             raise HTTPException(404, "file missing on disk")
         return path
 
@@ -228,7 +272,7 @@ def mk_api(
         path = _file_path(doc_id, rel)
         media_type = _media_type(rel)
         headers = {"Cache-Control": RAW_CACHE, "X-Content-Type-Options": "nosniff"}
-        if media_type.split(";")[0] in ACTIVE_TYPES:
+        if media_type.split(";")[0] not in NO_SANDBOX_TYPES:
             headers["Content-Security-Policy"] = RAW_SANDBOX_CSP
         return FileResponse(path, media_type=media_type, headers=headers)
 
@@ -242,7 +286,8 @@ def mk_api(
         path = _file_path(doc_id, rel)
         width = next((x for x in THUMB_WIDTHS if x >= w), THUMB_WIDTHS[-1])
         if thumbnailer and Path(rel).suffix.lower() in THUMBNAILABLE:
-            cached = _local_root() / THUMB_CACHE / doc_id / f"{rel}.w{width}.webp"
+            key = hashlib.sha1(rel.encode("utf-8")).hexdigest()[:20]
+            cached = _local_root() / THUMB_CACHE / doc_id / f"{key}.w{width}.webp"
             if cached.is_file() or thumbnailer(path, cached, width):
                 return FileResponse(cached, media_type="image/webp", headers={"Cache-Control": RAW_CACHE})
         return raw_file(doc_id, rel)

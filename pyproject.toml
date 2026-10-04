@@ -31,12 +31,14 @@ annals = "annals.__main__:main"
 server = [
     "fastapi>=0.100",
     "uvicorn>=0.20",
+    "pillow>=10",
 ]
 mcp = [
     "py2mcp",
 ]
 dev = [
     "fastapi>=0.100",
+    "pillow>=10",
     "httpx",
     "pytest>=7.0",
     "pytest-cov>=4.0",

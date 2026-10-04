@@ -11,7 +11,7 @@ import cw
 from annals.tools import _dispatch_funcs
 
 #: the shape ``publish`` returns for one document; only that shape prints as a bare link
-PUBLISH_KEYS = frozenset({"id", "title", "url", "group_id", "group_url"})
+PUBLISH_KEYS = frozenset({"id", "title", "url", "group_id", "group_url", "warning"})
 #: expected failures: one line on stderr and exit 1, no traceback
 EXPECTED_ERRORS = (ValueError, KeyError, FileNotFoundError, PermissionError, RuntimeError)
 
@@ -21,6 +21,8 @@ def _egress(result, *, out=None, err=None) -> int:
     out = out or sys.stdout
     if result is None:
         return 0
+    if isinstance(result, dict) and result.get("warning"):
+        print(f"annals: warning: {result.pop('warning')}", file=err or sys.stderr)
     if isinstance(result, str):
         print(result, file=out, end="" if result.endswith("\n") else "\n")
         return 0

@@ -336,12 +336,7 @@ class DocStore:
 
     def list_groups(self) -> list[dict]:
         """Every group, newest first."""
-        names = []
-        if hasattr(self.target, "root") and isinstance(getattr(self.target, "root"), Path):
-            base = self.target.root / GROUPS  # type: ignore[union-attr]
-            names = sorted(p.name for p in base.glob("*.json")) if base.is_dir() else []
-        else:
-            names = [n for n in self.target.list_dirs(GROUPS) if n.endswith(".json")]
+        names = [n for n in self.target.list_files(GROUPS) if n.endswith(".json")]
         groups = []
         for n in names:
             try:

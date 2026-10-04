@@ -10,9 +10,9 @@ annals is an in-tray for AI agents: an agent publishes a document (text, a page,
 
 | # | Seam | v1 default (no new dependency) | Replacement it was declared for |
 |---|---|---|---|
-| 1 | transport, `target=` (`annals.target`) | a local directory, or `host:/path` through the system `ssh` and `rsync` in batch mode | an http ingest endpoint with a bearer token, for agents with no ssh to the host |
+| 1 | transport, `target=` (`annals.target`) | a local directory, or `host:/path` through the system `ssh` and `rsync` in batch mode | an http ingest endpoint with a bearer token, for agents with no ssh to the host. Not a third `Target`: a `Target` writes raw paths and the publisher authors `meta.json`, which an untrusted client must not. Ingest is a server-side publish entry point that receives the files and derives `id`, `files` and `kind` itself |
 | 2 | auth, `authorizer=` (`annals.auth`) | none on localhost; cookie forwarded to an existing who-am-I endpoint plus an email allowlist; HTTP Basic | an OAuth or signed-token check, for a annals with API clients |
-| 3 | data root | `~/.local/share/annals`, `ANNALS_DATA_DIR` | a `dol` store over blob storage, through the same `Target` verbs |
+| 3 | data root | `~/.local/share/annals`, `ANNALS_DATA_DIR` | a `dol` store over blob storage, through the same `Target` verbs; the API reaches files only through `Target.local_path` (a blob target would answer `None`, and serving it then means one redirect to the store's URL at that call site) |
 | 4 | base url for the printed link | `base_url` in the config file | per-target in the config |
 | 5 | markdown rendering | `marked.js` in the browser, vendored | server-side rendering (or PDF) if the page ever needs to serve a non-browser reader |
 | 6 | host, `mk_api` vs `mk_app` | mounted inside an app platform that owns login and routing (`mk_api` + a page shell); `annals serve` standalone otherwise | none needed: both exist |
@@ -46,3 +46,7 @@ NOT seams, written directly on purpose: the id format, the `meta.json` shape, th
 ## Where the data lives
 
 `~/.local/share/annals/{docs,trash,groups}`, plus `cache/thumbs` (derived, safe to delete); `ANNALS_DATA_DIR` overrides the root. Nothing under the package or any app directory holds documents.
+
+## Trust boundary
+
+`meta.json` is written by the publisher, so the server does not trust it to keep paths in bounds: a raw or thumbnail request must name a file the meta lists AND resolve inside that document's directory (symlinks included). Every raw response except PDF carries `Content-Security-Policy: sandbox`, because the page shares its origin with every other app on the host and a browser renders more types as documents than any list would name. Markdown is rendered in the page, so marked's output always goes through DOMPurify first.

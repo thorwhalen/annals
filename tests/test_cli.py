@@ -89,3 +89,13 @@ def test_configure_writes_file(tmp_path, monkeypatch):
 
 def test_bad_usage_exits_nonzero():
     assert _run(["publish"], io.StringIO()) != 0
+
+
+def test_unconfigured_publish_warns_on_stderr(tmp_path, monkeypatch, capsys):
+    monkeypatch.delenv("ANNALS_TARGET", raising=False)
+    monkeypatch.setenv("ANNALS_CONFIG", str(tmp_path / "none.toml"))
+    monkeypatch.setenv("ANNALS_DATA_DIR", str(tmp_path / "local"))
+    (tmp_path / "r.md").write_text("# R")
+    assert run(["publish", str(tmp_path / "r.md")]) == 0
+    out, err = capsys.readouterr()
+    assert out.strip().startswith("http://127.0.0.1") and "no annals config" in err

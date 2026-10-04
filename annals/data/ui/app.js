@@ -80,17 +80,24 @@
   function basename(rel) { return rel.split("/").pop(); }
   function dirname(rel) { var i = rel.lastIndexOf("/"); return i < 0 ? "" : rel.slice(0, i + 1); }
 
-  /* The markdown renderer loads on first use, from the API like every other asset. */
+  /* The markdown renderer and its sanitizer load on first use, from the API. Markdown may
+     carry raw html, and this page shares its origin with every app on the host, so the
+     rendered html always passes through DOMPurify before it touches the page. */
   var markedReady;
-  function withMarked() {
-    if (window.marked) return Promise.resolve(window.marked);
-    markedReady = markedReady || new Promise(function (ok, ko) {
-      var s = h("script", { src: API + "/ui/marked.min.js" });
-      s.onload = function () { ok(window.marked); }; s.onerror = function () { ko(new Error("could not load the markdown renderer")); };
+  function loadScript(name) {
+    return new Promise(function (ok, ko) {
+      var s = h("script", { src: API + "/ui/" + name });
+      s.onload = ok; s.onerror = function () { ko(new Error("could not load " + name)); };
       document.head.appendChild(s);
     });
+  }
+  function withMarked() {
+    if (window.marked && window.DOMPurify) return Promise.resolve(window.marked);
+    markedReady = markedReady || Promise.all([loadScript("marked.min.js"), loadScript("purify.min.js")]).then(function () { return window.marked; });
     return markedReady;
   }
+  function safeHtml(html) { return window.DOMPurify.sanitize(html, { ADD_ATTR: ["target"] }); }
+  function decode(s) { try { return decodeURIComponent(s); } catch (e) { return s; } }
 
   /* -------- media: reserved box, distinct loading / slow / failed states ------------ */
   function mediaBox(kind, src, opts) {
@@ -240,7 +247,7 @@
       if (!u || /^([a-z][a-z0-9+.-]*:|\/\/|\/|#)/i.test(u)) return null;
       var parts = (dir + u.split("#")[0].split("?")[0]).split("/"), out = [];
       parts.forEach(function (p) { if (p === "..") out.pop(); else if (p && p !== ".") out.push(p); });
-      var rel = decodeURIComponent(out.join("/"));
+      var rel = decode(out.join("/"));
       return files.indexOf(rel) >= 0 ? rel : null;
     }
     article.querySelectorAll("img[src], video[src], audio[src], source[src]").forEach(function (el) {
@@ -274,7 +281,7 @@
         container.innerHTML = "";
         if (mode === "source") { container.appendChild(h("pre", { class: "source" }, [text])); return; }
         withMarked().then(function (mk) {
-          var art = h("article", { class: "rendered", html: mk.parse(text, { gfm: true, breaks: false }) });
+          var art = h("article", { class: "rendered", html: safeHtml(mk.parse(text, { gfm: true, breaks: false })) });
           rebase(art, m, rel); container.innerHTML = ""; container.appendChild(art);
         }).catch(function (e) { container.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
       }
@@ -399,7 +406,7 @@
   /* -------- router ------------------------------------------------------------------ */
   function route() {
     var path = location.pathname.indexOf(BASE) === 0 ? location.pathname.slice(BASE.length) : location.pathname;
-    var parts = path.split("/").filter(Boolean).map(decodeURIComponent); // ["d", id]
+    var parts = path.split("/").filter(Boolean).map(decode); // ["d", id]
     var kind = parts[0], arg = parts[1];
     if (kind === "d" && arg) return docView(arg, new URLSearchParams(location.search).get("f"));
     if (kind === "g" && arg) return groupView(arg);
