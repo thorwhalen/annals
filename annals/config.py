@@ -88,7 +88,10 @@ def load_settings(
     """Resolve settings: arguments, then env, then the config file, then local defaults."""
     file_values = _read_config_file(config_path or default_config_path())
     resolved_target = (
-        target or os.environ.get(ENV_TARGET) or file_values.get("target") or str(default_data_dir())
+        target
+        or os.environ.get(ENV_TARGET)
+        or file_values.get("target")
+        or str(default_data_dir())
     )
     resolved_base_url = (
         base_url

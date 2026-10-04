@@ -170,12 +170,16 @@ class SshTarget:
         ]
         proc = subprocess.run(cmd, capture_output=True, text=True)
         if proc.returncode != 0:
-            raise RuntimeError(f"rsync to {self.host} failed: {proc.stderr.strip()[:500]}")
+            raise RuntimeError(
+                f"rsync to {self.host} failed: {proc.stderr.strip()[:500]}"
+            )
 
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
         parent = str(PurePosixPath(dst).parent)
-        self._ssh(f"mkdir -p {shlex.quote(parent)} && mv {shlex.quote(src)} {shlex.quote(dst)}")
+        self._ssh(
+            f"mkdir -p {shlex.quote(parent)} && mv {shlex.quote(src)} {shlex.quote(dst)}"
+        )
 
     def remove_tree(self, rel: str) -> None:
         self._ssh(f"rm -rf {shlex.quote(self._abs(rel))}")
@@ -191,7 +195,10 @@ class SshTarget:
         path = self._abs(rel)
         parent = str(PurePosixPath(path).parent)
         q = shlex.quote(path)
-        self._ssh(f"mkdir -p {shlex.quote(parent)} && cat > {q}.tmp && mv {q}.tmp {q}", stdin=text)
+        self._ssh(
+            f"mkdir -p {shlex.quote(parent)} && cat > {q}.tmp && mv {q}.tmp {q}",
+            stdin=text,
+        )
 
     def list_dirs(self, rel: str) -> list[str]:
         base = shlex.quote(self._abs(rel))

@@ -56,7 +56,13 @@ def no_auth(request: RequestLike) -> Optional[str]:
 class CookieWhoami:
     """Ask an identity endpoint who holds this request's cookies; allow listed emails."""
 
-    def __init__(self, whoami_url: str, allowed_users: list[str], *, login_url: str = DFLT_LOGIN_URL):
+    def __init__(
+        self,
+        whoami_url: str,
+        allowed_users: list[str],
+        *,
+        login_url: str = DFLT_LOGIN_URL,
+    ):
         self.whoami_url = whoami_url
         self.allowed = {u.strip().lower() for u in allowed_users if u.strip()}
         self.login_url = login_url
@@ -65,7 +71,9 @@ class CookieWhoami:
         cookie = request.headers.get("cookie")
         if not cookie:
             return None
-        req = urllib.request.Request(self.whoami_url, headers={"Cookie": cookie, "Accept": "application/json"})
+        req = urllib.request.Request(
+            self.whoami_url, headers={"Cookie": cookie, "Accept": "application/json"}
+        )
         try:
             with urllib.request.urlopen(req, timeout=WHOAMI_TIMEOUT_S) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
@@ -92,7 +100,9 @@ class BasicAuth:
             user, _, pw = base64.b64decode(header[6:]).decode("utf-8").partition(":")
         except (ValueError, UnicodeDecodeError):
             return None
-        ok = secrets.compare_digest(user, self.username) and secrets.compare_digest(pw, self.password)
+        ok = secrets.compare_digest(user, self.username) and secrets.compare_digest(
+            pw, self.password
+        )
         return user if ok else None
 
 
@@ -101,7 +111,9 @@ def authorizer_from_env(env=None) -> Authorizer:
     env = os.environ if env is None else env
     whoami, allowed = env.get(ENV_WHOAMI_URL), env.get(ENV_ALLOWED_USERS)
     if whoami and allowed:
-        return CookieWhoami(whoami, allowed.split(","), login_url=env.get(ENV_LOGIN_URL, DFLT_LOGIN_URL))
+        return CookieWhoami(
+            whoami, allowed.split(","), login_url=env.get(ENV_LOGIN_URL, DFLT_LOGIN_URL)
+        )
     user, pw = env.get(ENV_BASIC_USER), env.get(ENV_BASIC_PASSWORD)
     if user and pw:
         return BasicAuth(user, pw)
