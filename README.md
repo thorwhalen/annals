@@ -17,6 +17,7 @@ Load the shipped skill, `annals-publish`, and you have the whole protocol: one c
 ```bash
 annals publish report.md                          # one document, prints its link
 annals publish a.md b.md c.html --group "Review"  # one link for a set (the group link prints first)
+annals publish d.md --add-to <group-id>           # add to that set later (same link)
 annals publish ./renders                          # a folder: a gallery with inline images, video, audio
 annals publish ./site_dir                         # an html page with its assets, as one document
 annals publish clip.mp4                           # media plays inline (streamed, seekable)
