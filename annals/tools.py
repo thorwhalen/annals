@@ -106,7 +106,9 @@ def publish(
             f"host:/path --base-url https://.../annals` (see `annals configure`)."
         )
     if group and add_to:
-        raise ValueError("pass --group (a new group) or --add-to (an existing one), not both")
+        raise ValueError(
+            "pass --group (a new group) or --add-to (an existing one), not both"
+        )
     if group or add_to:
         ids = [d["id"] for d in docs]
         g = store.add_to_group(add_to, ids) if add_to else store.make_group(group, ids)
