@@ -99,3 +99,19 @@ def test_unconfigured_publish_warns_on_stderr(tmp_path, monkeypatch, capsys):
     assert run(["publish", str(tmp_path / "r.md")]) == 0
     out, err = capsys.readouterr()
     assert out.strip().startswith("http://127.0.0.1") and "no annals config" in err
+
+
+def test_add_to_appends_to_an_existing_group(tmp_path, monkeypatch, capsys):
+    monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://x/annals")
+    for n in "abc":
+        (tmp_path / f"{n}.md").write_text(f"# {n}")
+    run(["publish", str(tmp_path / "a.md"), str(tmp_path / "b.md"), "--group", "Batch"])
+    gid = capsys.readouterr().out.splitlines()[0].rsplit("/", 1)[-1]
+    assert run(["publish", str(tmp_path / "c.md"), "--add-to", gid]) == 0
+    out = capsys.readouterr().out
+    assert gid in out
+    from annals.store import DocStore
+    assert len(DocStore(tmp_path / "data").group(gid)["docs"]) == 3
+    assert len(DocStore(tmp_path / "data").list_groups()) == 1
+    assert run(["publish", str(tmp_path / "c.md"), "--add-to", gid, "--group", "X"]) == 1

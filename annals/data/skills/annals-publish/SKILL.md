@@ -15,7 +15,7 @@ annals publish path/to/report.md --session <your session name>
 
 It prints the link. Put that link in your reply, on its own line. That is the entire protocol.
 
-First time on a machine: `pip install -U annals` (the publisher config, `~/.config/annals/config.toml`, says where documents go; `annals configure` shows it).
+Only if `annals` is not found: `pip install annals`. Do not `pip install -U` it where it is already installed: on a development machine that replaces the editable source install with the PyPI wheel. The publisher config, `~/.config/annals/config.toml`, says where documents go; `annals configure` shows it.
 
 - Markdown is rendered on the page with a toggle to the raw source (so the owner can copy it); its relative images resolve. HTML is rendered as-is in a frame. Images, video, audio and PDFs show inline (video streams and seeks). Anything else is offered as a download.
 - The title is taken from the first `# heading` (markdown) or `<title>` (html); pass `--title "..."` to override.
@@ -28,6 +28,8 @@ annals publish report.md appendix.md figures.html --group "Q3 review"
 ```
 
 Prints the group link first, then one line per document. Hand the user the group link.
+
+More for the same set later? Add to it rather than making a second group with the same title: `annals publish more.md --add-to <group-id>` (the id is the last part of the group link). `--group` always makes a NEW group.
 
 ## A folder: renders, frames, a page with its assets
 

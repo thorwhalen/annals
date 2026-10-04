@@ -53,6 +53,7 @@ def publish(
     title: str | None = None,
     tags: str = "",
     group: str | None = None,
+    add_to: str | None = None,
     session: str | None = None,
     all_files: bool = False,
     target: str | None = None,
@@ -64,7 +65,8 @@ def publish(
     directory (one document: an ``index.html`` or single page with its assets, else a
     gallery of everything in it), or ``-`` for stdin (markdown). ``tags`` is comma separated. ``group``
     names a group to create from the published documents; the reply then carries
-    ``group_url`` too. ``session`` records who published (the source shown on the page). A directory skips
+    ``group_url`` too. ``add_to`` appends them to an existing group instead (its id, as
+    printed in a group link), so a second batch lands under the link the owner already has. ``session`` records who published (the source shown on the page). A directory skips
     hidden files and caches (``.*``, ``__pycache__``, ``*.pyc``) unless ``all_files``.
     """
     settings = load_settings(target=target, base_url=base_url)
@@ -103,8 +105,11 @@ def publish(
             f"server. To publish where the owner reads, run `annals configure --target "
             f"host:/path --base-url https://.../annals` (see `annals configure`)."
         )
-    if group:
-        g = store.make_group(group, [d["id"] for d in docs])
+    if group and add_to:
+        raise ValueError("pass --group (a new group) or --add-to (an existing one), not both")
+    if group or add_to:
+        ids = [d["id"] for d in docs]
+        g = store.add_to_group(add_to, ids) if add_to else store.make_group(group, ids)
         result["group_id"] = g["id"]
         result["group_url"] = _group_url(settings, g["id"])
         result["url"] = result["group_url"] if len(docs) > 1 else result["url"]
