@@ -1,7 +1,7 @@
 """The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 
-This module is the single source of truth for what a tray can do. The CLI
-(:mod:`intray.__main__`, via ``cw``), the MCP server (``py2mcp`` over string refs to these
+This module is the single source of truth for what a annals can do. The CLI
+(:mod:`annals.__main__`, via ``cw``), the MCP server (``py2mcp`` over string refs to these
 names) and the shipped skill all describe the same functions, so there is nothing to keep
 in parity. Nothing here prints or exits; the surfaces do that.
 """
@@ -12,9 +12,9 @@ import os
 import socket
 from pathlib import Path
 
-from intray.config import Settings, default_data_dir, load_settings, write_config
-from intray.store import DocStore
-from intray.target import parse_target
+from annals.config import Settings, default_data_dir, load_settings, write_config
+from annals.store import DocStore
+from annals.target import parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
 
@@ -33,7 +33,7 @@ def _group_url(settings: Settings, gid: str) -> str:
 
 def _default_source() -> dict:
     src = {"host": socket.gethostname(), "cwd": os.getcwd()}
-    for key in ("TRAY_SESSION", "CROWSNEST_SESSION", "CLAUDE_SESSION_NAME"):
+    for key in ("ANNALS_SESSION", "CROWSNEST_SESSION", "CLAUDE_SESSION_NAME"):
         if os.environ.get(key):
             src["session"] = os.environ[key]
             break
@@ -54,15 +54,18 @@ def publish(
     tags: str = "",
     group: str | None = None,
     session: str | None = None,
+    all_files: bool = False,
     target: str | None = None,
     base_url: str | None = None,
 ) -> dict:
     """Publish one document and print its link; several paths become several documents.
 
-    ``paths``: markdown or html files, a directory (an html artifact with ``index.html``
-    and its assets), or ``-`` for stdin (markdown). ``tags`` is comma separated. ``group``
+    ``paths``: files of any kind (markdown, html, images, video, audio, pdf, text), a
+    directory (one document: an ``index.html`` or single page with its assets, else a
+    gallery of everything in it), or ``-`` for stdin (markdown). ``tags`` is comma separated. ``group``
     names a group to create from the published documents; the reply then carries
-    ``group_url`` too. ``session`` records who published (the source shown on the page).
+    ``group_url`` too. ``session`` records who published (the source shown on the page). A directory skips
+    hidden files and caches (``.*``, ``__pycache__``, ``*.pyc``) unless ``all_files``.
     """
     settings = load_settings(target=target, base_url=base_url)
     store = _store(settings)
@@ -80,19 +83,17 @@ def publish(
             meta = store.publish(title=title, tags=tag_list, source=source, text=text)
         else:
             meta = store.publish(
-                Path(p),
-                title=title if len(paths) == 1 else None,
-                tags=tag_list,
-                source=source,
+                Path(p), title=title if len(paths) == 1 else None, tags=tag_list, source=source,
+                **({"exclude": ()} if all_files else {}),
             )
-        docs.append(
-            {
-                "id": meta["id"],
-                "title": meta["title"],
-                "url": _doc_url(settings, meta["id"]),
-            }
-        )
+        docs.append({"id": meta["id"], "title": meta["title"], "url": _doc_url(settings, meta["id"])})
     result: dict = docs[0] if len(docs) == 1 else {"docs": docs}
+    if not settings.configured:
+        result["warning"] = (
+            f"no annals config: published to the local {settings.target} and linked to a local "
+            f"server. To publish where the owner reads, run `annals configure --target "
+            f"host:/path --base-url https://.../annals` (see `annals configure`)."
+        )
     if group:
         g = store.make_group(group, [d["id"] for d in docs])
         result["group_id"] = g["id"]
@@ -115,23 +116,15 @@ def ls(
     docs = store.search(q, trash=trash) if q else store.list(trash=trash)
     return {
         "docs": [
-            {
-                "id": m["id"],
-                "title": m["title"],
-                "kind": m["kind"],
-                "tags": m.get("tags", []),
-                "created": m.get("created"),
-                "url": _doc_url(settings, m["id"]),
-            }
+            {"id": m["id"], "title": m["title"], "kind": m["kind"], "tags": m.get("tags", []),
+             "created": m.get("created"), "url": _doc_url(settings, m["id"])}
             for m in docs[:limit]
         ],
         "total": len(docs),
     }
 
 
-def show(
-    doc_id: str, *, target: str | None = None, base_url: str | None = None
-) -> dict:
+def show(doc_id: str, *, target: str | None = None, base_url: str | None = None) -> dict:
     """A document's metadata and link."""
     settings = load_settings(target=target, base_url=base_url)
     meta = _store(settings).meta(doc_id)
@@ -161,12 +154,7 @@ def group(
     """Make a group (one URL for a set of documents) from existing document ids."""
     settings = load_settings(target=target, base_url=base_url)
     g = _store(settings).make_group(title, _as_list(doc_ids))
-    return {
-        "id": g["id"],
-        "title": g["title"],
-        "docs": g["docs"],
-        "url": _group_url(settings, g["id"]),
-    }
+    return {"id": g["id"], "title": g["title"], "docs": g["docs"], "url": _group_url(settings, g["id"])}
 
 
 def groups(*, target: str | None = None, base_url: str | None = None) -> dict:
@@ -174,12 +162,7 @@ def groups(*, target: str | None = None, base_url: str | None = None) -> dict:
     settings = load_settings(target=target, base_url=base_url)
     return {
         "groups": [
-            {
-                "id": g["id"],
-                "title": g["title"],
-                "n": len(g["docs"]),
-                "url": _group_url(settings, g["id"]),
-            }
+            {"id": g["id"], "title": g["title"], "n": len(g["docs"]), "url": _group_url(settings, g["id"])}
             for g in _store(settings).list_groups()
         ]
     }
@@ -188,7 +171,7 @@ def groups(*, target: str | None = None, base_url: str | None = None) -> dict:
 def configure(*, target: str | None = None, base_url: str | None = None) -> dict:
     """Write the publisher config (where to publish, what link to print) and show it.
 
-    Example: ``tray configure --target tw:/root/.local/share/tray --base-url https://apps.example.com/tray``.
+    Example: ``annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals``.
     With no arguments, shows the resolved settings without writing.
     """
     settings = load_settings(target=target, base_url=base_url)
@@ -204,27 +187,30 @@ def serve(
     host: str = "127.0.0.1",
     port: int = 8765,
     data_dir: str | None = None,
-    base_path: str = "/tray",
+    base_path: str = "/annals",
 ) -> None:
-    """Serve the tray page and API (needs ``pip install 'intray[server]'``).
+    """Serve the annals page and API (needs ``pip install 'annals[server]'``).
 
-    Auth comes from the environment: ``TRAY_WHOAMI_URL`` + ``TRAY_ALLOWED_USERS`` to sit
-    behind an existing login, ``TRAY_BASIC_USER`` + ``TRAY_BASIC_PASSWORD`` for HTTP Basic,
+    Auth comes from the environment: ``ANNALS_WHOAMI_URL`` + ``ANNALS_ALLOWED_USERS`` to sit
+    behind an existing login, ``ANNALS_BASIC_USER`` + ``ANNALS_BASIC_PASSWORD`` for HTTP Basic,
     nothing for an open server on localhost.
     """
-    from intray.api import serve as _serve
+    from annals.api import serve as _serve
 
     _serve(host=host, port=port, data_dir=data_dir, base_path=base_path)
 
 
-_dispatch_funcs[:] = [
-    publish,
-    ls,
-    show,
-    trash,
-    restore,
-    group,
-    groups,
-    configure,
-    serve,
-]
+def page_shell(*, api: str = "/api/annals", base: str = "/annals", title: str = "annals") -> str:
+    """The page's html shell, for a host that serves the API under its own prefix.
+
+    An enlace app writes it once as its frontend:
+    ``annals page-shell --api /api/annals --base /annals > frontend/index.html``.
+    The shell only names the two paths; the page's code loads from the API, so it upgrades
+    with the package.
+    """
+    from annals.api import page_html
+
+    return page_html(base=base, api=api, title=title)
+
+
+_dispatch_funcs[:] = [publish, ls, show, trash, restore, group, groups, configure, serve, page_shell]

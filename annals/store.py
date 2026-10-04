@@ -1,6 +1,6 @@
 """The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
 
-Layout under the data root (local or remote, see :mod:`intray.target`)::
+Layout under the data root (local or remote, see :mod:`annals.target`)::
 
     docs/<id>/meta.json         one document: metadata
     docs/<id>/<main file>       its content (index.html, report.md, ...), plus any assets
@@ -28,7 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-from intray.target import LocalTarget, Target
+from annals.target import LocalTarget, Target
 
 DOCS = "docs"
 TRASH = "trash"
@@ -36,24 +36,27 @@ GROUPS = "groups"
 META = "meta.json"
 MAX_SLUG_LEN = 48
 EXCERPT_CHARS = 280
+#: names never published from a directory: hidden files, caches, compiled python
+DFLT_EXCLUDE = (".*", "__pycache__", "*.pyc", "*.pyo")
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,199}$")
-#: extension -> kind. ``html`` renders in a frame, ``md`` renders as markdown, ``text`` as
-#: preformatted text, anything else is a download.
-KINDS = {
-    ".md": "md",
-    ".markdown": "md",
-    ".html": "html",
-    ".htm": "html",
-    ".txt": "text",
-    ".log": "text",
-    ".json": "text",
-    ".csv": "text",
-    ".toml": "text",
-    ".yaml": "text",
-    ".yml": "text",
-    ".py": "text",
+#: extension -> kind. ``html`` renders in a frame, ``md`` as markdown, ``text`` as
+#: preformatted text, ``image``/``video``/``audio``/``pdf`` inline in the page; anything
+#: else is a download. A document of several files with no single page to show is a
+#: ``folder``, shown as a gallery and file list.
+_EXTS = {
+    "md": ".md .markdown",
+    "html": ".html .htm",
+    "text": ".txt .log .json .jsonl .csv .tsv .toml .yaml .yml .py .js .ts .sh .srt .vtt .xml",
+    "image": ".png .jpg .jpeg .gif .webp .avif .svg .bmp",
+    "video": ".mp4 .webm .mov .m4v .ogv",
+    "audio": ".mp3 .wav .ogg .oga .m4a .aac .flac .opus",
+    "pdf": ".pdf",
 }
+KINDS = {ext: kind for kind, exts in _EXTS.items() for ext in exts.split()}
 TEXT_KINDS = frozenset({"md", "text"})
+MEDIA_KINDS = frozenset({"image", "video", "audio", "pdf"})
+PAGE_KINDS = frozenset({"md", "html"})
+FOLDER = "folder"
 
 
 def now_iso() -> str:
@@ -67,11 +70,7 @@ def slugify(text: str, *, max_len: int = MAX_SLUG_LEN) -> str:
     words = re.findall(r"[A-Za-z0-9]+", text.lower())
     slug = "-".join(words)
     if len(slug) > max_len:  # cut at a word boundary, never mid-word
-        slug = (
-            slug[:max_len].rsplit("-", 1)[0]
-            if "-" in slug[:max_len]
-            else slug[:max_len]
-        )
+        slug = slug[:max_len].rsplit("-", 1)[0] if "-" in slug[:max_len] else slug[:max_len]
     return slug.strip("-") or "doc"
 
 
@@ -120,32 +119,57 @@ def _excerpt(path: Path, kind: str) -> str:
     return text[:EXCERPT_CHARS]
 
 
-def _pick_main(files: list[Path]) -> Path:
-    """The file a viewer opens first: index.html, else the first renderable, else the first."""
+def _pick_main(files: list[Path]) -> tuple[Path, str]:
+    """The file a viewer opens first, and the document's kind.
+
+    ``index.html`` wins; else the only page (markdown or html) among the files, with the
+    rest as its assets; else the file itself when there is one. Anything else (a folder of
+    renders, several pages, mixed media) is a ``folder``: shown as a gallery and file list,
+    with the first file as ``main``.
+    """
     for f in files:
         if f.name.lower() in ("index.html", "index.htm"):
-            return f
+            return f, "html"
+    pages = [f for f in files if kind_of(f.name) in PAGE_KINDS]
+    if len(pages) == 1:
+        return pages[0], kind_of(pages[0].name)
+    if len(files) == 1:
+        return files[0], kind_of(files[0].name)
+    return files[0], FOLDER
+
+
+def _folder_summary(files: list[str]) -> str:
+    """``12 images, 3 audio, 1 md`` for a folder document's excerpt."""
+    counts: dict[str, int] = {}
     for f in files:
-        if kind_of(f.name) != "file":
-            return f
-    return files[0]
+        counts[kind_of(f)] = counts.get(kind_of(f), 0) + 1
+    plural = {"image": "images", "video": "videos", "file": "files", "pdf": "pdfs"}
+    order = ["image", "video", "audio", "pdf", "html", "md", "text", "file"]
+    return ", ".join(f"{counts[k]} {plural.get(k, k) if counts[k] > 1 else k}" for k in order if k in counts)
 
 
-def _stage(sources: list[Path], tmp: Path) -> tuple[Path, list[str]]:
-    """Copy the sources into ``tmp`` and return (main file, relative file list)."""
+def _stage(
+    sources: list[Path], tmp: Path, *, exclude: Iterable[str] = DFLT_EXCLUDE
+) -> tuple[Path, str, list[str]]:
+    """Copy the sources into ``tmp`` and return (main file, kind, relative file list).
+
+    Inside a directory, names matching ``exclude`` (glob patterns) are skipped; a file
+    named explicitly is always published.
+    """
+    ignore = shutil.ignore_patterns(*exclude) if exclude else None
     if len(sources) == 1 and sources[0].is_dir():
-        shutil.copytree(sources[0], tmp, dirs_exist_ok=True)
+        shutil.copytree(sources[0], tmp, dirs_exist_ok=True, ignore=ignore)
     else:
         for src in sources:
             if src.is_dir():
-                shutil.copytree(src, tmp / src.name, dirs_exist_ok=True)
+                shutil.copytree(src, tmp / src.name, dirs_exist_ok=True, ignore=ignore)
             else:
                 shutil.copy2(src, tmp / src.name)
     files = sorted(p for p in tmp.rglob("*") if p.is_file() and p.name != META)
     if not files:
         raise ValueError("nothing to publish: no files found")
-    main = _pick_main(files)
-    return main, [str(p.relative_to(tmp)) for p in files]
+    main, kind = _pick_main(files)
+    return main, kind, [str(p.relative_to(tmp)) for p in files]
 
 
 class DocStore:
@@ -166,30 +190,31 @@ class DocStore:
         source: dict | None = None,
         text: str | None = None,
         filename: str = "document.md",
+        exclude: Iterable[str] = DFLT_EXCLUDE,
     ) -> dict:
         """Publish files (or a directory, or ``text``) as ONE document; return its meta.
 
         One markdown or html file is the common case. A directory is published whole, with
         ``index.html`` (or the first renderable file) as the page shown. ``text`` publishes a
-        string as ``filename`` instead of reading sources.
+        string as ``filename`` instead of reading sources. ``exclude`` lists glob patterns
+        skipped inside a directory (hidden files and caches by default; ``()`` keeps all).
         """
-        with tempfile.TemporaryDirectory(prefix="tray-") as td:
+        with tempfile.TemporaryDirectory(prefix="annals-") as td:
             tmp = Path(td) / "doc"
             tmp.mkdir()
             if text is not None:
                 (tmp / filename).write_text(text, encoding="utf-8")
-                paths = [tmp / filename]
-                main, files = paths[0], [filename]
+                main, files = tmp / filename, [filename]
+                kind = kind_of(filename)
             else:
                 paths = [Path(s).expanduser() for s in sources]
                 missing = [str(p) for p in paths if not p.exists()]
                 if missing:
                     raise FileNotFoundError(", ".join(missing))
-                main, files = _stage(paths, tmp)
-            kind = kind_of(main.name)
-            title = (
-                title or _title_from_content(main, kind) or main.stem.replace("_", " ")
-            )
+                main, kind, files = _stage(paths, tmp, exclude=exclude)
+            default_title = paths[0].name if kind == FOLDER and text is None else main.stem
+            title = title or _title_from_content(main, kind) or default_title.replace("_", " ")
+            sizes = {f: (tmp / f).stat().st_size for f in files}
             doc_id = mk_id(title)
             meta = {
                 "id": doc_id,
@@ -200,8 +225,9 @@ class DocStore:
                 "tags": sorted({t.strip() for t in tags if t and t.strip()}),
                 "source": source or {},
                 "created": now_iso(),
-                "size": sum((tmp / f).stat().st_size for f in files),
-                "excerpt": _excerpt(main, kind),
+                "size": sum(sizes.values()),
+                "sizes": sizes,
+                "excerpt": _folder_summary(files) if kind == FOLDER else _excerpt(main, kind),
             }
             (tmp / META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
             self.target.put_tree(tmp, f"{DOCS}/{doc_id}")
@@ -212,9 +238,7 @@ class DocStore:
     def list(self, *, trash: bool = False) -> list[dict]:
         """Every document's meta, newest first (ids sort by time; ``created`` breaks ties)."""
         metas = self.target.read_metas(TRASH if trash else DOCS)
-        return sorted(
-            metas, key=lambda m: (m.get("created", ""), m.get("id", "")), reverse=True
-        )
+        return sorted(metas, key=lambda m: (m.get("created", ""), m.get("id", "")), reverse=True)
 
     def _where(self, doc_id: str) -> str:
         check_id(doc_id)
@@ -247,17 +271,10 @@ class DocStore:
 
         def haystack(m: dict) -> str:
             return " ".join(
-                [
-                    m.get("title", ""),
-                    " ".join(m.get("tags", [])),
-                    m.get("excerpt", ""),
-                    json.dumps(m.get("source", {})),
-                ]
+                [m.get("title", ""), " ".join(m.get("tags", [])), m.get("excerpt", ""), json.dumps(m.get("source", {}))]
             ).lower()
 
-        return [
-            m for m in self.list(trash=trash) if all(w in haystack(m) for w in words)
-        ]
+        return [m for m in self.list(trash=trash) if all(w in haystack(m) for w in words)]
 
     # -- the recycle bin --------------------------------------------------------------
 
@@ -268,9 +285,7 @@ class DocStore:
             self.target.move(f"{DOCS}/{doc_id}", f"{TRASH}/{doc_id}")
             meta["trashed"] = now_iso()
             meta.pop("in_trash", None)
-            self.target.write_text(
-                f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1)
-            )
+            self.target.write_text(f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1))
         meta["in_trash"] = True
         return meta
 
@@ -281,9 +296,7 @@ class DocStore:
             self.target.move(f"{TRASH}/{doc_id}", f"{DOCS}/{doc_id}")
             meta.pop("trashed", None)
             meta.pop("in_trash", None)
-            self.target.write_text(
-                f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1)
-            )
+            self.target.write_text(f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1))
         meta["in_trash"] = False
         return meta
 
@@ -296,9 +309,7 @@ class DocStore:
 
     # -- groups -----------------------------------------------------------------------
 
-    def make_group(
-        self, title: str, doc_ids: Iterable[str], *, gid: str | None = None
-    ) -> dict:
+    def make_group(self, title: str, doc_ids: Iterable[str], *, gid: str | None = None) -> dict:
         """Create (or overwrite) a group: a titled, ordered list of document ids."""
         ids = [check_id(i) for i in doc_ids]
         gid = check_id(gid) if gid else mk_id(title)
@@ -325,14 +336,7 @@ class DocStore:
 
     def list_groups(self) -> list[dict]:
         """Every group, newest first."""
-        names = []
-        if hasattr(self.target, "root") and isinstance(
-            getattr(self.target, "root"), Path
-        ):
-            base = self.target.root / GROUPS  # type: ignore[union-attr]
-            names = sorted(p.name for p in base.glob("*.json")) if base.is_dir() else []
-        else:
-            names = [n for n in self.target.list_dirs(GROUPS) if n.endswith(".json")]
+        names = [n for n in self.target.list_files(GROUPS) if n.endswith(".json")]
         groups = []
         for n in names:
             try:

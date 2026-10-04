@@ -5,13 +5,13 @@ requires = [
 build-backend = "hatchling.build"
 
 [project]
-name = "intray"
+name = "annals"
 version = "0.0.2"
-description = "An in-tray for AI agents: publish markdown and html documents to a private page the owner reads on the phone, and get back a link."
+description = "Annals for AI agents: publish markdown, html, images, video, audio, PDFs and folders to a private page the owner reads on the phone, and get back a link."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
-keywords = ["agents", "publish", "markdown", "html", "private", "page", "claude-code", "in-tray"]
+keywords = ["agents", "publish", "markdown", "html", "media", "private", "page", "claude-code", "in-tray"]
 authors = [
     { name = "Thor Whalen" },
 ]
@@ -20,23 +20,25 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/thorwhalen/tray"
-Repository = "https://github.com/thorwhalen/tray"
-Documentation = "https://thorwhalen.github.io/tray"
+Homepage = "https://github.com/thorwhalen/annals"
+Repository = "https://github.com/thorwhalen/annals"
+Documentation = "https://thorwhalen.github.io/annals"
 
 [project.scripts]
-tray = "intray.__main__:main"
+annals = "annals.__main__:main"
 
 [project.optional-dependencies]
 server = [
     "fastapi>=0.100",
     "uvicorn>=0.20",
+    "pillow>=10",
 ]
 mcp = [
     "py2mcp",
 ]
 dev = [
     "fastapi>=0.100",
+    "pillow>=10",
     "httpx",
     "pytest>=7.0",
     "pytest-cov>=4.0",
@@ -50,9 +52,8 @@ docs = [
 [tool.hatch.build]
 skip-excluded-dirs = true
 
-# The distribution is intray; the package (and the command) is tray.
 [tool.hatch.build.targets.wheel]
-packages = ["intray"]
+packages = ["annals"]
 
 [tool.hatch.build.targets.sdist]
 exclude = [

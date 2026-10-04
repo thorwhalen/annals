@@ -51,8 +51,14 @@ class Target(Protocol):
 
     def read_metas(self, rel: str) -> list[dict]: ...
 
+    def list_files(self, rel: str) -> list[str]: ...
 
-def _check_rel(rel: str) -> str:
+    def local_path(self, rel: str) -> Path | None:
+        """The file on this machine's disk, when the documents are local (to stream it)."""
+        ...
+
+
+def check_rel(rel: str) -> str:
     """Refuse anything that could escape the root; the store only ever passes safe paths."""
     p = PurePosixPath(rel)
     if p.is_absolute() or ".." in p.parts:
@@ -70,7 +76,7 @@ class LocalTarget:
         return str(self.root)
 
     def _abs(self, rel: str) -> Path:
-        return self.root / _check_rel(rel)
+        return self.root / check_rel(rel)
 
     def put_tree(self, src_dir: Path, rel: str) -> None:
         dst = self._abs(rel)
@@ -106,6 +112,15 @@ class LocalTarget:
             return []
         return sorted(p.name for p in base.iterdir() if p.is_dir())
 
+    def list_files(self, rel: str) -> list[str]:
+        base = self._abs(rel)
+        return sorted(p.name for p in base.iterdir() if p.is_file()) if base.is_dir() else []
+
+    def local_path(self, rel: str) -> Path | None:
+        """``rel`` under the root, resolved; ``None`` if it escapes the root (a symlink)."""
+        path = self._abs(rel).resolve()
+        return path if path.is_relative_to(self.root.resolve()) else None
+
     def read_metas(self, rel: str) -> list[dict]:
         base = self._abs(rel)
         if not base.is_dir():
@@ -130,7 +145,7 @@ class SshTarget:
         return f"{self.host}:{self.root}"
 
     def _abs(self, rel: str) -> str:
-        return f"{self.root}/{_check_rel(rel)}"
+        return f"{self.root}/{check_rel(rel)}"
 
     def _ssh(self, script: str, *, stdin: str | None = None) -> str:
         cmd = ["ssh", *SSH_OPTS, self.host, script]
@@ -189,6 +204,14 @@ class SshTarget:
         base = shlex.quote(self._abs(rel))
         out = self._ssh(f"[ -d {base} ] && ls -1 {base} || true")
         return sorted(name for name in out.splitlines() if name)
+
+    def list_files(self, rel: str) -> list[str]:
+        base = shlex.quote(self._abs(rel))
+        out = self._ssh(f"[ -d {base} ] && ls -1p {base} | grep -v / || true")  # portable (no GNU find)
+        return sorted(name for name in out.splitlines() if name)
+
+    def local_path(self, rel: str) -> Path | None:
+        return None  # remote: nothing to stream from this machine's disk
 
     def read_metas(self, rel: str) -> list[dict]:
         base = shlex.quote(self._abs(rel))

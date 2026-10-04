@@ -1,18 +1,18 @@
-"""The auth seam: who may read the tray.
+"""The auth seam: who may read the annals.
 
-A tray is private by construction, so the server asks every request who is calling. The
+A annals is private by construction, so the server asks every request who is calling. The
 answer comes from one of three ``Authorizer`` callables, chosen by :func:`authorizer_from_env`
-(or passed to :func:`inintray.api.mk_app`):
+(or passed to :func:`annals.api.mk_app`):
 
-* :func:`no_auth`: everyone is the owner. Right for ``tray serve`` bound to ``127.0.0.1``,
+* :func:`no_auth`: everyone is the owner. Right for ``annals serve`` bound to ``127.0.0.1``,
   wrong anywhere else.
 * :class:`CookieWhoami`: forward the request's cookies to an identity endpoint that answers
   ``{"email": ...}`` (enlace_auth's ``/auth/whoami``), and allow the listed emails. This is
-  how a tray sits behind an existing login without owning passwords: the login page, the
-  session cookie and the logout belong to the platform; the tray only checks the allowlist.
-  Env: ``TRAY_WHOAMI_URL``, ``TRAY_ALLOWED_USERS`` (comma separated), ``TRAY_LOGIN_URL``.
-* :class:`BasicAuth`: one username and password (HTTP Basic). For a tray with no platform
-  login in front of it. Env: ``TRAY_BASIC_USER``, ``TRAY_BASIC_PASSWORD``.
+  how a annals sits behind an existing login without owning passwords: the login page, the
+  session cookie and the logout belong to the platform; the annals only checks the allowlist.
+  Env: ``ANNALS_WHOAMI_URL``, ``ANNALS_ALLOWED_USERS`` (comma separated), ``ANNALS_LOGIN_URL``.
+* :class:`BasicAuth`: one username and password (HTTP Basic). For a annals with no platform
+  login in front of it. Env: ``ANNALS_BASIC_USER``, ``ANNALS_BASIC_PASSWORD``.
 
 An authorizer returns the caller's identity (a string) or ``None``. The API turns ``None``
 into a 303 to the login page for a browser GET, and a 401 for anything else, mirroring
@@ -29,11 +29,11 @@ import urllib.error
 import urllib.request
 from typing import Callable, Optional, Protocol
 
-ENV_WHOAMI_URL = "TRAY_WHOAMI_URL"
-ENV_ALLOWED_USERS = "TRAY_ALLOWED_USERS"
-ENV_LOGIN_URL = "TRAY_LOGIN_URL"
-ENV_BASIC_USER = "TRAY_BASIC_USER"
-ENV_BASIC_PASSWORD = "TRAY_BASIC_PASSWORD"
+ENV_WHOAMI_URL = "ANNALS_WHOAMI_URL"
+ENV_ALLOWED_USERS = "ANNALS_ALLOWED_USERS"
+ENV_LOGIN_URL = "ANNALS_LOGIN_URL"
+ENV_BASIC_USER = "ANNALS_BASIC_USER"
+ENV_BASIC_PASSWORD = "ANNALS_BASIC_PASSWORD"
 DFLT_LOGIN_URL = "/auth/login"
 WHOAMI_TIMEOUT_S = 3.0
 
