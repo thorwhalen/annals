@@ -114,7 +114,11 @@ class LocalTarget:
 
     def list_files(self, rel: str) -> list[str]:
         base = self._abs(rel)
-        return sorted(p.name for p in base.iterdir() if p.is_file()) if base.is_dir() else []
+        return (
+            sorted(p.name for p in base.iterdir() if p.is_file())
+            if base.is_dir()
+            else []
+        )
 
     def local_path(self, rel: str) -> Path | None:
         """``rel`` under the root, resolved; ``None`` if it escapes the root (a symlink)."""
@@ -207,7 +211,9 @@ class SshTarget:
 
     def list_files(self, rel: str) -> list[str]:
         base = shlex.quote(self._abs(rel))
-        out = self._ssh(f"[ -d {base} ] && ls -1p {base} | grep -v / || true")  # portable (no GNU find)
+        out = self._ssh(
+            f"[ -d {base} ] && ls -1p {base} | grep -v / || true"
+        )  # portable (no GNU find)
         return sorted(name for name in out.splitlines() if name)
 
     def local_path(self, rel: str) -> Path | None:

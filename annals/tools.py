@@ -83,10 +83,19 @@ def publish(
             meta = store.publish(title=title, tags=tag_list, source=source, text=text)
         else:
             meta = store.publish(
-                Path(p), title=title if len(paths) == 1 else None, tags=tag_list, source=source,
+                Path(p),
+                title=title if len(paths) == 1 else None,
+                tags=tag_list,
+                source=source,
                 **({"exclude": ()} if all_files else {}),
             )
-        docs.append({"id": meta["id"], "title": meta["title"], "url": _doc_url(settings, meta["id"])})
+        docs.append(
+            {
+                "id": meta["id"],
+                "title": meta["title"],
+                "url": _doc_url(settings, meta["id"]),
+            }
+        )
     result: dict = docs[0] if len(docs) == 1 else {"docs": docs}
     if not settings.configured:
         result["warning"] = (
@@ -116,15 +125,23 @@ def ls(
     docs = store.search(q, trash=trash) if q else store.list(trash=trash)
     return {
         "docs": [
-            {"id": m["id"], "title": m["title"], "kind": m["kind"], "tags": m.get("tags", []),
-             "created": m.get("created"), "url": _doc_url(settings, m["id"])}
+            {
+                "id": m["id"],
+                "title": m["title"],
+                "kind": m["kind"],
+                "tags": m.get("tags", []),
+                "created": m.get("created"),
+                "url": _doc_url(settings, m["id"]),
+            }
             for m in docs[:limit]
         ],
         "total": len(docs),
     }
 
 
-def show(doc_id: str, *, target: str | None = None, base_url: str | None = None) -> dict:
+def show(
+    doc_id: str, *, target: str | None = None, base_url: str | None = None
+) -> dict:
     """A document's metadata and link."""
     settings = load_settings(target=target, base_url=base_url)
     meta = _store(settings).meta(doc_id)
@@ -154,7 +171,12 @@ def group(
     """Make a group (one URL for a set of documents) from existing document ids."""
     settings = load_settings(target=target, base_url=base_url)
     g = _store(settings).make_group(title, _as_list(doc_ids))
-    return {"id": g["id"], "title": g["title"], "docs": g["docs"], "url": _group_url(settings, g["id"])}
+    return {
+        "id": g["id"],
+        "title": g["title"],
+        "docs": g["docs"],
+        "url": _group_url(settings, g["id"]),
+    }
 
 
 def groups(*, target: str | None = None, base_url: str | None = None) -> dict:
@@ -162,7 +184,12 @@ def groups(*, target: str | None = None, base_url: str | None = None) -> dict:
     settings = load_settings(target=target, base_url=base_url)
     return {
         "groups": [
-            {"id": g["id"], "title": g["title"], "n": len(g["docs"]), "url": _group_url(settings, g["id"])}
+            {
+                "id": g["id"],
+                "title": g["title"],
+                "n": len(g["docs"]),
+                "url": _group_url(settings, g["id"]),
+            }
             for g in _store(settings).list_groups()
         ]
     }
@@ -200,7 +227,9 @@ def serve(
     _serve(host=host, port=port, data_dir=data_dir, base_path=base_path)
 
 
-def page_shell(*, api: str = "/api/annals", base: str = "/annals", title: str = "annals") -> str:
+def page_shell(
+    *, api: str = "/api/annals", base: str = "/annals", title: str = "annals"
+) -> str:
     """The page's html shell, for a host that serves the API under its own prefix.
 
     An enlace app writes it once as its frontend:
@@ -213,4 +242,15 @@ def page_shell(*, api: str = "/api/annals", base: str = "/annals", title: str = 
     return page_html(base=base, api=api, title=title)
 
 
-_dispatch_funcs[:] = [publish, ls, show, trash, restore, group, groups, configure, serve, page_shell]
+_dispatch_funcs[:] = [
+    publish,
+    ls,
+    show,
+    trash,
+    restore,
+    group,
+    groups,
+    configure,
+    serve,
+    page_shell,
+]

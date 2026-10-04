@@ -31,11 +31,23 @@ from urllib.parse import quote
 
 import anyio
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse, Response
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 
 from annals.auth import Authorizer, authorizer_from_env, no_auth
-from annals.config import APP_NAME, DFLT_SERVE_PORT, ENV_DATA_DIR, MAX_INLINE_TEXT_BYTES, default_data_dir
+from annals.config import (
+    APP_NAME,
+    DFLT_SERVE_PORT,
+    ENV_DATA_DIR,
+    MAX_INLINE_TEXT_BYTES,
+    default_data_dir,
+)
 from annals.store import DOCS, TRASH, DocStore, TEXT_KINDS, kind_of
 from annals.target import check_rel
 
@@ -50,7 +62,9 @@ RAW_CACHE = "private, max-age=86400"
 # platform's cookies or call any app's API on this shared origin. Harmless for media used
 # by <img>/<video>. PDF alone is exempt: its built-in viewer refuses a sandboxed document.
 NO_SANDBOX_TYPES = frozenset({"application/pdf"})
-RAW_SANDBOX_CSP = "sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads"
+RAW_SANDBOX_CSP = (
+    "sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads"
+)
 # Types a browser would otherwise download or mis-render; served as text so a viewer can
 # show them (markdown and friends are text to a reader).
 #: thumbnail widths served; a request snaps up to the nearest, so the cache stays bounded
@@ -58,7 +72,10 @@ THUMB_WIDTHS = (160, 320, 640)
 THUMB_CACHE = "cache/thumbs"
 #: rasters Pillow can shrink; anything else (svg) is served as itself
 THUMBNAILABLE = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".avif"})
-TEXT_TYPE_OVERRIDES = {".md": "text/markdown; charset=utf-8", ".markdown": "text/markdown; charset=utf-8"}
+TEXT_TYPE_OVERRIDES = {
+    ".md": "text/markdown; charset=utf-8",
+    ".markdown": "text/markdown; charset=utf-8",
+}
 
 
 class _RevalidatingStatic(StaticFiles):
@@ -103,7 +120,9 @@ def pillow_thumbnailer(src: Path, dst: Path, width: int) -> bool:
         return True
     try:
         with warnings.catch_warnings():
-            warnings.simplefilter("ignore", Image.DecompressionBombWarning)  # the cap below decides
+            warnings.simplefilter(
+                "ignore", Image.DecompressionBombWarning
+            )  # the cap below decides
             with Image.open(src) as im:
                 im.draft("RGB", (width, width * 4))  # JPEG: decode at 1/2..1/8 scale
                 if im.width * im.height > THUMB_MAX_PIXELS:
@@ -155,7 +174,11 @@ def _with_thumb(meta: dict) -> dict:
     """
     if meta.get("kind") == "file" and meta.get("main"):
         meta["kind"] = kind_of(meta["main"])
-    files = [meta["main"]] + meta.get("files", []) if meta.get("main") else meta.get("files", [])
+    files = (
+        [meta["main"]] + meta.get("files", [])
+        if meta.get("main")
+        else meta.get("files", [])
+    )
     meta["thumb"] = next((f for f in files if kind_of(f) == "image"), None)
     return meta
 
@@ -303,9 +326,17 @@ def mk_api(
                 thumbnailer, path, cached, width, limiter=thumb_limiter
             )
             if made:
-                return FileResponse(cached, media_type="image/webp", headers={"Cache-Control": RAW_CACHE})
+                return FileResponse(
+                    cached,
+                    media_type="image/webp",
+                    headers={"Cache-Control": RAW_CACHE},
+                )
             if path.stat().st_size > THUMB_FALLBACK_MAX_BYTES:
-                return Response(_TOO_BIG_SVG, media_type="image/svg+xml", headers={"Cache-Control": RAW_CACHE})
+                return Response(
+                    _TOO_BIG_SVG,
+                    media_type="image/svg+xml",
+                    headers={"Cache-Control": RAW_CACHE},
+                )
         return raw_file(doc_id, rel)
 
     if UI_DIR.is_dir():  # never fail a host's import over a missing asset dir
@@ -314,7 +345,9 @@ def mk_api(
     return api
 
 
-def page_html(*, base: str = DFLT_BASE_PATH, api: str | None = None, title: str = APP_NAME) -> str:
+def page_html(
+    *, base: str = DFLT_BASE_PATH, api: str | None = None, title: str = APP_NAME
+) -> str:
     """The page shell: where the page lives (``base``) and where its API is (``api``).
 
     A host that serves the API under another prefix (enlace: ``/api/annals``) writes this
@@ -325,7 +358,11 @@ def page_html(*, base: str = DFLT_BASE_PATH, api: str | None = None, title: str 
     base = "/" + base.strip("/")
     api = "/" + (api or base + "/api").strip("/")
     shell = (UI_DIR / "index.html").read_text(encoding="utf-8")
-    return shell.replace("{{BASE}}", base).replace("{{API}}", api).replace("{{TITLE}}", title)
+    return (
+        shell.replace("{{BASE}}", base)
+        .replace("{{API}}", api)
+        .replace("{{TITLE}}", title)
+    )
 
 
 def _wants_html(request: Request) -> bool:
@@ -354,10 +391,23 @@ class _AuthGate:
     def _deny(self, request: Request):
         login_url = getattr(self.authorizer, "login_url", None)
         if login_url and _wants_html(request):
-            nxt = request.url.path + (f"?{request.url.query}" if request.url.query else "")
-            return RedirectResponse(f"{login_url}?login_required=1&next={quote(nxt, safe='')}", status_code=303)
-        headers = {"WWW-Authenticate": f'Basic realm="{APP_NAME}"'} if login_url is None and self.authorizer is not no_auth else {}
-        return JSONResponse({"detail": "Not authenticated", "auth": "user"}, status_code=401, headers=headers)
+            nxt = request.url.path + (
+                f"?{request.url.query}" if request.url.query else ""
+            )
+            return RedirectResponse(
+                f"{login_url}?login_required=1&next={quote(nxt, safe='')}",
+                status_code=303,
+            )
+        headers = (
+            {"WWW-Authenticate": f'Basic realm="{APP_NAME}"'}
+            if login_url is None and self.authorizer is not no_auth
+            else {}
+        )
+        return JSONResponse(
+            {"detail": "Not authenticated", "auth": "user"},
+            status_code=401,
+            headers=headers,
+        )
 
 
 def mk_app(
@@ -394,7 +444,9 @@ def mk_app(
     app.mount(base + "/api", mk_api(store=store, title=title))
     app.state.store = store
     app.state.base_path = base
-    app.add_middleware(_AuthGate, authorizer=authorizer)  # pure ASGI, never BaseHTTPMiddleware
+    app.add_middleware(
+        _AuthGate, authorizer=authorizer
+    )  # pure ASGI, never BaseHTTPMiddleware
     return app
 
 

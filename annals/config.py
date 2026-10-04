@@ -100,7 +100,11 @@ def load_settings(
         or f"http://127.0.0.1:{DFLT_SERVE_PORT}/{APP_NAME}"
     )
     configured = bool(target or os.environ.get(ENV_TARGET) or file_values.get("target"))
-    return Settings(target=resolved_target, base_url=resolved_base_url.rstrip("/"), configured=configured)
+    return Settings(
+        target=resolved_target,
+        base_url=resolved_base_url.rstrip("/"),
+        configured=configured,
+    )
 
 
 def write_config(settings: Settings, *, config_path: Path | None = None) -> Path:

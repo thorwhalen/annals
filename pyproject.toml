@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "annals"
-version = "0.0.2"
+version = "0.0.3"
 description = "Annals for AI agents: publish markdown, html, images, video, audio, PDFs and folders to a private page the owner reads on the phone, and get back a link."
 readme = "README.md"
 requires-python = ">=3.11"

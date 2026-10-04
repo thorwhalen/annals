@@ -70,7 +70,11 @@ def slugify(text: str, *, max_len: int = MAX_SLUG_LEN) -> str:
     words = re.findall(r"[A-Za-z0-9]+", text.lower())
     slug = "-".join(words)
     if len(slug) > max_len:  # cut at a word boundary, never mid-word
-        slug = slug[:max_len].rsplit("-", 1)[0] if "-" in slug[:max_len] else slug[:max_len]
+        slug = (
+            slug[:max_len].rsplit("-", 1)[0]
+            if "-" in slug[:max_len]
+            else slug[:max_len]
+        )
     return slug.strip("-") or "doc"
 
 
@@ -145,7 +149,11 @@ def _folder_summary(files: list[str]) -> str:
         counts[kind_of(f)] = counts.get(kind_of(f), 0) + 1
     plural = {"image": "images", "video": "videos", "file": "files", "pdf": "pdfs"}
     order = ["image", "video", "audio", "pdf", "html", "md", "text", "file"]
-    return ", ".join(f"{counts[k]} {plural.get(k, k) if counts[k] > 1 else k}" for k in order if k in counts)
+    return ", ".join(
+        f"{counts[k]} {plural.get(k, k) if counts[k] > 1 else k}"
+        for k in order
+        if k in counts
+    )
 
 
 def _stage(
@@ -212,8 +220,14 @@ class DocStore:
                 if missing:
                     raise FileNotFoundError(", ".join(missing))
                 main, kind, files = _stage(paths, tmp, exclude=exclude)
-            default_title = paths[0].name if kind == FOLDER and text is None else main.stem
-            title = title or _title_from_content(main, kind) or default_title.replace("_", " ")
+            default_title = (
+                paths[0].name if kind == FOLDER and text is None else main.stem
+            )
+            title = (
+                title
+                or _title_from_content(main, kind)
+                or default_title.replace("_", " ")
+            )
             sizes = {f: (tmp / f).stat().st_size for f in files}
             doc_id = mk_id(title)
             meta = {
@@ -227,7 +241,9 @@ class DocStore:
                 "created": now_iso(),
                 "size": sum(sizes.values()),
                 "sizes": sizes,
-                "excerpt": _folder_summary(files) if kind == FOLDER else _excerpt(main, kind),
+                "excerpt": _folder_summary(files)
+                if kind == FOLDER
+                else _excerpt(main, kind),
             }
             (tmp / META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
             self.target.put_tree(tmp, f"{DOCS}/{doc_id}")
@@ -238,7 +254,9 @@ class DocStore:
     def list(self, *, trash: bool = False) -> list[dict]:
         """Every document's meta, newest first (ids sort by time; ``created`` breaks ties)."""
         metas = self.target.read_metas(TRASH if trash else DOCS)
-        return sorted(metas, key=lambda m: (m.get("created", ""), m.get("id", "")), reverse=True)
+        return sorted(
+            metas, key=lambda m: (m.get("created", ""), m.get("id", "")), reverse=True
+        )
 
     def _where(self, doc_id: str) -> str:
         check_id(doc_id)
@@ -271,10 +289,17 @@ class DocStore:
 
         def haystack(m: dict) -> str:
             return " ".join(
-                [m.get("title", ""), " ".join(m.get("tags", [])), m.get("excerpt", ""), json.dumps(m.get("source", {}))]
+                [
+                    m.get("title", ""),
+                    " ".join(m.get("tags", [])),
+                    m.get("excerpt", ""),
+                    json.dumps(m.get("source", {})),
+                ]
             ).lower()
 
-        return [m for m in self.list(trash=trash) if all(w in haystack(m) for w in words)]
+        return [
+            m for m in self.list(trash=trash) if all(w in haystack(m) for w in words)
+        ]
 
     # -- the recycle bin --------------------------------------------------------------
 
@@ -285,7 +310,9 @@ class DocStore:
             self.target.move(f"{DOCS}/{doc_id}", f"{TRASH}/{doc_id}")
             meta["trashed"] = now_iso()
             meta.pop("in_trash", None)
-            self.target.write_text(f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1))
+            self.target.write_text(
+                f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1)
+            )
         meta["in_trash"] = True
         return meta
 
@@ -296,7 +323,9 @@ class DocStore:
             self.target.move(f"{TRASH}/{doc_id}", f"{DOCS}/{doc_id}")
             meta.pop("trashed", None)
             meta.pop("in_trash", None)
-            self.target.write_text(f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1))
+            self.target.write_text(
+                f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1)
+            )
         meta["in_trash"] = False
         return meta
 
@@ -309,7 +338,9 @@ class DocStore:
 
     # -- groups -----------------------------------------------------------------------
 
-    def make_group(self, title: str, doc_ids: Iterable[str], *, gid: str | None = None) -> dict:
+    def make_group(
+        self, title: str, doc_ids: Iterable[str], *, gid: str | None = None
+    ) -> dict:
         """Create (or overwrite) a group: a titled, ordered list of document ids."""
         ids = [check_id(i) for i in doc_ids]
         gid = check_id(gid) if gid else mk_id(title)
