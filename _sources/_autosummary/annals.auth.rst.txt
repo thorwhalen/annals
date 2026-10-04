@@ -1,0 +1,21 @@
+annals.auth
+===========
+
+.. automodule:: annals.auth
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      authorizer_from_env
+      no_auth
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      BasicAuth
+      CookieWhoami
+      RequestLike
+   

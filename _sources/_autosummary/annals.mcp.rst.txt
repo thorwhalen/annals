@@ -1,0 +1,12 @@
+annals.mcp
+==========
+
+.. automodule:: annals.mcp
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_server
+   

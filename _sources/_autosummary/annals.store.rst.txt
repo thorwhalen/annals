@@ -1,0 +1,28 @@
+annals.store
+============
+
+.. automodule:: annals.store
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_EXCLUDE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_id
+      kind_of
+      mk_id
+      now_iso
+      slugify
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DocStore
+   

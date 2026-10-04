@@ -5,7 +5,7 @@
 :relative-docs: ..
 ```
 
-<p class="epythet-aggregates">This documentation as a single file: <a href="intray.md">intray.md</a> (Markdown, for agents).</p>
+<p class="epythet-aggregates">This documentation as a single file: <a href="annals.md">annals.md</a> (Markdown, for agents).</p>
 
 ```{toctree}
 :maxdepth: 3

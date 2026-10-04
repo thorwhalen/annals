@@ -1,0 +1,27 @@
+annals.target
+=============
+
+.. automodule:: annals.target
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      RECORD_SEP
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_rel
+      parse_target
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      LocalTarget
+      SshTarget
+      Target
+   

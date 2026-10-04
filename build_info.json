@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-03T15:31:49Z",
+  "built_at": "2026-10-04T06:15:08Z",
   "package": {
-    "name": "intray",
-    "version": "0.0.1",
-    "display_name": "intray",
+    "name": "annals",
+    "version": "0.0.2",
+    "display_name": "annals",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "2924211ddeecc7bea24a539c04c14a29be279a55",
-    "short_commit": "2924211",
+    "commit": "b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82",
+    "short_commit": "b87d473",
     "branch": "main",
     "tags": [],
     "dirty": false,
-    "remote_url": "https://github.com/thorwhalen/tray",
-    "commit_url": "https://github.com/thorwhalen/tray/commit/2924211ddeecc7bea24a539c04c14a29be279a55",
+    "remote_url": "https://github.com/thorwhalen/annals",
+    "commit_url": "https://github.com/thorwhalen/annals/commit/b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82",
     "error": null
   },
   "ci": {
     "provider": "github",
-    "repository": "thorwhalen/tray",
-    "sha": "2924211ddeecc7bea24a539c04c14a29be279a55",
+    "repository": "thorwhalen/annals",
+    "sha": "b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "37133470929",
-    "run_url": "https://github.com/thorwhalen/tray/actions/runs/37133470929",
+    "run_id": "37182189741",
+    "run_url": "https://github.com/thorwhalen/annals/actions/runs/37182189741",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -37,8 +37,8 @@
   },
   "config": {
     "theme": "auto",
-    "html_theme": "sphinxawesome_theme",
-    "accent": "#006d3f",
+    "html_theme": "shibuya",
+    "accent": "#624496",
     "mode": "auto",
     "api_generator": "autosummary",
     "ignore": [
@@ -56,20 +56,20 @@
   },
   "site": {
     "modules_documented": 7,
-    "objects_documented": 72
+    "objects_documented": 79
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.2",
+    "latest": "0.0.3",
     "relation": "behind",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/tray && cd tray\ngit checkout 2924211ddeecc7bea24a539c04c14a29be279a55\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82\npip install \"epythet==0.2.12\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": false,
     "notes": [
-      "The documented version (0.0.1) is behind the latest release on PyPI (0.0.2): `pip install intray` gives newer code than these docs describe."
+      "The documented version (0.0.2) is behind the latest release on PyPI (0.0.3): `pip install annals` gives newer code than these docs describe."
     ]
   }
 }

@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.store - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.target" href="annals.target.html" /><link rel="prev" title="annals.mcp" href="annals.mcp.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.store"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.store.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.store.DFLT_EXCLUDE"><code class="docutils literal notranslate"><span class="pre">DFLT_EXCLUDE</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore"><code class="docutils literal notranslate"><span class="pre">DocStore</span></code></a><ul>
+<li><a class="reference internal" href="#annals.store.DocStore.add_to_group"><code class="docutils literal notranslate"><span class="pre">DocStore.add_to_group()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.group"><code class="docutils literal notranslate"><span class="pre">DocStore.group()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.list"><code class="docutils literal notranslate"><span class="pre">DocStore.list()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.list_groups"><code class="docutils literal notranslate"><span class="pre">DocStore.list_groups()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.make_group"><code class="docutils literal notranslate"><span class="pre">DocStore.make_group()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.meta"><code class="docutils literal notranslate"><span class="pre">DocStore.meta()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.publish"><code class="docutils literal notranslate"><span class="pre">DocStore.publish()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.purge"><code class="docutils literal notranslate"><span class="pre">DocStore.purge()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.read_text"><code class="docutils literal notranslate"><span class="pre">DocStore.read_text()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.restore"><code class="docutils literal notranslate"><span class="pre">DocStore.restore()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.search"><code class="docutils literal notranslate"><span class="pre">DocStore.search()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.trash"><code class="docutils literal notranslate"><span class="pre">DocStore.trash()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.store.check_id"><code class="docutils literal notranslate"><span class="pre">check_id()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.kind_of"><code class="docutils literal notranslate"><span class="pre">kind_of()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.mk_id"><code class="docutils literal notranslate"><span class="pre">mk_id()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.now_iso"><code class="docutils literal notranslate"><span class="pre">now_iso()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.slugify"><code class="docutils literal notranslate"><span class="pre">slugify()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.store</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.store">
+<span id="annals-store"></span><h1>annals.store<a class="headerlink" href="#module-annals.store" title="Link to this heading">#</a></h1>
+<p>The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.</p>
+<p>Layout under the data root (local or remote, see <a class="reference internal" href="annals.target.html#module-annals.target" title="annals.target"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.target</span></code></a>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">docs</span><span class="o">/&lt;</span><span class="nb">id</span><span class="o">&gt;/</span><span class="n">meta</span><span class="o">.</span><span class="n">json</span>         <span class="n">one</span> <span class="n">document</span><span class="p">:</span> <span class="n">metadata</span>
+</span><span data-line="2"><span class="n">docs</span><span class="o">/&lt;</span><span class="nb">id</span><span class="o">&gt;/&lt;</span><span class="n">main</span> <span class="n">file</span><span class="o">&gt;</span>       <span class="n">its</span> <span class="n">content</span> <span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">html</span><span class="p">,</span> <span class="n">report</span><span class="o">.</span><span class="n">md</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">plus</span> <span class="nb">any</span> <span class="n">assets</span>
+</span><span data-line="3"><span class="n">trash</span><span class="o">/&lt;</span><span class="nb">id</span><span class="o">&gt;/...</span>              <span class="n">the</span> <span class="n">same</span> <span class="n">shape</span><span class="p">;</span> <span class="n">the</span> <span class="n">recycle</span> <span class="nb">bin</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">move</span>
+</span><span data-line="4"><span class="n">groups</span><span class="o">/&lt;</span><span class="n">gid</span><span class="o">&gt;.</span><span class="n">json</span>           <span class="n">a</span> <span class="n">named</span><span class="p">,</span> <span class="n">ordered</span> <span class="nb">list</span> <span class="n">of</span> <span class="n">document</span> <span class="n">ids</span> <span class="k">with</span> <span class="n">its</span> <span class="n">own</span> <span class="n">URL</span>
+</span></pre></div>
+</div>
+<p>Flat on purpose: agents from many corpora do not share a hierarchy, and every placement
+decision costs tokens. Tags and groups carry the structure. Ids are time-sortable and
+readable (<code class="docutils literal notranslate"><span class="pre">20261003-203301-starwars-theme-report-3f9a</span></code>), so a listing is already in
+publication order and a URL says what it points to.</p>
+<p>Plain files, written whole, because the same tree is written by rsync from another machine
+and read by the server; there is no index to keep consistent.</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.DFLT_EXCLUDE" title="annals.store.DFLT_EXCLUDE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_EXCLUDE</span></code></a></p></td>
+<td><p>hidden files, caches, compiled python</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.check_id" title="annals.store.check_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_id</span></code></a>(doc_id)</p></td>
+<td><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on an id that could not have come from <a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">mk_id()</span></code></a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.kind_of" title="annals.store.kind_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of</span></code></a>(filename)</p></td>
+<td><p>The rendering kind of a file, from its extension.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_id</span></code></a>(title, *[, when])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">YYYYMMDD-HHMMSS-&lt;slug&gt;-&lt;4</span> <span class="pre">hex&gt;</span></code>: sortable by time, readable in a URL.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
+<td><p>UTC timestamp with second precision, the format every meta.json uses.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
+<td><p>Lowercase ascii words joined by hyphens; empty input becomes <code class="docutils literal notranslate"><span class="pre">doc</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.DocStore" title="annals.store.DocStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DocStore</span></code></a>(target)</p></td>
+<td><p>Publish, list, read, trash, restore and group documents on a <code class="xref py py-class docutils literal notranslate"><span class="pre">Target</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.store.DFLT_EXCLUDE">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">DFLT_EXCLUDE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('.*',</span> <span class="pre">'__pycache__',</span> <span class="pre">'*.pyc',</span> <span class="pre">'*.pyo')</span></span><a class="headerlink" href="#annals.store.DFLT_EXCLUDE" title="Link to this definition">#</a></dt>
+<dd><p>hidden files, caches, compiled python</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>names never published from a directory</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.store.DocStore">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">DocStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Publish, list, read, trash, restore and group documents on a <code class="xref py py-class docutils literal notranslate"><span class="pre">Target</span></code>.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.add_to_group">
+<span class="sig-name descname"><span class="pre">add_to_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.add_to_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.add_to_group" title="Link to this definition">#</a></dt>
+<dd><p>Append ids to an existing group, keeping order and skipping duplicates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.group">
+<span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.group" title="Link to this definition">#</a></dt>
+<dd><p>One group, by id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.list">
+<span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.list" title="Link to this definition">#</a></dt>
+<dd><p>Every document’s meta, newest first (ids sort by time; <code class="docutils literal notranslate"><span class="pre">created</span></code> breaks ties).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.store.DocStore.list" title="annals.store.DocStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.list_groups">
+<span class="sig-name descname"><span class="pre">list_groups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.list_groups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.list_groups" title="Link to this definition">#</a></dt>
+<dd><p>Every group, newest first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.store.DocStore.list" title="annals.store.DocStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.make_group">
+<span class="sig-name descname"><span class="pre">make_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">gid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.make_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.make_group" title="Link to this definition">#</a></dt>
+<dd><p>Create (or overwrite) a group: a titled, ordered list of document ids.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.meta" title="Link to this definition">#</a></dt>
+<dd><p>One document’s meta; <code class="docutils literal notranslate"><span class="pre">in_trash</span></code> says which side of the bin it is on.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.publish">
+<span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'document.md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('.*',</span> <span class="pre">'__pycache__',</span> <span class="pre">'*.pyc',</span> <span class="pre">'*.pyo')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.publish" title="Link to this definition">#</a></dt>
+<dd><p>Publish files (or a directory, or <code class="docutils literal notranslate"><span class="pre">text</span></code>) as ONE document; return its meta.</p>
+<p>One markdown or html file is the common case. A directory is published whole, with
+<code class="docutils literal notranslate"><span class="pre">index.html</span></code> (or the first renderable file) as the page shown. <code class="docutils literal notranslate"><span class="pre">text</span></code> publishes a
+string as <code class="docutils literal notranslate"><span class="pre">filename</span></code> instead of reading sources. <code class="docutils literal notranslate"><span class="pre">exclude</span></code> lists glob patterns
+skipped inside a directory (hidden files and caches by default; <code class="docutils literal notranslate"><span class="pre">()</span></code> keeps all).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.purge">
+<span class="sig-name descname"><span class="pre">purge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.purge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.purge" title="Link to this definition">#</a></dt>
+<dd><p>Delete a document that is in the bin. Refuses one that is not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.14)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.read_text">
+<span class="sig-name descname"><span class="pre">read_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.read_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.read_text" title="Link to this definition">#</a></dt>
+<dd><p>A document’s main file (or one of its files) as text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.restore">
+<span class="sig-name descname"><span class="pre">restore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.restore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.restore" title="Link to this definition">#</a></dt>
+<dd><p>Move a document out of the bin (idempotent).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.search">
+<span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.search" title="Link to this definition">#</a></dt>
+<dd><p>Case-insensitive match of every query word against title, tags, excerpt, source.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.store.DocStore.list" title="annals.store.DocStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.trash">
+<span class="sig-name descname"><span class="pre">trash</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.trash"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.trash" title="Link to this definition">#</a></dt>
+<dd><p>Move a document into the bin (idempotent).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.check_id">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">check_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#check_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.check_id" title="Link to this definition">#</a></dt>
+<dd><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on an id that could not have come from <a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">mk_id()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.kind_of">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">kind_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#kind_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.kind_of" title="Link to this definition">#</a></dt>
+<dd><p>The rendering kind of a file, from its extension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.mk_id">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">mk_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">when</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#mk_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.mk_id" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">YYYYMMDD-HHMMSS-&lt;slug&gt;-&lt;4</span> <span class="pre">hex&gt;</span></code>: sortable by time, readable in a URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.now_iso">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">now_iso</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#now_iso"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.now_iso" title="Link to this definition">#</a></dt>
+<dd><p>UTC timestamp with second precision, the format every meta.json uses.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.slugify">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">slugify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#slugify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.slugify" title="Link to this definition">#</a></dt>
+<dd><p>Lowercase ascii words joined by hyphens; empty input becomes <code class="docutils literal notranslate"><span class="pre">doc</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.mcp.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.mcp</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.target.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.target</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=e3a6060d"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

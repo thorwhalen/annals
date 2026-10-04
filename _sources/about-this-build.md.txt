@@ -5,32 +5,32 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-10-03 15:31 UTC** from commit <a href="https://github.com/thorwhalen/tray/commit/2924211ddeecc7bea24a539c04c14a29be279a55"><code>2924211</code></a> on branch <code>main</code>, for **intray 0.0.1** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-04 06:15 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82"><code>b87d473</code></a> on branch <code>main</code>, for **annals 0.0.2** (from <code>pyproject.toml</code>).
 
 :::{warning}
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.1) is behind the latest release on PyPI (0.0.2): `pip install intray` gives newer code than these docs describe.
+- The documented version (0.0.2) is behind the latest release on PyPI (0.0.3): `pip install annals` gives newer code than these docs describe.
 :::
 
 ## Source
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/tray/commit/2924211ddeecc7bea24a539c04c14a29be279a55"><code>2924211ddeecc7bea24a539c04c14a29be279a55</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/annals/commit/b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82"><code>b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
-| Remote | <code>https://github.com/thorwhalen/tray</code> |
+| Remote | <code>https://github.com/thorwhalen/annals</code> |
 
 ## Continuous integration
 
 | | |
 |---|---|
-| Repository | <code>thorwhalen/tray</code> |
-| Run | <a href="https://github.com/thorwhalen/tray/actions/runs/37133470929">37133470929</a> |
+| Repository | <code>thorwhalen/annals</code> |
+| Run | <a href="https://github.com/thorwhalen/annals/actions/runs/37182189741">37182189741</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>2924211ddeecc7bea24a539c04c14a29be279a55</code> (in the history of the built commit) |
+| Event commit | <code>b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -45,8 +45,8 @@ The documentation and the package may be misaligned:
 
 | | |
 |---|---|
-| theme | <code>auto</code> (Sphinx theme <code>sphinxawesome&#95;theme</code>) |
-| accent | <code>#006d3f</code> |
+| theme | <code>auto</code> (Sphinx theme <code>shibuya</code>) |
+| accent | <code>#624496</code> |
 | api_generator | <code>autosummary</code> |
 | ignore | <code>tests/</code>, <code>scrap/</code>, <code>examples/</code> |
 | agent_outputs | <code>true</code> |
@@ -55,13 +55,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/intray/0.0.2/">0.0.2</a>, newer than the documented version (0.0.1).
+Latest release: <a href="https://pypi.org/project/annals/0.0.3/">0.0.3</a>, newer than the documented version (0.0.2).
 
 ## Reproduce
 
 ```bash
-git clone https://github.com/thorwhalen/tray && cd tray
-git checkout 2924211ddeecc7bea24a539c04c14a29be279a55
+git clone https://github.com/thorwhalen/annals && cd annals
+git checkout b87d473b9bb1fa35ae37cd189e7eb2d27c0c0b82
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

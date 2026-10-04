@@ -1,0 +1,21 @@
+annals.tools
+============
+
+.. automodule:: annals.tools
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      configure
+      group
+      groups
+      ls
+      page_shell
+      publish
+      restore
+      serve
+      show
+      trash
+   

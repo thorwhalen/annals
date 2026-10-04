@@ -2,7 +2,7 @@
 
 # For AI agents
 
-`intray` ships artifacts for coding agents alongside its code. This page lists
+`annals` ships artifacts for coding agents alongside its code. This page lists
 them, says where each lives in the repository, and points at the
 machine-readable copies of this documentation.
 
@@ -11,24 +11,24 @@ machine-readable copies of this documentation.
 
 Skills are folders holding a `SKILL.md` (the [Agent Skills](https://agentskills.io) format): a description that tells an agent when to use it and a body with the procedure. Install one into your agent with `gh skill` (any host: `--agent claude-code`, `copilot`, `cursor`, `codex`, `gemini`), or use the copy bundled in the wheel.
 
-### `tray-publish`
+### `annals-publish`
 
-Publish a markdown or html document (a report, an analysis, a rendered artifact, a page) to the owner's private tray and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to "publish this", "post it to my tray", "put it where I can read it on my phone", "give me a link to that report", "share the page with me", or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers grouping several documents under one link, listing what is in the tray, and moving a document to the recycle bin.
+Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner's private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to "publish this", "post it to my annals", "put it where I can read it on my phone", "give me a link to that report", "show me the images", "where can I see the renders", "share the page with me", or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.
 
 ```bash
-gh skill install thorwhalen/tray tray-publish --agent claude-code
+gh skill install thorwhalen/annals annals-publish --agent claude-code
 ```
 
-Source: [`intray/data/skills/tray-publish`](https://github.com/thorwhalen/tray/tree/HEAD/intray/data/skills/tray-publish) (bundled with the pip package).
+Source: [`annals/data/skills/annals-publish`](https://github.com/thorwhalen/annals/tree/HEAD/annals/data/skills/annals-publish) (bundled with the pip package).
 
-The bundled skills are also on disk after `pip install intray`, under the package's `data/skills/` directory; link them into an agent without network access with `skill link-skills <that directory>`.
+The bundled skills are also on disk after `pip install annals`, under the package's `data/skills/` directory; link them into an agent without network access with `skill link-skills <that directory>`.
 
 
 ## Machine-readable documentation
 
 This site publishes the same documentation in forms that fit an agent's context window:
 
-- [`llms.txt`](https://thorwhalen.github.io/tray/llms.txt): an index of every page with a one-line description ([llms.txt](https://llmstxt.org) format)
-- [`intray.md`](https://thorwhalen.github.io/tray/intray.md): the whole documentation as one Markdown file
+- [`llms.txt`](https://thorwhalen.github.io/annals/llms.txt): an index of every page with a one-line description ([llms.txt](https://llmstxt.org) format)
+- [`annals.md`](https://thorwhalen.github.io/annals/annals.md): the whole documentation as one Markdown file
 - `<page>.html.md`: a rendered Markdown twin of every page, advertised from each page's `<head>` with `<link rel="alternate" type="text/markdown">`
-- [`objects.inv`](https://thorwhalen.github.io/tray/objects.inv): the Sphinx inventory: a symbol-to-URL index (`sphobjinv convert plain objects.inv -`)
+- [`objects.inv`](https://thorwhalen.github.io/annals/objects.inv): the Sphinx inventory: a symbol-to-URL index (`sphobjinv convert plain objects.inv -`)
