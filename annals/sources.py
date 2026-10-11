@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import fnmatch
 import os
+import re
 import threading
 from collections.abc import Callable, Iterator, Mapping
 from datetime import datetime, timezone
@@ -41,6 +42,21 @@ from annals.store import (
 
 PUBLISHED = "published"
 KEY_SEP = ":"
+#: a source name is a url segment and part of every item key
+SOURCE_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,63}$")
+#: names the page uses for its own routes (``/all``, ``/trash``) or the published documents
+RESERVED_SOURCE_NAMES = frozenset({PUBLISHED, "all", "trash"})
+
+
+def check_source_name(name: str) -> str:
+    """``name`` if it can name an extra source; ``ValueError`` saying why not otherwise."""
+    if not SOURCE_NAME_RE.match(name):
+        raise ValueError(
+            f"a source name is lowercase letters, digits, - and _: {name!r}"
+        )
+    if name in RESERVED_SOURCE_NAMES:
+        raise ValueError(f"{name!r} is reserved; pick another source name")
+    return name
 
 
 class Source(Protocol):
@@ -107,13 +123,14 @@ def list_meta(meta: dict) -> dict:
 
 
 class PublishedSource:
-    """The documents agents published, as rows (a view over a :class:`DocStore`)."""
+    """The documents agents published, as rows (a view over a :class:`DocStore`).
 
-    def __init__(
-        self, store: DocStore, *, name: str = PUBLISHED, title: str = "Published"
-    ):
+    Always named ``published``: the page links its items to ``/d/<id>``.
+    """
+
+    def __init__(self, store: DocStore, *, title: str = "Published"):
         self.store = store
-        self.name = name
+        self.name = PUBLISHED
         self.title = title
         self._texts: dict[
             str, str
@@ -125,6 +142,7 @@ class PublishedSource:
             key=mk_key(self.name, meta["id"]),
             source=self.name,
             session=(meta.get("source") or {}).get("session", ""),
+            host=(meta.get("source") or {}).get("host", ""),
             time=meta.get("created", ""),
             tags=list(meta.get("tags") or []),
         )
@@ -190,8 +208,7 @@ class FolderSource(Mapping):
         exclude: Iterable[str] = DFLT_EXCLUDE,
         session_of: Callable[[str], str] = top_level_name,
     ):
-        if KEY_SEP in name:
-            raise ValueError(f"a source name cannot contain {KEY_SEP!r}: {name!r}")
+        check_source_name(name)
         self.root = Path(root).expanduser()
         self.name = name
         self.title = title or name.replace("-", " ").replace("_", " ").capitalize()
@@ -207,25 +224,38 @@ class FolderSource(Mapping):
         return any(fnmatch.fnmatch(name, pat) for pat in self.exclude)
 
     def _walk(self, rel_dir: str = "") -> Iterator[tuple[str, os.DirEntry]]:
-        """``(rel, entry)`` for every file kept, sorted; symlinks only when they stay inside."""
+        """``(rel, entry)`` for every file kept, sorted.
+
+        Sub-folders are walked, but a symlinked folder never is (a link to ``.`` would
+        loop); a symlinked file is kept only when its target is itself a file :meth:`file_path`
+        would serve (inside the root, not hidden).
+        """
         try:
             with os.scandir(os.path.join(self.root, rel_dir)) as it:
                 entries = sorted(it, key=lambda e: e.name)
-        except (FileNotFoundError, NotADirectoryError, PermissionError):
+        except OSError:
             return
         for e in entries:
             if self._skip(e.name):
                 continue
             rel = f"{rel_dir}/{e.name}" if rel_dir else e.name
-            if e.is_symlink() and not self._inside(Path(e.path).resolve()):
+            try:
+                if e.is_symlink():
+                    self.file_path(rel)  # KeyError unless the target is servable
+                    yield rel, e
+                elif e.is_dir():
+                    yield from self._walk(rel)
+                elif e.is_file():
+                    yield rel, e
+            except (KeyError, OSError):
                 continue
-            if e.is_dir():
-                yield from self._walk(rel)
-            elif e.is_file():
-                yield rel, e
 
     def _inside(self, path: Path) -> bool:
-        return path.is_relative_to(self.root.resolve())
+        """Inside the root, and not hidden there (the resolved path, so a link cannot dodge)."""
+        root = self.root.resolve()
+        if not path.is_relative_to(root):
+            return False
+        return not any(self._skip(part) for part in path.relative_to(root).parts)
 
     def __iter__(self) -> Iterator[str]:
         return (rel for rel, _ in self._walk())
@@ -275,17 +305,26 @@ class FolderSource(Mapping):
     # -- the Source protocol -------------------------------------------------------
 
     def file_path(self, rel: str) -> Path:
-        """The file on disk; ``KeyError`` if it is absent, hidden, or escapes the root."""
+        """The file on disk; ``KeyError`` if it is absent, hidden, or escapes the root.
+
+        Only the canonical spelling of a path is accepted (``a/b.md``, not ``./a/b.md``,
+        ``a//b.md`` or ``a/b.md/``), so one file has one key.
+        """
         p = PurePosixPath(rel)
         if (
             not rel
+            or "\x00" in rel
+            or str(p) != rel
             or p.is_absolute()
             or ".." in p.parts
             or any(self._skip(s) for s in p.parts)
         ):
             raise KeyError(rel)
-        path = (self.root / rel).resolve()
-        if not self._inside(path) or not path.is_file():
+        try:
+            path = (self.root / rel).resolve()
+            if not self._inside(path) or not path.is_file():
+                raise KeyError(rel)
+        except (OSError, ValueError):
             raise KeyError(rel)
         return path
 

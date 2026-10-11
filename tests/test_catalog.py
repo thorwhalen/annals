@@ -314,3 +314,68 @@ def _tag_many(path, worker):
     store = JsonTagStore(path)
     for i in range(25):
         store[f"w{worker}:{i}"] = ["t"]
+
+
+# -- regressions from the adversarial review ---------------------------------------------
+
+
+def test_folder_source_survives_symlink_loops_and_hides_hidden_targets(ledgers, client):
+    os.symlink(".", ledgers / "loop")
+    (ledgers / ".secret").write_text("TOPSECRET")
+    os.symlink(".secret", ledgers / "peek.md")
+    os.symlink("new.md", ledgers / "alias.md")  # a plain in-folder link is fine
+    src = FolderSource(ledgers, name="ledgers")
+    ids = {r["id"] for r in src.rows()}
+    assert (
+        "alias.md" in ids
+        and "peek.md" not in ids
+        and not any(i.startswith("loop") for i in ids)
+    )
+    assert client.get("/items").status_code == 200
+    assert client.get("/files/ledgers/peek.md").status_code == 404
+    assert client.get("/items", params={"q": "TOPSECRET"}).json()["total"] == 0
+
+
+def test_one_file_one_key(client):
+    for key in [
+        "ledgers:./new.md",
+        "ledgers:team//plan.md",
+        "ledgers:new.md/",
+        "ledgers:a%00.md",
+    ]:
+        assert client.patch(f"/items/{key}", json={"tags": ["x"]}).status_code == 404
+        assert client.get(f"/items/{key}").status_code == 404
+    assert client.get("/files/ledgers/a%00.md").status_code == 404
+    assert client.get("/tags").json()["tags"] == {"q3": 1}
+
+
+def test_a_damaged_tag_file_never_breaks_the_page(client, tmp_path):
+    path = tmp_path / "data" / "tags" / "tags.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("{not json")
+    assert (
+        client.get("/docs").status_code == 200
+        and client.get("/items").status_code == 200
+    )
+    assert client.patch("/items/ledgers:new.md", json={"tags": ["ok"]}).json()[
+        "tags"
+    ] == ["ok"]
+    assert (path.parent / "tags.json.damaged").read_text() == "{not json"
+    path.write_text(json.dumps({"ledgers:new.md": "abc", "ledgers:old.md": ["fine"]}))
+    rows = {r["key"]: r for r in client.get("/items").json()["data"]}
+    assert rows["ledgers:new.md"]["tags"] == [] and rows["ledgers:old.md"]["tags"] == [
+        "fine"
+    ]
+
+
+def test_source_names_are_url_safe_and_not_reserved(store, ledgers):
+    for bad in ["all", "trash", "published", "a/b", "A", "x:y", ""]:
+        with pytest.raises(ValueError):
+            mk_api(store=store, sources={bad: ledgers})
+
+
+def test_published_rows_keep_the_host(store, ledgers):
+    store.publish(text="# h", title="H", source={"session": "s", "host": "box"})
+    c = TestClient(mk_api(store=store, sources={"ledgers": ledgers}))
+    row = next(r for r in c.get("/items").json()["data"] if r["title"] == "H")
+    assert row["session"] == "s" and row["host"] == "box"

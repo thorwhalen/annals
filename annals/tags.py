@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import contextlib
 import json
+import logging
 import os
 import re
 import tempfile
@@ -26,6 +27,8 @@ try:  # POSIX: writers in several processes (a server's workers) take turns
     import fcntl
 except ImportError:  # pragma: no cover - Windows: one process, the thread lock suffices
     fcntl = None
+
+log = logging.getLogger(__name__)
 
 TAGS_DIR = "tags"
 TAGS_FILE = "tags.json"
@@ -69,6 +72,7 @@ class JsonTagStore(MutableMapping):
         self.path = Path(path).expanduser()
         self._data: dict[str, list[str]] = {}
         self._stamp: tuple | None = None
+        self._damaged = False
         self._lock = threading.Lock()
 
     @contextlib.contextmanager
@@ -94,13 +98,52 @@ class JsonTagStore(MutableMapping):
             return self._data
         stamp = (st.st_ino, st.st_mtime_ns, st.st_size)
         if force or stamp != self._stamp:
-            data = json.loads(self.path.read_text(encoding="utf-8") or "{}")
-            self._data = {str(k): list(v) for k, v in data.items()}
+            self._data = self._parse(
+                self.path.read_text(encoding="utf-8", errors="replace")
+            )
             self._stamp = stamp
         return self._data
 
+    def _parse(self, text: str) -> dict[str, list[str]]:
+        """The file's entries; a damaged file or entry is logged and skipped, never fatal.
+
+        A file that is not a JSON object is kept aside (``tags.json.damaged``) at the next
+        write, so a hand edit gone wrong can still be recovered.
+        """
+        self._damaged = False
+        try:
+            data = json.loads(text or "{}")
+        except json.JSONDecodeError as e:
+            log.warning(
+                "annals tags: %s is not valid JSON (%s); reading it as empty",
+                self.path,
+                e,
+            )
+            self._damaged = True
+            return {}
+        if not isinstance(data, dict):
+            log.warning(
+                "annals tags: %s is not a JSON object; reading it as empty", self.path
+            )
+            self._damaged = True
+            return {}
+        out = {}
+        for k, v in data.items():
+            if isinstance(v, list) and all(isinstance(t, str) for t in v):
+                out[str(k)] = list(v)
+            else:
+                log.warning(
+                    "annals tags: skipping %r in %s: not a list of strings",
+                    k,
+                    self.path,
+                )
+        return out
+
     def _save(self, data: dict[str, list[str]]) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        if self._damaged and self.path.exists():
+            os.replace(self.path, self.path.with_name(self.path.name + ".damaged"))
+            self._damaged = False
         fd, tmp = tempfile.mkstemp(dir=self.path.parent, suffix=".tmp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:

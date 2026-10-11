@@ -21,8 +21,22 @@ import re
 from collections import Counter
 from collections.abc import Mapping, MutableMapping
 
-from annals.sources import Source, mk_key, split_key
-from annals.tags import normalize_tags
+import os
+from pathlib import Path
+
+from annals.config import ENV_SOURCES
+from annals.sources import (
+    PUBLISHED,
+    PublishedSource,
+    Source,
+    as_source,
+    check_source_name,
+    mk_key,
+    parse_sources_spec,
+    split_key,
+)
+from annals.store import DocStore
+from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore, normalize_tags
 
 SNIPPET_CHARS = 90
 
@@ -126,3 +140,27 @@ class Catalog:
         """Every tag in use on a listed item, with how many items carry it."""
         counts = Counter(t for r in self.rows() for t in r.get("tags", []))
         return dict(sorted(counts.items(), key=lambda kv: kv[0].lower()))
+
+
+def mk_catalog(
+    store: DocStore,
+    *,
+    sources: Mapping[str, Source | Path | str] | None = None,
+    tags: MutableMapping[str, list[str]] | None = None,
+) -> Catalog:
+    """The published documents first, then the extra sources; the owner's tags beside them.
+
+    ``sources`` maps a name to a folder path (read in place) or a :class:`Source`; by
+    default the folders named in ``ANNALS_SOURCES``. ``tags`` defaults to one JSON file
+    under the data root (``tags/tags.json``), or a dict when the data root is remote.
+    The API, and any CLI or agent tool that tags items, build their catalog here.
+    """
+    if sources is None:
+        sources = parse_sources_spec(os.environ.get(ENV_SOURCES, ""))
+    if tags is None:
+        root = store.target.local_path(".")
+        tags = JsonTagStore(root / TAGS_DIR / TAGS_FILE) if root is not None else {}
+    named: dict[str, Source] = {PUBLISHED: PublishedSource(store)}
+    for name, spec in sources.items():
+        named[check_source_name(name)] = as_source(name, spec)
+    return Catalog(named, tags=tags)

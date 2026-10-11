@@ -54,7 +54,7 @@ from annals.config import (
     MAX_INLINE_TEXT_BYTES,
     default_data_dir,
 )
-from annals.catalog import Catalog
+from annals.catalog import Catalog, mk_catalog
 from annals.sources import (
     PUBLISHED,
     PublishedSource,
@@ -200,7 +200,7 @@ def mk_api(
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     if thumbnailer is True:
         thumbnailer = _default_thumbnailer()
-    catalog = _mk_catalog(store, sources=sources, tags=tags)
+    catalog = mk_catalog(store, sources=sources, tags=tags)
     api = FastAPI(title=f"{title} api", docs_url=None, redoc_url=None, openapi_url=None)
     # No swagger: its /docs route would shadow ours.
 
@@ -404,25 +404,6 @@ def mk_api(
     api.state.store = store
     api.state.catalog = catalog
     return api
-
-
-def _mk_catalog(
-    store: DocStore,
-    *,
-    sources: Mapping[str, Source | Path | str] | None,
-    tags: MutableMapping[str, list[str]] | None,
-) -> Catalog:
-    """The published documents first, then the extra sources; tags beside the documents."""
-    if sources is None:
-        sources = parse_sources_spec(os.environ.get(ENV_SOURCES, ""))
-    if PUBLISHED in sources:
-        raise ValueError(f"{PUBLISHED!r} is the published documents' source name")
-    if tags is None:
-        root = store.target.local_path(".")
-        tags = JsonTagStore(root / TAGS_DIR / TAGS_FILE) if root is not None else {}
-    named = {PUBLISHED: PublishedSource(store)}
-    named.update({name: as_source(name, spec) for name, spec in sources.items()})
-    return Catalog(named, tags=tags)
 
 
 def _item_or_404(catalog: Catalog, key: str) -> dict:

@@ -61,6 +61,9 @@
   /* Going somewhere is a new history entry; refining the current view replaces it. */
   function go(path, replace) {
     if (path === location.pathname + location.search) return route();
+    /* Back to a list returns to the same place in it: remember the scroll and how many
+       rows were shown on the entry being left */
+    if (!replace) history.replaceState(Object.assign({}, history.state, { scrollY: window.scrollY, shown: listShown }), "");
     history[replace ? "replaceState" : "pushState"]({ from: location.pathname + location.search }, "", path);
     route();
   }
@@ -197,7 +200,7 @@
 
   /* -------- layout -------------------------------------------------------------- */
   function page(title, nav, body) {
-    app.innerHTML = "";
+    app.innerHTML = ""; listShown = 0;
     document.title = title ? title + " · " + NAME : NAME;
     var wrap = h("div", { class: "wrap" });
     wrap.appendChild(h("header", { class: "bar" }, [h("div", { class: "row" }, [
@@ -228,7 +231,7 @@
       opts.showSource && isRow ? h("span", { class: "src" }, [sourceTitle(m.source)]) : null,
       kindBadge(m.kind),
       t ? ageEl(t) : null,
-      isRow ? (m.session ? h("span", null, [m.session]) : null) : (sourceText(m.source) ? h("span", null, [sourceText(m.source)]) : null),
+      (isRow ? sourceText({ session: m.session, host: m.host }) : sourceText(m.source)) ? h("span", null, [isRow ? sourceText({ session: m.session, host: m.host }) : sourceText(m.source)]) : null,
       m.size ? h("span", null, [size(m.size)]) : null,
       m.n_files > 1 ? h("span", null, [m.n_files + " files"]) : null
     ].concat((m.tags || []).map(function (t) { return h("span", { class: "tag" }, [t]); })));
@@ -301,13 +304,16 @@
   function readPref(k, d) { try { return localStorage.getItem(NAME + ":" + k) || d; } catch (e) { return d; } }
   function writePref(k, v) { try { localStorage.setItem(NAME + ":" + k, v); } catch (e) { /* private mode */ } }
   var lastList = null;   /* {sig, rows, groups, at}: what the last list fetched */
+  var listShown = 0;     /* how many rows the open list shows (0: no list open) */
 
   /* scope: a source name, "all", or "trash" (the published documents' bin) */
   function listView(scope) {
     var trash = scope === "trash", source = trash ? "published" : scope === "all" ? "" : scope;
     var fams = FAMILIES.filter(function (f) { return !f.allOnly || scope === "all"; });
     var params = new URLSearchParams(location.search);
-    var state = { q: params.get("q") || "", sort: readPref("sort", "newest"), open: null, shown: LIST_PAGE, showAll: {} };
+    var back = history.state || {};
+    var state = { q: params.get("q") || "", sort: readPref("sort", "newest"), open: null, shown: Math.max(LIST_PAGE, back.shown || 0), showAll: {} };
+    var restoreY = back.scrollY || 0;
     var sel = {};
     fams.forEach(function (f) { sel[f.key] = params.getAll(f.key); });
     var rows = [], groups = [], loading = true, failed = null;
@@ -326,7 +332,7 @@
       return location.pathname + (qs ? "?" + qs : "");
     }
     /* each filter change is one history entry, so Back undoes it */
-    function commit() { var u = urlFor(); if (u !== location.pathname + location.search) history.pushState({ list: true }, "", u); state.shown = LIST_PAGE; render(); }
+    function commit() { var u = urlFor(); if (u !== location.pathname + location.search) history.pushState({ list: true }, "", u); state.shown = LIST_PAGE; restoreY = 0; render(); }
     function toggle(f, v) {
       var i = sel[f.key].indexOf(v);
       if (i >= 0) sel[f.key].splice(i, 1); else sel[f.key].push(v);
@@ -415,9 +421,11 @@
       if (state.sort === "newest" || state.sort === "oldest") gs.forEach(function (g) { listEl.appendChild(groupCard(g)); });
       shown.slice(0, state.shown).forEach(function (r) { listEl.appendChild(trash ? card(r, trashActions(r)) : card(r, null, { showSource: scope === "all" })); });
       if (shown.length > state.shown) {
-        listEl.appendChild(h("button", { class: "btn more", onclick: function () { state.shown += LIST_PAGE; render(); } },
+        listEl.appendChild(h("button", { class: "btn more", onclick: function () { state.shown += LIST_PAGE; listShown = state.shown; render(); } },
           ["Show " + Math.min(LIST_PAGE, shown.length - state.shown) + " more of " + (shown.length - state.shown)]));
       }
+      listShown = state.shown;
+      if (restoreY) { window.scrollTo(0, restoreY); restoreY = 0; }
     }
     /* "no results" always names the way back */
     function emptyState() {
@@ -688,7 +696,7 @@
         h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"]),
         rel ? null : (m.in_trash
           ? h("button", { class: "btn", onclick: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }, ["Restore"])
-          : h("button", { class: "btn danger", onclick: function () { api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); go(BASE + "/"); }); } }, ["Move to bin"]))
+          : h("button", { class: "btn danger", onclick: function () { api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); } }, ["Move to bin"]))
       ]));
       var meta = h("div", { class: "meta" }, [
         kindBadge(m.kind), h("span", { title: when(m.created) }, [age(m.created)]), m.size ? h("span", null, [size(m.size)]) : null,
