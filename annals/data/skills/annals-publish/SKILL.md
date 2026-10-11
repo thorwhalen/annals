@@ -58,6 +58,19 @@ annals group "Title" <id> <id> ...   # one link for existing documents
 annals configure             # show where documents go and what link is printed
 ```
 
+## A second place to publish (named targets)
+
+The default target is the owner's own annals. A config file can also name other places, each its own table (`annals configure --to inoocq --target <dir-or-host:/path> --base-url https://.../annals` writes one). Opt in per command and nothing else changes:
+
+```bash
+annals publish report.md --to inoocq --session <name>   # lands in the "inoocq" annals; prints ITS link
+annals ls --to inoocq                                   # list it
+annals copy <link-or-id> --to inoocq                    # copy a document or a whole group (ids are kept)
+annals copy <link-or-id> --to inoocq --source other     # read from a named target instead of the default
+```
+
+Without `--to` documents go to the default target, as always. Use `--to <name>` only when you were told to (for example: material meant for the whole inoocq team goes `--to inoocq`, private notes do not). `copy` reads the documents from a place this machine can read (a directory or `ssh`), so it works where the documents live, not from a machine that only has the link. An unknown name is an error that lists the known ones.
+
 ## Where it goes
 
 `annals configure` shows the target (a local directory, or `host:/path` over ssh) and the base URL. If the target is remote, publishing needs a working `ssh <host>` with keys (no prompt). If `annals publish` fails with an ssh error, say so and give the user the file path instead; do not retry in a loop.

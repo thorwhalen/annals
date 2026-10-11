@@ -163,7 +163,7 @@
   var knownSources = [{ name: "published", title: "Published" }];
   function sourceTitle(name) { var s = knownSources.filter(function (x) { return x.name === name; })[0]; return s ? s.title : name; }
 
-  function safeHtml(html) { return window.DOMPurify.sanitize(html, { ADD_ATTR: ["target"] }); }
+  function safeHtml(html) { return window.DOMPurify.sanitize(html, { ADD_ATTR: ["target"], FORBID_TAGS: ["style", "form", "input", "button", "textarea", "select"], FORBID_ATTR: ["style"] }); }
   function decode(s) { try { return decodeURIComponent(s); } catch (e) { return s; } }
 
   /* -------- media: reserved box, distinct loading / slow / failed states ------------ */
