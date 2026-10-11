@@ -36,8 +36,11 @@
 
    api
    auth
+   catalog
    config
    mcp
+   sources
    store
+   tags
    target
    tools

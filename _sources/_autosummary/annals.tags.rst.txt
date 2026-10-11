@@ -1,0 +1,18 @@
+annals.tags
+===========
+
+.. automodule:: annals.tags
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      normalize_tags
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      JsonTagStore
+   

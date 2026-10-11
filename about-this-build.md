@@ -2,16 +2,18 @@
 
 # About this build
 
-This documentation was built on **2026-10-04 09:49 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594"><code>537becd</code></a> on branch <code>main</code>, for **annals 0.0.3** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-11 06:59 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea"><code>63700b4</code></a> on branch <code>main</code>, for **annals 0.0.4** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.4) is behind the latest release on PyPI (0.0.5): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594"><code>537becd3d683b1d72bf495b9ea40c49eb9b2c594</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea"><code>63700b43ed2a94e4fa1b7c1939fba78283ccc1ea</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -22,9 +24,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/37193299772">37193299772</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/38119791949">38119791949</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>537becd3d683b1d72bf495b9ea40c49eb9b2c594</code> (in the history of the built commit) |
+| Event commit | <code>63700b43ed2a94e4fa1b7c1939fba78283ccc1ea</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -33,7 +35,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | epythet  | 0.2.12  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
-| Python   | 3.12.14 |
+| Python   | 3.12.15 |
 
 ## Configuration as resolved
 
@@ -49,13 +51,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.3/">0.0.3</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.5/">0.0.5</a>, newer than the documented version (0.0.4).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 537becd3d683b1d72bf495b9ea40c49eb9b2c594
+git checkout 63700b43ed2a94e4fa1b7c1939fba78283ccc1ea
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

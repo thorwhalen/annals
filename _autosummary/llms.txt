@@ -7,9 +7,12 @@
 
 - [annals](annals.html.md): annals: an in-tray for AI agents. Publish documents and media to a private page; get a link.
 - [annals.auth](annals.auth.html.md): The auth seam: who may read the annals.
+- [annals.catalog](annals.catalog.html.md): The catalog: every source’s items as one list, with search and the owner’s tags.
 - [annals.config](annals.config.html.md): Settings: where documents are published and what link to print.
 - [annals.mcp](annals.mcp.html.md): MCP surface: the same operations as the CLI, from &#96;annals.tools&#96;, via &#96;py2mcp&#96;.
+- [annals.sources](annals.sources.html.md): Item sources: everything the page lists, wherever it lives, as rows of one shape.
 - [annals.store](annals.store.html.md): The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
+- [annals.tags](annals.tags.html.md): The owner’s tags: a &#96;MutableMapping&#96; from item key to tag list, kept apart from the items.
 - [annals.target](annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
 - [annals.tools](annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 

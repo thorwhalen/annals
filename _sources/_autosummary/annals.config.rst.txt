@@ -4,6 +4,12 @@ annals.config
 .. automodule:: annals.config
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ENV_SOURCES
+   
    .. rubric:: Functions
 
    .. autosummary::

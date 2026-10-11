@@ -15,9 +15,16 @@ Resolution order, highest first: explicit keyword arguments, environment variabl
 `$XDG_CONFIG_HOME/annals/config.toml`, default `~/.config/annals/config.toml`), then the
 local defaults (publish into the local data dir, link to a local `annals serve`).
 
-The server side has one knob of its own, `ANNALS_DATA_DIR`: the directory the API reads.
-It defaults to `~/.local/share/annals`, which is also the default publish target, so with
-no configuration at all `annals publish` and `annals serve` meet in the same place.
+The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
+reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
+so with no configuration at all `annals publish` and `annals serve` meet in the same
+place. `ANNALS_SOURCES` names extra folders the page lists beside the published documents,
+read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separated).
+
+### Module Attributes
+
+| [`ENV_SOURCES`](#annals.config.ENV_SOURCES)   | "name=path, name2=path2"   |
+|----------------------------------------------------------------|----------------------------|
 
 ### Functions
 
@@ -31,6 +38,13 @@ no configuration at all `annals publish` and `annals serve` meet in the same pla
 
 | [`Settings`](#annals.config.Settings)(target, base_url[, configured])   | Where to publish and what link to print.   |
 |---------------------------------------------------------------------------------------------|--------------------------------------------|
+
+### annals.config.ENV_SOURCES *= 'ANNALS_SOURCES'*
+
+“name=path, name2=path2”
+
+* **Type:**
+  extra folders the page lists beside the published documents
 
 ### *class* annals.config.Settings(target, base_url, configured=True)
 

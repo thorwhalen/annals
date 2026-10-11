@@ -249,10 +249,13 @@ Move documents to the recycle bin (restorable).
 
 ### Modules
 
-| [`auth`](annals.auth.md#module-annals.auth)     | The auth seam: who may read the annals.                                                                                                            |
-|------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`config`](annals.config.md#module-annals.config) | Settings: where documents are published and what link to print.                                                                                    |
-| [`mcp`](annals.mcp.md#module-annals.mcp)       | MCP surface: the same operations as the CLI, from [`annals.tools`](annals.tools.md#module-annals.tools), via `py2mcp`. |
-| [`store`](annals.store.md#module-annals.store)   | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
-| [`target`](annals.target.md#module-annals.target) | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
-| [`tools`](annals.tools.md#module-annals.tools)   | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
+| [`auth`](annals.auth.md#module-annals.auth)       | The auth seam: who may read the annals.                                                                                                            |
+|--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`catalog`](annals.catalog.md#module-annals.catalog) | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
+| [`config`](annals.config.md#module-annals.config)   | Settings: where documents are published and what link to print.                                                                                    |
+| [`mcp`](annals.mcp.md#module-annals.mcp)         | MCP surface: the same operations as the CLI, from [`annals.tools`](annals.tools.md#module-annals.tools), via `py2mcp`. |
+| [`sources`](annals.sources.md#module-annals.sources) | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
+| [`store`](annals.store.md#module-annals.store)     | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`tags`](annals.tags.md#module-annals.tags)       | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
+| [`target`](annals.target.md#module-annals.target)   | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`tools`](annals.tools.md#module-annals.tools)     | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |

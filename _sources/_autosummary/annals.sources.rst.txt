@@ -1,0 +1,35 @@
+annals.sources
+==============
+
+.. automodule:: annals.sources
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      SOURCE_NAME_RE
+      RESERVED_SOURCE_NAMES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      as_source
+      check_source_name
+      iso_utc
+      list_meta
+      mk_key
+      parse_sources_spec
+      split_key
+      top_level_name
+      with_thumb
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      FolderSource
+      PublishedSource
+      Source
+   

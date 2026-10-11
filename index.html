@@ -66,9 +66,12 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="_autosummary/annals.html">annals</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.tags.html">annals.tags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.target.html">annals.target</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.tools.html">annals.tools</a></li>
 </ul>
@@ -91,6 +94,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#for-agents">For agents</a></li>
 <li><a class="reference internal" href="#where-documents-go">Where documents go</a></li>
 <li><a class="reference internal" href="#hosting-the-page">Hosting the page</a></li>
+<li><a class="reference internal" href="#other-folders-search-filters-and-tags">Other folders, search, filters and tags</a></li>
 <li><a class="reference internal" href="#python-api">Python API</a></li>
 <li><a class="reference internal" href="#design-notes">Design notes</a></li>
 <li><a class="reference internal" href="#skills">Skills</a></li>
@@ -129,6 +133,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="3"><span class="c1"># https://apps.example.com/annals/d/20261003-203301-quarterly-report-3f9a</span>
 </span></pre></div>
 </div>
+<p>Beside what agents publish, the page can list other folders read in place, such as the sessions’ ledgers (<code class="docutils literal notranslate"><span class="pre">~/.local/share/crowsnest/ledger</span></code>): one search over every word of every item, filters by source, kind, session, date and tag, and tags you add from the page, kept apart from the files.</p>
 <p>Documents are plain files in a directory. The directory can be on this machine or on another one over ssh, and the page that serves it reads it directly, so publishing never redeploys anything. No database, no build step, no API token.</p>
 <section id="for-agents">
 <h2>For agents<a class="headerlink" href="#for-agents" title="Link to this heading">#</a></h2>
@@ -228,6 +233,21 @@ data-aria-dark="Switch to auto color mode">
 </table>
 </div>
 </section>
+<section id="other-folders-search-filters-and-tags">
+<h2>Other folders, search, filters and tags<a class="headerlink" href="#other-folders-search-filters-and-tags" title="Link to this heading">#</a></h2>
+<p>Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (<code class="docutils literal notranslate"><span class="pre">/annals/s/&lt;name&gt;</span></code>) and in <code class="docutils literal notranslate"><span class="pre">/annals/all</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">app</span> <span class="o">=</span> <span class="n">mk_api</span><span class="p">(</span><span class="n">data_dir</span><span class="o">=</span><span class="s2">"~/.local/share/annals"</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="p">{</span><span class="s2">"ledgers"</span><span class="p">:</span> <span class="s2">"~/.local/share/crowsnest/ledger"</span><span class="p">})</span>
+</span></pre></div>
+</div>
+<p>or, with no code, <code class="docutils literal notranslate"><span class="pre">ANNALS_SOURCES=&quot;ledgers=~/.local/share/crowsnest/ledger&quot;</span></code> (several: comma-separated). A folder is read in place and never written: its files are listed newest first with their age, markdown renders, html is framed, the rest shows by its kind, and a sub-folder’s files count as written by the sub-folder’s name. Hidden files and caches are skipped.</p>
+<p>On every list:</p>
+<ul class="simple">
+<li><p><strong>Search</strong> matches every word, case-insensitively, against titles, tags, sessions, excerpts and the full text of markdown and text files (on the server; the matching passage shows under the title).</p></li>
+<li><p><strong>Filters</strong> are one button per family (source, kind, session, date, tag). Checked values within a family are alternatives (“any of”), families combine (“and”), the counts are what each choice would give now, and the active filters show as removable chips. The filters and the search are in the URL, so Back undoes a filter and a link reproduces the view.</p></li>
+<li><p><strong>Tags</strong>: add or remove them on any item’s page; they save as you go. They are stored apart from the items, in one file under the data root (<code class="docutils literal notranslate"><span class="pre">tags/tags.json</span></code>), so a ledger is never touched; on a published document they replace the tags the publisher gave.</p></li>
+</ul>
+<p>The API behind it: <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/items?q=&amp;source=&amp;trash=</span></code> → <code class="docutils literal notranslate"><span class="pre">{data,</span> <span class="pre">total}</span></code>, <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/items/&lt;source&gt;:&lt;id&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">PATCH</span> <span class="pre">/items/&lt;source&gt;:&lt;id&gt;</span></code> with <code class="docutils literal notranslate"><span class="pre">{&quot;tags&quot;:</span> <span class="pre">[...]}</span></code>, <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/tags</span></code>, <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/sources</span></code>, and <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/files/&lt;source&gt;/&lt;path&gt;</span></code> for a folder’s raw files. The page reaches items through <a class="reference external" href="https://www.npmjs.com/package/&#64;zodal/store-http"><code class="docutils literal notranslate"><span class="pre">&#64;zodal/store-http</span></code></a>’s provider (vendored; rebuild with <code class="docutils literal notranslate"><span class="pre">misc/vendor/build.sh</span></code>).</p>
+</section>
 <section id="python-api">
 <h2>Python API<a class="headerlink" href="#python-api" title="Link to this heading">#</a></h2>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">publish</span>
@@ -235,7 +255,7 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="3"><span class="n">publish</span><span class="p">([</span><span class="s2">"report.md"</span><span class="p">],</span> <span class="n">tags</span><span class="o">=</span><span class="s2">"q3"</span><span class="p">)[</span><span class="s2">"url"</span><span class="p">]</span>          <span class="c1"># same, through the configured target</span>
 </span></pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">annals.api.mk_api(...)</span></code> is the mountable API; <code class="docutils literal notranslate"><span class="pre">annals.api.mk_app(data_dir=...,</span> <span class="pre">authorizer=...)</span></code> the standalone app.</p>
+<p><code class="docutils literal notranslate"><span class="pre">annals.api.mk_api(...)</span></code> is the mountable API; <code class="docutils literal notranslate"><span class="pre">annals.api.mk_app(data_dir=...,</span> <span class="pre">authorizer=...)</span></code> the standalone app. Both take <code class="docutils literal notranslate"><span class="pre">sources=</span></code> (name → folder path, or any <code class="docutils literal notranslate"><span class="pre">annals.sources.Source</span></code>) and <code class="docutils literal notranslate"><span class="pre">tags=</span></code> (any <code class="docutils literal notranslate"><span class="pre">MutableMapping</span></code> from item key to tag list; default <code class="docutils literal notranslate"><span class="pre">JsonTagStore</span></code>). <code class="docutils literal notranslate"><span class="pre">annals.catalog.Catalog</span></code> is the facade they stand on: every source’s rows as one list, searched, with the owner’s tags.</p>
 </section>
 <section id="design-notes">
 <h2>Design notes<a class="headerlink" href="#design-notes" title="Link to this heading">#</a></h2>
@@ -253,7 +273,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-04 09:49 UTC from <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594">537becd</a> (main) · annals 0.0.3 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-11 06:59 UTC from <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea">63700b4</a> (main) · annals 0.0.4 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -288,7 +308,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=47de8214"></script>
+      <script src="_static/documentation_options.js?v=8c5712d9"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

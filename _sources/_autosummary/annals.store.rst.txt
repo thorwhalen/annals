@@ -8,6 +8,7 @@ annals.store
 
    .. autosummary::
    
+      HEAD_CHARS
       DFLT_EXCLUDE
    
    .. rubric:: Functions
@@ -19,6 +20,7 @@ annals.store
       mk_id
       now_iso
       slugify
+      title_and_excerpt
    
    .. rubric:: Classes
 

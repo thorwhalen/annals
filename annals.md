@@ -1,4 +1,4 @@
-> built 2026-10-04 09:49 UTC from 537becd (main) · annals 0.0.3. Details: build_info.json
+> built 2026-10-11 06:59 UTC from 63700b4 (main) · annals 0.0.4. Details: build_info.json
 
 # index.html.md
 
@@ -13,6 +13,8 @@ pip install annals
 annals publish report.md --session my-agent
 # https://apps.example.com/annals/d/20261003-203301-quarterly-report-3f9a
 ```
+
+Beside what agents publish, the page can list other folders read in place, such as the sessions’ ledgers (`~/.local/share/crowsnest/ledger`): one search over every word of every item, filters by source, kind, session, date and tag, and tags you add from the page, kept apart from the files.
 
 Documents are plain files in a directory. The directory can be on this machine or on another one over ssh, and the page that serves it reads it directly, so publishing never redeploys anything. No database, no build step, no API token.
 
@@ -88,6 +90,24 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
 | Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
 
+## Other folders, search, filters and tags
+
+Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (`/annals/s/<name>`) and in `/annals/all`:
+
+```python
+app = mk_api(data_dir="~/.local/share/annals", sources={"ledgers": "~/.local/share/crowsnest/ledger"})
+```
+
+or, with no code, `ANNALS_SOURCES="ledgers=~/.local/share/crowsnest/ledger"` (several: comma-separated). A folder is read in place and never written: its files are listed newest first with their age, markdown renders, html is framed, the rest shows by its kind, and a sub-folder’s files count as written by the sub-folder’s name. Hidden files and caches are skipped.
+
+On every list:
+
+- **Search** matches every word, case-insensitively, against titles, tags, sessions, excerpts and the full text of markdown and text files (on the server; the matching passage shows under the title).
+- **Filters** are one button per family (source, kind, session, date, tag). Checked values within a family are alternatives (“any of”), families combine (“and”), the counts are what each choice would give now, and the active filters show as removable chips. The filters and the search are in the URL, so Back undoes a filter and a link reproduces the view.
+- **Tags**: add or remove them on any item’s page; they save as you go. They are stored apart from the items, in one file under the data root (`tags/tags.json`), so a ledger is never touched; on a published document they replace the tags the publisher gave.
+
+The API behind it: `GET /items?q=&source=&trash=` → `{data, total}`, `GET /items/<source>:<id>`, `PATCH /items/<source>:<id>` with `{"tags": [...]}`, `GET /tags`, `GET /sources`, and `GET /files/<source>/<path>` for a folder’s raw files. The page reaches items through [`@zodal/store-http`](https://www.npmjs.com/package/@zodal/store-http)’s provider (vendored; rebuild with `misc/vendor/build.sh`).
+
 ## Python API
 
 ```python
@@ -96,7 +116,7 @@ meta = DocStore("~/.local/share/annals").publish("report.md", tags=["q3"])
 publish(["report.md"], tags="q3")["url"]          # same, through the configured target
 ```
 
-`annals.api.mk_api(...)` is the mountable API; `annals.api.mk_app(data_dir=..., authorizer=...)` the standalone app.
+`annals.api.mk_api(...)` is the mountable API; `annals.api.mk_app(data_dir=..., authorizer=...)` the standalone app. Both take `sources=` (name → folder path, or any `annals.sources.Source`) and `tags=` (any `MutableMapping` from item key to tag list; default `JsonTagStore`). `annals.catalog.Catalog` is the facade they stand on: every source’s rows as one list, searched, with the owner’s tags.
 
 ## Design notes
 
@@ -183,6 +203,97 @@ Everyone is `owner`. Only for a server that listens on localhost.
   [`Optional`](https://docs.python.org/3/library/typing.html#typing.Optional)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
+# _autosummary/annals.catalog.html.md
+
+# annals.catalog
+
+The catalog: every source’s items as one list, with search and the owner’s tags.
+
+[`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog) is the facade the HTTP API stands on. It combines named sources (see
+[`annals.sources`](_autosummary/annals.sources.html.md#module-annals.sources)) and a tag store (see [`annals.tags`](_autosummary/annals.tags.html.md#module-annals.tags)):
+
+* [`Catalog.rows()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.rows) lists items newest first, across sources or within one, filtered by
+  a full-text query (every word must appear in the title, tags, session, excerpt or full
+  text; case-insensitive), each row with the owner’s tags overlaid and, when there is a
+  query, a `snippet` of the text around the first match.
+* [`Catalog.item()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.item) is one item, [`Catalog.set_tags()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.set_tags) replaces its tags (in the tag
+  store, never in the item), [`Catalog.tag_counts()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.tag_counts) lists every tag in use.
+
+Facets (kind, session, date, tag) are not computed here: the page counts them over the rows
+it received, so every toggle is instant and the counts are always the ones the current
+query would give.
+
+### Functions
+
+| [`mk_catalog`](_autosummary/annals.catalog.html.md#annals.catalog.mk_catalog)(store, \*[, sources, tags])   | The published documents first, then the extra sources; the owner's tags beside them.   |
+|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+
+### Classes
+
+| [`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog)(sources, \*, tags)   | Named sources plus the owner's tags, listed, searched and tagged as one collection.   |
+|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+
+### *class* annals.catalog.Catalog(sources, , tags)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Named sources plus the owner’s tags, listed, searched and tagged as one collection.
+
+#### forget(key)
+
+Drop an item’s tags (when the item itself is gone for good).
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### item(key)
+
+One item, with what the page shows; `KeyError` if there is none.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### rows(q='', , source=None, trash=False)
+
+Items newest first, from one source or all, matching every word of `q`.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### set_tags(key, tags)
+
+Replace an item’s tags (in the tag store); the item’s row, with them.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### sources_info()
+
+Each source’s name and title, in the order given.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### tag_counts()
+
+Every tag in use on a listed item, with how many items carry it.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
+
+### annals.catalog.mk_catalog(store, , sources=None, tags=None)
+
+The published documents first, then the extra sources; the owner’s tags beside them.
+
+`sources` maps a name to a folder path (read in place) or a `Source`; by
+default the folders named in `ANNALS_SOURCES`. `tags` defaults to one JSON file
+under the data root (`tags/tags.json`), or a dict when the data root is remote.
+The API, and any CLI or agent tool that tags items, build their catalog here.
+
+* **Return type:**
+  [`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog)
+
+
 # _autosummary/annals.config.html.md
 
 # annals.config
@@ -202,9 +313,16 @@ Resolution order, highest first: explicit keyword arguments, environment variabl
 `$XDG_CONFIG_HOME/annals/config.toml`, default `~/.config/annals/config.toml`), then the
 local defaults (publish into the local data dir, link to a local `annals serve`).
 
-The server side has one knob of its own, `ANNALS_DATA_DIR`: the directory the API reads.
-It defaults to `~/.local/share/annals`, which is also the default publish target, so with
-no configuration at all `annals publish` and `annals serve` meet in the same place.
+The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
+reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
+so with no configuration at all `annals publish` and `annals serve` meet in the same
+place. `ANNALS_SOURCES` names extra folders the page lists beside the published documents,
+read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separated).
+
+### Module Attributes
+
+| [`ENV_SOURCES`](_autosummary/annals.config.html.md#annals.config.ENV_SOURCES)   | "name=path, name2=path2"   |
+|----------------------------------------------------------------|----------------------------|
 
 ### Functions
 
@@ -218,6 +336,13 @@ no configuration at all `annals publish` and `annals serve` meet in the same pla
 
 | [`Settings`](_autosummary/annals.config.html.md#annals.config.Settings)(target, base_url[, configured])   | Where to publish and what link to print.   |
 |---------------------------------------------------------------------------------------------|--------------------------------------------|
+
+### annals.config.ENV_SOURCES *= 'ANNALS_SOURCES'*
+
+“name=path, name2=path2”
+
+* **Type:**
+  extra folders the page lists beside the published documents
 
 ### *class* annals.config.Settings(target, base_url, configured=True)
 
@@ -522,13 +647,16 @@ Move documents to the recycle bin (restorable).
 
 ### Modules
 
-| [`auth`](_autosummary/annals.auth.html.md#module-annals.auth)     | The auth seam: who may read the annals.                                                                                                            |
-|------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`config`](_autosummary/annals.config.html.md#module-annals.config) | Settings: where documents are published and what link to print.                                                                                    |
-| [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)       | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
-| [`store`](_autosummary/annals.store.html.md#module-annals.store)   | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
-| [`target`](_autosummary/annals.target.html.md#module-annals.target) | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
-| [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)   | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
+| [`auth`](_autosummary/annals.auth.html.md#module-annals.auth)       | The auth seam: who may read the annals.                                                                                                            |
+|--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog) | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
+| [`config`](_autosummary/annals.config.html.md#module-annals.config)   | Settings: where documents are published and what link to print.                                                                                    |
+| [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)         | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`sources`](_autosummary/annals.sources.html.md#module-annals.sources) | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
+| [`store`](_autosummary/annals.store.html.md#module-annals.store)     | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)       | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
+| [`target`](_autosummary/annals.target.html.md#module-annals.target)   | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)     | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
 
 
 # _autosummary/annals.mcp.html.md
@@ -548,6 +676,184 @@ core free of any MCP import; the function list is the one the CLI dispatches.
 ### annals.mcp.mk_server()
 
 Build the MCP server over [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools).
+
+
+# _autosummary/annals.sources.html.md
+
+# annals.sources
+
+Item sources: everything the page lists, wherever it lives, as rows of one shape.
+
+A *source* is a named, read-mostly collection of items. Two kinds exist:
+
+* [`PublishedSource`](_autosummary/annals.sources.html.md#annals.sources.PublishedSource): the documents agents published (a [`annals.store.DocStore`](_autosummary/annals.store.html.md#annals.store.DocStore)).
+* [`FolderSource`](_autosummary/annals.sources.html.md#annals.sources.FolderSource): a folder of files owned by someone else, read in place and never
+  written (the crowsnest ledgers, and any other personal folder later). Its items are the
+  folder’s files, keyed by their path relative to the folder.
+
+Every source yields the same row shape, which the page lists, searches and filters:
+
+`key`      `<source>:<id>`, unique across sources (the API’s item id)
+`source`   the source’s name; `id` the item’s id within it
+`title`, `kind` (see [`annals.store.kind_of()`](_autosummary/annals.store.html.md#annals.store.kind_of)), `session` (who wrote it)
+`time`     ISO 8601, UTC: publication time, or a file’s last modification
+`size`, `tags` (the item’s own; the catalog overlays the owner’s), `excerpt`
+
+Sources are plain objects with a few methods (the [`Source`](_autosummary/annals.sources.html.md#annals.sources.Source) protocol), so a new kind
+of folder is a new class or a new keyword argument, never a change to the API.
+
+### Module Attributes
+
+| [`SOURCE_NAME_RE`](_autosummary/annals.sources.html.md#annals.sources.SOURCE_NAME_RE)        | a source name is a url segment and part of every item key                            |
+|------------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`RESERVED_SOURCE_NAMES`](_autosummary/annals.sources.html.md#annals.sources.RESERVED_SOURCE_NAMES) | names the page uses for its own routes (`/all`, `/trash`) or the published documents |
+
+### Functions
+
+| [`as_source`](_autosummary/annals.sources.html.md#annals.sources.as_source)(name, spec)    | A source from a source, or from a folder path (read in place as a [`FolderSource`](_autosummary/annals.sources.html.md#annals.sources.FolderSource)).   |
+|---------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| [`check_source_name`](_autosummary/annals.sources.html.md#annals.sources.check_source_name)(name)  | `name` if it can name an extra source; `ValueError` saying why not otherwise.                                                       |
+| `iso_utc`(ts)                                                             |                                                                                                                                     |
+| [`list_meta`](_autosummary/annals.sources.html.md#annals.sources.list_meta)(meta)          | A listing row: the meta without its per-file tables (a folder can hold thousands).                                                  |
+| `mk_key`(source, item_id)                                                 |                                                                                                                                     |
+| [`parse_sources_spec`](_autosummary/annals.sources.html.md#annals.sources.parse_sources_spec)(spec) | `"ledgers=~/x, notes=/y"` -> `{"ledgers": "~/x", "notes": "/y"}` (the env form).                                                    |
+| [`split_key`](_autosummary/annals.sources.html.md#annals.sources.split_key)(key)           | `"ledgers:a/b.md"` -> `("ledgers", "a/b.md")`; `KeyError` when malformed.                                                           |
+| [`top_level_name`](_autosummary/annals.sources.html.md#annals.sources.top_level_name)(rel)      | Who wrote a file in a folder of per-session files: `a.md` -> `a`, `b/c.md` -> `b`.                                                  |
+| [`with_thumb`](_autosummary/annals.sources.html.md#annals.sources.with_thumb)(meta)         | Add `thumb` (the first image, main file first) and fix pre-media kinds.                                                             |
+
+### Classes
+
+| [`FolderSource`](_autosummary/annals.sources.html.md#annals.sources.FolderSource)(root, \*, name[, title, ...])   | A folder of files, read in place and never written, as a `Mapping` of rows.   |
+|-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| [`PublishedSource`](_autosummary/annals.sources.html.md#annals.sources.PublishedSource)(store, \*[, title])          | The documents agents published, as rows (a view over a `DocStore`).           |
+| [`Source`](_autosummary/annals.sources.html.md#annals.sources.Source)(\*args, \*\*kwargs)                   | What the catalog needs from a source of items.                                |
+
+### *class* annals.sources.FolderSource(root, \*, name, title=None, exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), session_of=<function top_level_name>)
+
+Bases: [`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping)
+
+A folder of files, read in place and never written, as a `Mapping` of rows.
+
+Keys are paths relative to `root` (`"annals.md"`, `"cw-liaise/design.md"`), values
+listing rows. The folder is walked on every listing (a stat per file, cheap for
+hundreds), and a file is re-read only when its size or mtime changed. Hidden files and
+caches are skipped (`exclude`, the same patterns a directory publish skips), and so
+is anything that resolves outside `root`.
+
+`session_of(rel)` names who wrote a file; the default suits a folder of per-session
+files and sub-folders ([`top_level_name()`](_autosummary/annals.sources.html.md#annals.sources.top_level_name)).
+
+#### file_path(rel)
+
+The file on disk; `KeyError` if it is absent, hidden, or escapes the root.
+
+Only the canonical spelling of a path is accepted (`a/b.md`, not `./a/b.md`,
+`a//b.md` or `a/b.md/`), so one file has one key.
+
+* **Return type:**
+  [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
+
+#### text(rel)
+
+The file’s text (cached until it changes); `""` for binaries and huge files.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### *class* annals.sources.PublishedSource(store, , title='Published')
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+The documents agents published, as rows (a view over a `DocStore`).
+
+Always named `published`: the page links its items to `/d/<id>`.
+
+### annals.sources.RESERVED_SOURCE_NAMES *= frozenset({'all', 'published', 'trash'})*
+
+names the page uses for its own routes (`/all`, `/trash`) or the published documents
+
+### annals.sources.SOURCE_NAME_RE *= re.compile('^[a-z0-9][a-z0-9_-]{0,63}$')*
+
+a source name is a url segment and part of every item key
+
+### *class* annals.sources.Source(\*args, \*\*kwargs)
+
+Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
+
+What the catalog needs from a source of items.
+
+#### item(item_id)
+
+One row plus what the page shows (`text` for text kinds). `KeyError` if absent.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### rows(, trash=False)
+
+Listing rows, newest first.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### text(item_id)
+
+The item’s full text for search (`""` when it has none).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.sources.as_source(name, spec)
+
+A source from a source, or from a folder path (read in place as a [`FolderSource`](_autosummary/annals.sources.html.md#annals.sources.FolderSource)).
+
+* **Return type:**
+  [`Source`](_autosummary/annals.sources.html.md#annals.sources.Source)
+
+### annals.sources.check_source_name(name)
+
+`name` if it can name an extra source; `ValueError` saying why not otherwise.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.sources.list_meta(meta)
+
+A listing row: the meta without its per-file tables (a folder can hold thousands).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.sources.parse_sources_spec(spec)
+
+`"ledgers=~/x, notes=/y"` -> `{"ledgers": "~/x", "notes": "/y"}` (the env form).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.sources.split_key(key)
+
+`"ledgers:a/b.md"` -> `("ledgers", "a/b.md")`; `KeyError` when malformed.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.sources.top_level_name(rel)
+
+Who wrote a file in a folder of per-session files: `a.md` -> `a`, `b/c.md` -> `b`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.sources.with_thumb(meta)
+
+Add `thumb` (the first image, main file first) and fix pre-media kinds.
+
+Documents published before media kinds existed say `file` for an image or a video;
+their kind is recomputed from the main file so they show inline too.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 
 # _autosummary/annals.store.html.md
@@ -575,17 +881,19 @@ and read by the server; there is no index to keep consistent.
 
 ### Module Attributes
 
-| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE)   | hidden files, caches, compiled python   |
-|-----------------------------------------------------------------|-----------------------------------------|
+| [`HEAD_CHARS`](_autosummary/annals.store.html.md#annals.store.HEAD_CHARS)   | how much of a file is read to find its title and excerpt   |
+|---------------------------------------------------------------|------------------------------------------------------------|
+| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE) | hidden files, caches, compiled python                      |
 
 ### Functions
 
-| [`check_id`](_autosummary/annals.store.html.md#annals.store.check_id)(doc_id)             | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id).   |
-|-------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`kind_of`](_autosummary/annals.store.html.md#annals.store.kind_of)(filename)            | The rendering kind of a file, from its extension.                                                                     |
-| [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])     | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
-| [`now_iso`](_autosummary/annals.store.html.md#annals.store.now_iso)()                    | UTC timestamp with second precision, the format every meta.json uses.                                                 |
-| [`slugify`](_autosummary/annals.store.html.md#annals.store.slugify)(text, \*[, max_len]) | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
+| [`check_id`](_autosummary/annals.store.html.md#annals.store.check_id)(doc_id)              | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id).   |
+|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| [`kind_of`](_autosummary/annals.store.html.md#annals.store.kind_of)(filename)             | The rendering kind of a file, from its extension.                                                                     |
+| [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])      | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
+| [`now_iso`](_autosummary/annals.store.html.md#annals.store.now_iso)()                     | UTC timestamp with second precision, the format every meta.json uses.                                                 |
+| [`slugify`](_autosummary/annals.store.html.md#annals.store.slugify)(text, \*[, max_len])  | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
+| [`title_and_excerpt`](_autosummary/annals.store.html.md#annals.store.title_and_excerpt)(head, kind) | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                       |
 
 ### Classes
 
@@ -694,6 +1002,10 @@ Move a document into the bin (idempotent).
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.store.HEAD_CHARS *= 4000*
+
+how much of a file is read to find its title and excerpt
+
 ### annals.store.check_id(doc_id)
 
 Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id).
@@ -728,6 +1040,68 @@ Lowercase ascii words joined by hyphens; empty input becomes `doc`.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.store.title_and_excerpt(head, kind)
+
+A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+
+# _autosummary/annals.tags.html.md
+
+# annals.tags
+
+The owner’s tags: a `MutableMapping` from item key to tag list, kept apart from the items.
+
+Tags the owner adds on the page are stored here, never in the items themselves: a folder
+source belongs to whoever writes it (a crowsnest ledger belongs to its session), so annals
+must not edit it, and a published document’s `meta.json` is the publisher’s record.
+An entry, once present, is the item’s whole tag list (it replaces the item’s own tags, so
+removing a tag the publisher set works too); deleting the entry falls back to them.
+
+[`JsonTagStore`](_autosummary/annals.tags.html.md#annals.tags.JsonTagStore), the default, is one JSON file under the data root
+(`<data root>/tags/tags.json`), written atomically. Any `MutableMapping[str, list[str]]`
+can replace it (`mk_api(tags=...)`), e.g. a table in a database.
+
+### Functions
+
+| [`normalize_tags`](_autosummary/annals.tags.html.md#annals.tags.normalize_tags)(tags)   | Trimmed, single-spaced, de-duplicated (ignoring case), sorted; refuses junk.   |
+|-------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+
+### Classes
+
+| [`JsonTagStore`](_autosummary/annals.tags.html.md#annals.tags.JsonTagStore)(path)   | `{item key: [tags]}` in one JSON file, re-read when another process changed it.   |
+|-----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+
+### *class* annals.tags.JsonTagStore(path)
+
+Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
+
+`{item key: [tags]}` in one JSON file, re-read when another process changed it.
+
+Safe with several server processes on one machine: a write takes an exclusive
+`flock` on `<file>.lock`, re-reads the file, changes it and replaces it atomically,
+so two workers saving at once never lose each other’s change. A read re-reads the file
+whenever its inode, size or mtime changed (every write makes a new inode).
+
+#### snapshot()
+
+Every entry at once, under one read (what a listing overlays).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
+### annals.tags.normalize_tags(tags)
+
+Trimmed, single-spaced, de-duplicated (ignoring case), sorted; refuses junk.
+
+Raises `ValueError` for a tag that is not a string, is longer than `MAX_TAG_LEN`,
+holds control characters, or for more than `MAX_TAGS_PER_ITEM` tags.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
 # _autosummary/annals.target.html.md
@@ -941,16 +1315,18 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-04 09:49 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594"><code>537becd</code></a> on branch <code>main</code>, for **annals 0.0.3** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-11 06:59 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea"><code>63700b4</code></a> on branch <code>main</code>, for **annals 0.0.4** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.4) is behind the latest release on PyPI (0.0.5): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/537becd3d683b1d72bf495b9ea40c49eb9b2c594"><code>537becd3d683b1d72bf495b9ea40c49eb9b2c594</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea"><code>63700b43ed2a94e4fa1b7c1939fba78283ccc1ea</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -961,9 +1337,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/37193299772">37193299772</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/38119791949">38119791949</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>537becd3d683b1d72bf495b9ea40c49eb9b2c594</code> (in the history of the built commit) |
+| Event commit | <code>63700b43ed2a94e4fa1b7c1939fba78283ccc1ea</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -972,7 +1348,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | epythet  | 0.2.12  |
 | Sphinx   | 9.1.0   |
 | docutils | 0.22.4  |
-| Python   | 3.12.14 |
+| Python   | 3.12.15 |
 
 ## Configuration as resolved
 
@@ -988,13 +1364,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.3/">0.0.3</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.5/">0.0.5</a>, newer than the documented version (0.0.4).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 537becd3d683b1d72bf495b9ea40c49eb9b2c594
+git checkout 63700b43ed2a94e4fa1b7c1939fba78283ccc1ea
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

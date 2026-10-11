@@ -21,17 +21,19 @@ and read by the server; there is no index to keep consistent.
 
 ### Module Attributes
 
-| [`DFLT_EXCLUDE`](#annals.store.DFLT_EXCLUDE)   | hidden files, caches, compiled python   |
-|-----------------------------------------------------------------|-----------------------------------------|
+| [`HEAD_CHARS`](#annals.store.HEAD_CHARS)   | how much of a file is read to find its title and excerpt   |
+|---------------------------------------------------------------|------------------------------------------------------------|
+| [`DFLT_EXCLUDE`](#annals.store.DFLT_EXCLUDE) | hidden files, caches, compiled python                      |
 
 ### Functions
 
-| [`check_id`](#annals.store.check_id)(doc_id)             | Raise `ValueError` on an id that could not have come from [`mk_id()`](#annals.store.mk_id).   |
-|-------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`kind_of`](#annals.store.kind_of)(filename)            | The rendering kind of a file, from its extension.                                                                     |
-| [`mk_id`](#annals.store.mk_id)(title, \*[, when])     | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
-| [`now_iso`](#annals.store.now_iso)()                    | UTC timestamp with second precision, the format every meta.json uses.                                                 |
-| [`slugify`](#annals.store.slugify)(text, \*[, max_len]) | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
+| [`check_id`](#annals.store.check_id)(doc_id)              | Raise `ValueError` on an id that could not have come from [`mk_id()`](#annals.store.mk_id).   |
+|--------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| [`kind_of`](#annals.store.kind_of)(filename)             | The rendering kind of a file, from its extension.                                                                     |
+| [`mk_id`](#annals.store.mk_id)(title, \*[, when])      | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
+| [`now_iso`](#annals.store.now_iso)()                     | UTC timestamp with second precision, the format every meta.json uses.                                                 |
+| [`slugify`](#annals.store.slugify)(text, \*[, max_len])  | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
+| [`title_and_excerpt`](#annals.store.title_and_excerpt)(head, kind) | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                       |
 
 ### Classes
 
@@ -140,6 +142,10 @@ Move a document into the bin (idempotent).
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.store.HEAD_CHARS *= 4000*
+
+how much of a file is read to find its title and excerpt
+
 ### annals.store.check_id(doc_id)
 
 Raise `ValueError` on an id that could not have come from [`mk_id()`](#annals.store.mk_id).
@@ -174,3 +180,10 @@ Lowercase ascii words joined by hyphens; empty input becomes `doc`.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.store.title_and_excerpt(head, kind)
+
+A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]

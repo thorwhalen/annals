@@ -1,0 +1,18 @@
+annals.catalog
+==============
+
+.. automodule:: annals.catalog
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      mk_catalog
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Catalog
+   
