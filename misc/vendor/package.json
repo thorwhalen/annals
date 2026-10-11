@@ -1,0 +1,14 @@
+{
+  "name": "annals-vendor",
+  "private": true,
+  "description": "The page's vendored browser modules, pinned. Rebuild with ./build.sh; the output is committed under annals/data/ui/vendor/.",
+  "dependencies": {
+    "@zodal/core": "0.2.0",
+    "@zodal/store": "0.2.0",
+    "@zodal/store-http": "0.1.0",
+    "zod": "4.1.13"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0"
+  }
+}

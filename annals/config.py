@@ -13,9 +13,11 @@ Resolution order, highest first: explicit keyword arguments, environment variabl
 ``$XDG_CONFIG_HOME/annals/config.toml``, default ``~/.config/annals/config.toml``), then the
 local defaults (publish into the local data dir, link to a local ``annals serve``).
 
-The server side has one knob of its own, ``ANNALS_DATA_DIR``: the directory the API reads.
-It defaults to ``~/.local/share/annals``, which is also the default publish target, so with
-no configuration at all ``annals publish`` and ``annals serve`` meet in the same place.
+The server side has two knobs of its own. ``ANNALS_DATA_DIR`` is the directory the API
+reads. It defaults to ``~/.local/share/annals``, which is also the default publish target,
+so with no configuration at all ``annals publish`` and ``annals serve`` meet in the same
+place. ``ANNALS_SOURCES`` names extra folders the page lists beside the published documents,
+read in place (``ledgers=~/.local/share/crowsnest/ledger``; several, comma-separated).
 """
 
 from __future__ import annotations
@@ -29,6 +31,8 @@ APP_NAME = "annals"
 ENV_TARGET = "ANNALS_TARGET"
 ENV_BASE_URL = "ANNALS_BASE_URL"
 ENV_DATA_DIR = "ANNALS_DATA_DIR"
+#: extra folders the page lists beside the published documents: "name=path, name2=path2"
+ENV_SOURCES = "ANNALS_SOURCES"
 ENV_CONFIG = "ANNALS_CONFIG"
 DFLT_SERVE_PORT = 8765
 # A document's content file is read whole into the API's JSON response; this is the cap.

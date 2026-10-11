@@ -18,10 +18,13 @@ annals is an in-tray for AI agents: an agent publishes a document (text, a page,
 | 6 | host, `mk_api` vs `mk_app` | mounted inside an app platform that owns login and routing (`mk_api` + a page shell); `annals serve` standalone otherwise | none needed: both exist |
 | 7 | thumbnails, `thumbnailer=` | Pillow when installed, cached under the data root's `cache/thumbs`; else the original | a blob store's own image resizing, or poster frames for video via ffmpeg |
 | 8 | what a directory publish skips, `exclude=` | `.*`, `__pycache__`, `*.pyc` | per-call patterns (`--all-files` keeps everything) |
+| 9 | item sources, `mk_api(sources=)` (`annals.sources`) | the published documents plus named local folders read in place (`FolderSource`) | other personal-file folders; one mirror per machine for ledgers written on several machines (see "Ledgers from several machines") |
+| 10 | the owner's tags, `mk_api(tags=)` (`annals.tags`) | `JsonTagStore`: one JSON file under the data root | the database for app JSON (tw_platform#291) |
+| 11 | how the page reaches items | `@zodal/store-http`'s `createHttpProvider` over `/items` (vendored, 7 KB) | the schema-driven zodal page (roadmap); any zodal `DataProvider` |
 
 Surfaces: the CLI (`cw` over `annals/tools.py`), the Python API, MCP (`py2mcp` over string refs to the same functions), the shipped skill, and the FastAPI app. All of them read one function list, so there is nothing to keep in parity.
 
-NOT seams, written directly on purpose: the id format, the `meta.json` shape, the bin semantics (a move), the page's framework (none), the sort keys.
+NOT seams, written directly on purpose: the id format, the `meta.json` shape, the bin semantics (a move), the page's framework (none), the sort keys, the full-text matching (every word, substring, over cached text), the facet counting (in the page, flat families), the date ranges.
 
 ## Decisions
 
@@ -43,9 +46,19 @@ NOT seams, written directly on purpose: the id format, the `meta.json` shape, th
 
 **Markdown renders in the browser, html in a sandboxed frame.** Rendering client-side keeps the server free of a markdown dependency and makes the source toggle trivial (the same text). An html document is the agent's own code, so the frame cannot read the annals's cookies or call its API (`Content-Security-Policy: sandbox ...` on the raw response plus the frame's `sandbox` attribute).
 
+**Other folders are read, never written.** A folder source (the crowsnest ledgers) belongs to whoever writes it. annals walks it on each listing (a stat per file; a file is re-read only when its size or mtime changed), never copies it, and never writes into it; the owner's tags on its items live in annals' own data root. A source is anything with `rows`, `item` and `text` (`annals.sources.Source`), so a new kind of folder is a new class at the `sources=` seam.
+
+**One list, every source.** Each source yields rows of one shape (`key` = `<source>:<id>`, `title`, `kind`, `session`, `time`, `size`, `tags`, `excerpt`), so search, filters, sorting and tagging are written once. Full-text search runs on the server (the page never downloads the texts); facet counts run in the page over the rows a search returned, so a toggle costs no round trip and every count is the one that choice would give (a family's own selection is left out of its counts: OR within a family, AND across).
+
+**Tags apart from items.** The owner's tags are an overlay keyed by item key: an entry, once written, is the item's whole tag list, so a publisher's tag can be removed too, and deleting the entry falls back to the item's own. One JSON file, written atomically, re-read when another process changed it; a database replaces it at the `tags=` seam.
+
+## Ledgers from several machines
+
+Ledgers are written on the Mac, on the server and on a third machine; the server's folder holds only what was copied there. annals reads one folder per source, so the open question is how the copies meet, not how annals reads them. Proposed (not built, waiting on the owner): each machine pushes its own ledger folder into a per-machine mirror on the server (`~/.local/share/crowsnest/ledger-hosts/<host>/`, an `rsync` without `--delete` from the same timer that already pushes the crowsnest page every minute), and annals lists each mirror as a source (`ledgers-mac`, `ledgers-iq`) or one source over all of them with the machine as a facet. Reading the other machines live over ssh is the alternative, and a worse one: a closed laptop would empty the list.
+
 ## Where the data lives
 
-`~/.local/share/annals/{docs,trash,groups}`, plus `cache/thumbs` (derived, safe to delete); `ANNALS_DATA_DIR` overrides the root. Nothing under the package or any app directory holds documents.
+`~/.local/share/annals/{docs,trash,groups,tags}`, plus `cache/thumbs` (derived, safe to delete); `ANNALS_DATA_DIR` overrides the root. Folder sources stay where their owners keep them. Nothing under the package or any app directory holds documents.
 
 ## Trust boundary
 
