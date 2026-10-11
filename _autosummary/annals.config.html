@@ -100,6 +100,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.config.default_config_path"><code class="docutils literal notranslate"><span class="pre">default_config_path()</span></code></a></li>
 <li><a class="reference internal" href="#annals.config.default_data_dir"><code class="docutils literal notranslate"><span class="pre">default_data_dir()</span></code></a></li>
 <li><a class="reference internal" href="#annals.config.load_settings"><code class="docutils literal notranslate"><span class="pre">load_settings()</span></code></a></li>
+<li><a class="reference internal" href="#annals.config.named_targets"><code class="docutils literal notranslate"><span class="pre">named_targets()</span></code></a></li>
 <li><a class="reference internal" href="#annals.config.write_config"><code class="docutils literal notranslate"><span class="pre">write_config()</span></code></a></li>
 </ul>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
@@ -154,6 +155,10 @@ opens (<code class="docutils literal notranslate"><span class="pre">https://apps
 (<code class="docutils literal notranslate"><span class="pre">ANNALS_TARGET</span></code>, <code class="docutils literal notranslate"><span class="pre">ANNALS_BASE_URL</span></code>), the config file (<code class="docutils literal notranslate"><span class="pre">$ANNALS_CONFIG</span></code> or
 <code class="docutils literal notranslate"><span class="pre">$XDG_CONFIG_HOME/annals/config.toml</span></code>, default <code class="docutils literal notranslate"><span class="pre">~/.config/annals/config.toml</span></code>), then the
 local defaults (publish into the local data dir, link to a local <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code>).</p>
+<p>Named targets (<code class="docutils literal notranslate"><span class="pre">--to</span> <span class="pre">NAME</span></code>): a second place to publish, opted into per command. The config
+file holds them as <code class="docutils literal notranslate"><span class="pre">[targets.NAME]</span></code> tables with the same two keys; <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--to</span>
+<span class="pre">NAME</span> <span class="pre">--target</span> <span class="pre">...</span> <span class="pre">--base-url</span> <span class="pre">...</span></code> writes one. <code class="docutils literal notranslate"><span class="pre">to</span></code> picks it over the environment and the
+file’s default, and explicit <code class="docutils literal notranslate"><span class="pre">target</span></code>/<code class="docutils literal notranslate"><span class="pre">base_url</span></code> arguments still win over <code class="docutils literal notranslate"><span class="pre">to</span></code>.</p>
 <p>The server side has two knobs of its own. <code class="docutils literal notranslate"><span class="pre">ANNALS_DATA_DIR</span></code> is the directory the API
 reads. It defaults to <code class="docutils literal notranslate"><span class="pre">~/.local/share/annals</span></code>, which is also the default publish target,
 so with no configuration at all <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span></code> and <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code> meet in the same
@@ -179,11 +184,14 @@ read in place (<code class="docutils literal notranslate"><span class="pre">ledg
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.config.default_data_dir" title="annals.config.default_data_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_data_dir</span></code></a>()</p></td>
 <td><p>The local data root: <code class="docutils literal notranslate"><span class="pre">$ANNALS_DATA_DIR</span></code> or <code class="docutils literal notranslate"><span class="pre">~/.local/share/annals</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.config.load_settings" title="annals.config.load_settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_settings</span></code></a>(*[, target, base_url, config_path])</p></td>
-<td><p>Resolve settings: arguments, then env, then the config file, then local defaults.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.config.load_settings" title="annals.config.load_settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_settings</span></code></a>(*[, target, base_url, to, ...])</p></td>
+<td><p>Resolve settings: arguments, then <code class="docutils literal notranslate"><span class="pre">to</span></code>, env, the config file, then local defaults.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.config.write_config" title="annals.config.write_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_config</span></code></a>(settings, *[, config_path])</p></td>
-<td><p>Write the config file (two string keys; no TOML writer dependency needed).</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.config.named_targets" title="annals.config.named_targets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">named_targets</span></code></a>(*[, config_path])</p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">[targets.NAME]</span></code> tables of the config file: name -&gt; {target, base_url}.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.config.write_config" title="annals.config.write_config"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_config</span></code></a>(settings, *[, to, config_path])</p></td>
+<td><p>Write the config file (string keys only; no TOML writer dependency needed).</p></td>
 </tr>
 </tbody>
 </table>
@@ -265,8 +273,10 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.config.load_settings">
-<span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">load_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#load_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.load_settings" title="Link to this definition">#</a></dt>
-<dd><p>Resolve settings: arguments, then env, then the config file, then local defaults.</p>
+<span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">load_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#load_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.load_settings" title="Link to this definition">#</a></dt>
+<dd><p>Resolve settings: arguments, then <code class="docutils literal notranslate"><span class="pre">to</span></code>, env, the config file, then local defaults.</p>
+<p><code class="docutils literal notranslate"><span class="pre">to</span></code> names a <code class="docutils literal notranslate"><span class="pre">[targets.NAME]</span></code> table of the config file; it replaces the environment
+and the file’s default target for this call (explicit arguments still win).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.config.Settings" title="annals.config.Settings"><code class="xref py py-class docutils literal notranslate"><span class="pre">Settings</span></code></a></span></p>
@@ -275,9 +285,23 @@ in the local data dir and the link points at a local server, which is rarely mea
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.config.named_targets">
+<span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">named_targets</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#named_targets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.named_targets" title="Link to this definition">#</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">[targets.NAME]</span></code> tables of the config file: name -&gt; {target, base_url}.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.config.write_config">
-<span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">write_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#write_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.write_config" title="Link to this definition">#</a></dt>
-<dd><p>Write the config file (two string keys; no TOML writer dependency needed).</p>
+<span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">write_config</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">settings</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#write_config"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.write_config" title="Link to this definition">#</a></dt>
+<dd><p>Write the config file (string keys only; no TOML writer dependency needed).</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">to</span></code>, <code class="docutils literal notranslate"><span class="pre">settings</span></code> is saved as the named target <code class="docutils literal notranslate"><span class="pre">[targets.&lt;to&gt;]</span></code> and the
+default section is left as it was; without it the default section is replaced. Either
+way the other tables are kept.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a></span></p>
@@ -327,7 +351,7 @@ in the local data dir and the link points at a local server, which is rarely mea
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="../_static/documentation_options.js?v=282f96c0"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

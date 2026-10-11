@@ -9,6 +9,7 @@ annals.tools
    .. autosummary::
    
       configure
+      copy
       group
       groups
       ls

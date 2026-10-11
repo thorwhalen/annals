@@ -17,6 +17,7 @@ annals.config
       default_config_path
       default_data_dir
       load_settings
+      named_targets
       write_config
    
    .. rubric:: Classes

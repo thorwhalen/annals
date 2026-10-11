@@ -53,6 +53,10 @@ annals configure --target tw:/root/.local/share/annals --base-url https://apps.e
 
 That writes `~/.config/annals/config.toml`. `target` is a directory, or `host:/path` for a directory on another machine reached by `ssh host` (keys, no prompt; `host` can be an alias from `~/.ssh/config`). `ANNALS_TARGET` and `ANNALS_BASE_URL` override it per shell. With no configuration, documents go to `~/.local/share/annals` and the link points at a local `annals serve`.
 
+### A second place (`--to`)
+
+A config file can name more places: `annals configure --to team --target host:/path --base-url https://team.example.com/annals` saves a `[targets.team]` table and leaves the default alone. Then `annals publish r.md --to team` (also `ls`, `show`, `trash`, `restore`, `group`, `groups`) works on that place only, and `annals copy <link-or-id> --to team [--source other]` copies documents or whole groups there, keeping their ids. Nothing about the place is in the code: a name, a target and a base url.
+
 ## Hosting the page
 
 **Inside an app platform** (the usual case). Mount the API under the platform’s prefix and let the platform’s login gate it:

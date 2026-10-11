@@ -92,7 +92,10 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#for-agents">For agents</a></li>
-<li><a class="reference internal" href="#where-documents-go">Where documents go</a></li>
+<li><a class="reference internal" href="#where-documents-go">Where documents go</a><ul>
+<li><a class="reference internal" href="#a-second-place-to">A second place (<code class="docutils literal notranslate"><span class="pre">--to</span></code>)</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#hosting-the-page">Hosting the page</a></li>
 <li><a class="reference internal" href="#other-folders-search-filters-and-tags">Other folders, search, filters and tags</a></li>
 <li><a class="reference internal" href="#python-api">Python API</a></li>
@@ -188,6 +191,10 @@ data-aria-dark="Switch to auto color mode">
 </span></pre></div>
 </div>
 <p>That writes <code class="docutils literal notranslate"><span class="pre">~/.config/annals/config.toml</span></code>. <code class="docutils literal notranslate"><span class="pre">target</span></code> is a directory, or <code class="docutils literal notranslate"><span class="pre">host:/path</span></code> for a directory on another machine reached by <code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">host</span></code> (keys, no prompt; <code class="docutils literal notranslate"><span class="pre">host</span></code> can be an alias from <code class="docutils literal notranslate"><span class="pre">~/.ssh/config</span></code>). <code class="docutils literal notranslate"><span class="pre">ANNALS_TARGET</span></code> and <code class="docutils literal notranslate"><span class="pre">ANNALS_BASE_URL</span></code> override it per shell. With no configuration, documents go to <code class="docutils literal notranslate"><span class="pre">~/.local/share/annals</span></code> and the link points at a local <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code>.</p>
+<section id="a-second-place-to">
+<h3>A second place (<code class="docutils literal notranslate"><span class="pre">--to</span></code>)<a class="headerlink" href="#a-second-place-to" title="Link to this heading">#</a></h3>
+<p>A config file can name more places: <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--to</span> <span class="pre">team</span> <span class="pre">--target</span> <span class="pre">host:/path</span> <span class="pre">--base-url</span> <span class="pre">https://team.example.com/annals</span></code> saves a <code class="docutils literal notranslate"><span class="pre">[targets.team]</span></code> table and leaves the default alone. Then <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">r.md</span> <span class="pre">--to</span> <span class="pre">team</span></code> (also <code class="docutils literal notranslate"><span class="pre">ls</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code>, <code class="docutils literal notranslate"><span class="pre">trash</span></code>, <code class="docutils literal notranslate"><span class="pre">restore</span></code>, <code class="docutils literal notranslate"><span class="pre">group</span></code>, <code class="docutils literal notranslate"><span class="pre">groups</span></code>) works on that place only, and <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">copy</span> <span class="pre">&lt;link-or-id&gt;</span> <span class="pre">--to</span> <span class="pre">team</span> <span class="pre">[--source</span> <span class="pre">other]</span></code> copies documents or whole groups there, keeping their ids. Nothing about the place is in the code: a name, a target and a base url.</p>
+</section>
 </section>
 <section id="hosting-the-page">
 <h2>Hosting the page<a class="headerlink" href="#hosting-the-page" title="Link to this heading">#</a></h2>
@@ -273,7 +280,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-11 06:59 UTC from <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea">63700b4</a> (main) · annals 0.0.4 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-11 12:09 UTC from <a href="https://github.com/thorwhalen/annals/commit/45a71edd2b425dfd4280ee02c90ee1ed2e91b2e1">45a71ed</a> (main) · annals 0.0.5 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -308,7 +315,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=8c5712d9"></script>
+      <script src="_static/documentation_options.js?v=282f96c0"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

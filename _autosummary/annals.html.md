@@ -9,17 +9,17 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 ### Functions
 
-| [`configure`](#annals.configure)(\*[, target, base_url])                  | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
-|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`group`](#annals.group)(title, doc_ids, \*[, target, base_url])      | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
-| [`groups`](#annals.groups)(\*[, target, base_url])                     | List groups, newest first.                                                                                                                                        |
-| [`load_settings`](#annals.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults.                                                                                 |
-| [`ls`](#annals.ls)([q, trash, limit, target, base_url])            | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
-| [`parse_target`](#annals.parse_target)(spec)                                 | `host:/path` becomes an [`SshTarget`](#annals.SshTarget); anything else a [`LocalTarget`](#annals.LocalTarget). |
-| [`publish`](#annals.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                                                                                  |
-| [`restore`](#annals.restore)(doc_ids, \*[, target])                     | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](#annals.show)(doc_id, \*[, target, base_url])               | A document's metadata and link.                                                                                                                                   |
-| [`trash`](#annals.trash)(doc_ids, \*[, target])                       | Move documents to the recycle bin (restorable).                                                                                                                   |
+| [`configure`](#annals.configure)(\*[, target, base_url, to])             | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`group`](#annals.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
+| [`groups`](#annals.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                                                                                                        |
+| [`load_settings`](#annals.load_settings)(\*[, target, base_url, to, ...])    | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
+| [`ls`](#annals.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
+| [`parse_target`](#annals.parse_target)(spec)                                | `host:/path` becomes an [`SshTarget`](#annals.SshTarget); anything else a [`LocalTarget`](#annals.LocalTarget). |
+| [`publish`](#annals.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.                                                                                  |
+| [`restore`](#annals.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                                                                                                        |
+| [`show`](#annals.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                                                                                                         |
+| [`trash`](#annals.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
 
@@ -164,7 +164,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### annals.configure(, target=None, base_url=None)
+### annals.configure(, target=None, base_url=None, to=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -174,32 +174,38 @@ Write the publisher config (where to publish, what link to print) and show it.
 ### Example
 
 `annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals`.
-With no arguments, shows the resolved settings without writing.
+`--to NAME` saves the target and base url as a named target (`annals publish --to NAME`)
+and leaves the default alone. With no arguments, shows the resolved settings without writing.
 
-### annals.group(title, doc_ids, , target=None, base_url=None)
+### annals.group(title, doc_ids, , target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.groups(, target=None, base_url=None)
+### annals.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.load_settings(, target=None, base_url=None, config_path=None)
+### annals.load_settings(, target=None, base_url=None, to=None, config_path=None)
 
-Resolve settings: arguments, then env, then the config file, then local defaults.
+Resolve settings: arguments, then `to`, env, the config file, then local defaults.
+
+`to` names a `[targets.NAME]` table of the config file; it replaces the environment
+and the file’s default target for this call (explicit arguments still win).
 
 * **Return type:**
   [`Settings`](annals.config.html.md#annals.config.Settings)
 
-### annals.ls(q='', , trash=False, limit=50, target=None, base_url=None)
+### annals.ls(q='', , trash=False, limit=50, target=None, base_url=None, to=None)
 
 List documents (newest first), optionally filtered by words or showing the bin.
+
+`to` lists a named target instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -211,7 +217,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -222,25 +228,27 @@ names a group to create from the published documents; the reply then carries
 `group_url` too. `add_to` appends them to an existing group instead (its id, as
 printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
+`to` publishes to a named target of the config file (`[targets.NAME]`, see
+`annals configure --to`) instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.restore(doc_ids, , target=None)
+### annals.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.show(doc_id, , target=None, base_url=None)
+### annals.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link.
+A document’s metadata and link (`to`: on a named target).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.trash(doc_ids, , target=None)
+### annals.trash(doc_ids, , target=None, to=None)
 
 Move documents to the recycle bin (restorable).
 

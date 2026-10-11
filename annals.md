@@ -1,4 +1,4 @@
-> built 2026-10-11 06:59 UTC from 63700b4 (main) · annals 0.0.4. Details: build_info.json
+> built 2026-10-11 12:09 UTC from 45a71ed (main) · annals 0.0.5. Details: build_info.json
 
 # index.html.md
 
@@ -56,6 +56,10 @@ annals configure --target tw:/root/.local/share/annals --base-url https://apps.e
 ```
 
 That writes `~/.config/annals/config.toml`. `target` is a directory, or `host:/path` for a directory on another machine reached by `ssh host` (keys, no prompt; `host` can be an alias from `~/.ssh/config`). `ANNALS_TARGET` and `ANNALS_BASE_URL` override it per shell. With no configuration, documents go to `~/.local/share/annals` and the link points at a local `annals serve`.
+
+### A second place (`--to`)
+
+A config file can name more places: `annals configure --to team --target host:/path --base-url https://team.example.com/annals` saves a `[targets.team]` table and leaves the default alone. Then `annals publish r.md --to team` (also `ls`, `show`, `trash`, `restore`, `group`, `groups`) works on that place only, and `annals copy <link-or-id> --to team [--source other]` copies documents or whole groups there, keeping their ids. Nothing about the place is in the code: a name, a target and a base url.
 
 ## Hosting the page
 
@@ -313,6 +317,11 @@ Resolution order, highest first: explicit keyword arguments, environment variabl
 `$XDG_CONFIG_HOME/annals/config.toml`, default `~/.config/annals/config.toml`), then the
 local defaults (publish into the local data dir, link to a local `annals serve`).
 
+Named targets (`--to NAME`): a second place to publish, opted into per command. The config
+file holds them as `[targets.NAME]` tables with the same two keys; `annals configure --to
+NAME --target ... --base-url ...` writes one. `to` picks it over the environment and the
+file’s default, and explicit `target`/`base_url` arguments still win over `to`.
+
 The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
 reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
 so with no configuration at all `annals publish` and `annals serve` meet in the same
@@ -326,11 +335,12 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Functions
 
-| [`default_config_path`](_autosummary/annals.config.html.md#annals.config.default_config_path)()                              | `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.                     |
-|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`default_data_dir`](_autosummary/annals.config.html.md#annals.config.default_data_dir)()                                 | The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.               |
-| [`load_settings`](_autosummary/annals.config.html.md#annals.config.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults. |
-| [`write_config`](_autosummary/annals.config.html.md#annals.config.write_config)(settings, \*[, config_path])          | Write the config file (two string keys; no TOML writer dependency needed).        |
+| [`default_config_path`](_autosummary/annals.config.html.md#annals.config.default_config_path)()                          | `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.                      |
+|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`default_data_dir`](_autosummary/annals.config.html.md#annals.config.default_data_dir)()                             | The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.                |
+| [`load_settings`](_autosummary/annals.config.html.md#annals.config.load_settings)(\*[, target, base_url, to, ...]) | Resolve settings: arguments, then `to`, env, the config file, then local defaults. |
+| [`named_targets`](_autosummary/annals.config.html.md#annals.config.named_targets)(\*[, config_path])               | The `[targets.NAME]` tables of the config file: name -> {target, base_url}.        |
+| [`write_config`](_autosummary/annals.config.html.md#annals.config.write_config)(settings, \*[, to, config_path])  | Write the config file (string keys only; no TOML writer dependency needed).        |
 
 ### Classes
 
@@ -379,16 +389,30 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### annals.config.load_settings(, target=None, base_url=None, config_path=None)
+### annals.config.load_settings(, target=None, base_url=None, to=None, config_path=None)
 
-Resolve settings: arguments, then env, then the config file, then local defaults.
+Resolve settings: arguments, then `to`, env, the config file, then local defaults.
+
+`to` names a `[targets.NAME]` table of the config file; it replaces the environment
+and the file’s default target for this call (explicit arguments still win).
 
 * **Return type:**
   [`Settings`](_autosummary/annals.config.html.md#annals.config.Settings)
 
-### annals.config.write_config(settings, , config_path=None)
+### annals.config.named_targets(, config_path=None)
 
-Write the config file (two string keys; no TOML writer dependency needed).
+The `[targets.NAME]` tables of the config file: name -> {target, base_url}.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
+### annals.config.write_config(settings, , to=None, config_path=None)
+
+Write the config file (string keys only; no TOML writer dependency needed).
+
+With `to`, `settings` is saved as the named target `[targets.<to>]` and the
+default section is left as it was; without it the default section is replaced. Either
+way the other tables are kept.
 
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
@@ -407,17 +431,17 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 ### Functions
 
-| [`configure`](_autosummary/annals.html.md#annals.configure)(\*[, target, base_url])                  | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
-|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`group`](_autosummary/annals.html.md#annals.group)(title, doc_ids, \*[, target, base_url])      | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
-| [`groups`](_autosummary/annals.html.md#annals.groups)(\*[, target, base_url])                     | List groups, newest first.                                                                                                                                        |
-| [`load_settings`](_autosummary/annals.html.md#annals.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults.                                                                                 |
-| [`ls`](_autosummary/annals.html.md#annals.ls)([q, trash, limit, target, base_url])            | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
-| [`parse_target`](_autosummary/annals.html.md#annals.parse_target)(spec)                                 | `host:/path` becomes an [`SshTarget`](_autosummary/annals.html.md#annals.SshTarget); anything else a [`LocalTarget`](_autosummary/annals.html.md#annals.LocalTarget). |
-| [`publish`](_autosummary/annals.html.md#annals.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                                                                                  |
-| [`restore`](_autosummary/annals.html.md#annals.restore)(doc_ids, \*[, target])                     | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](_autosummary/annals.html.md#annals.show)(doc_id, \*[, target, base_url])               | A document's metadata and link.                                                                                                                                   |
-| [`trash`](_autosummary/annals.html.md#annals.trash)(doc_ids, \*[, target])                       | Move documents to the recycle bin (restorable).                                                                                                                   |
+| [`configure`](_autosummary/annals.html.md#annals.configure)(\*[, target, base_url, to])             | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`group`](_autosummary/annals.html.md#annals.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
+| [`groups`](_autosummary/annals.html.md#annals.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                                                                                                        |
+| [`load_settings`](_autosummary/annals.html.md#annals.load_settings)(\*[, target, base_url, to, ...])    | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
+| [`ls`](_autosummary/annals.html.md#annals.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
+| [`parse_target`](_autosummary/annals.html.md#annals.parse_target)(spec)                                | `host:/path` becomes an [`SshTarget`](_autosummary/annals.html.md#annals.SshTarget); anything else a [`LocalTarget`](_autosummary/annals.html.md#annals.LocalTarget). |
+| [`publish`](_autosummary/annals.html.md#annals.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.                                                                                  |
+| [`restore`](_autosummary/annals.html.md#annals.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                                                                                                        |
+| [`show`](_autosummary/annals.html.md#annals.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                                                                                                         |
+| [`trash`](_autosummary/annals.html.md#annals.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
 
@@ -562,7 +586,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### annals.configure(, target=None, base_url=None)
+### annals.configure(, target=None, base_url=None, to=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -572,32 +596,38 @@ Write the publisher config (where to publish, what link to print) and show it.
 ### Example
 
 `annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals`.
-With no arguments, shows the resolved settings without writing.
+`--to NAME` saves the target and base url as a named target (`annals publish --to NAME`)
+and leaves the default alone. With no arguments, shows the resolved settings without writing.
 
-### annals.group(title, doc_ids, , target=None, base_url=None)
+### annals.group(title, doc_ids, , target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.groups(, target=None, base_url=None)
+### annals.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.load_settings(, target=None, base_url=None, config_path=None)
+### annals.load_settings(, target=None, base_url=None, to=None, config_path=None)
 
-Resolve settings: arguments, then env, then the config file, then local defaults.
+Resolve settings: arguments, then `to`, env, the config file, then local defaults.
+
+`to` names a `[targets.NAME]` table of the config file; it replaces the environment
+and the file’s default target for this call (explicit arguments still win).
 
 * **Return type:**
   [`Settings`](_autosummary/annals.config.html.md#annals.config.Settings)
 
-### annals.ls(q='', , trash=False, limit=50, target=None, base_url=None)
+### annals.ls(q='', , trash=False, limit=50, target=None, base_url=None, to=None)
 
 List documents (newest first), optionally filtered by words or showing the bin.
+
+`to` lists a named target instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -609,7 +639,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](_autosummary/annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -620,25 +650,27 @@ names a group to create from the published documents; the reply then carries
 `group_url` too. `add_to` appends them to an existing group instead (its id, as
 printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
+`to` publishes to a named target of the config file (`[targets.NAME]`, see
+`annals configure --to`) instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.restore(doc_ids, , target=None)
+### annals.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.show(doc_id, , target=None, base_url=None)
+### annals.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link.
+A document’s metadata and link (`to`: on a named target).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.trash(doc_ids, , target=None)
+### annals.trash(doc_ids, , target=None, to=None)
 
 Move documents to the recycle bin (restorable).
 
@@ -1204,19 +1236,20 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url])             | Write the publisher config (where to publish, what link to print) and show it.   |
-|------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url]) | Make a group (one URL for a set of documents) from existing document ids.        |
-| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url])                | List groups, newest first.                                                       |
-| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url])       | List documents (newest first), optionally filtered by words or showing the bin.  |
-| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])            | The page's html shell, for a host that serves the API under its own prefix.      |
-| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...]) | Publish one document and print its link; several paths become several documents. |
-| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target])                | Bring documents back from the recycle bin.                                       |
-| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the annals page and API (needs `pip install 'annals[server]'`).            |
-| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url])          | A document's metadata and link.                                                  |
-| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target])                  | Move documents to the recycle bin (restorable).                                  |
+| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to])             | Write the publisher config (where to publish, what link to print) and show it.     |
+|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])    | Copy documents or groups to a named target, keeping their ids; print the new link. |
+| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.          |
+| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                         |
+| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.    |
+| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                | The page's html shell, for a host that serves the API under its own prefix.        |
+| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.   |
+| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                         |
+| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path])      | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
+| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                          |
+| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                    |
 
-### annals.tools.configure(, target=None, base_url=None)
+### annals.tools.configure(, target=None, base_url=None, to=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -1226,25 +1259,42 @@ Write the publisher config (where to publish, what link to print) and show it.
 ### Example
 
 `annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals`.
-With no arguments, shows the resolved settings without writing.
+`--to NAME` saves the target and base url as a named target (`annals publish --to NAME`)
+and leaves the default alone. With no arguments, shows the resolved settings without writing.
 
-### annals.tools.group(title, doc_ids, , target=None, base_url=None)
+### annals.tools.copy(refs, , to, source=None, target=None, base_url=None)
+
+Copy documents or groups to a named target, keeping their ids; print the new link.
+
+`refs` are links (`https://.../annals/d/<id>`, `.../g/<group-id>`) or bare ids; only
+the id is used, so the link may point at any instance. They are read from the default
+target (or the named target `source`) and written to the named target `to`. A group
+is copied with its documents and keeps its id and title. Copying again refreshes the
+copy. The source must be readable from this machine (a directory, or `host:/path`).
+`target`/`base_url` override the DESTINATION’s location, as in `publish`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.group(title, doc_ids, , target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.groups(, target=None, base_url=None)
+### annals.tools.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.ls(q='', , trash=False, limit=50, target=None, base_url=None)
+### annals.tools.ls(q='', , trash=False, limit=50, target=None, base_url=None, to=None)
 
 List documents (newest first), optionally filtered by words or showing the bin.
+
+`to` lists a named target instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1261,7 +1311,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -1272,11 +1322,13 @@ names a group to create from the published documents; the reply then carries
 `group_url` too. `add_to` appends them to an existing group instead (its id, as
 printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
+`to` publishes to a named target of the config file (`[targets.NAME]`, see
+`annals configure --to`) instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.restore(doc_ids, , target=None)
+### annals.tools.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
 
@@ -1294,14 +1346,14 @@ nothing for an open server on localhost.
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### annals.tools.show(doc_id, , target=None, base_url=None)
+### annals.tools.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link.
+A document’s metadata and link (`to`: on a named target).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.trash(doc_ids, , target=None)
+### annals.tools.trash(doc_ids, , target=None, to=None)
 
 Move documents to the recycle bin (restorable).
 
@@ -1315,18 +1367,16 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-11 06:59 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea"><code>63700b4</code></a> on branch <code>main</code>, for **annals 0.0.4** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-11 12:09 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/45a71edd2b425dfd4280ee02c90ee1ed2e91b2e1"><code>45a71ed</code></a> on branch <code>main</code>, for **annals 0.0.5** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.4) is behind the latest release on PyPI (0.0.5): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/63700b43ed2a94e4fa1b7c1939fba78283ccc1ea"><code>63700b43ed2a94e4fa1b7c1939fba78283ccc1ea</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/45a71edd2b425dfd4280ee02c90ee1ed2e91b2e1"><code>45a71edd2b425dfd4280ee02c90ee1ed2e91b2e1</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1337,9 +1387,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/38119791949">38119791949</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/38138120153">38138120153</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>63700b43ed2a94e4fa1b7c1939fba78283ccc1ea</code> (in the history of the built commit) |
+| Event commit | <code>45a71edd2b425dfd4280ee02c90ee1ed2e91b2e1</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1364,13 +1414,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.5/">0.0.5</a>, newer than the documented version (0.0.4).
+Latest release: <a href="https://pypi.org/project/annals/0.0.5/">0.0.5</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 63700b43ed2a94e4fa1b7c1939fba78283ccc1ea
+git checkout 45a71edd2b425dfd4280ee02c90ee1ed2e91b2e1
 pip install "epythet==0.2.12"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

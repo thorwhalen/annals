@@ -9,19 +9,20 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](#annals.tools.configure)(\*[, target, base_url])             | Write the publisher config (where to publish, what link to print) and show it.   |
-|------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
-| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url]) | Make a group (one URL for a set of documents) from existing document ids.        |
-| [`groups`](#annals.tools.groups)(\*[, target, base_url])                | List groups, newest first.                                                       |
-| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url])       | List documents (newest first), optionally filtered by words or showing the bin.  |
-| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])            | The page's html shell, for a host that serves the API under its own prefix.      |
-| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...]) | Publish one document and print its link; several paths become several documents. |
-| [`restore`](#annals.tools.restore)(doc_ids, \*[, target])                | Bring documents back from the recycle bin.                                       |
-| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path])  | Serve the annals page and API (needs `pip install 'annals[server]'`).            |
-| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url])          | A document's metadata and link.                                                  |
-| [`trash`](#annals.tools.trash)(doc_ids, \*[, target])                  | Move documents to the recycle bin (restorable).                                  |
+| [`configure`](#annals.tools.configure)(\*[, target, base_url, to])             | Write the publisher config (where to publish, what link to print) and show it.     |
+|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])    | Copy documents or groups to a named target, keeping their ids; print the new link. |
+| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.          |
+| [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                         |
+| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.    |
+| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                | The page's html shell, for a host that serves the API under its own prefix.        |
+| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.   |
+| [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                         |
+| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path])      | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
+| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                          |
+| [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                    |
 
-### annals.tools.configure(, target=None, base_url=None)
+### annals.tools.configure(, target=None, base_url=None, to=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -31,25 +32,42 @@ Write the publisher config (where to publish, what link to print) and show it.
 ### Example
 
 `annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals`.
-With no arguments, shows the resolved settings without writing.
+`--to NAME` saves the target and base url as a named target (`annals publish --to NAME`)
+and leaves the default alone. With no arguments, shows the resolved settings without writing.
 
-### annals.tools.group(title, doc_ids, , target=None, base_url=None)
+### annals.tools.copy(refs, , to, source=None, target=None, base_url=None)
+
+Copy documents or groups to a named target, keeping their ids; print the new link.
+
+`refs` are links (`https://.../annals/d/<id>`, `.../g/<group-id>`) or bare ids; only
+the id is used, so the link may point at any instance. They are read from the default
+target (or the named target `source`) and written to the named target `to`. A group
+is copied with its documents and keeps its id and title. Copying again refreshes the
+copy. The source must be readable from this machine (a directory, or `host:/path`).
+`target`/`base_url` override the DESTINATION’s location, as in `publish`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.group(title, doc_ids, , target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.groups(, target=None, base_url=None)
+### annals.tools.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.ls(q='', , trash=False, limit=50, target=None, base_url=None)
+### annals.tools.ls(q='', , trash=False, limit=50, target=None, base_url=None, to=None)
 
 List documents (newest first), optionally filtered by words or showing the bin.
+
+`to` lists a named target instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -66,7 +84,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -77,11 +95,13 @@ names a group to create from the published documents; the reply then carries
 `group_url` too. `add_to` appends them to an existing group instead (its id, as
 printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
+`to` publishes to a named target of the config file (`[targets.NAME]`, see
+`annals configure --to`) instead of the default one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.restore(doc_ids, , target=None)
+### annals.tools.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
 
@@ -99,14 +119,14 @@ nothing for an open server on localhost.
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### annals.tools.show(doc_id, , target=None, base_url=None)
+### annals.tools.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link.
+A document’s metadata and link (`to`: on a named target).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.trash(doc_ids, , target=None)
+### annals.tools.trash(doc_ids, , target=None, to=None)
 
 Move documents to the recycle bin (restorable).
 

@@ -15,6 +15,11 @@ Resolution order, highest first: explicit keyword arguments, environment variabl
 `$XDG_CONFIG_HOME/annals/config.toml`, default `~/.config/annals/config.toml`), then the
 local defaults (publish into the local data dir, link to a local `annals serve`).
 
+Named targets (`--to NAME`): a second place to publish, opted into per command. The config
+file holds them as `[targets.NAME]` tables with the same two keys; `annals configure --to
+NAME --target ... --base-url ...` writes one. `to` picks it over the environment and the
+file’s default, and explicit `target`/`base_url` arguments still win over `to`.
+
 The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
 reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
 so with no configuration at all `annals publish` and `annals serve` meet in the same
@@ -28,11 +33,12 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Functions
 
-| [`default_config_path`](#annals.config.default_config_path)()                              | `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.                     |
-|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`default_data_dir`](#annals.config.default_data_dir)()                                 | The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.               |
-| [`load_settings`](#annals.config.load_settings)(\*[, target, base_url, config_path]) | Resolve settings: arguments, then env, then the config file, then local defaults. |
-| [`write_config`](#annals.config.write_config)(settings, \*[, config_path])          | Write the config file (two string keys; no TOML writer dependency needed).        |
+| [`default_config_path`](#annals.config.default_config_path)()                          | `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.                      |
+|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`default_data_dir`](#annals.config.default_data_dir)()                             | The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.                |
+| [`load_settings`](#annals.config.load_settings)(\*[, target, base_url, to, ...]) | Resolve settings: arguments, then `to`, env, the config file, then local defaults. |
+| [`named_targets`](#annals.config.named_targets)(\*[, config_path])               | The `[targets.NAME]` tables of the config file: name -> {target, base_url}.        |
+| [`write_config`](#annals.config.write_config)(settings, \*[, to, config_path])  | Write the config file (string keys only; no TOML writer dependency needed).        |
 
 ### Classes
 
@@ -81,16 +87,30 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### annals.config.load_settings(, target=None, base_url=None, config_path=None)
+### annals.config.load_settings(, target=None, base_url=None, to=None, config_path=None)
 
-Resolve settings: arguments, then env, then the config file, then local defaults.
+Resolve settings: arguments, then `to`, env, the config file, then local defaults.
+
+`to` names a `[targets.NAME]` table of the config file; it replaces the environment
+and the file’s default target for this call (explicit arguments still win).
 
 * **Return type:**
   [`Settings`](#annals.config.Settings)
 
-### annals.config.write_config(settings, , config_path=None)
+### annals.config.named_targets(, config_path=None)
 
-Write the config file (two string keys; no TOML writer dependency needed).
+The `[targets.NAME]` tables of the config file: name -> {target, base_url}.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
+### annals.config.write_config(settings, , to=None, config_path=None)
+
+Write the config file (string keys only; no TOML writer dependency needed).
+
+With `to`, `settings` is saved as the named target `[targets.<to>]` and the
+default section is left as it was; without it the default section is replaced. Either
+way the other tables are kept.
 
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
