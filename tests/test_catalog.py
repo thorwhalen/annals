@@ -149,7 +149,6 @@ def test_json_tag_store_persists_and_sees_other_writers(tmp_path):
     a["x:1"] = ["red", "Red", "blue"]
     assert b["x:1"] == ["blue", "red"] and len(b) == 1 and list(b) == ["x:1"]
     b["x:2"] = ["green"]
-    os.utime(path, ns=(1, 1))  # force a different stamp even within one mtime tick
     assert a.snapshot() == {"x:1": ["blue", "red"], "x:2": ["green"]}
     del a["x:1"]
     assert "x:1" not in JsonTagStore(path) and json.loads(path.read_text()) == {
@@ -295,3 +294,23 @@ def test_document_endpoints_show_the_owners_tags(client):
     client.patch(f"/items/{key}", json={"tags": ["mine"]})
     assert client.get(f"/docs/{doc_id}").json()["tags"] == ["mine"]
     assert client.get("/docs").json()["docs"][0]["tags"] == ["mine"]
+
+
+def test_json_tag_store_loses_no_write_across_processes(tmp_path):
+    """Two server workers saving at once: every write survives (the file lock)."""
+    import multiprocessing as mp
+
+    path = tmp_path / "tags.json"
+    ctx = mp.get_context("fork")
+    procs = [ctx.Process(target=_tag_many, args=(path, w)) for w in range(4)]
+    for p in procs:
+        p.start()
+    for p in procs:
+        p.join(30)
+    assert len(JsonTagStore(path)) == 4 * 25
+
+
+def _tag_many(path, worker):
+    store = JsonTagStore(path)
+    for i in range(25):
+        store[f"w{worker}:{i}"] = ["t"]

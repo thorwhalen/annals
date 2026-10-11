@@ -13,6 +13,7 @@ can replace it (``mk_api(tags=...)``), e.g. a table in a database.
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import re
@@ -20,6 +21,11 @@ import tempfile
 import threading
 from collections.abc import Iterable, Iterator, MutableMapping
 from pathlib import Path
+
+try:  # POSIX: writers in several processes (a server's workers) take turns
+    import fcntl
+except ImportError:  # pragma: no cover - Windows: one process, the thread lock suffices
+    fcntl = None
 
 TAGS_DIR = "tags"
 TAGS_FILE = "tags.json"
@@ -51,7 +57,13 @@ def normalize_tags(tags: Iterable[str]) -> list[str]:
 
 
 class JsonTagStore(MutableMapping):
-    """``{item key: [tags]}`` in one JSON file, re-read when another process changed it."""
+    """``{item key: [tags]}`` in one JSON file, re-read when another process changed it.
+
+    Safe with several server processes on one machine: a write takes an exclusive
+    ``flock`` on ``<file>.lock``, re-reads the file, changes it and replaces it atomically,
+    so two workers saving at once never lose each other's change. A read re-reads the file
+    whenever its inode, size or mtime changed (every write makes a new inode).
+    """
 
     def __init__(self, path: Path | str):
         self.path = Path(path).expanduser()
@@ -59,14 +71,29 @@ class JsonTagStore(MutableMapping):
         self._stamp: tuple | None = None
         self._lock = threading.Lock()
 
-    def _load(self) -> dict[str, list[str]]:
+    @contextlib.contextmanager
+    def _writing(self):
+        """The thread lock, plus an exclusive lock other processes respect."""
+        with self._lock:
+            if fcntl is None:
+                yield
+                return
+            self.path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.path.with_name(self.path.name + ".lock"), "a") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(lock, fcntl.LOCK_UN)
+
+    def _load(self, *, force: bool = False) -> dict[str, list[str]]:
         try:
             st = self.path.stat()
         except FileNotFoundError:
             self._data, self._stamp = {}, None
             return self._data
-        stamp = (st.st_mtime_ns, st.st_size)
-        if stamp != self._stamp:
+        stamp = (st.st_ino, st.st_mtime_ns, st.st_size)
+        if force or stamp != self._stamp:
             data = json.loads(self.path.read_text(encoding="utf-8") or "{}")
             self._data = {str(k): list(v) for k, v in data.items()}
             self._stamp = stamp
@@ -83,21 +110,22 @@ class JsonTagStore(MutableMapping):
             if os.path.exists(tmp):
                 os.unlink(tmp)
         st = self.path.stat()
-        self._data, self._stamp = data, (st.st_mtime_ns, st.st_size)
+        self._data, self._stamp = data, (st.st_ino, st.st_mtime_ns, st.st_size)
 
     def __getitem__(self, key: str) -> list[str]:
         with self._lock:
             return list(self._load()[key])
 
     def __setitem__(self, key: str, tags: Iterable[str]) -> None:
-        with self._lock:
-            data = dict(self._load())
-            data[key] = normalize_tags(tags)
+        tags = normalize_tags(tags)
+        with self._writing():
+            data = dict(self._load(force=True))
+            data[key] = tags
             self._save(data)
 
     def __delitem__(self, key: str) -> None:
-        with self._lock:
-            data = dict(self._load())
+        with self._writing():
+            data = dict(self._load(force=True))
             del data[key]
             self._save(data)
 
