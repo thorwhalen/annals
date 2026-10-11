@@ -13,6 +13,11 @@ Resolution order, highest first: explicit keyword arguments, environment variabl
 ``$XDG_CONFIG_HOME/annals/config.toml``, default ``~/.config/annals/config.toml``), then the
 local defaults (publish into the local data dir, link to a local ``annals serve``).
 
+Named targets (``--to NAME``): a second place to publish, opted into per command. The config
+file holds them as ``[targets.NAME]`` tables with the same two keys; ``annals configure --to
+NAME --target ... --base-url ...`` writes one. ``to`` picks it over the environment and the
+file's default, and explicit ``target``/``base_url`` arguments still win over ``to``.
+
 The server side has two knobs of its own. ``ANNALS_DATA_DIR`` is the directory the API
 reads. It defaults to ``~/.local/share/annals``, which is also the default publish target,
 so with no configuration at all ``annals publish`` and ``annals serve`` meet in the same
@@ -74,22 +79,51 @@ class Settings:
         return asdict(self)
 
 
-def _read_config_file(path: Path) -> dict:
+def _read_toml(path: Path) -> dict:
     if not path.is_file():
         return {}
     with path.open("rb") as f:
-        data = tomllib.load(f)
-    section = data.get(APP_NAME, data)
+        return tomllib.load(f)
+
+
+def _read_config_file(path: Path) -> dict:
+    section = _read_toml(path)
+    section = section.get(APP_NAME, section)
     return {k: v for k, v in section.items() if isinstance(v, str)}
+
+
+def named_targets(*, config_path: Path | None = None) -> dict[str, dict[str, str]]:
+    """The ``[targets.NAME]`` tables of the config file: name -> {target, base_url}."""
+    tables = _read_toml(config_path or default_config_path()).get("targets", {})
+    return {
+        name: {k: v for k, v in table.items() if isinstance(v, str)}
+        for name, table in tables.items()
+        if isinstance(table, dict)
+    }
 
 
 def load_settings(
     *,
     target: str | None = None,
     base_url: str | None = None,
+    to: str | None = None,
     config_path: Path | None = None,
 ) -> Settings:
-    """Resolve settings: arguments, then env, then the config file, then local defaults."""
+    """Resolve settings: arguments, then ``to``, env, the config file, then local defaults.
+
+    ``to`` names a ``[targets.NAME]`` table of the config file; it replaces the environment
+    and the file's default target for this call (explicit arguments still win).
+    """
+    if to:
+        known = named_targets(config_path=config_path)
+        if to not in known or not known[to].get("target"):
+            raise ValueError(
+                f"unknown annals target {to!r}; known: {sorted(known) or 'none'}. "
+                f"Add one with `annals configure --to {to} --target ... --base-url ...`."
+            )
+        named = known[to]
+        target = target or named["target"]
+        base_url = base_url or named.get("base_url")
     file_values = _read_config_file(config_path or default_config_path())
     resolved_target = (
         target
@@ -111,15 +145,34 @@ def load_settings(
     )
 
 
-def write_config(settings: Settings, *, config_path: Path | None = None) -> Path:
-    """Write the config file (two string keys; no TOML writer dependency needed)."""
+def write_config(
+    settings: Settings,
+    *,
+    to: str | None = None,
+    config_path: Path | None = None,
+) -> Path:
+    """Write the config file (string keys only; no TOML writer dependency needed).
+
+    With ``to``, ``settings`` is saved as the named target ``[targets.<to>]`` and the
+    default section is left as it was; without it the default section is replaced. Either
+    way the other tables are kept.
+    """
     path = config_path or default_config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
-    body = (
-        f"# {APP_NAME} publisher settings. `annals configure` rewrites this file.\n"
-        f"[{APP_NAME}]\n"
-        f'target = "{settings.target}"\n'
-        f'base_url = "{settings.base_url}"\n'
-    )
+    default = _read_config_file(path)
+    targets = named_targets(config_path=path)
+    if to:
+        targets[to] = {"target": settings.target, "base_url": settings.base_url}
+    else:
+        default = {"target": settings.target, "base_url": settings.base_url}
+    body = f"# {APP_NAME} publisher settings. `annals configure` rewrites this file.\n"
+    if default:
+        body += f"[{APP_NAME}]\n" + "".join(
+            f'{k} = "{v}"\n' for k, v in default.items()
+        )
+    for name, table in targets.items():
+        body += f"\n[targets.{name}]\n" + "".join(
+            f'{k} = "{v}"\n' for k, v in table.items()
+        )
     path.write_text(body, encoding="utf-8")
     return path

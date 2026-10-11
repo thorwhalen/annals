@@ -8,6 +8,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 from __future__ import annotations
 
+import json
 import os
 import socket
 from pathlib import Path
@@ -58,6 +59,7 @@ def publish(
     all_files: bool = False,
     target: str | None = None,
     base_url: str | None = None,
+    to: str | None = None,
 ) -> dict:
     """Publish one document and print its link; several paths become several documents.
 
@@ -68,8 +70,10 @@ def publish(
     ``group_url`` too. ``add_to`` appends them to an existing group instead (its id, as
     printed in a group link), so a second batch lands under the link the owner already has. ``session`` records who published (the source shown on the page). A directory skips
     hidden files and caches (``.*``, ``__pycache__``, ``*.pyc``) unless ``all_files``.
+    ``to`` publishes to a named target of the config file (``[targets.NAME]``, see
+    ``annals configure --to``) instead of the default one.
     """
-    settings = load_settings(target=target, base_url=base_url)
+    settings = load_settings(target=target, base_url=base_url, to=to)
     store = _store(settings)
     tag_list = [t for t in tags.split(",") if t.strip()]
     source = _default_source()
@@ -125,9 +129,13 @@ def ls(
     limit: int = 50,
     target: str | None = None,
     base_url: str | None = None,
+    to: str | None = None,
 ) -> dict:
-    """List documents (newest first), optionally filtered by words or showing the bin."""
-    settings = load_settings(target=target, base_url=base_url)
+    """List documents (newest first), optionally filtered by words or showing the bin.
+
+    ``to`` lists a named target instead of the default one.
+    """
+    settings = load_settings(target=target, base_url=base_url, to=to)
     store = _store(settings)
     docs = store.search(q, trash=trash) if q else store.list(trash=trash)
     return {
@@ -147,24 +155,32 @@ def ls(
 
 
 def show(
-    doc_id: str, *, target: str | None = None, base_url: str | None = None
+    doc_id: str,
+    *,
+    target: str | None = None,
+    base_url: str | None = None,
+    to: str | None = None,
 ) -> dict:
-    """A document's metadata and link."""
-    settings = load_settings(target=target, base_url=base_url)
+    """A document's metadata and link (``to``: on a named target)."""
+    settings = load_settings(target=target, base_url=base_url, to=to)
     meta = _store(settings).meta(doc_id)
     meta["url"] = _doc_url(settings, doc_id)
     return meta
 
 
-def trash(doc_ids: list[str], *, target: str | None = None) -> dict:
+def trash(
+    doc_ids: list[str], *, target: str | None = None, to: str | None = None
+) -> dict:
     """Move documents to the recycle bin (restorable)."""
-    store = _store(load_settings(target=target))
+    store = _store(load_settings(target=target, to=to))
     return {"trashed": [store.trash(i)["id"] for i in _as_list(doc_ids)]}
 
 
-def restore(doc_ids: list[str], *, target: str | None = None) -> dict:
+def restore(
+    doc_ids: list[str], *, target: str | None = None, to: str | None = None
+) -> dict:
     """Bring documents back from the recycle bin."""
-    store = _store(load_settings(target=target))
+    store = _store(load_settings(target=target, to=to))
     return {"restored": [store.restore(i)["id"] for i in _as_list(doc_ids)]}
 
 
@@ -174,9 +190,10 @@ def group(
     *,
     target: str | None = None,
     base_url: str | None = None,
+    to: str | None = None,
 ) -> dict:
     """Make a group (one URL for a set of documents) from existing document ids."""
-    settings = load_settings(target=target, base_url=base_url)
+    settings = load_settings(target=target, base_url=base_url, to=to)
     g = _store(settings).make_group(title, _as_list(doc_ids))
     return {
         "id": g["id"],
@@ -186,9 +203,11 @@ def group(
     }
 
 
-def groups(*, target: str | None = None, base_url: str | None = None) -> dict:
+def groups(
+    *, target: str | None = None, base_url: str | None = None, to: str | None = None
+) -> dict:
     """List groups, newest first."""
-    settings = load_settings(target=target, base_url=base_url)
+    settings = load_settings(target=target, base_url=base_url, to=to)
     return {
         "groups": [
             {
@@ -202,18 +221,114 @@ def groups(*, target: str | None = None, base_url: str | None = None) -> dict:
     }
 
 
-def configure(*, target: str | None = None, base_url: str | None = None) -> dict:
+def configure(
+    *,
+    target: str | None = None,
+    base_url: str | None = None,
+    to: str | None = None,
+) -> dict:
     """Write the publisher config (where to publish, what link to print) and show it.
 
     Example: ``annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals``.
-    With no arguments, shows the resolved settings without writing.
+    ``--to NAME`` saves the target and base url as a named target (``annals publish --to NAME``)
+    and leaves the default alone. With no arguments, shows the resolved settings without writing.
     """
-    settings = load_settings(target=target, base_url=base_url)
+    if to and (target or base_url):
+        # Resolve a partly-given named target against what is already saved under it.
+        try:
+            settings = load_settings(target=target, base_url=base_url, to=to)
+        except ValueError:
+            if not (target and base_url):
+                raise ValueError(
+                    f"a new named target needs both --target and --base-url ({to!r} is not saved yet)"
+                ) from None
+            settings = load_settings(target=target, base_url=base_url)
+    else:
+        settings = load_settings(target=target, base_url=base_url, to=to)
     out = settings.as_dict()
     if target or base_url:
-        out["config_path"] = str(write_config(settings))
+        out["config_path"] = str(write_config(settings, to=to))
     out["local_data_dir"] = str(default_data_dir())
     return out
+
+
+def _parse_ref(ref: str) -> tuple[str, str]:
+    """``("group"|"doc"|"id", id)`` from a link (``.../g/<id>``, ``.../d/<id>``) or a bare id."""
+    parts = ref.strip().rstrip("/").split("/")
+    if len(parts) >= 2 and parts[-2] in ("g", "d"):
+        return ("group" if parts[-2] == "g" else "doc"), parts[-1]
+    return "id", parts[-1]
+
+
+def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
+    import tempfile
+
+    meta = src.meta(doc_id)
+    rel = f"{'trash' if meta.get('in_trash') else 'docs'}/{doc_id}"
+    with tempfile.TemporaryDirectory(prefix="annals-copy-") as td:
+        src.target.get_tree(rel, Path(td) / "doc")
+        dst.target.put_tree(Path(td) / "doc", f"docs/{doc_id}")
+    return meta
+
+
+def copy(
+    refs: list[str],
+    *,
+    to: str,
+    source: str | None = None,
+    target: str | None = None,
+    base_url: str | None = None,
+) -> dict:
+    """Copy documents or groups to a named target, keeping their ids; print the new link.
+
+    ``refs`` are links (``https://.../annals/d/<id>``, ``.../g/<group-id>``) or bare ids; only
+    the id is used, so the link may point at any instance. They are read from the default
+    target (or the named target ``source``) and written to the named target ``to``. A group
+    is copied with its documents and keeps its id and title. Copying again refreshes the
+    copy. The source must be readable from this machine (a directory, or ``host:/path``).
+    ``target``/``base_url`` override the DESTINATION's location, as in ``publish``.
+    """
+    src_settings = load_settings(to=source)
+    dst_settings = load_settings(target=target, base_url=base_url, to=to)
+    if src_settings.target == dst_settings.target:
+        raise ValueError(
+            f"source and destination are the same place: {src_settings.target}"
+        )
+    src, dst = _store(src_settings), _store(dst_settings)
+    copied: list[dict] = []
+    group_out: dict | None = None
+    for ref in _as_list(refs):
+        kind, ident = _parse_ref(ref)
+        if kind == "id":
+            try:
+                src.group(ident)
+                kind = "group"
+            except KeyError:
+                kind = "doc"
+        if kind == "group":
+            g = src.group(ident)
+            for doc_id in g["docs"]:
+                m = _copy_doc(src, dst, doc_id)
+                copied.append(
+                    {
+                        "id": doc_id,
+                        "title": m["title"],
+                        "url": _doc_url(dst_settings, doc_id),
+                    }
+                )
+            dst.target.write_text(f"groups/{g['id']}.json", json.dumps(g, indent=1))
+            group_out = {
+                "group_id": g["id"],
+                "group_url": _group_url(dst_settings, g["id"]),
+            }
+        else:
+            m = _copy_doc(src, dst, ident)
+            copied.append(
+                {"id": ident, "title": m["title"], "url": _doc_url(dst_settings, ident)}
+            )
+    if group_out:
+        return {**group_out, "url": group_out["group_url"], "docs": copied}
+    return copied[0] if len(copied) == 1 else {"docs": copied}
 
 
 def serve(
@@ -257,6 +372,7 @@ _dispatch_funcs[:] = [
     restore,
     group,
     groups,
+    copy,
     configure,
     serve,
     page_shell,

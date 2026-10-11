@@ -37,6 +37,8 @@ class Target(Protocol):
 
     def put_tree(self, src_dir: Path, rel: str) -> None: ...
 
+    def get_tree(self, rel: str, dst_dir: Path) -> None: ...
+
     def move(self, rel_src: str, rel_dst: str) -> None: ...
 
     def remove_tree(self, rel: str) -> None: ...
@@ -84,6 +86,9 @@ class LocalTarget:
         if dst.exists():
             shutil.rmtree(dst)
         shutil.copytree(src_dir, dst)
+
+    def get_tree(self, rel: str, dst_dir: Path) -> None:
+        shutil.copytree(self._abs(rel), dst_dir, dirs_exist_ok=True)
 
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
@@ -176,6 +181,22 @@ class SshTarget:
         if proc.returncode != 0:
             raise RuntimeError(
                 f"rsync to {self.host} failed: {proc.stderr.strip()[:500]}"
+            )
+
+    def get_tree(self, rel: str, dst_dir: Path) -> None:
+        dst_dir.mkdir(parents=True, exist_ok=True)
+        cmd = [
+            "rsync",
+            "-a",
+            "-e",
+            "ssh " + " ".join(SSH_OPTS),
+            f"{self.host}:{self._abs(rel)}/",
+            f"{dst_dir}/",
+        ]
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"rsync from {self.host} failed: {proc.stderr.strip()[:500]}"
             )
 
     def move(self, rel_src: str, rel_dst: str) -> None:
