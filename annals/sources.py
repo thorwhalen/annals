@@ -1,0 +1,351 @@
+"""Item sources: everything the page lists, wherever it lives, as rows of one shape.
+
+A *source* is a named, read-mostly collection of items. Two kinds exist:
+
+* :class:`PublishedSource`: the documents agents published (a :class:`annals.store.DocStore`).
+* :class:`FolderSource`: a folder of files owned by someone else, read in place and never
+  written (the crowsnest ledgers, and any other personal folder later). Its items are the
+  folder's files, keyed by their path relative to the folder.
+
+Every source yields the same row shape, which the page lists, searches and filters:
+
+``key``      ``<source>:<id>``, unique across sources (the API's item id)
+``source``   the source's name; ``id`` the item's id within it
+``title``, ``kind`` (see :func:`annals.store.kind_of`), ``session`` (who wrote it)
+``time``     ISO 8601, UTC: publication time, or a file's last modification
+``size``, ``tags`` (the item's own; the catalog overlays the owner's), ``excerpt``
+
+Sources are plain objects with a few methods (the :class:`Source` protocol), so a new kind
+of folder is a new class or a new keyword argument, never a change to the API.
+"""
+
+from __future__ import annotations
+
+import fnmatch
+import os
+import threading
+from collections.abc import Callable, Iterator, Mapping
+from datetime import datetime, timezone
+from pathlib import Path, PurePosixPath
+from typing import Iterable, Protocol
+
+from annals.config import MAX_INLINE_TEXT_BYTES
+from annals.store import (
+    DFLT_EXCLUDE,
+    HEAD_CHARS,
+    TEXT_KINDS,
+    DocStore,
+    kind_of,
+    title_and_excerpt,
+)
+
+PUBLISHED = "published"
+KEY_SEP = ":"
+
+
+class Source(Protocol):
+    """What the catalog needs from a source of items."""
+
+    name: str
+    title: str
+
+    def rows(self, *, trash: bool = False) -> list[dict]:
+        """Listing rows, newest first."""
+        ...
+
+    def item(self, item_id: str) -> dict:
+        """One row plus what the page shows (``text`` for text kinds). ``KeyError`` if absent."""
+        ...
+
+    def text(self, item_id: str) -> str:
+        """The item's full text for search (``""`` when it has none)."""
+        ...
+
+
+def mk_key(source: str, item_id: str) -> str:
+    return f"{source}{KEY_SEP}{item_id}"
+
+
+def split_key(key: str) -> tuple[str, str]:
+    """``"ledgers:a/b.md"`` -> ``("ledgers", "a/b.md")``; ``KeyError`` when malformed."""
+    source, sep, item_id = key.partition(KEY_SEP)
+    if not sep or not source or not item_id:
+        raise KeyError(key)
+    return source, item_id
+
+
+def iso_utc(ts: float) -> str:
+    return datetime.fromtimestamp(ts, timezone.utc).isoformat(timespec="seconds")
+
+
+# -- published documents ---------------------------------------------------------------
+
+
+def with_thumb(meta: dict) -> dict:
+    """Add ``thumb`` (the first image, main file first) and fix pre-media kinds.
+
+    Documents published before media kinds existed say ``file`` for an image or a video;
+    their kind is recomputed from the main file so they show inline too.
+    """
+    if meta.get("kind") == "file" and meta.get("main"):
+        meta["kind"] = kind_of(meta["main"])
+    files = (
+        [meta["main"]] + meta.get("files", [])
+        if meta.get("main")
+        else meta.get("files", [])
+    )
+    meta["thumb"] = next((f for f in files if kind_of(f) == "image"), None)
+    return meta
+
+
+def list_meta(meta: dict) -> dict:
+    """A listing row: the meta without its per-file tables (a folder can hold thousands)."""
+    row = with_thumb(dict(meta))
+    row["n_files"] = len(row.pop("files", []) or [])
+    row.pop("sizes", None)
+    return row
+
+
+class PublishedSource:
+    """The documents agents published, as rows (a view over a :class:`DocStore`)."""
+
+    def __init__(
+        self, store: DocStore, *, name: str = PUBLISHED, title: str = "Published"
+    ):
+        self.store = store
+        self.name = name
+        self.title = title
+        self._texts: dict[
+            str, str
+        ] = {}  # a document never changes after it is published
+
+    def _row(self, meta: dict) -> dict:
+        row = list_meta(meta)
+        row.update(
+            key=mk_key(self.name, meta["id"]),
+            source=self.name,
+            session=(meta.get("source") or {}).get("session", ""),
+            time=meta.get("created", ""),
+            tags=list(meta.get("tags") or []),
+        )
+        return row
+
+    def rows(self, *, trash: bool = False) -> list[dict]:
+        return [self._row(m) for m in self.store.list(trash=trash)]
+
+    def item(self, item_id: str) -> dict:
+        try:
+            meta = self.store.meta(item_id)
+        except ValueError:
+            raise KeyError(item_id)
+        row = self._row(meta)
+        row["files"] = meta.get("files", [])
+        row["in_trash"] = meta.get("in_trash", False)
+        if row["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:
+            row["text"] = self.store.read_text(item_id)
+        return row
+
+    def text(self, item_id: str) -> str:
+        if item_id not in self._texts:
+            try:
+                meta = self.store.meta(item_id)
+                ok = (
+                    meta["kind"] in TEXT_KINDS
+                    and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES
+                )
+                self._texts[item_id] = self.store.read_text(item_id) if ok else ""
+            except (KeyError, ValueError, OSError):
+                return ""
+        return self._texts[item_id]
+
+
+# -- a folder read in place ------------------------------------------------------------
+
+
+def top_level_name(rel: str) -> str:
+    """Who wrote a file in a folder of per-session files: ``a.md`` -> ``a``, ``b/c.md`` -> ``b``."""
+    parts = PurePosixPath(rel).parts
+    return parts[0] if len(parts) > 1 else PurePosixPath(parts[0]).stem
+
+
+class FolderSource(Mapping):
+    """A folder of files, read in place and never written, as a ``Mapping`` of rows.
+
+    Keys are paths relative to ``root`` (``"annals.md"``, ``"cw-liaise/design.md"``), values
+    listing rows. The folder is walked on every listing (a stat per file, cheap for
+    hundreds), and a file is re-read only when its size or mtime changed. Hidden files and
+    caches are skipped (``exclude``, the same patterns a directory publish skips), and so
+    is anything that resolves outside ``root``.
+
+    ``session_of(rel)`` names who wrote a file; the default suits a folder of per-session
+    files and sub-folders (:func:`top_level_name`).
+    """
+
+    def __init__(
+        self,
+        root: Path | str,
+        *,
+        name: str,
+        title: str | None = None,
+        exclude: Iterable[str] = DFLT_EXCLUDE,
+        session_of: Callable[[str], str] = top_level_name,
+    ):
+        if KEY_SEP in name:
+            raise ValueError(f"a source name cannot contain {KEY_SEP!r}: {name!r}")
+        self.root = Path(root).expanduser()
+        self.name = name
+        self.title = title or name.replace("-", " ").replace("_", " ").capitalize()
+        self.exclude = tuple(exclude)
+        self.session_of = session_of
+        self._rows: dict[str, tuple[tuple, dict]] = {}
+        self._texts: dict[str, tuple[tuple, str]] = {}
+        self._lock = threading.Lock()
+
+    # -- the Mapping ---------------------------------------------------------------
+
+    def _skip(self, name: str) -> bool:
+        return any(fnmatch.fnmatch(name, pat) for pat in self.exclude)
+
+    def _walk(self, rel_dir: str = "") -> Iterator[tuple[str, os.DirEntry]]:
+        """``(rel, entry)`` for every file kept, sorted; symlinks only when they stay inside."""
+        try:
+            with os.scandir(os.path.join(self.root, rel_dir)) as it:
+                entries = sorted(it, key=lambda e: e.name)
+        except (FileNotFoundError, NotADirectoryError, PermissionError):
+            return
+        for e in entries:
+            if self._skip(e.name):
+                continue
+            rel = f"{rel_dir}/{e.name}" if rel_dir else e.name
+            if e.is_symlink() and not self._inside(Path(e.path).resolve()):
+                continue
+            if e.is_dir():
+                yield from self._walk(rel)
+            elif e.is_file():
+                yield rel, e
+
+    def _inside(self, path: Path) -> bool:
+        return path.is_relative_to(self.root.resolve())
+
+    def __iter__(self) -> Iterator[str]:
+        return (rel for rel, _ in self._walk())
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self._walk())
+
+    def __getitem__(self, rel: str) -> dict:
+        path = self.file_path(rel)
+        return self._row(rel, str(path), path.stat())
+
+    def _row(self, rel: str, path: str, st: os.stat_result) -> dict:
+        """The row for a file, re-read only when its size or mtime changed."""
+        stamp = (st.st_mtime_ns, st.st_size)
+        cached = self._rows.get(rel)
+        if cached and cached[0] == stamp:
+            return cached[1]
+        kind = kind_of(rel)
+        head = ""
+        if kind in TEXT_KINDS or kind == "html":
+            with open(path, encoding="utf-8", errors="replace") as f:
+                head = f.read(HEAD_CHARS)
+        title, excerpt = title_and_excerpt(head, kind)
+        row = {
+            "key": mk_key(self.name, rel),
+            "source": self.name,
+            "id": rel,
+            "title": title or PurePosixPath(rel).stem.replace("_", " "),
+            "kind": kind,
+            "session": self.session_of(rel),
+            "time": iso_utc(st.st_mtime),
+            "size": st.st_size,
+            "tags": [],
+            "excerpt": excerpt,
+        }
+        with self._lock:
+            self._rows[rel] = (stamp, row)
+        return row
+
+    def __contains__(self, rel: object) -> bool:
+        try:
+            self.file_path(str(rel))
+            return True
+        except KeyError:
+            return False
+
+    # -- the Source protocol -------------------------------------------------------
+
+    def file_path(self, rel: str) -> Path:
+        """The file on disk; ``KeyError`` if it is absent, hidden, or escapes the root."""
+        p = PurePosixPath(rel)
+        if (
+            not rel
+            or p.is_absolute()
+            or ".." in p.parts
+            or any(self._skip(s) for s in p.parts)
+        ):
+            raise KeyError(rel)
+        path = (self.root / rel).resolve()
+        if not self._inside(path) or not path.is_file():
+            raise KeyError(rel)
+        return path
+
+    def rows(self, *, trash: bool = False) -> list[dict]:
+        if trash:
+            return []  # nothing here is ever binned: annals does not own these files
+        out = []
+        for rel, entry in self._walk():
+            try:
+                out.append(dict(self._row(rel, entry.path, entry.stat())))
+            except OSError:
+                continue  # vanished between the walk and the stat
+        return sorted(out, key=lambda r: r["time"], reverse=True)
+
+    def item(self, rel: str) -> dict:
+        row = dict(self[rel])
+        if row["kind"] in TEXT_KINDS and row["size"] <= MAX_INLINE_TEXT_BYTES:
+            row["text"] = self.text(rel)
+        return row
+
+    def text(self, rel: str) -> str:
+        """The file's text (cached until it changes); ``""`` for binaries and huge files."""
+        cached = self._texts.get(rel)
+        row = self._rows.get(rel)
+        if cached and row and cached[0] == row[0]:
+            # a listing just stat'ed it: the cached text is current for that listing
+            return cached[1]
+        try:
+            path = self.file_path(rel)
+            st = path.stat()
+        except (KeyError, OSError):
+            return ""
+        if (
+            kind_of(rel) not in TEXT_KINDS | {"html"}
+            or st.st_size > MAX_INLINE_TEXT_BYTES
+        ):
+            return ""
+        stamp = (st.st_mtime_ns, st.st_size)
+        if cached and cached[0] == stamp:
+            return cached[1]
+        text = path.read_text(encoding="utf-8", errors="replace")
+        with self._lock:
+            self._texts[rel] = (stamp, text)
+        return text
+
+
+def as_source(name: str, spec: Source | Path | str) -> Source:
+    """A source from a source, or from a folder path (read in place as a :class:`FolderSource`)."""
+    if isinstance(spec, (str, Path)):
+        return FolderSource(spec, name=name)
+    return spec
+
+
+def parse_sources_spec(spec: str) -> dict[str, str]:
+    """``"ledgers=~/x, notes=/y"`` -> ``{"ledgers": "~/x", "notes": "/y"}`` (the env form)."""
+    out = {}
+    for part in spec.split(","):
+        name, sep, path = part.strip().partition("=")
+        if part.strip() and (not sep or not name.strip() or not path.strip()):
+            raise ValueError(f"expected name=path, got {part.strip()!r}")
+        if sep:
+            out[name.strip()] = path.strip()
+    return out

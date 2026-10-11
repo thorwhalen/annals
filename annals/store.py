@@ -36,6 +36,8 @@ GROUPS = "groups"
 META = "meta.json"
 MAX_SLUG_LEN = 48
 EXCERPT_CHARS = 280
+#: how much of a file is read to find its title and excerpt
+HEAD_CHARS = 4000
 #: names never published from a directory: hidden files, caches, compiled python
 DFLT_EXCLUDE = (".*", "__pycache__", "*.pyc", "*.pyo")
 ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,199}$")
@@ -96,31 +98,37 @@ def kind_of(filename: str) -> str:
     return KINDS.get(Path(filename).suffix.lower(), "file")
 
 
-def _title_from_content(path: Path, kind: str) -> str | None:
-    try:
-        head = path.read_text(encoding="utf-8", errors="replace")[:4000]
-    except OSError:
-        return None
+def title_and_excerpt(head: str, kind: str) -> tuple[str | None, str]:
+    """A title (markdown ``# h1`` or html ``<title>``) and a plain-text excerpt of ``head``."""
+    title = None
     if kind == "md":
         m = re.search(r"^#\s+(.+?)\s*$", head, re.M)
-        return m.group(1).strip() if m else None
-    if kind == "html":
+        title = m.group(1).strip() if m else None
+    elif kind == "html":
         m = re.search(r"<title[^>]*>(.*?)</title>", head, re.I | re.S)
-        return re.sub(r"\s+", " ", m.group(1)).strip() if m else None
-    return None
+        title = re.sub(r"\s+", " ", m.group(1)).strip() if m else None
+    if kind not in TEXT_KINDS:
+        return title, ""
+    text = re.sub(r"^#+\s.*$", "", head, flags=re.M)  # drop headings
+    text = re.sub(r"[`*_>\[\]()#|]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return title, text[:EXCERPT_CHARS]
+
+
+def _head(path: Path) -> str:
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return f.read(HEAD_CHARS)
+    except OSError:
+        return ""
+
+
+def _title_from_content(path: Path, kind: str) -> str | None:
+    return title_and_excerpt(_head(path), kind)[0] if kind in ("md", "html") else None
 
 
 def _excerpt(path: Path, kind: str) -> str:
-    if kind not in TEXT_KINDS:
-        return ""
-    try:
-        text = path.read_text(encoding="utf-8", errors="replace")[:4000]
-    except OSError:
-        return ""
-    text = re.sub(r"^#+\s.*$", "", text, flags=re.M)  # drop headings
-    text = re.sub(r"[`*_>\[\]()#]", "", text)
-    text = re.sub(r"\s+", " ", text).strip()
-    return text[:EXCERPT_CHARS]
+    return title_and_excerpt(_head(path), kind)[1] if kind in TEXT_KINDS else ""
 
 
 def _pick_main(files: list[Path]) -> tuple[Path, str]:

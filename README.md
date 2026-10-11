@@ -8,6 +8,8 @@ annals publish report.md --session my-agent
 # https://apps.example.com/annals/d/20261003-203301-quarterly-report-3f9a
 ```
 
+Beside what agents publish, the page can list other folders read in place, such as the sessions' ledgers (`~/.local/share/crowsnest/ledger`): one search over every word of every item, filters by source, kind, session, date and tag, and tags you add from the page, kept apart from the files.
+
 Documents are plain files in a directory. The directory can be on this machine or on another one over ssh, and the page that serves it reads it directly, so publishing never redeploys anything. No database, no build step, no API token.
 
 ## For agents
@@ -82,6 +84,24 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | No platform login | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD` | HTTP Basic |
 | Localhost only | nothing | open |
 
+## Other folders, search, filters and tags
+
+Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (`/annals/s/<name>`) and in `/annals/all`:
+
+```python
+app = mk_api(data_dir="~/.local/share/annals", sources={"ledgers": "~/.local/share/crowsnest/ledger"})
+```
+
+or, with no code, `ANNALS_SOURCES="ledgers=~/.local/share/crowsnest/ledger"` (several: comma-separated). A folder is read in place and never written: its files are listed newest first with their age, markdown renders, html is framed, the rest shows by its kind, and a sub-folder's files count as written by the sub-folder's name. Hidden files and caches are skipped.
+
+On every list:
+
+- **Search** matches every word, case-insensitively, against titles, tags, sessions, excerpts and the full text of markdown and text files (on the server; the matching passage shows under the title).
+- **Filters** are one button per family (source, kind, session, date, tag). Checked values within a family are alternatives ("any of"), families combine ("and"), the counts are what each choice would give now, and the active filters show as removable chips. The filters and the search are in the URL, so Back undoes a filter and a link reproduces the view.
+- **Tags**: add or remove them on any item's page; they save as you go. They are stored apart from the items, in one file under the data root (`tags/tags.json`), so a ledger is never touched; on a published document they replace the tags the publisher gave.
+
+The API behind it: `GET /items?q=&source=&trash=` → `{data, total}`, `GET /items/<source>:<id>`, `PATCH /items/<source>:<id>` with `{"tags": [...]}`, `GET /tags`, `GET /sources`, and `GET /files/<source>/<path>` for a folder's raw files. The page reaches items through [`@zodal/store-http`](https://www.npmjs.com/package/@zodal/store-http)'s provider (vendored; rebuild with `misc/vendor/build.sh`).
+
 ## Python API
 
 ```python
@@ -90,7 +110,7 @@ meta = DocStore("~/.local/share/annals").publish("report.md", tags=["q3"])
 publish(["report.md"], tags="q3")["url"]          # same, through the configured target
 ```
 
-`annals.api.mk_api(...)` is the mountable API; `annals.api.mk_app(data_dir=..., authorizer=...)` the standalone app.
+`annals.api.mk_api(...)` is the mountable API; `annals.api.mk_app(data_dir=..., authorizer=...)` the standalone app. Both take `sources=` (name → folder path, or any `annals.sources.Source`) and `tags=` (any `MutableMapping` from item key to tag list; default `JsonTagStore`). `annals.catalog.Catalog` is the facade they stand on: every source's rows as one list, searched, with the owner's tags.
 
 ## Design notes
 

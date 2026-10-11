@@ -1,18 +1,22 @@
-"""The HTTP surface: a JSON API over a :class:`annals.store.DocStore`, plus the page.
+"""The HTTP surface: a JSON API over a :class:`annals.store.DocStore` and other sources, plus the page.
 
 Two factories, one implementation:
 
 * :func:`mk_api` is the API alone, rooted at ``/``: list, search, read, trash, restore,
   purge, groups, raw files (``/raw/{id}/{path}``, with byte ranges so video seeks) and the
-  page's assets (``/ui/...``). A host platform mounts it under its own prefix and gates it
+  page's assets (``/ui/...``). Beside the documents, ``/items`` lists every source's items
+  as one collection (published documents plus folders read in place, such as the crowsnest
+  ledgers; see :mod:`annals.sources`) with full-text search, and ``PATCH /items/{key}``
+  sets the owner's tags, which live apart from the items (see :mod:`annals.tags`). A host platform mounts it under its own prefix and gates it
   with its own login; that is how annals runs as an enlace app (``/api/annals``), with
   the page shell from :func:`page_html` as the app's frontend.
 * :func:`mk_app` is the standalone server ``annals serve`` runs: the API at
   ``{base}/api``, the page at ``{base}/``, ``{base}/d/{id}``, ``{base}/g/{gid}``,
-  ``{base}/trash`` (one html shell; the browser routes), and an auth gate around it all
+  ``{base}/trash``, ``{base}/all``, ``{base}/s/{source}``, ``{base}/i/{source}/{id}`` (one
+  html shell; the browser routes), and an auth gate around it all
   (see :mod:`annals.auth`).
 
-The reader's actions are the three the recycle bin needs. Publishing is not an HTTP
+The reader's actions are the three the recycle bin needs, plus tagging. Publishing is not an HTTP
 operation here: it is a file write (see :mod:`annals.target`), which keeps this surface
 small and the documents' lifecycle independent of whatever serves them.
 """
@@ -26,11 +30,12 @@ import shutil
 import tempfile
 import warnings
 from pathlib import Path
+from collections.abc import Mapping, MutableMapping
 from typing import Callable
 from urllib.parse import quote
 
 import anyio
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -45,10 +50,23 @@ from annals.config import (
     APP_NAME,
     DFLT_SERVE_PORT,
     ENV_DATA_DIR,
+    ENV_SOURCES,
     MAX_INLINE_TEXT_BYTES,
     default_data_dir,
 )
+from annals.catalog import Catalog
+from annals.sources import (
+    PUBLISHED,
+    PublishedSource,
+    Source,
+    as_source,
+    list_meta,
+    mk_key,
+    parse_sources_spec,
+    with_thumb,
+)
 from annals.store import DOCS, TRASH, DocStore, TEXT_KINDS, kind_of
+from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore
 from annals.target import check_rel
 
 UI_DIR = Path(__file__).parent / "data" / "ui"
@@ -153,34 +171,9 @@ def _default_thumbnailer() -> Thumbnailer | None:
     return pillow_thumbnailer
 
 
-def _list_meta(meta: dict) -> dict:
-    """A listing row: the meta without its per-file tables (a folder can hold thousands)."""
-    row = _with_thumb(dict(meta))
-    row["n_files"] = len(row.pop("files", []) or [])
-    row.pop("sizes", None)
-    return row
-
-
 def _media_type(rel: str) -> str:
     override = TEXT_TYPE_OVERRIDES.get(Path(rel).suffix.lower())
     return override or mimetypes.guess_type(rel)[0] or "application/octet-stream"
-
-
-def _with_thumb(meta: dict) -> dict:
-    """Add ``thumb`` (the first image, main file first) and fix pre-media kinds.
-
-    Documents published before media kinds existed say ``file`` for an image or a video;
-    their kind is recomputed from the main file so they show inline too.
-    """
-    if meta.get("kind") == "file" and meta.get("main"):
-        meta["kind"] = kind_of(meta["main"])
-    files = (
-        [meta["main"]] + meta.get("files", [])
-        if meta.get("main")
-        else meta.get("files", [])
-    )
-    meta["thumb"] = next((f for f in files if kind_of(f) == "image"), None)
-    return meta
 
 
 def mk_api(
@@ -188,6 +181,8 @@ def mk_api(
     data_dir: Path | str | None = None,
     store: DocStore | None = None,
     thumbnailer: Thumbnailer | None | bool = True,
+    sources: Mapping[str, Source | Path | str] | None = None,
+    tags: MutableMapping[str, list[str]] | None = None,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The JSON API, raw files and page assets, rooted at ``/``, with no auth of its own.
@@ -196,12 +191,25 @@ def mk_api(
     :func:`mk_app`, which adds the gate. Every argument has a working default.
     ``thumbnailer`` shrinks gallery images: Pillow when it is installed (``True``), any
     ``(src, dst, width) -> bool`` callable, or ``None`` to always serve the original.
+    ``sources`` adds named sources listed beside the published documents: a folder path
+    (read in place, never written) or any :class:`annals.sources.Source`; by default, the
+    folders named in ``ANNALS_SOURCES``. ``tags`` is where the owner's tags live, any
+    ``MutableMapping`` from item key to tag list; by default one JSON file under the data
+    root (``tags/tags.json``), or a dict when the data root is not on this machine.
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     if thumbnailer is True:
         thumbnailer = _default_thumbnailer()
+    catalog = _mk_catalog(store, sources=sources, tags=tags)
     api = FastAPI(title=f"{title} api", docs_url=None, redoc_url=None, openapi_url=None)
     # No swagger: its /docs route would shadow ours.
+
+    def _owner_tags(meta: dict) -> dict:
+        """A document's tags as the owner left them (the publisher's until the owner edits)."""
+        own = catalog.tags.get(mk_key(PUBLISHED, meta["id"]))
+        if own is not None:
+            meta["tags"] = list(own)
+        return meta
 
     @api.get("/health")
     def health() -> dict:
@@ -212,12 +220,12 @@ def mk_api(
     def list_docs(q: str = "", trash: bool = False) -> dict:
         """All documents (or the bin), newest first; ``q`` filters by words."""
         docs = store.search(q, trash=trash) if q else store.list(trash=trash)
-        return {"docs": [_list_meta(m) for m in docs]}
+        return {"docs": [_owner_tags(list_meta(m)) for m in docs]}
 
     @api.get("/docs/{doc_id}")
     def get_doc(doc_id: str) -> dict:
         """One document's meta, each file's kind, and its text inline when markdown or text."""
-        meta = _with_thumb(_meta_or_404(store, doc_id))
+        meta = _owner_tags(with_thumb(_meta_or_404(store, doc_id)))
         meta["file_kinds"] = {f: kind_of(f) for f in meta.get("files", [])}
         if meta["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:
             meta["text"] = store.read_text(doc_id)
@@ -243,6 +251,7 @@ def mk_api(
             store.purge(doc_id)
         except PermissionError as e:
             raise HTTPException(409, str(e))
+        catalog.forget(mk_key(PUBLISHED, doc_id))
         root = _local_root()
         if root is not None:
             shutil.rmtree(root / THUMB_CACHE / doc_id, ignore_errors=True)
@@ -263,10 +272,66 @@ def mk_api(
         docs = []
         for i in group["docs"]:
             try:
-                docs.append(_list_meta(store.meta(i)))
+                docs.append(_owner_tags(list_meta(store.meta(i))))
             except (KeyError, ValueError):
                 continue
         return {**group, "items": docs}
+
+    # -- every source's items: one list, full-text search, the owner's tags ---------
+    # The page reaches these through @zodal/store-http's provider: GET /items?q= answers
+    # {data, total}; GET and PATCH /items/{key} one item. A key is "<source>:<id>".
+
+    @api.get("/sources")
+    def list_sources() -> dict:
+        """The sources listed, in order (``published`` first)."""
+        return {"sources": catalog.sources_info()}
+
+    @api.get("/items")
+    def list_items(q: str = "", source: str = "", trash: bool = False) -> dict:
+        """Items newest first, from every source or one, matching every word of ``q``."""
+        try:
+            rows = catalog.rows(q, source=source or None, trash=trash)
+        except KeyError as e:
+            raise HTTPException(404, str(e.args[0]) if e.args else "no such source")
+        return {"data": rows, "total": len(rows)}
+
+    @api.get("/items/{key:path}")
+    def get_item(key: str) -> dict:
+        """One item: its row, plus its text when it is markdown or text."""
+        return _item_or_404(catalog, key)
+
+    @api.patch("/items/{key:path}")
+    def patch_item(key: str, patch: dict = Body(...)) -> dict:
+        """Change an item's tags, the one thing the owner edits: ``{"tags": [...]}``."""
+        extra = set(patch) - {"tags"}
+        if extra or not isinstance(patch.get("tags"), list):
+            raise HTTPException(
+                422, 'send {"tags": [...]}; tags are the only editable field'
+            )
+        _item_or_404(catalog, key)
+        try:
+            return catalog.set_tags(key, patch["tags"])
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+
+    @api.get("/tags")
+    def list_tags() -> dict:
+        """Every tag in use, with how many items carry it."""
+        return {"tags": catalog.tag_counts()}
+
+    @api.get("/files/{source}/{rel:path}")
+    def source_file(source: str, rel: str) -> Response:
+        """A file of a folder source as itself (sandboxed like every raw file)."""
+        src = catalog.sources.get(source)
+        file_path = getattr(src, "file_path", None)
+        if file_path is None:
+            raise HTTPException(404, "no such source")
+        try:
+            path = file_path(rel)
+        except KeyError:
+            raise HTTPException(404, "no such file")
+        # these files change in place (a ledger grows), so revalidate every time
+        return _raw_response(path, rel, cache="private, no-cache")
 
     def _local_root() -> Path | None:
         return store.target.local_path(".")
@@ -299,12 +364,7 @@ def mk_api(
         file into memory, which is what a ``<video>`` element needs (Safari will not play
         without ranges).
         """
-        path = _file_path(doc_id, rel)
-        media_type = _media_type(rel)
-        headers = {"Cache-Control": RAW_CACHE, "X-Content-Type-Options": "nosniff"}
-        if media_type.split(";")[0] not in NO_SANDBOX_TYPES:
-            headers["Content-Security-Policy"] = RAW_SANDBOX_CSP
-        return FileResponse(path, media_type=media_type, headers=headers)
+        return _raw_response(_file_path(doc_id, rel), rel)
 
     # Waiting for a thumbnail slot must not hold one of the threads every app shares, so
     # the endpoint is async and only the work itself goes to a thread, two at a time.
@@ -342,7 +402,43 @@ def mk_api(
     if UI_DIR.is_dir():  # never fail a host's import over a missing asset dir
         api.mount("/ui", _RevalidatingStatic(directory=str(UI_DIR)), name="ui")
     api.state.store = store
+    api.state.catalog = catalog
     return api
+
+
+def _mk_catalog(
+    store: DocStore,
+    *,
+    sources: Mapping[str, Source | Path | str] | None,
+    tags: MutableMapping[str, list[str]] | None,
+) -> Catalog:
+    """The published documents first, then the extra sources; tags beside the documents."""
+    if sources is None:
+        sources = parse_sources_spec(os.environ.get(ENV_SOURCES, ""))
+    if PUBLISHED in sources:
+        raise ValueError(f"{PUBLISHED!r} is the published documents' source name")
+    if tags is None:
+        root = store.target.local_path(".")
+        tags = JsonTagStore(root / TAGS_DIR / TAGS_FILE) if root is not None else {}
+    named = {PUBLISHED: PublishedSource(store)}
+    named.update({name: as_source(name, spec) for name, spec in sources.items()})
+    return Catalog(named, tags=tags)
+
+
+def _item_or_404(catalog: Catalog, key: str) -> dict:
+    try:
+        return catalog.item(key)
+    except (KeyError, ValueError, OSError):
+        raise HTTPException(404, "no such item")
+
+
+def _raw_response(path: Path, rel: str, *, cache: str = RAW_CACHE) -> Response:
+    """A file as itself, streamed, with byte ranges, under the sandbox policy (not PDF)."""
+    media_type = _media_type(rel)
+    headers = {"Cache-Control": cache, "X-Content-Type-Options": "nosniff"}
+    if media_type.split(";")[0] not in NO_SANDBOX_TYPES:
+        headers["Content-Security-Policy"] = RAW_SANDBOX_CSP
+    return FileResponse(path, media_type=media_type, headers=headers)
 
 
 def page_html(
@@ -416,12 +512,15 @@ def mk_app(
     store: DocStore | None = None,
     authorizer: Authorizer | None = None,
     base_path: str = DFLT_BASE_PATH,
+    sources: Mapping[str, Source | Path | str] | None = None,
+    tags: MutableMapping[str, list[str]] | None = None,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The standalone server: page + API under ``base_path``, behind ``authorizer``.
 
     Every argument has a working default (the local data dir; auth from the environment,
-    which is none on a bare machine, so bind to localhost).
+    which is none on a bare machine, so bind to localhost). ``sources`` and ``tags`` are
+    :func:`mk_api`'s.
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     authorizer = authorizer or authorizer_from_env()
@@ -433,7 +532,14 @@ def mk_app(
     @app.get(base + "/d/{doc_id}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/g/{gid}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/trash", response_class=HTMLResponse, include_in_schema=False)
-    def page(doc_id: str = "", gid: str = "") -> HTMLResponse:
+    @app.get(base + "/all", response_class=HTMLResponse, include_in_schema=False)
+    @app.get(base + "/s/{source}", response_class=HTMLResponse, include_in_schema=False)
+    @app.get(
+        base + "/i/{key:path}", response_class=HTMLResponse, include_in_schema=False
+    )
+    def page(
+        doc_id: str = "", gid: str = "", source: str = "", key: str = ""
+    ) -> HTMLResponse:
         return HTMLResponse(shell, headers={"Cache-Control": "no-cache"})
 
     @app.get("/", include_in_schema=False)
@@ -441,7 +547,9 @@ def mk_app(
     def root_redirect() -> RedirectResponse:
         return RedirectResponse(base + "/", status_code=307)
 
-    app.mount(base + "/api", mk_api(store=store, title=title))
+    app.mount(
+        base + "/api", mk_api(store=store, sources=sources, tags=tags, title=title)
+    )
     app.state.store = store
     app.state.base_path = base
     app.add_middleware(
