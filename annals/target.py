@@ -27,7 +27,7 @@ from typing import Protocol
 #: Separator between concatenated meta.json files when reading many at once over ssh.
 RECORD_SEP = "\x1e"
 SSH_OPTS = ("-o", "BatchMode=yes", "-o", "ConnectTimeout=15")
-_SSH_TARGET_RE = re.compile(r"^(?P<host>[A-Za-z0-9_.@-]+):(?P<path>[~/].*)$")
+_SSH_TARGET_RE = re.compile(r"^(?P<host>[A-Za-z0-9][A-Za-z0-9_.@-]*):(?P<path>[~/].*)$")
 
 
 class Target(Protocol):
@@ -88,7 +88,10 @@ class LocalTarget:
         shutil.copytree(src_dir, dst)
 
     def get_tree(self, rel: str, dst_dir: Path) -> None:
-        shutil.copytree(self._abs(rel), dst_dir, dirs_exist_ok=True)
+        src = self._abs(rel)
+        if src.is_symlink():
+            raise ValueError(f"refusing to read a symlinked document: {rel}")
+        shutil.copytree(src, dst_dir, symlinks=True, dirs_exist_ok=True)
 
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
@@ -188,6 +191,7 @@ class SshTarget:
         cmd = [
             "rsync",
             "-a",
+            "--no-links",
             "-e",
             "ssh " + " ".join(SSH_OPTS),
             f"{self.host}:{self._abs(rel)}/",

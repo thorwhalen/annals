@@ -105,3 +105,43 @@ def test_copy_refuses_same_place(env):
         ["copy", "20260101-000000-x-abcd", "--to", "other", "--source", "other"]
     )
     assert code == 1 and "same place" in err
+
+
+def test_empty_name_and_bad_names_are_errors(env):
+    _setup(env)
+    assert _run(["publish", "-", "--to", ""])[0] == 1
+    assert (
+        _run(["configure", "--to", 'a"b', "--target", "/x", "--base-url", "https://x"])[
+            0
+        ]
+        == 1
+    )
+
+
+def test_values_with_quotes_survive_the_config_file(env):
+    _run(
+        [
+            "configure",
+            "--to",
+            "q",
+            "--target",
+            str(env / 'we"ird'),
+            "--base-url",
+            "https://x.test/annals",
+        ]
+    )
+    assert named_targets()["q"]["target"].endswith('we"ird')
+
+
+def test_copy_refuses_symlinked_content(env):
+    main, other = _setup(env)
+    a = env / "a.md"
+    a.write_text("# A\n")
+    _, url, _ = _run(["publish", str(a)])
+    doc_id = url.rsplit("/", 1)[1]
+    secret = env / "secret.txt"
+    secret.write_text("s")
+    (main / "docs" / doc_id / "leak.txt").symlink_to(secret)
+    code, _, err = _run(["copy", doc_id, "--to", "other"])
+    assert code == 1 and "regular files" in err
+    assert not (other / "docs" / doc_id).exists()

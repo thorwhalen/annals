@@ -14,7 +14,7 @@ import socket
 from pathlib import Path
 
 from annals.config import Settings, default_data_dir, load_settings, write_config
-from annals.store import DocStore
+from annals.store import DocStore, check_id
 from annals.target import parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
@@ -260,6 +260,16 @@ def _parse_ref(ref: str) -> tuple[str, str]:
     return "id", parts[-1]
 
 
+def _same_place(a: str, b: str) -> bool:
+    """True when two target specs name the same directory (or the same ssh host:path)."""
+    ta, tb = parse_target(a), parse_target(b)
+    if hasattr(ta, "root") and hasattr(tb, "root"):
+        return (
+            Path(ta.root).expanduser().resolve() == Path(tb.root).expanduser().resolve()
+        )
+    return a.rstrip("/") == b.rstrip("/")
+
+
 def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
     import tempfile
 
@@ -267,6 +277,13 @@ def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
     rel = f"{'trash' if meta.get('in_trash') else 'docs'}/{doc_id}"
     with tempfile.TemporaryDirectory(prefix="annals-copy-") as td:
         src.target.get_tree(rel, Path(td) / "doc")
+        odd = [
+            str(p.relative_to(td))
+            for p in (Path(td) / "doc").rglob("*")
+            if p.is_symlink() or not (p.is_file() or p.is_dir())
+        ]
+        if odd:
+            raise ValueError(f"refusing to copy {doc_id}: not regular files: {odd[:3]}")
         dst.target.put_tree(Path(td) / "doc", f"docs/{doc_id}")
     return meta
 
@@ -290,7 +307,7 @@ def copy(
     """
     src_settings = load_settings(to=source)
     dst_settings = load_settings(target=target, base_url=base_url, to=to)
-    if src_settings.target == dst_settings.target:
+    if _same_place(src_settings.target, dst_settings.target):
         raise ValueError(
             f"source and destination are the same place: {src_settings.target}"
         )
@@ -307,6 +324,7 @@ def copy(
                 kind = "doc"
         if kind == "group":
             g = src.group(ident)
+            check_id(g["id"])
             for doc_id in g["docs"]:
                 m = _copy_doc(src, dst, doc_id)
                 copied.append(

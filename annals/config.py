@@ -27,7 +27,9 @@ read in place (``ledgers=~/.local/share/crowsnest/ledger``; several, comma-separ
 
 from __future__ import annotations
 
+import json
 import os
+import re
 import tomllib
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -40,6 +42,7 @@ ENV_DATA_DIR = "ANNALS_DATA_DIR"
 ENV_SOURCES = "ANNALS_SOURCES"
 ENV_CONFIG = "ANNALS_CONFIG"
 DFLT_SERVE_PORT = 8765
+_NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 # A document's content file is read whole into the API's JSON response; this is the cap.
 MAX_INLINE_TEXT_BYTES = 2_000_000
 
@@ -114,7 +117,9 @@ def load_settings(
     ``to`` names a ``[targets.NAME]`` table of the config file; it replaces the environment
     and the file's default target for this call (explicit arguments still win).
     """
-    if to:
+    if to is not None:
+        if not _NAME_RE.match(to):
+            raise ValueError(f"not a valid annals target name: {to!r}")
         known = named_targets(config_path=config_path)
         if to not in known or not known[to].get("target"):
             raise ValueError(
@@ -123,7 +128,12 @@ def load_settings(
             )
         named = known[to]
         target = target or named["target"]
+        # Never fall through to the default's base url: links would name the wrong place.
         base_url = base_url or named.get("base_url")
+        if not base_url:
+            raise ValueError(
+                f"annals target {to!r} has no base_url; set it with `annals configure --to {to} --base-url ...`"
+            )
     file_values = _read_config_file(config_path or default_config_path())
     resolved_target = (
         target
@@ -158,6 +168,8 @@ def write_config(
     way the other tables are kept.
     """
     path = config_path or default_config_path()
+    if to is not None and not _NAME_RE.match(to):
+        raise ValueError(f"not a valid annals target name: {to!r}")
     path.parent.mkdir(parents=True, exist_ok=True)
     default = _read_config_file(path)
     targets = named_targets(config_path=path)
@@ -172,7 +184,9 @@ def write_config(
         )
     for name, table in targets.items():
         body += f"\n[targets.{name}]\n" + "".join(
-            f'{k} = "{v}"\n' for k, v in table.items()
+            f"{k} = {json.dumps(v)}\n" for k, v in table.items()
         )
-    path.write_text(body, encoding="utf-8")
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(body, encoding="utf-8")
+    os.replace(tmp, path)
     return path
