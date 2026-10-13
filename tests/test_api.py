@@ -235,3 +235,25 @@ def test_refused_thumbnail_sends_a_placeholder_not_a_huge_original(store, tmp_pa
     monkeypatch.setattr(api_mod, "THUMB_FALLBACK_MAX_BYTES", 10)
     r = c.get(f"/thumb/{m['id']}/photo.png")
     assert r.headers["content-type"] == "image/svg+xml" and b"large image" in r.content
+
+
+def test_symlinks_out_of_the_data_root_are_not_followed(tmp_path, store, client):
+    secret = tmp_path / "secret.txt"
+    secret.write_text("s3cret-word")
+    doc = client.get("/annals/api/docs").json()["docs"][0]
+    main = tmp_path / "data" / "docs" / doc["id"] / doc["main"]
+    main.unlink()
+    main.symlink_to(secret)
+    r = client.get(f"/annals/api/docs/{doc['id']}")
+    assert r.status_code == 404 and "s3cret" not in r.text
+    assert client.get(f"/annals/api/raw/{doc['id']}/{doc['main']}").status_code == 404
+    # a symlinked meta.json drops the document from listings instead of showing it
+    meta = tmp_path / "data" / "docs" / doc["id"] / "meta.json"
+    meta.unlink()
+    meta.symlink_to(secret)
+    assert client.get("/annals/api/docs").json()["docs"] == []
+    # a symlinked group file must not break the group list
+    groups = tmp_path / "data" / "groups"
+    groups.mkdir(exist_ok=True)
+    (groups / "x.json").symlink_to(secret)
+    assert client.get("/annals/api/groups").status_code == 200

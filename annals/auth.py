@@ -91,6 +91,8 @@ class BasicAuth:
     def __init__(self, username: str, password: str):
         self.username = username
         self.password = password
+        # bytes, encoded once: a bad env value fails at startup, not on every request
+        self._username_b, self._password_b = username.encode(), password.encode()
 
     def __call__(self, request: RequestLike) -> Optional[str]:
         header = request.headers.get("authorization", "")
@@ -100,9 +102,10 @@ class BasicAuth:
             user, _, pw = base64.b64decode(header[6:]).decode("utf-8").partition(":")
         except (ValueError, UnicodeDecodeError):
             return None
-        ok = secrets.compare_digest(user, self.username) and secrets.compare_digest(
-            pw, self.password
-        )
+        # bytes: compare_digest raises TypeError on non-ASCII str, and a client sends any
+        ok = secrets.compare_digest(
+            user.encode(), self._username_b
+        ) & secrets.compare_digest(pw.encode(), self._password_b)
         return user if ok else None
 
 

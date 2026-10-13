@@ -30,6 +30,18 @@ SSH_OPTS = ("-o", "BatchMode=yes", "-o", "ConnectTimeout=15")
 _SSH_TARGET_RE = re.compile(r"^(?P<host>[A-Za-z0-9][A-Za-z0-9_.@-]*):(?P<path>[~/].*)$")
 
 
+def _q(path: str) -> str:
+    """``shlex.quote`` for a remote shell, leaving a leading ``~/`` for the shell to expand.
+
+    Quoted, ``~`` is a literal directory name; rsync expands it remotely, so the
+    two transports would otherwise disagree about where ``host:~/x`` is. Only the
+    current user's ``~/`` is supported: ``~user/x`` stays literal on the ssh side.
+    """
+    if path.startswith("~/"):
+        return "~/" + shlex.quote(path[2:])
+    return shlex.quote(path)
+
+
 class Target(Protocol):
     """What the store needs from wherever the documents live."""
 
@@ -105,7 +117,10 @@ class LocalTarget:
         return self._abs(rel).exists()
 
     def read_text(self, rel: str) -> str:
-        return self._abs(rel).read_text(encoding="utf-8")
+        path = self.local_path(rel)
+        if path is None:  # a symlink pointing out of the root
+            raise ValueError(f"refusing to read outside the root: {rel}")
+        return path.read_text(encoding="utf-8")
 
     def write_text(self, rel: str, text: str) -> None:
         path = self._abs(rel)
@@ -140,9 +155,9 @@ class LocalTarget:
         metas = []
         for meta_path in base.glob("*/meta.json"):
             try:
-                metas.append(json.loads(meta_path.read_text(encoding="utf-8")))
-            except (OSError, json.JSONDecodeError):
-                continue  # a half-written document is not the reader's problem
+                metas.append(json.loads(self.read_text(f"{rel}/{meta_path.parent.name}/meta.json")))
+            except (OSError, ValueError):
+                continue  # half-written, or a symlink out of the root: not the reader's problem
         return metas
 
 
@@ -170,7 +185,7 @@ class SshTarget:
 
     def put_tree(self, src_dir: Path, rel: str) -> None:
         dst = self._abs(rel)
-        self._ssh(f"mkdir -p {shlex.quote(dst)}")
+        self._ssh(f"mkdir -p {_q(dst)}")
         cmd = [
             "rsync",
             "-a",
@@ -207,35 +222,35 @@ class SshTarget:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
         parent = str(PurePosixPath(dst).parent)
         self._ssh(
-            f"mkdir -p {shlex.quote(parent)} && mv {shlex.quote(src)} {shlex.quote(dst)}"
+            f"mkdir -p {_q(parent)} && mv {_q(src)} {_q(dst)}"
         )
 
     def remove_tree(self, rel: str) -> None:
-        self._ssh(f"rm -rf {shlex.quote(self._abs(rel))}")
+        self._ssh(f"rm -rf {_q(self._abs(rel))}")
 
     def exists(self, rel: str) -> bool:
-        out = self._ssh(f"test -e {shlex.quote(self._abs(rel))} && echo yes || echo no")
+        out = self._ssh(f"test -e {_q(self._abs(rel))} && echo yes || echo no")
         return out.strip() == "yes"
 
     def read_text(self, rel: str) -> str:
-        return self._ssh(f"cat {shlex.quote(self._abs(rel))}")
+        return self._ssh(f"cat {_q(self._abs(rel))}")
 
     def write_text(self, rel: str, text: str) -> None:
         path = self._abs(rel)
         parent = str(PurePosixPath(path).parent)
-        q = shlex.quote(path)
+        q = _q(path)
         self._ssh(
-            f"mkdir -p {shlex.quote(parent)} && cat > {q}.tmp && mv {q}.tmp {q}",
+            f"mkdir -p {_q(parent)} && cat > {q}.tmp && mv {q}.tmp {q}",
             stdin=text,
         )
 
     def list_dirs(self, rel: str) -> list[str]:
-        base = shlex.quote(self._abs(rel))
+        base = _q(self._abs(rel))
         out = self._ssh(f"[ -d {base} ] && ls -1 {base} || true")
         return sorted(name for name in out.splitlines() if name)
 
     def list_files(self, rel: str) -> list[str]:
-        base = shlex.quote(self._abs(rel))
+        base = _q(self._abs(rel))
         out = self._ssh(
             f"[ -d {base} ] && ls -1p {base} | grep -v / || true"
         )  # portable (no GNU find)
@@ -245,7 +260,7 @@ class SshTarget:
         return None  # remote: nothing to stream from this machine's disk
 
     def read_metas(self, rel: str) -> list[dict]:
-        base = shlex.quote(self._abs(rel))
+        base = _q(self._abs(rel))
         script = (
             f"[ -d {base} ] || exit 0; for f in {base}/*/meta.json; do "
             f'[ -f "$f" ] && cat "$f" && printf "{RECORD_SEP}"; done; true'
