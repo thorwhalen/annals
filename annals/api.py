@@ -228,7 +228,10 @@ def mk_api(
         meta = _owner_tags(with_thumb(_meta_or_404(store, doc_id)))
         meta["file_kinds"] = {f: kind_of(f) for f in meta.get("files", [])}
         if meta["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:
-            meta["text"] = store.read_text(doc_id)
+            try:
+                meta["text"] = store.read_text(doc_id)
+            except (KeyError, OSError, ValueError):  # missing, unreadable or outside the root
+                raise HTTPException(404, "no readable text for this document")
         return meta
 
     @api.post("/docs/{doc_id}/trash")

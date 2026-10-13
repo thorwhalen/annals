@@ -91,6 +91,8 @@ class BasicAuth:
     def __init__(self, username: str, password: str):
         self.username = username
         self.password = password
+        # bytes, encoded once: a bad env value fails at startup, not on every request
+        self._username_b, self._password_b = username.encode(), password.encode()
 
     def __call__(self, request: RequestLike) -> Optional[str]:
         header = request.headers.get("authorization", "")
@@ -102,8 +104,8 @@ class BasicAuth:
             return None
         # bytes: compare_digest raises TypeError on non-ASCII str, and a client sends any
         ok = secrets.compare_digest(
-            user.encode(), self.username.encode()
-        ) & secrets.compare_digest(pw.encode(), self.password.encode())
+            user.encode(), self._username_b
+        ) & secrets.compare_digest(pw.encode(), self._password_b)
         return user if ok else None
 
 

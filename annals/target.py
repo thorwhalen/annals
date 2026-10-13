@@ -155,9 +155,9 @@ class LocalTarget:
         metas = []
         for meta_path in base.glob("*/meta.json"):
             try:
-                metas.append(json.loads(meta_path.read_text(encoding="utf-8")))
-            except (OSError, json.JSONDecodeError):
-                continue  # a half-written document is not the reader's problem
+                metas.append(json.loads(self.read_text(f"{rel}/{meta_path.parent.name}/meta.json")))
+            except (OSError, ValueError):
+                continue  # half-written, or a symlink out of the root: not the reader's problem
         return metas
 
 

@@ -31,3 +31,10 @@ def test_basic_auth_non_ascii_secret_still_matches():
 
 def test_basic_auth_garbage_header_is_rejected():
     assert BasicAuth("me", "pw")(SimpleNamespace(headers={"authorization": "Basic !!!"})) is None
+
+
+def test_basic_auth_unencodable_config_fails_at_startup():
+    import pytest
+
+    with pytest.raises(UnicodeEncodeError):
+        BasicAuth("me", "bad\udcff")
