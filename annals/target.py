@@ -34,7 +34,8 @@ def _q(path: str) -> str:
     """``shlex.quote`` for a remote shell, leaving a leading ``~/`` for the shell to expand.
 
     Quoted, ``~`` is a literal directory name; rsync expands it remotely, so the
-    two transports would otherwise disagree about where ``host:~/x`` is.
+    two transports would otherwise disagree about where ``host:~/x`` is. Only the
+    current user's ``~/`` is supported: ``~user/x`` stays literal on the ssh side.
     """
     if path.startswith("~/"):
         return "~/" + shlex.quote(path[2:])
@@ -116,7 +117,10 @@ class LocalTarget:
         return self._abs(rel).exists()
 
     def read_text(self, rel: str) -> str:
-        return self._abs(rel).read_text(encoding="utf-8")
+        path = self.local_path(rel)
+        if path is None:  # a symlink pointing out of the root
+            raise ValueError(f"refusing to read outside the root: {rel}")
+        return path.read_text(encoding="utf-8")
 
     def write_text(self, rel: str, text: str) -> None:
         path = self._abs(rel)

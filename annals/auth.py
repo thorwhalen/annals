@@ -100,9 +100,10 @@ class BasicAuth:
             user, _, pw = base64.b64decode(header[6:]).decode("utf-8").partition(":")
         except (ValueError, UnicodeDecodeError):
             return None
-        ok = secrets.compare_digest(user, self.username) and secrets.compare_digest(
-            pw, self.password
-        )
+        # bytes: compare_digest raises TypeError on non-ASCII str, and a client sends any
+        ok = secrets.compare_digest(
+            user.encode(), self.username.encode()
+        ) & secrets.compare_digest(pw.encode(), self.password.encode())
         return user if ok else None
 
 

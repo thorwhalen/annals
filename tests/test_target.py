@@ -150,3 +150,16 @@ def test_ssh_home_relative_root_is_expanded_by_the_remote_shell(ssh_calls):
     t.write_text("docs/a.txt", "x")
     script = _script(ssh_calls.calls[-1])
     assert "cat > ~/'annals data/docs/a.txt'.tmp" in script
+
+
+def test_local_read_text_refuses_a_symlink_leaving_the_root(tmp_path):
+    secret = tmp_path / "secret.txt"
+    secret.write_text("s3cret")
+    root = tmp_path / "root"
+    (root / "docs" / "d1").mkdir(parents=True)
+    (root / "docs" / "d1" / "a.md").symlink_to(secret)
+    (root / "docs" / "d1" / "ok.md").write_text("fine")
+    t = LocalTarget(root)
+    with pytest.raises(ValueError, match="outside"):
+        t.read_text("docs/d1/a.md")
+    assert t.read_text("docs/d1/ok.md") == "fine"
