@@ -155,7 +155,11 @@ class LocalTarget:
         metas = []
         for meta_path in base.glob("*/meta.json"):
             try:
-                metas.append(json.loads(self.read_text(f"{rel}/{meta_path.parent.name}/meta.json")))
+                metas.append(
+                    json.loads(
+                        self.read_text(f"{rel}/{meta_path.parent.name}/meta.json")
+                    )
+                )
             except (OSError, ValueError):
                 continue  # half-written, or a symlink out of the root: not the reader's problem
         return metas
@@ -221,9 +225,7 @@ class SshTarget:
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
         parent = str(PurePosixPath(dst).parent)
-        self._ssh(
-            f"mkdir -p {_q(parent)} && mv {_q(src)} {_q(dst)}"
-        )
+        self._ssh(f"mkdir -p {_q(parent)} && mv {_q(src)} {_q(dst)}")
 
     def remove_tree(self, rel: str) -> None:
         self._ssh(f"rm -rf {_q(self._abs(rel))}")

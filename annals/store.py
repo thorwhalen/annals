@@ -380,6 +380,10 @@ class DocStore:
         for n in names:
             try:
                 groups.append(json.loads(self.target.read_text(f"{GROUPS}/{n}")))
-            except (OSError, RuntimeError, ValueError):  # ValueError: bad JSON, or a symlink out of the root
+            except (
+                OSError,
+                RuntimeError,
+                ValueError,
+            ):  # ValueError: bad JSON, or a symlink out of the root
                 continue
         return sorted(groups, key=lambda g: g.get("created", ""), reverse=True)

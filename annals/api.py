@@ -230,7 +230,11 @@ def mk_api(
         if meta["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:
             try:
                 meta["text"] = store.read_text(doc_id)
-            except (KeyError, OSError, ValueError):  # missing, unreadable or outside the root
+            except (
+                KeyError,
+                OSError,
+                ValueError,
+            ):  # missing, unreadable or outside the root
                 raise HTTPException(404, "no readable text for this document")
         return meta
 
