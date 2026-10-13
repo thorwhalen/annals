@@ -140,3 +140,13 @@ def test_ssh_rsync_commands(ssh_calls, tmp_path):
 def test_ssh_rejects_unsafe_rel():
     with pytest.raises(ValueError):
         SshTarget("tw", "/srv/a").remove_tree("../etc")
+
+
+def test_ssh_home_relative_root_is_expanded_by_the_remote_shell(ssh_calls):
+    t = SshTarget("tw", "~/annals data")
+    t.remove_tree("docs/d1")
+    # quoted, ``~`` would be a literal directory name, unlike rsync's reading of it
+    assert _script(ssh_calls.calls[-1]) == "rm -rf ~/'annals data/docs/d1'"
+    t.write_text("docs/a.txt", "x")
+    script = _script(ssh_calls.calls[-1])
+    assert "cat > ~/'annals data/docs/a.txt'.tmp" in script
