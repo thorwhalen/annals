@@ -134,7 +134,9 @@ def check_id(doc_id: str) -> str:
 
 #: a host name an artifact link may carry: lower-case dns labels, nothing else (a
 #: backslash or a ``;`` in it would make a browser go somewhere else than it reads)
-_DNS_HOST_RE = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+")
+_DNS_HOST_RE = re.compile(
+    r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+"
+)
 #: the characters an artifact link may contain: printable ascii, minus space, quotes,
 #: angle brackets and backslash
 _URL_CHARS_RE = re.compile(r"[A-Za-z0-9\-._~:/?#\[\]@!$&()*+,;=%]+")

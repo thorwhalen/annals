@@ -69,7 +69,13 @@ from annals.sources import (
     parse_sources_spec,
     with_thumb,
 )
-from annals.store import DocStore, TEXT_KINDS, check_artifact_url, kind_of, split_version
+from annals.store import (
+    DocStore,
+    TEXT_KINDS,
+    check_artifact_url,
+    kind_of,
+    split_version,
+)
 from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore
 from annals.target import check_rel
 
