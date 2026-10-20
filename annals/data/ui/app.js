@@ -683,6 +683,19 @@
     return h("details", { class: "more-files versions" }, [h("summary", null, ["Versions (" + (list.length + 1) + ")"]), h("ul", { class: "filelist" }, rows)]);
   }
 
+  /* -------- the interactive version of a page (annals publish --artifact) ----------- */
+  /* The publisher and the API validate the link (annals.store.check_artifact_url); a meta
+     written elsewhere is checked again here: an https link to claude.ai, nothing else. */
+  var ARTIFACT_HOSTS = ["claude.ai"];
+  function artifactLink(m) {
+    var url = typeof m.artifact === "string" ? m.artifact : "", u;
+    if (!/^https:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&()*+,;=%]+$/.test(url)) return null;
+    try { u = new URL(url); } catch (e) { return null; }
+    var known = ARTIFACT_HOSTS.some(function (d) { return u.hostname === d || u.hostname.slice(-d.length - 1) === "." + d; });
+    if (u.protocol !== "https:" || !known || u.username || u.password || u.port) return null;
+    return h("a", { class: "btn primary", href: url, target: "_blank", rel: "noopener noreferrer" }, ["Open the interactive version"]);
+  }
+
   /* -------- one document, or one file of it --------------------------------------- */
   function docView(id, rel) {
     page("Document", mainNav("published"), [h("p", { class: "muted" }, ["Loading…"])]);
@@ -707,7 +720,7 @@
           h("button", { class: "btn", disabled: next ? null : "", onclick: function () { go(fileUrl(m.id, next), true); } }, ["Next"])
         ]);
       }
-      var docTools = h("div", { class: "toolbar" }, tools.concat([
+      var docTools = h("div", { class: "toolbar" }, [artifactLink(m)].concat(tools, [
         h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"]),
         rel ? null : (m.in_trash
           ? h("button", { class: "btn", onclick: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }, ["Restore"])

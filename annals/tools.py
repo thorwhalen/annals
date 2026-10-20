@@ -14,7 +14,7 @@ import socket
 from pathlib import Path
 
 from annals.config import Settings, default_data_dir, load_settings, write_config
-from annals.store import DocStore, check_id, split_version
+from annals.store import DocStore, check_artifact_url, check_id, split_version
 from annals.target import SshTarget, parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
@@ -61,6 +61,7 @@ def publish(
     base_url: str | None = None,
     to: str | None = None,
     replace: str | None = None,
+    artifact: str | None = None,
 ) -> dict:
     """Publish one document and print its link; several paths become several documents.
 
@@ -75,9 +76,15 @@ def publish(
     ``annals configure --to``) instead of the default one. ``replace`` (a document's link or
     id) publishes ONE path as a new version of that document: the link stays the same, the
     page shows the new version and offers the earlier ones. That is how a living page (a
-    guide, a status page) keeps one link.
+    guide, a status page) keeps one link. ``artifact`` (a claude.ai artifact link) is the
+    interactive version of the page: the document's page shows an "Open the interactive
+    version" button. Publish the Artifact first, then the same page here with its link.
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
+    if artifact is not None:
+        artifact = check_artifact_url(artifact)
+        if len(_as_list(paths)) > 1:
+            raise ValueError("--artifact takes one path: the page it is the version of")
     store = _store(settings)
     tag_list = [t for t in tags.split(",") if t.strip()]
     source = _default_source()
@@ -100,7 +107,12 @@ def publish(
 
             text = sys.stdin.read()
             meta = store.publish(
-                title=title, tags=tag_list, source=source, text=text, replace=replace_id
+                title=title,
+                tags=tag_list,
+                source=source,
+                text=text,
+                replace=replace_id,
+                artifact=artifact,
             )
         else:
             meta = store.publish(
@@ -109,6 +121,7 @@ def publish(
                 tags=tag_list,
                 source=source,
                 replace=replace_id,
+                artifact=artifact,
                 **({"exclude": ()} if all_files else {}),
             )
         docs.append(

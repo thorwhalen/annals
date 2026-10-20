@@ -412,3 +412,76 @@ def test_ssh_lock_is_created_with_its_note(tmp_path, loopback_ssh):
     (tmp_path / "remote" / "docs" / "f").mkdir()
     (tmp_path / "remote" / "docs" / "f" / "a b.txt").write_text("hello")
     assert t.file_sizes("docs/f", ["a b.txt", "nope"]) == {"a b.txt": 5}
+
+
+# -- the interactive version: publish(artifact=<claude.ai link>) ------------------------
+
+ARTIFACT = "https://claude.ai/artifact/0123abcd"
+
+
+def test_artifact_link_is_stored_and_kept_by_a_replace(store, tmp_path):
+    first = store.publish(_write(tmp_path / "p.html", "<title>P</title>v1"), artifact=ARTIFACT)
+    assert first["artifact"] == ARTIFACT
+    doc_id = first["id"]
+    second = store.publish(_write(tmp_path / "p.html", "<title>P</title>v2"), replace=doc_id)
+    assert second["artifact"] == ARTIFACT  # kept when the replacement names none
+    other = "https://claude.ai/code/artifact/9f9f"
+    third = store.publish(
+        _write(tmp_path / "p.html", "<title>P</title>v3"), replace=doc_id, artifact=other
+    )
+    assert third["artifact"] == other
+    plain = store.publish(_write(tmp_path / "q.md", "# Q"))
+    assert "artifact" not in plain
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        "javascript:alert(1)",
+        "http://claude.ai/artifact/x",
+        "https://evil.example/artifact/x",
+        "https://claude.ai.evil.example/x",
+        "https://user@claude.ai/x",
+        "https://claude.ai:8443/x",
+        "https://claude.ai/x\n<script>",
+        "https://claude.ai/a b",
+        "https://claude.ai:443/x",
+        "https://evil.com\\.claude.ai/x",
+        "https://evil.com;.claude.ai/",
+        "https://evil.com\\x.claude.ai/artifact/1",
+        "https://CLAUDE.ai/x",
+        "https://claude.ai/\u00e9",
+        'https://claude.ai/"x',
+    ],
+)
+def test_artifact_link_must_be_https_claude_ai(store, tmp_path, bad):
+    with pytest.raises(ValueError):
+        store.publish(_write(tmp_path / "p.md", "# P"), artifact=bad)
+    assert store.list() == []
+
+
+def test_artifact_link_reaches_the_api_and_the_cli(tmp_path, monkeypatch):
+    data = tmp_path / "data"
+    monkeypatch.setenv("ANNALS_TARGET", str(data))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://example.test/annals")
+    monkeypatch.delenv("ANNALS_OUTBOX", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+    src = _write(tmp_path / "page.html", "<!doctype html><title>Page</title>hi")
+    out, err = io.StringIO(), io.StringIO()
+    assert run(["publish", str(src), "--artifact", ARTIFACT], out=out, err=err) == 0, err.getvalue()
+    doc_id = out.getvalue().strip().rsplit("/", 1)[-1]
+    client = TestClient(mk_app(store=DocStore(data), authorizer=no_auth))
+    assert client.get(f"/annals/api/docs/{doc_id}").json()["artifact"] == ARTIFACT
+    err = io.StringIO()
+    assert run(["publish", str(src), "--artifact", "http://x"], out=io.StringIO(), err=err) == 1
+    assert "artifact" in err.getvalue()
+
+
+def test_api_drops_an_artifact_link_it_would_not_accept(store, tmp_path):
+    doc_id = store.publish(_write(tmp_path / "p.html", "<title>P</title>x"))["id"]
+    meta_path = store.target.root / "docs" / doc_id / "meta.json"
+    meta = json.loads(meta_path.read_text())
+    meta["artifact"] = "https://evil.com\\.claude.ai/x"  # written by another publisher
+    meta_path.write_text(json.dumps(meta))
+    client = TestClient(mk_app(store=store, authorizer=no_auth))
+    assert "artifact" not in client.get(f"/annals/api/docs/{doc_id}").json()
