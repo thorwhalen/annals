@@ -308,7 +308,9 @@ class SshTarget:
 
     def list_dirs(self, rel: str) -> list[str]:
         base = _q(self._abs(rel))
-        out = self._ssh(f"[ -d {base} ] && ls -1A {base} || true")  # as local: hidden too
+        out = self._ssh(
+            f"[ -d {base} ] && ls -1A {base} || true"
+        )  # as local: hidden too
         return sorted(name for name in out.splitlines() if name)
 
     def list_files(self, rel: str) -> list[str]:

@@ -448,7 +448,12 @@ class DocStore:
 
     @staticmethod
     def _holder(**info) -> dict:
-        return {"since": time.time(), "host": socket.gethostname(), "pid": os.getpid(), **info}
+        return {
+            "since": time.time(),
+            "host": socket.gethostname(),
+            "pid": os.getpid(),
+            **info,
+        }
 
     def _lock_note(self, lock: str, info: dict) -> None:
         self.target.write_text(f"{lock}/{LOCK_INFO}", json.dumps(self._holder(**info)))
@@ -723,7 +728,9 @@ class DocStore:
             try:
                 meta = json.loads(self.target.read_text(f"{rel}/{META}"))
             except (OSError, RuntimeError):
-                if attempt:  # a swap landed between finding it and reading it: once more
+                if (
+                    attempt
+                ):  # a swap landed between finding it and reading it: once more
                     raise KeyError(doc_id) from None
                 continue
             # a new version that went live a moment ago, its final meta not yet written

@@ -88,7 +88,9 @@ def publish(
     replace_id = None
     if replace:
         if len(paths) > 1:
-            raise ValueError("--replace takes one path: the new version of one document")
+            raise ValueError(
+                "--replace takes one path: the new version of one document"
+            )
         kind, replace_id = _parse_ref(replace)
         if kind == "group":
             raise ValueError("--replace names a document, not a group")
@@ -301,7 +303,9 @@ def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
     import tempfile
 
     if split_version(doc_id)[1] is not None:
-        raise ValueError(f"{doc_id} is a version; copy the document (it keeps its versions)")
+        raise ValueError(
+            f"{doc_id} is a version; copy the document (it keeps its versions)"
+        )
     meta = src.meta(doc_id)
     rel = src.doc_rel(doc_id)
     with tempfile.TemporaryDirectory(prefix="annals-copy-") as td:

@@ -366,7 +366,9 @@ def mk_api(
         """The file on disk, or a 404: it must be listed in the meta AND stay inside the
         document's directory (meta.json is written by the publisher, so it is not trusted
         to keep paths in bounds)."""
-        meta = _meta_or_404(store, doc_id, settle=False)  # hot path: the page settled it
+        meta = _meta_or_404(
+            store, doc_id, settle=False
+        )  # hot path: the page settled it
         if rel not in meta["files"]:
             raise HTTPException(404, "no such file in document")
         try:
