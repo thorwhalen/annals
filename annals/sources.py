@@ -132,8 +132,8 @@ class PublishedSource:
         self.store = store
         self.name = PUBLISHED
         self.title = title
-        # a version never changes, so a text is cached per (id, version stamp)
-        self._texts: dict[tuple[str, str], str] = {}
+        # id -> (its ``updated`` stamp, text): a replace changes the stamp
+        self._texts: dict[str, tuple[str, str]] = {}
         self._stamps: dict[str, str] = {}  # id -> its ``updated``, as last listed
 
     def _row(self, meta: dict) -> dict:
@@ -166,21 +166,20 @@ class PublishedSource:
         return row
 
     def text(self, item_id: str) -> str:
-        key = (item_id, self._stamps.get(item_id, ""))
-        if key in self._texts:
-            return self._texts[key]
+        cached = self._texts.get(item_id)
+        if cached and cached[0] == self._stamps.get(item_id, ""):
+            return cached[1]
         try:
             meta = self.store.meta(item_id)
-            key = (item_id, meta.get("updated", ""))
-            if key not in self._texts:
-                ok = (
-                    meta["kind"] in TEXT_KINDS
-                    and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES
-                )
-                self._texts[key] = self.store.read_text(item_id) if ok else ""
+            ok = (
+                meta["kind"] in TEXT_KINDS
+                and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES
+            )
+            text = self.store.read_text(item_id) if ok else ""
         except (KeyError, ValueError, OSError):
             return ""
-        return self._texts[key]
+        self._texts[item_id] = (meta.get("updated", ""), text)
+        return text
 
 
 # -- a folder read in place ------------------------------------------------------------

@@ -36,7 +36,7 @@ from typing import Callable
 from urllib.parse import quote
 
 import anyio
-from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi import Body, FastAPI, Header, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -385,7 +385,9 @@ def mk_api(
         return path
 
     @api.get("/raw/{doc_id}/{rel:path}")
-    def raw_file(doc_id: str, rel: str) -> Response:
+    def raw_file(
+        doc_id: str, rel: str, if_none_match: str | None = Header(None)
+    ) -> Response:
         """A document's file as itself, streamed, with byte ranges (video and audio seek).
 
         ``FileResponse`` answers ``Range`` with ``206 Partial Content`` and never loads the
@@ -395,7 +397,7 @@ def mk_api(
         path = _file_path(doc_id, rel)
         cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
         if kind_of(rel) == "html":
-            return _html_response(path, rel, cache=cache)
+            return _html_response(path, rel, cache=cache, request_etag=if_none_match)
         return _raw_response(path, rel, cache=cache)
 
     # Waiting for a thumbnail slot must not hold one of the threads every app shares, so
@@ -419,19 +421,20 @@ def mk_api(
             made = cached.is_file() or await anyio.to_thread.run_sync(
                 thumbnailer, path, cached, width, limiter=thumb_limiter
             )
+            cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
             if made:
                 return FileResponse(
                     cached,
                     media_type="image/webp",
-                    headers={"Cache-Control": RAW_CACHE},
+                    headers={"Cache-Control": cache},
                 )
             if path.stat().st_size > THUMB_FALLBACK_MAX_BYTES:
                 return Response(
                     _TOO_BIG_SVG,
                     media_type="image/svg+xml",
-                    headers={"Cache-Control": RAW_CACHE},
+                    headers={"Cache-Control": cache},
                 )
-        return raw_file(doc_id, rel)
+        return raw_file(doc_id, rel, None)
 
     if UI_DIR.is_dir():  # never fail a host's import over a missing asset dir
         api.mount("/ui", _RevalidatingStatic(directory=str(UI_DIR)), name="ui")
@@ -474,16 +477,25 @@ def doctype_guard(html: bytes) -> bytes:
     return ("\n".join(missing) + "\n").encode("utf-8") + body
 
 
-def _html_response(path: Path, rel: str, *, cache: str) -> Response:
-    """An html file through :func:`doctype_guard`, under the sandbox policy."""
+def _html_response(
+    path: Path, rel: str, *, cache: str, request_etag: str | None = None
+) -> Response:
+    """An html file through :func:`doctype_guard`, under the sandbox policy.
+
+    Carries an ETag from the file's size and mtime, so a revalidation is a 304.
+    """
+    st = path.stat()
+    etag = f'"{st.st_size:x}-{st.st_mtime_ns:x}"'
+    headers = {
+        "Cache-Control": cache,
+        "ETag": etag,
+        "X-Content-Type-Options": "nosniff",
+        "Content-Security-Policy": RAW_SANDBOX_CSP,
+    }
+    if request_etag and etag in {t.strip() for t in request_etag.split(",")}:
+        return Response(status_code=304, headers=headers)
     return Response(
-        doctype_guard(path.read_bytes()),
-        media_type=_media_type(rel),
-        headers={
-            "Cache-Control": cache,
-            "X-Content-Type-Options": "nosniff",
-            "Content-Security-Policy": RAW_SANDBOX_CSP,
-        },
+        doctype_guard(path.read_bytes()), media_type=_media_type(rel), headers=headers
     )
 
 

@@ -34,6 +34,7 @@ import re
 import secrets
 import shutil
 import tempfile
+import time
 import unicodedata
 from contextlib import suppress
 from datetime import datetime, timezone
@@ -60,11 +61,19 @@ VERSIONS = ".versions"
 VERSION_SEP = "@"
 #: ``<id>.r<stamp>-<hex>`` is a pending replacement of ``<id>``
 PENDING_SEP = ".r"
-#: a pending replacement being applied is renamed to this prefix first (the claim)
-CLAIM_PREFIX = ".claim-"
-PREV, NEXT = ".prev", ".next"
+#: ``<root>/.lock-<id>/`` is held while a replacement of ``<id>`` is applied; it is also
+#: the working directory, holding ``next`` (the replacement) and ``old`` (the version
+#: being archived) between renames, and ``lock.json`` (what a recovery needs to know)
+LOCK_PREFIX = ".lock-"
+LOCK_INFO = "lock.json"
+#: a lock older than this was left by a crash: its work is finished or undone
+LOCK_STALE_S = 600
+#: a reader that misses a document being swapped waits for it this long, in steps
+SWAP_WAIT_S, SWAP_STEP_S = 2.0, 0.02
+#: a replacement is written under this hidden name, then renamed into place whole
+INCOMING_PREFIX = ".incoming-"
 #: names a document's own files may not use: the store's bookkeeping lives there
-RESERVED = (VERSIONS, PREV, NEXT)
+RESERVED = (VERSIONS,)
 #: extension -> kind. ``html`` renders in a frame, ``md`` as markdown, ``text`` as
 #: preformatted text, ``image``/``video``/``audio``/``pdf`` inline in the page; anything
 #: else is a download. A document of several files with no single page to show is a
@@ -130,6 +139,15 @@ def mk_pending_id(doc_id: str, *, when: datetime | None = None) -> str:
     when = when or datetime.now(timezone.utc)
     stamp = when.strftime("%Y%m%d%H%M%S%f")
     return check_id(f"{doc_id}{PENDING_SEP}{stamp}-{secrets.token_hex(3)}")
+
+
+def _is_pending_of(name, doc_id) -> bool:
+    """True when ``name`` is a well-formed pending replacement of ``doc_id``."""
+    return (
+        isinstance(name, str)
+        and bool(ID_RE.match(name))
+        and name.rpartition(PENDING_SEP)[0] == doc_id
+    )
 
 
 def kind_of(filename: str) -> str:
@@ -318,7 +336,12 @@ class DocStore:
             if replace is not None:
                 meta.update(replaces=replace, pending_id=mk_pending_id(replace))
             (tmp / META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
-            self.target.put_tree(tmp, f"{DOCS}/{meta.get('pending_id', doc_id)}")
+            if replace is None:
+                self.target.put_tree(tmp, f"{DOCS}/{doc_id}")
+            else:  # appears whole, so no reader applies a half-written replacement
+                incoming = f"{DOCS}/{INCOMING_PREFIX}{meta['pending_id']}"
+                self.target.put_tree(tmp, incoming)
+                self.target.move(incoming, f"{DOCS}/{meta['pending_id']}")
         if replace is None:
             return meta
         if self.auto_settle:
@@ -354,74 +377,201 @@ class DocStore:
         A replacement whose document is not here yet (it is still on its way, or the
         document was purged) stays pending and is listed under its own id.
         """
+        for root in (DOCS, TRASH):  # first, what a crash left half done
+            for n in self.target.list_dirs(root):
+                base = n[len(LOCK_PREFIX) :]
+                if n.startswith(LOCK_PREFIX) and doc_id in (None, base):
+                    self._recover(f"{root}/{n}", root, base)
         bases = {n.rpartition(PENDING_SEP)[0] for n in self.pending(doc_id)}
         return sorted(b for b in bases if self._apply(b))
 
     def _apply(self, base: str) -> bool:
-        """Apply every pending replacement of ``base``, oldest first.
+        """Apply the pending replacements of ``base``, oldest first, under its lock.
 
-        Every step is a rename. The first claims the document: it is renamed into a
-        working directory only this call knows, so a competing call fails that rename and
-        leaves the work to the winner, and no replacement is applied twice or out of
-        order. Each replacement is then claimed the same way, the current version moved
-        under its ``.versions/``, and the result renamed back into place. No file is ever
-        removed (only the emptied working directory); the document is absent from its place for those few renames.
+        Stops at the first one that is not ready (still arriving, or unreadable): order
+        matters, and the next pull or read retries it.
         """
         root = self._root_of(base)
         names = self.pending(base)
         if root is None or not names:
             return False
-        work = f"{root}/{CLAIM_PREFIX}{base}-{secrets.token_hex(3)}"
-        try:
-            self.target.move(f"{root}/{base}", f"{work}/{PREV}")
-        except (OSError, RuntimeError):
-            with suppress(OSError, RuntimeError):  # the move made it, then lost the race
-                self.target.remove_empty_dir(work)
-            return False  # another reader holds it
+        lock = self._lock(root, base)
+        if lock is None:
+            return False  # another reader is applying them
         applied = False
         try:
             for name in names:
-                try:
-                    self.target.move(f"{DOCS}/{name}", f"{work}/{NEXT}")
-                except (OSError, RuntimeError):
-                    continue  # gone since it was listed
-                self._stack(work)
+                if not self._swap_in(root, base, name, lock):
+                    break
                 applied = True
         finally:
-            self.target.move(f"{work}/{PREV}", f"{root}/{base}")
-        self.target.remove_empty_dir(work)
+            self._unlock(lock)
         return applied
 
-    def _stack(self, work: str) -> None:
-        """In ``work``: put ``.next`` on top of ``.prev`` and make the result ``.prev``."""
-        prev = json.loads(self.target.read_text(f"{work}/{PREV}/{META}"))
-        new = json.loads(self.target.read_text(f"{work}/{NEXT}/{META}"))
-        n = int(prev.get("version", 1))
-        if self.target.exists(f"{work}/{PREV}/{VERSIONS}"):
-            self.target.move(f"{work}/{PREV}/{VERSIONS}", f"{work}/{NEXT}/{VERSIONS}")
-        self.target.move(f"{work}/{PREV}", f"{work}/{NEXT}/{VERSIONS}/{n}")
+    def _lock(self, root: str, base: str) -> str | None:
+        """Take ``<root>/.lock-<base>`` (an exclusive mkdir); recover a stale one first."""
+        lock = f"{root}/{LOCK_PREFIX}{base}"
+        for _ in range(2):
+            try:
+                self.target.make_dir(lock)
+            except (OSError, RuntimeError):
+                if not self._recover(lock, root, base):
+                    return None
+                continue
+            self._lock_note(lock, {})
+            return lock
+        return None
+
+    def _lock_note(self, lock: str, info: dict) -> None:
+        self.target.write_text(
+            f"{lock}/{LOCK_INFO}", json.dumps({"since": time.time(), **info})
+        )
+
+    def _unlock(self, lock: str) -> None:
+        """Release the lock, unless a failed step left files in it (recovery's job)."""
+        if any(self.target.exists(f"{lock}/{d}") for d in ("next", "old")):
+            return
+        self.target.remove_tree(lock)  # holds only lock.json now
+
+    def _recover(self, lock: str, root: str, base: str) -> bool:
+        """Finish or undo the work of a lock left by a crash; True when it is released.
+
+        A lock is stale when its note is older than ``LOCK_STALE_S`` (or it has none, a
+        moment after it was taken). Whatever step the crash interrupted, the files are in
+        one of three places (the document, the lock's ``next`` or its ``old``), and each
+        state has one way forward or back. Nothing is deleted but the emptied lock.
+        """
+        try:
+            info = json.loads(self.target.read_text(f"{lock}/{LOCK_INFO}"))
+        except (OSError, RuntimeError, ValueError):
+            time.sleep(SWAP_STEP_S)  # it may have been taken a moment ago
+            try:
+                info = json.loads(self.target.read_text(f"{lock}/{LOCK_INFO}"))
+            except (OSError, RuntimeError, ValueError):
+                info = {"since": 0}
+        if time.time() - float(info.get("since", 0)) < LOCK_STALE_S:
+            return False
+        live = f"{root}/{base}"
+        nxt, old = f"{lock}/next", f"{lock}/old"
+        try:
+            if self.target.exists(nxt):  # interrupted before the new version went live
+                if not self.target.exists(f"{live}/{META}") and self.target.exists(old):
+                    self.target.move(old, live)
+                self.target.move(nxt, f"{DOCS}/{info['pending']}")
+            elif self.target.exists(old):  # live; the old version was being archived
+                self._archive(old, live, int(info["n"]))
+            self.target.remove_tree(lock)
+        except (OSError, RuntimeError, KeyError, ValueError):
+            return False  # leave it as it is: nothing is lost, it stays retryable
+        return True
+
+    def _ready(self, pend: str, base: str) -> dict | None:
+        """The pending replacement's meta when it is complete and well formed, else None.
+
+        Complete means every file its meta lists is there at the size it records, so a
+        replacement still arriving (a pull in progress) is never applied.
+        """
+        try:
+            meta = json.loads(self.target.read_text(f"{pend}/{META}"))
+        except (OSError, RuntimeError, ValueError):
+            return None
+        if not isinstance(meta, dict):
+            return None
+        files, sizes = meta.get("files"), meta.get("sizes")
+        if (
+            meta.get("replaces") != base
+            or not isinstance(files, list)
+            or not isinstance(sizes, dict)
+            or not all(isinstance(f, str) for f in files)
+            or any(f.split("/", 1)[0] in RESERVED for f in files)
+            or self.target.exists(f"{pend}/{VERSIONS}")
+        ):
+            return None
+        try:
+            on_disk = self.target.file_sizes(pend, files)
+        except (OSError, RuntimeError, ValueError):
+            return None
+        return meta if all(on_disk.get(f) == sizes.get(f) for f in files) else None
+
+    def _swap_in(self, root: str, base: str, name: str, lock: str) -> bool:
+        """Make the pending replacement ``name`` the current version of ``base``.
+
+        Everything that can fail is checked first. Then, renames only: the replacement
+        into the lock (with its final meta), the document out of its place and the new
+        version into it (the only moment the id has nothing behind it, and readers wait
+        through it), then the old version, whole, under ``.versions/<n>/``.
+        """
+        live, pend = f"{root}/{base}", f"{DOCS}/{name}"
+        new = self._ready(pend, base)
+        if new is None:
+            return False
+        try:
+            prev = json.loads(self.target.read_text(f"{live}/{META}"))
+            history = prev.get("versions", [])
+            if not isinstance(history, list) or not all(
+                isinstance(v, dict) for v in history
+            ):
+                return False
+            n = int(prev.get("version", 1))
+        except (OSError, RuntimeError, ValueError, AttributeError, TypeError):
+            return False
+        applied = {v.get("from_pending") for v in history} | {prev.get("from_pending")}
+        if name in applied:  # pulled twice: already in the history; to the bin with it
+            with suppress(OSError, RuntimeError):
+                self.target.move(pend, f"{TRASH}/{name}")
+            return True
+        if self.target.exists(f"{live}/{VERSIONS}/{n}"):
+            return False
         entry = {
             "n": n,
             "title": prev.get("title", ""),
             "kind": prev.get("kind", ""),
             "size": prev.get("size", 0),
             "created": prev.get("updated") or prev.get("created", ""),
+            "from_pending": prev.get("from_pending"),
         }
         for key in ("replaces", "pending_id"):
             new.pop(key, None)
         meta = {
             **new,
-            "id": prev["id"],
+            "id": base,
             "tags": new.get("tags") or prev.get("tags", []),
             "created": prev.get("created", new.get("created")),
             "updated": new.get("created"),
             "version": n + 1,
-            "versions": [*prev.get("versions", []), entry],
+            "versions": [*history, entry],
+            "from_pending": name,
         }
         if "trashed" in prev:
             meta["trashed"] = prev["trashed"]
-        self.target.write_text(f"{work}/{NEXT}/{META}", json.dumps(meta, indent=1))
-        self.target.move(f"{work}/{NEXT}", f"{work}/{PREV}")
+        nxt, old = f"{lock}/next", f"{lock}/old"
+        self._lock_note(lock, {"pending": name, "n": n})
+        try:
+            self.target.move(pend, nxt)
+        except (OSError, RuntimeError):
+            return False
+        try:
+            self.target.write_text(f"{nxt}/{META}", json.dumps(meta, indent=1))
+            self.target.move(live, old)
+        except (OSError, RuntimeError):
+            self.target.move(nxt, pend)  # nothing changed: put it back
+            return False
+        try:
+            self.target.move(nxt, live)
+        except (OSError, RuntimeError):
+            self.target.move(old, live)
+            self.target.move(nxt, pend)
+            return False
+        self._archive(old, live, n)
+        return True
+
+    def _archive(self, old: str, live: str, n: int) -> None:
+        """Move the old version (with the history it carried) under the live document."""
+        if self.target.exists(f"{old}/{VERSIONS}") and not self.target.exists(
+            f"{live}/{VERSIONS}"
+        ):
+            self.target.move(f"{old}/{VERSIONS}", f"{live}/{VERSIONS}")
+        self.target.move(old, f"{live}/{VERSIONS}/{n}")
 
     def doc_rel(self, doc_id: str) -> str:
         """The directory of a document (or of a version, ``<id>@<n>``) under the data root."""
@@ -457,7 +607,7 @@ class DocStore:
         metas = [
             {**m, "id": m["pending_id"], "pending": True} if "replaces" in m else m
             for m in metas
-            if "replaces" not in m or m.get("pending_id")
+            if "replaces" not in m or _is_pending_of(m.get("pending_id"), m["replaces"])
         ]
         return sorted(
             metas,
@@ -467,9 +617,18 @@ class DocStore:
 
     def _where(self, doc_id: str) -> str:
         root = self._root_of(check_id(doc_id))
+        deadline = time.monotonic() + SWAP_WAIT_S
+        while root is None and time.monotonic() < deadline and self._swapping(doc_id):
+            time.sleep(SWAP_STEP_S)  # a replacement is going live: wait out the rename
+            root = self._root_of(doc_id)
         if root is None:
             raise KeyError(doc_id)
         return root
+
+    def _swapping(self, doc_id: str) -> bool:
+        return any(
+            self.target.exists(f"{r}/{LOCK_PREFIX}{doc_id}/old") for r in (DOCS, TRASH)
+        )
 
     def meta(self, doc_id: str) -> dict:
         """One document's meta; ``in_trash`` says which side of the bin it is on.

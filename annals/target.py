@@ -57,8 +57,12 @@ class Target(Protocol):
 
     def remove_tree(self, rel: str) -> None: ...
 
-    def remove_empty_dir(self, rel: str) -> None:
-        """Remove a directory only if it is empty (fails otherwise): a safe cleanup."""
+    def make_dir(self, rel: str) -> None:
+        """Create a directory; fails if it exists (an atomic test-and-set: a lock)."""
+        ...
+
+    def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
+        """The byte size of each of ``files`` under ``rel`` that is a regular file."""
         ...
 
     def exists(self, rel: str) -> bool: ...
@@ -121,8 +125,19 @@ class LocalTarget:
     def remove_tree(self, rel: str) -> None:
         shutil.rmtree(self._abs(rel))
 
-    def remove_empty_dir(self, rel: str) -> None:
-        os.rmdir(self._abs(rel))
+    def make_dir(self, rel: str) -> None:
+        path = self._abs(rel)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.mkdir()
+
+    def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
+        base = self._abs(rel)
+        out = {}
+        for f in files:
+            path = base / check_rel(f)
+            if path.is_file() and not path.is_symlink():
+                out[f] = path.stat().st_size
+        return out
 
     def exists(self, rel: str) -> bool:
         return self._abs(rel).exists()
@@ -245,8 +260,21 @@ class SshTarget:
     def remove_tree(self, rel: str) -> None:
         self._ssh(f"rm -rf {_q(self._abs(rel))}")
 
-    def remove_empty_dir(self, rel: str) -> None:
-        self._ssh(f"rmdir {_q(self._abs(rel))}")
+    def make_dir(self, rel: str) -> None:
+        path = self._abs(rel)
+        self._ssh(f"mkdir -p {_q(str(PurePosixPath(path).parent))} && mkdir {_q(path)}")
+
+    def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
+        if not files:
+            return {}
+        base = self._abs(rel)
+        paths = " ".join(_q(f"{base}/{check_rel(f)}") for f in files)
+        out = self._ssh(
+            f'for f in {paths}; do if [ -f "$f" ] && [ ! -L "$f" ]; then wc -c < "$f"; '
+            f"else echo -1; fi; done"
+        )  # one line per file, in order: no file name is parsed back
+        sizes = [int(x) for x in out.split()]
+        return {f: n for f, n in zip(files, sizes) if n >= 0}
 
     def exists(self, rel: str) -> bool:
         out = self._ssh(f"test -e {_q(self._abs(rel))} && echo yes || echo no")
@@ -266,7 +294,7 @@ class SshTarget:
 
     def list_dirs(self, rel: str) -> list[str]:
         base = _q(self._abs(rel))
-        out = self._ssh(f"[ -d {base} ] && ls -1 {base} || true")
+        out = self._ssh(f"[ -d {base} ] && ls -1A {base} || true")  # as local: hidden too
         return sorted(name for name in out.splitlines() if name)
 
     def list_files(self, rel: str) -> list[str]:

@@ -253,3 +253,121 @@ def test_replace_over_ssh(tmp_path, loopback_ssh):
     assert store.read_text(doc_id).endswith("v2")
     assert sorted(p.name for p in (remote / "docs").iterdir()) == [doc_id]
     assert [m["id"] for m in DocStore(remote).list()] == [doc_id]
+
+
+# -- what the adversarial review found: failures mid-apply, partial pulls, re-pulls ----
+
+
+def _queue(root, doc_id, text):
+    """Publish a replacement on an outbox view of ``root``; return its directory."""
+    meta = DocStore(root, settle=False).publish(text=text, replace=doc_id)
+    return root / "docs" / meta["pending_id"]
+
+
+def test_a_failure_mid_apply_leaves_the_document_readable(tmp_path, monkeypatch):
+    root = tmp_path / "data"
+    store = DocStore(root)
+    doc_id = store.publish(text="# F\n\nv1", title="F")["id"]
+    pend = _queue(root, doc_id, "# F\n\nv2")
+    real = store.target.write_text
+
+    def full_disk(rel, text):
+        if rel.endswith("next/meta.json"):
+            raise OSError(28, "No space left on device")
+        return real(rel, text)
+
+    monkeypatch.setattr(store.target, "write_text", full_disk)
+    assert store.settle() == []
+    assert store.read_text(doc_id).endswith("v1") and pend.is_dir()
+    monkeypatch.setattr(store.target, "write_text", real)
+    assert store.settle() == [doc_id] and store.read_text(doc_id).endswith("v2")
+    assert sorted(p.name for p in (root / "docs").iterdir()) == [doc_id]
+
+
+def test_untrusted_history_does_not_break_the_document(tmp_path):
+    root = tmp_path / "data"
+    store = DocStore(root)
+    doc_id = store.publish(text="# H\n\nv1", title="H")["id"]
+    meta_path = root / "docs" / doc_id / "meta.json"
+    meta = json.loads(meta_path.read_text())
+    meta_path.write_text(json.dumps({**meta, "versions": "not a list"}))
+    _queue(root, doc_id, "# H\n\nv2")
+    assert store.settle() == [] and store.read_text(doc_id).endswith("v1")
+
+
+def test_a_half_arrived_or_broken_replacement_waits_visibly(tmp_path):
+    root = tmp_path / "data"
+    store = DocStore(root)
+    doc_id = store.publish(text="# P\n\nv1", title="P")["id"]
+    pend = _queue(root, doc_id, "# P\n\nv2 is longer")
+    body = pend / "document.md"
+    full = body.read_text()
+    body.write_text(full[:5])  # the pull has not finished this file
+    assert store.settle() == [] and store.read_text(doc_id).endswith("v1")
+    assert pend.name in [m["id"] for m in store.list()]  # listed, not lost
+    body.write_text(full)  # the next pull completes it
+    assert store.settle() == [doc_id]
+    broken = _queue(root, doc_id, "# P\n\nv3")
+    (broken / "meta.json").write_text("{trunc")
+    assert store.settle() == [] and broken.is_dir()
+    assert store.meta(doc_id)["version"] == 2
+
+
+def test_a_replacement_pulled_twice_is_applied_once(tmp_path):
+    root = tmp_path / "data"
+    store = DocStore(root)
+    doc_id = store.publish(text="# R\n\nv1", title="R")["id"]
+    pend = _queue(root, doc_id, "# R\n\nv2")
+    copy = tmp_path / "copy"
+    shutil.copytree(pend, copy)
+    store.settle()
+    shutil.copytree(copy, pend)  # a retried pull lands the same directory again
+    store.settle()
+    assert store.meta(doc_id)["version"] == 2 and store.pending() == []
+    assert (root / "trash" / pend.name).is_dir()  # set aside, not deleted
+
+
+def test_a_stale_lock_left_by_a_crash_is_recovered(tmp_path, monkeypatch):
+    import annals.store as st
+
+    root = tmp_path / "data"
+    store = DocStore(root)
+    doc_id = store.publish(text="# C\n\nv1", title="C")["id"]
+    pend = _queue(root, doc_id, "# C\n\nv2")
+    # the crash: the replacement was claimed and the document moved aside, then nothing
+    lock = root / "docs" / f".lock-{doc_id}"
+    lock.mkdir()
+    (lock / "lock.json").write_text(json.dumps({"since": 0, "pending": pend.name, "n": 1}))
+    pend.rename(lock / "next")
+    (root / "docs" / doc_id).rename(lock / "old")
+    monkeypatch.setattr(st, "SWAP_WAIT_S", 0.05)
+    assert store.settle() == [doc_id]  # recovered (put back), then applied
+    assert store.read_text(doc_id).endswith("v2") and store.read_text(f"{doc_id}@1").endswith("v1")
+    assert sorted(p.name for p in (root / "docs").iterdir()) == [doc_id]
+
+
+def test_a_fresh_lock_is_respected_and_readers_wait_out_a_swap(tmp_path):
+    root = tmp_path / "data"
+    store = DocStore(root)
+    doc_id = store.publish(text="# W\n\nv1", title="W")["id"]
+    lock = root / "docs" / f".lock-{doc_id}"
+    lock.mkdir()
+    (lock / "lock.json").write_text(json.dumps({"since": 9e99}))
+    (root / "docs" / doc_id).rename(lock / "old")  # mid-swap, in another process
+    timer = threading.Timer(0.2, lambda: (lock / "old").rename(root / "docs" / doc_id))
+    timer.start()
+    assert DocStore(root).meta(doc_id)["title"] == "W"  # waited instead of a 404
+    timer.join()
+    _queue(root, doc_id, "# W\n\nv2")
+    assert store.settle() == []  # the lock is someone else's
+    lock.joinpath("lock.json").unlink()
+    lock.rmdir()
+    assert store.settle() == [doc_id]
+
+
+def test_html_revalidates_with_an_etag(store, tmp_path):
+    doc_id = store.publish(_write(tmp_path / "e.html", "<p>x</p>"))["id"]
+    client = TestClient(mk_app(store=store, authorizer=no_auth))
+    first = client.get(f"/annals/api/raw/{doc_id}/e.html")
+    again = client.get(f"/annals/api/raw/{doc_id}/e.html", headers={"If-None-Match": first.headers["etag"]})
+    assert again.status_code == 304
