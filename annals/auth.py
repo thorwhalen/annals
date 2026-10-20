@@ -75,7 +75,9 @@ class CookieWhoami:
         self.whoami_url = whoami_url
         self._ttl, self._cache_max, self._clock = cache_ttl_s, cache_max, clock
         self._cache: dict[str, tuple[float, Optional[str]]] = {}
-        self._lock = threading.Lock()  # guards the cache dict only, never the network call
+        self._lock = (
+            threading.Lock()
+        )  # guards the cache dict only, never the network call
         self.allowed = {u.strip().lower() for u in allowed_users if u.strip()}
         self.login_url = login_url
 
