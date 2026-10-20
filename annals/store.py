@@ -471,7 +471,16 @@ class DocStore:
         """Release the lock, unless a failed step left files in it (recovery's job)."""
         if any(self.target.exists(f"{lock}/{d}") for d in ("next", "old")):
             return
-        self.target.remove_tree(lock)  # holds only its notes now
+        self._drop_lock(lock)
+
+    def _drop_lock(self, lock: str) -> None:
+        """Remove a lock holding only its note: renamed away first, so no reader ever
+        sees it half removed (and takes it for one left without a note)."""
+        root, _, name = lock.rpartition("/")
+        tomb = f"{root}/.unlock-{secrets.token_hex(4)}-{name}"
+        with suppress(OSError, RuntimeError):
+            self.target.move(lock, tomb)
+            self.target.remove_tree(tomb)
 
     def _recover(self, lock: str, root: str, base: str) -> bool:
         """Finish or undo the work of a lock left by a crash; True when it is released.
@@ -486,9 +495,9 @@ class DocStore:
             if not isinstance(info, dict):
                 info = {"since": 0}
         except (OSError, RuntimeError, ValueError):
-            # the note is written with the lock, so none means a crash in between (or
-            # the lock is just gone, which the next take settles)
-            info = {"since": 0}
+            # a lock is created with its note and renamed away before removal, so no
+            # note means it is gone already: the next take settles it
+            return False
         if not self._stale(info):
             return False
         live = f"{root}/{base}"
@@ -504,7 +513,7 @@ class DocStore:
                     self._roll_back(live, old, pend)  # live, but its meta never written
                 else:  # done but for archiving the old version
                     self._archive(old, live, int(info["n"]))
-            self.target.remove_tree(lock)
+            self._drop_lock(lock)
         except (OSError, RuntimeError, KeyError, ValueError):
             return False  # leave it as it is: nothing is lost, it stays retryable
         return True
@@ -570,8 +579,12 @@ class DocStore:
             return False
         applied = {v.get("from_pending") for v in history} | {prev.get("from_pending")}
         if name in applied:  # pulled twice: already in the history; to the bin with it
+            dup = f"{name}-{secrets.token_hex(2)}"
             try:
-                self.target.move(pend, f"{TRASH}/{name}-{secrets.token_hex(2)}")
+                self.target.move(pend, f"{TRASH}/{dup}")
+                self.target.write_text(
+                    f"{TRASH}/{dup}/{META}", json.dumps({**new, "pending_id": dup})
+                )  # listed in the bin under its own name, so it can be purged
             except (OSError, RuntimeError):
                 return False
             return True
@@ -766,13 +779,14 @@ class DocStore:
         """Move a document into the bin (idempotent)."""
         meta = self._whole(doc_id)
         if not meta["in_trash"]:
-            with self._locked(DOCS, doc_id):
+            with self._locked(DOCS, doc_id):  # read and write the meta under the lock
+                meta = self.meta(doc_id, settle=False)
                 self.target.move(f"{DOCS}/{doc_id}", f"{TRASH}/{doc_id}")
-            meta["trashed"] = now_iso()
-            meta.pop("in_trash", None)
-            self.target.write_text(
-                f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1)
-            )
+                meta["trashed"] = now_iso()
+                meta.pop("in_trash", None)
+                self.target.write_text(
+                    f"{TRASH}/{doc_id}/{META}", json.dumps(meta, indent=1)
+                )
         meta["in_trash"] = True
         return meta
 
@@ -781,12 +795,13 @@ class DocStore:
         meta = self._whole(doc_id)
         if meta["in_trash"]:
             with self._locked(TRASH, doc_id):
+                meta = self.meta(doc_id, settle=False)
                 self.target.move(f"{TRASH}/{doc_id}", f"{DOCS}/{doc_id}")
-            meta.pop("trashed", None)
-            meta.pop("in_trash", None)
-            self.target.write_text(
-                f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1)
-            )
+                meta.pop("trashed", None)
+                meta.pop("in_trash", None)
+                self.target.write_text(
+                    f"{DOCS}/{doc_id}/{META}", json.dumps(meta, indent=1)
+                )
         meta["in_trash"] = False
         return meta
 

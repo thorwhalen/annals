@@ -325,6 +325,9 @@ def test_a_replacement_pulled_twice_is_applied_once(tmp_path):
     store.settle()
     assert store.meta(doc_id)["version"] == 2 and store.pending() == []
     assert [p.name.startswith(pend.name) for p in (root / "trash").iterdir()] == [True]  # set aside
+    (dup,) = [m["id"] for m in store.list(trash=True)]
+    store.purge(dup)  # and it can be emptied from the bin
+    assert list((root / "trash").iterdir()) == []
 
 
 def test_a_stale_lock_left_by_a_crash_is_recovered(tmp_path, monkeypatch):
