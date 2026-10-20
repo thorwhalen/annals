@@ -22,6 +22,7 @@ what enlace_auth does so the two are indistinguishable from the phone.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import secrets
@@ -81,14 +82,15 @@ class CookieWhoami:
         if not cookie:
             return None
         now = self._clock()
-        hit = self._cache.get(cookie)
+        key = hashlib.sha256(cookie.encode()).hexdigest()  # bounded key size
+        hit = self._cache.get(key)
         if hit and now - hit[0] < self._ttl:
             return hit[1]
         who = self._ask(cookie)
         if who is not _UNREACHABLE:  # an outage is not an answer: retry next request
             if len(self._cache) >= self._cache_max:
-                self._cache.clear()
-            self._cache[cookie] = (now, who)
+                self._cache.pop(next(iter(self._cache)), None)  # evict oldest
+            self._cache[key] = (now, who)
             return who
         return None
 

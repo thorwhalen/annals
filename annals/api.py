@@ -37,6 +37,7 @@ from typing import Callable
 from urllib.parse import quote
 
 import anyio
+import anyio.to_thread
 from fastapi import Body, FastAPI, Header, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
