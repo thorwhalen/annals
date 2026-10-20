@@ -14,14 +14,14 @@ import socket
 from pathlib import Path
 
 from annals.config import Settings, default_data_dir, load_settings, write_config
-from annals.store import DocStore, check_id
+from annals.store import DocStore, check_id, split_version
 from annals.target import parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
 
 
 def _store(settings: Settings) -> DocStore:
-    return DocStore(parse_target(settings.target))
+    return DocStore(parse_target(settings.target), settle=not settings.outbox)
 
 
 def _doc_url(settings: Settings, doc_id: str) -> str:
@@ -60,6 +60,7 @@ def publish(
     target: str | None = None,
     base_url: str | None = None,
     to: str | None = None,
+    replace: str | None = None,
 ) -> dict:
     """Publish one document and print its link; several paths become several documents.
 
@@ -71,7 +72,10 @@ def publish(
     printed in a group link), so a second batch lands under the link the owner already has. ``session`` records who published (the source shown on the page). A directory skips
     hidden files and caches (``.*``, ``__pycache__``, ``*.pyc``) unless ``all_files``.
     ``to`` publishes to a named target of the config file (``[targets.NAME]``, see
-    ``annals configure --to``) instead of the default one.
+    ``annals configure --to``) instead of the default one. ``replace`` (a document's link or
+    id) publishes ONE path as a new version of that document: the link stays the same, the
+    page shows the new version and offers the earlier ones. That is how a living page (a
+    guide, a status page) keeps one link.
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
     store = _store(settings)
@@ -81,18 +85,28 @@ def publish(
         source["session"] = session
     docs = []
     paths = _as_list(paths)
+    replace_id = None
+    if replace:
+        if len(paths) > 1:
+            raise ValueError("--replace takes one path: the new version of one document")
+        kind, replace_id = _parse_ref(replace)
+        if kind == "group":
+            raise ValueError("--replace names a document, not a group")
     for p in paths:
         if p == "-":
             import sys
 
             text = sys.stdin.read()
-            meta = store.publish(title=title, tags=tag_list, source=source, text=text)
+            meta = store.publish(
+                title=title, tags=tag_list, source=source, text=text, replace=replace_id
+            )
         else:
             meta = store.publish(
                 Path(p),
                 title=title if len(paths) == 1 else None,
                 tags=tag_list,
                 source=source,
+                replace=replace_id,
                 **({"exclude": ()} if all_files else {}),
             )
         docs.append(
@@ -226,27 +240,40 @@ def configure(
     target: str | None = None,
     base_url: str | None = None,
     to: str | None = None,
+    outbox: bool = False,
 ) -> dict:
     """Write the publisher config (where to publish, what link to print) and show it.
 
     Example: ``annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals``.
     ``--to NAME`` saves the target and base url as a named target (``annals publish --to NAME``)
-    and leaves the default alone. With no arguments, shows the resolved settings without writing.
+    and leaves the default alone. ``--outbox`` marks the target as an outbox: a directory
+    the server pulls and empties (it cannot be written to from here), so replacements are
+    left for the server to apply; it is kept by later changes (``ANNALS_OUTBOX=0`` or an
+    edit of the file turns it off). With no arguments, shows the resolved settings without writing.
     """
-    if to and (target or base_url):
+    writing = bool(target or base_url or outbox)
+    if to and writing:
         # Resolve a partly-given named target against what is already saved under it.
         try:
-            settings = load_settings(target=target, base_url=base_url, to=to)
+            settings = load_settings(
+                target=target, base_url=base_url, to=to, outbox=outbox or None
+            )
         except ValueError:
             if not (target and base_url):
                 raise ValueError(
                     f"a new named target needs both --target and --base-url ({to!r} is not saved yet)"
                 ) from None
-            settings = load_settings(target=target, base_url=base_url)
+            settings = load_settings(target=target, base_url=base_url, outbox=outbox)
     else:
-        settings = load_settings(target=target, base_url=base_url, to=to)
+        current = load_settings(to=to)  # what a partial change applies to
+        settings = load_settings(
+            target=target or (current.target if writing else None),
+            base_url=base_url,
+            to=to,
+            outbox=(outbox or current.outbox) if writing else None,
+        )
     out = settings.as_dict()
-    if target or base_url:
+    if writing:
         out["config_path"] = str(write_config(settings, to=to))
     out["local_data_dir"] = str(default_data_dir())
     return out
@@ -273,8 +300,10 @@ def _same_place(a: str, b: str) -> bool:
 def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
     import tempfile
 
+    if split_version(doc_id)[1] is not None:
+        raise ValueError(f"{doc_id} is a version; copy the document (it keeps its versions)")
     meta = src.meta(doc_id)
-    rel = f"{'trash' if meta.get('in_trash') else 'docs'}/{doc_id}"
+    rel = src.doc_rel(doc_id)
     with tempfile.TemporaryDirectory(prefix="annals-copy-") as td:
         src.target.get_tree(rel, Path(td) / "doc")
         odd = [

@@ -1,6 +1,6 @@
 ---
 name: annals-publish
-description: Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner's private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to "publish this", "post it to my annals", "put it where I can read it on my phone", "give me a link to that report", "show me the images", "where can I see the renders", "share the page with me", or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.
+description: Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner's private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to "publish this", "post it to my annals", "put it where I can read it on my phone", "give me a link to that report", "show me the images", "where can I see the renders", "share the page with me", or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers living pages (one link that stays current: `--replace`), grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.
 ---
 
 # annals-publish — one command, one link
@@ -17,9 +17,22 @@ It prints the link. Put that link in your reply, on its own line. That is the en
 
 Only if `annals` is not found: `pip install annals`. Do not `pip install -U` it where it is already installed: on a development machine that replaces the editable source install with the PyPI wheel. The publisher config, `~/.config/annals/config.toml`, says where documents go; `annals configure` shows it.
 
-- Markdown is rendered on the page with a toggle to the raw source (so the owner can copy it); its relative images resolve. HTML is rendered as-is in a frame. Images, video, audio and PDFs show inline (video streams and seeks). Anything else is offered as a download.
+- Markdown is rendered on the page with a toggle to the raw source (so the owner can copy it); its relative images resolve. HTML is rendered as-is in a frame (a page without `<!doctype html>` is served with one, so it renders in standards mode). Images, video, audio and PDFs show inline (video streams and seeks). Anything else is offered as a download.
 - The title is taken from the first `# heading` (markdown) or `<title>` (html); pass `--title "..."` to override.
 - `--tags a,b` adds tags (searchable). `--session <name>` records who published; always pass your session or corpus name when you have one.
+
+## Living pages: one link that stays current
+
+A guide, a status page or a dashboard you will refresh should keep ONE link. Publish it once, then publish each new version over it:
+
+```bash
+annals publish guide.html --session <name>                    # first time: prints the link
+annals publish guide.html --replace <link-or-id> --session <name>   # later: same link printed
+```
+
+The page shows the newest version, marked "updated", and lists the earlier ones (each readable at `<link>@<n>`). Nothing is lost: the previous files are kept as a version. `--replace` takes one path (a file or a folder, such as a site with its assets); it works for a document inside a group too, and the group keeps it. Remember the link (in your ledger or notes) so the next session replaces rather than republishes.
+
+On a machine whose target is an outbox (`annals configure` shows `"outbox": true`: the server pulls the documents and empties the directory), the replacement is queued and applied when the server pulls it, about a minute later; the printed link is already the right one. Elsewhere it applies at once, and a `--replace` of an id that does not exist is an error.
 
 ## Several documents under one link
 
@@ -80,3 +93,4 @@ Without `--to` documents go to the default target, as always. Use `--to <name>` 
 - Do not paste the document into the chat as well as publishing it: the link is the deliverable.
 - Do not publish secrets, credentials, or private data the owner has not seen; the page is private to them, but it is still a copy.
 - Do not create one group per document; a group is for a set the user should read together.
+- Do not republish a living page as a new document each time; `--replace` it, so the owner's link stays current.

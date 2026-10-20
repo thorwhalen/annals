@@ -18,6 +18,11 @@ file holds them as ``[targets.NAME]`` tables with the same two keys; ``annals co
 NAME --target ... --base-url ...`` writes one. ``to`` picks it over the environment and the
 file's default, and explicit ``target``/``base_url`` arguments still win over ``to``.
 
+A third, ``outbox``, is true for a target another machine pulls and empties (the server
+fetches documents from it rather than being written to): a replacement published there
+travels as it is and is applied where it lands (see :mod:`annals.store`). ``ANNALS_OUTBOX``
+overrides it.
+
 The server side has two knobs of its own. ``ANNALS_DATA_DIR`` is the directory the API
 reads. It defaults to ``~/.local/share/annals``, which is also the default publish target,
 so with no configuration at all ``annals publish`` and ``annals serve`` meet in the same
@@ -41,6 +46,8 @@ ENV_DATA_DIR = "ANNALS_DATA_DIR"
 #: extra folders the page lists beside the published documents: "name=path, name2=path2"
 ENV_SOURCES = "ANNALS_SOURCES"
 ENV_CONFIG = "ANNALS_CONFIG"
+ENV_OUTBOX = "ANNALS_OUTBOX"
+_TRUE = frozenset({"1", "true", "yes", "on"})
 DFLT_SERVE_PORT = 8765
 _NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 # A document's content file is read whole into the API's JSON response; this is the cap.
@@ -76,6 +83,8 @@ class Settings:
     #: False when nothing (argument, env, config file) named a target: publishing then lands
     #: in the local data dir and the link points at a local server, which is rarely meant
     configured: bool = True
+    #: the target is pulled and emptied by another machine; replacements apply there
+    outbox: bool = False
 
     def as_dict(self) -> dict:
         """Plain dict, for the CLI and MCP surfaces."""
@@ -92,14 +101,14 @@ def _read_toml(path: Path) -> dict:
 def _read_config_file(path: Path) -> dict:
     section = _read_toml(path)
     section = section.get(APP_NAME, section)
-    return {k: v for k, v in section.items() if isinstance(v, str)}
+    return {k: v for k, v in section.items() if isinstance(v, (str, bool))}
 
 
 def named_targets(*, config_path: Path | None = None) -> dict[str, dict[str, str]]:
     """The ``[targets.NAME]`` tables of the config file: name -> {target, base_url}."""
     tables = _read_toml(config_path or default_config_path()).get("targets", {})
     return {
-        name: {k: v for k, v in table.items() if isinstance(v, str)}
+        name: {k: v for k, v in table.items() if isinstance(v, (str, bool))}
         for name, table in tables.items()
         if isinstance(table, dict)
     }
@@ -110,6 +119,7 @@ def load_settings(
     target: str | None = None,
     base_url: str | None = None,
     to: str | None = None,
+    outbox: bool | None = None,
     config_path: Path | None = None,
 ) -> Settings:
     """Resolve settings: arguments, then ``to``, env, the config file, then local defaults.
@@ -128,6 +138,7 @@ def load_settings(
             )
         named = known[to]
         target = target or named["target"]
+        outbox = outbox if outbox is not None else bool(named.get("outbox", False))
         # Never fall through to the default's base url: links would name the wrong place.
         base_url = base_url or named.get("base_url")
         if not base_url:
@@ -148,10 +159,19 @@ def load_settings(
         or f"http://127.0.0.1:{DFLT_SERVE_PORT}/{APP_NAME}"
     )
     configured = bool(target or os.environ.get(ENV_TARGET) or file_values.get("target"))
+    if outbox is None:
+        env = os.environ.get(ENV_OUTBOX)
+        outbox = (
+            env.strip().lower() in _TRUE
+            if env is not None
+            else bool(file_values.get("outbox", False))
+            and not (target or os.environ.get(ENV_TARGET))
+        )
     return Settings(
         target=resolved_target,
         base_url=resolved_base_url.rstrip("/"),
         configured=configured,
+        outbox=outbox,
     )
 
 
@@ -173,14 +193,17 @@ def write_config(
     path.parent.mkdir(parents=True, exist_ok=True)
     default = _read_config_file(path)
     targets = named_targets(config_path=path)
+    values: dict = {"target": settings.target, "base_url": settings.base_url}
+    if settings.outbox:
+        values["outbox"] = True
     if to:
-        targets[to] = {"target": settings.target, "base_url": settings.base_url}
+        targets[to] = values
     else:
-        default = {"target": settings.target, "base_url": settings.base_url}
+        default = values
     body = f"# {APP_NAME} publisher settings. `annals configure` rewrites this file.\n"
     if default:
         body += f"[{APP_NAME}]\n" + "".join(
-            f'{k} = "{v}"\n' for k, v in default.items()
+            f"{k} = {json.dumps(v)}\n" for k, v in default.items()
         )
     for name, table in targets.items():
         body += f"\n[targets.{name}]\n" + "".join(

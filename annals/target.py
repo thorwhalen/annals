@@ -21,11 +21,14 @@ import re
 import shlex
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Protocol
 
 #: Separator between concatenated meta.json files when reading many at once over ssh.
 RECORD_SEP = "\x1e"
+#: the note a lock directory is created with (see :meth:`Target.make_lock`)
+LOCK_NOTE = "lock.json"
 SSH_OPTS = ("-o", "BatchMode=yes", "-o", "ConnectTimeout=15")
 _SSH_TARGET_RE = re.compile(r"^(?P<host>[A-Za-z0-9][A-Za-z0-9_.@-]*):(?P<path>[~/].*)$")
 
@@ -51,9 +54,20 @@ class Target(Protocol):
 
     def get_tree(self, rel: str, dst_dir: Path) -> None: ...
 
-    def move(self, rel_src: str, rel_dst: str) -> None: ...
+    def move(self, rel_src: str, rel_dst: str) -> None:
+        """Rename; fails when the source is gone or the destination already exists."""
+        ...
 
     def remove_tree(self, rel: str) -> None: ...
+
+    def make_lock(self, rel: str, note: str) -> None:
+        """Create directory ``rel`` holding ``lock.json`` (``note``) as one step; fail if
+        it exists. An atomic test-and-set: a lock that is never seen without its note."""
+        ...
+
+    def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
+        """The byte size of each of ``files`` under ``rel`` that is a regular file."""
+        ...
 
     def exists(self, rel: str) -> bool: ...
 
@@ -107,11 +121,33 @@ class LocalTarget:
 
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
+        if dst.exists():
+            raise FileExistsError(rel_dst)
         dst.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(src, dst)
+        os.rename(src, dst)
 
     def remove_tree(self, rel: str) -> None:
         shutil.rmtree(self._abs(rel))
+
+    def make_lock(self, rel: str, note: str) -> None:
+        path = self._abs(rel)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        prep = Path(tempfile.mkdtemp(prefix=".lockprep-", dir=path.parent))
+        (prep / LOCK_NOTE).write_text(note, encoding="utf-8")
+        try:  # a rename onto a lock (never empty) fails: only one taker wins
+            os.rename(prep, path)
+        except OSError:
+            shutil.rmtree(prep, ignore_errors=True)
+            raise
+
+    def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
+        base = self._abs(rel)
+        out = {}
+        for f in files:
+            path = base / check_rel(f)
+            if path.is_file() and not path.is_symlink():
+                out[f] = path.stat().st_size
+        return out
 
     def exists(self, rel: str) -> bool:
         return self._abs(rel).exists()
@@ -154,6 +190,8 @@ class LocalTarget:
             return []
         metas = []
         for meta_path in base.glob("*/meta.json"):
+            if meta_path.parent.name.startswith("."):
+                continue  # work in progress (a replacement being applied), like ssh's glob
             try:
                 metas.append(
                     json.loads(
@@ -225,10 +263,32 @@ class SshTarget:
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
         parent = str(PurePosixPath(dst).parent)
-        self._ssh(f"mkdir -p {_q(parent)} && mv {_q(src)} {_q(dst)}")
+        self._ssh(
+            f"[ ! -e {_q(dst)} ] && mkdir -p {_q(parent)} && mv {_q(src)} {_q(dst)}"
+        )
 
     def remove_tree(self, rel: str) -> None:
         self._ssh(f"rm -rf {_q(self._abs(rel))}")
+
+    def make_lock(self, rel: str, note: str) -> None:
+        path = self._abs(rel)
+        parent = _q(str(PurePosixPath(path).parent))
+        self._ssh(  # one remote shell: the note follows the mkdir within a millisecond
+            f"mkdir -p {parent} && mkdir {_q(path)} && cat > {_q(path + '/' + LOCK_NOTE)}",
+            stdin=note,
+        )
+
+    def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
+        if not files:
+            return {}
+        base = self._abs(rel)
+        paths = " ".join(_q(f"{base}/{check_rel(f)}") for f in files)
+        out = self._ssh(
+            f'for f in {paths}; do if [ -f "$f" ] && [ ! -L "$f" ]; then wc -c < "$f"; '
+            f"else echo -1; fi; done"
+        )  # one line per file, in order: no file name is parsed back
+        sizes = [int(x) for x in out.split()]
+        return {f: n for f, n in zip(files, sizes) if n >= 0}
 
     def exists(self, rel: str) -> bool:
         out = self._ssh(f"test -e {_q(self._abs(rel))} && echo yes || echo no")
@@ -248,7 +308,7 @@ class SshTarget:
 
     def list_dirs(self, rel: str) -> list[str]:
         base = _q(self._abs(rel))
-        out = self._ssh(f"[ -d {base} ] && ls -1 {base} || true")
+        out = self._ssh(f"[ -d {base} ] && ls -1A {base} || true")  # as local: hidden too
         return sorted(name for name in out.splitlines() if name)
 
     def list_files(self, rel: str) -> list[str]:

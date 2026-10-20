@@ -231,6 +231,7 @@
       opts.showSource && isRow ? h("span", { class: "src" }, [sourceTitle(m.source)]) : null,
       kindBadge(m.kind),
       t ? ageEl(t) : null,
+      m.updated ? h("span", { class: "updated" }, ["updated"]) : null,
       (isRow ? sourceText({ session: m.session, host: m.host }) : sourceText(m.source)) ? h("span", null, [isRow ? sourceText({ session: m.session, host: m.host }) : sourceText(m.source)]) : null,
       m.size ? h("span", null, [size(m.size)]) : null,
       m.n_files > 1 ? h("span", null, [m.n_files + " files"]) : null
@@ -668,6 +669,20 @@
     return out;
   }
 
+  /* -------- the versions of a replaced document (annals publish --replace) ---------- */
+  function versionsPanel(m) {
+    var base = m.version_of || m.id, list = (m.versions || []).slice();
+    if (!list.length) return null;
+    var current = m.version_of ? m.current_version : m.version;
+    var rows = list.map(function (v) {
+      var here = m.version_of && v.n === m.version;
+      return h("li", null, [here ? h("strong", null, ["Version " + v.n]) : link(BASE + "/d/" + base + "@" + v.n, "Version " + v.n),
+        " · ", h("span", { title: when(v.created) }, [age(v.created)]), v.title ? h("span", { class: "muted" }, [" " + v.title]) : null]);
+    }).reverse();
+    rows.unshift(h("li", null, [m.version_of ? link(BASE + "/d/" + base, "Version " + current + " (current)") : h("strong", null, ["Version " + current + " (current)"])]));
+    return h("details", { class: "more-files versions" }, [h("summary", null, ["Versions (" + (list.length + 1) + ")"]), h("ul", { class: "filelist" }, rows)]);
+  }
+
   /* -------- one document, or one file of it --------------------------------------- */
   function docView(id, rel) {
     page("Document", mainNav("published"), [h("p", { class: "muted" }, ["Loading…"])]);
@@ -698,16 +713,22 @@
           ? h("button", { class: "btn", onclick: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }, ["Restore"])
           : h("button", { class: "btn danger", onclick: function () { api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); } }, ["Move to bin"]))
       ]));
+      var isVersion = !!m.version_of;
       var meta = h("div", { class: "meta" }, [
-        kindBadge(m.kind), h("span", { title: when(m.created) }, [age(m.created)]), m.size ? h("span", null, [size(m.size)]) : null,
+        kindBadge(m.kind), h("span", { title: when(m.created) }, [age(m.created)]),
+        m.updated ? h("span", { class: "updated", title: when(m.updated) }, ["updated " + age(m.updated)]) : null,
+        m.version > 1 || isVersion ? h("span", null, ["version " + m.version]) : null,
+        m.size ? h("span", null, [size(m.size)]) : null,
         sourceText(m.source) ? h("span", null, [sourceText(m.source)]) : null,
         m.files && m.files.length > 1 ? h("span", null, [m.files.length + " files"]) : null
       ]);
       var showFiles = !rel && m.files && m.files.length > 1;
       page(rel ? basename(rel) : m.title, mainNav(m.in_trash ? "trash" : "published"), [
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
-        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
-        fileNav, docTools, body,
+        isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
+        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        fileNav, isVersion ? h("div", { class: "toolbar" }, tools.concat([h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"])])) : docTools, body,
+        rel ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
       ]);
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
