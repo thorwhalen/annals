@@ -420,16 +420,20 @@ def serve(
     port: int = 8765,
     data_dir: str | None = None,
     base_path: str = "/annals",
+    allow_open: bool = False,
 ) -> None:
     """Serve the annals page and API (needs ``pip install 'annals[server]'``).
 
     Auth comes from the environment: ``ANNALS_WHOAMI_URL`` + ``ANNALS_ALLOWED_USERS`` to sit
     behind an existing login, ``ANNALS_BASIC_USER`` + ``ANNALS_BASIC_PASSWORD`` for HTTP Basic,
-    nothing for an open server on localhost.
+    nothing for an open server on localhost. A host reachable beyond this machine with no auth
+    configured is refused unless ``allow_open`` (``--allow-open``) says something else gates it.
     """
     from annals.api import serve as _serve
 
-    _serve(host=host, port=port, data_dir=data_dir, base_path=base_path)
+    _serve(
+        host=host, port=port, data_dir=data_dir, base_path=base_path, allow_open=allow_open
+    )
 
 
 def page_shell(

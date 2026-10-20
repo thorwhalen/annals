@@ -133,8 +133,15 @@ class Catalog:
         return self.item(key)
 
     def forget(self, key: str) -> None:
-        """Drop an item's tags (when the item itself is gone for good)."""
+        """Drop an item's tags and any cached text (when the item itself is gone for good)."""
         self.tags.pop(key, None)
+        try:
+            source, item_id = split_key(key)
+        except KeyError:
+            return
+        drop = getattr(self.sources.get(source), "forget", None)
+        if drop:
+            drop(item_id)
 
     def tag_counts(self) -> dict[str, int]:
         """Every tag in use on a listed item, with how many items carry it."""

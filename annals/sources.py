@@ -25,12 +25,13 @@ import fnmatch
 import os
 import re
 import threading
+from collections import OrderedDict
 from collections.abc import Callable, Iterator, Mapping
 from datetime import datetime, timezone
 from pathlib import Path, PurePosixPath
 from typing import Iterable, Protocol
 
-from annals.config import MAX_INLINE_TEXT_BYTES
+from annals.config import DFLT_MAX_CACHED_TEXTS, MAX_INLINE_TEXT_BYTES
 from annals.store import (
     DFLT_EXCLUDE,
     HEAD_CHARS,
@@ -128,13 +129,22 @@ class PublishedSource:
     Always named ``published``: the page links its items to ``/d/<id>``.
     """
 
-    def __init__(self, store: DocStore, *, title: str = "Published"):
+    def __init__(
+        self,
+        store: DocStore,
+        *,
+        title: str = "Published",
+        max_cached_texts: int = DFLT_MAX_CACHED_TEXTS,
+    ):
         self.store = store
         self.name = PUBLISHED
         self.title = title
-        # id -> (its ``updated`` stamp, text): a replace changes the stamp
-        self._texts: dict[str, tuple[str, str]] = {}
+        self.max_cached_texts = max_cached_texts
+        # id -> (its ``updated`` stamp, text), least recently used first: a replace changes
+        # the stamp, a purge calls :meth:`forget`, and the size is bounded
+        self._texts: OrderedDict[str, tuple[str, str]] = OrderedDict()
         self._stamps: dict[str, str] = {}  # id -> its ``updated``, as last listed
+        self._lock = threading.Lock()  # sync endpoints run in a thread pool
 
     def _row(self, meta: dict) -> dict:
         row = list_meta(meta)
@@ -150,7 +160,13 @@ class PublishedSource:
 
     def rows(self, *, trash: bool = False) -> list[dict]:
         metas = self.store.list(trash=trash)
-        self._stamps.update((m["id"], m.get("updated", "")) for m in metas)
+        with self._lock:
+            if not trash:  # a live listing is every id there is to cache; the rest are gone
+                listed = {m["id"] for m in metas}
+                for gone in set(self._stamps) - listed:
+                    self._stamps.pop(gone, None)
+                    self._texts.pop(gone, None)
+            self._stamps.update((m["id"], m.get("updated", "")) for m in metas)
         return [self._row(m) for m in metas]
 
     def item(self, item_id: str) -> dict:
@@ -166,9 +182,11 @@ class PublishedSource:
         return row
 
     def text(self, item_id: str) -> str:
-        cached = self._texts.get(item_id)
-        if cached and cached[0] == self._stamps.get(item_id, ""):
-            return cached[1]
+        with self._lock:
+            cached = self._texts.get(item_id)
+            if cached and cached[0] == self._stamps.get(item_id, ""):
+                self._texts.move_to_end(item_id)
+                return cached[1]
         try:
             meta = self.store.meta(item_id)
             ok = (
@@ -178,8 +196,20 @@ class PublishedSource:
             text = self.store.read_text(item_id) if ok else ""
         except (KeyError, ValueError, OSError):
             return ""
-        self._texts[item_id] = (meta.get("updated", ""), text)
+        with self._lock:
+            # a purge that ran while we read must not get its text cached again
+            if item_id in self._stamps or not self._stamps:
+                self._texts[item_id] = (meta.get("updated", ""), text)
+                self._texts.move_to_end(item_id)
+                while len(self._texts) > self.max_cached_texts:
+                    self._texts.popitem(last=False)
         return text
+
+    def forget(self, item_id: str) -> None:
+        """Drop what is cached for a document that is gone for good (purged)."""
+        with self._lock:
+            self._texts.pop(item_id, None)
+            self._stamps.pop(item_id, None)
 
 
 # -- a folder read in place ------------------------------------------------------------
