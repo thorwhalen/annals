@@ -26,6 +26,7 @@ from __future__ import annotations
 import functools
 import hashlib
 import mimetypes
+import ipaddress
 import os
 import re
 import shutil
@@ -665,15 +666,43 @@ def _meta_or_404(store: DocStore, doc_id: str, *, settle: bool = True) -> dict:
         raise HTTPException(404, "no such document")
 
 
+def _is_loopback(host: str) -> bool:
+    """True for ``localhost`` and any loopback address (``127.0.0.1``, ``::1``)."""
+    if host.lower() == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(host.strip("[]")).is_loopback
+    except ValueError:
+        return False
+
+
 def serve(
     *,
     host: str = "127.0.0.1",
     port: int = DFLT_SERVE_PORT,
     data_dir: str | None = None,
     base_path: str = DFLT_BASE_PATH,
+    allow_open: bool = False,
 ) -> None:
-    """Run the standalone server with uvicorn (``pip install 'annals[server]'``)."""
+    """Run the standalone server with uvicorn (``pip install 'annals[server]'``).
+
+    Refuses (``ValueError``) a non-loopback ``host`` while no auth is configured in the
+    environment, because everyone reaching the port would be the owner. ``allow_open=True``
+    is the explicit override, for a host that does its own gating in front.
+    """
     import uvicorn
 
-    app = mk_app(data_dir=data_dir or os.environ.get(ENV_DATA_DIR), base_path=base_path)
+    authorizer = authorizer_from_env()
+    if authorizer is no_auth and not _is_loopback(host) and not allow_open:
+        raise ValueError(
+            f"refused: host {host!r} is reachable beyond this machine and no auth is configured, "
+            "so anyone who can reach the port would read every document. Set ANNALS_WHOAMI_URL + "
+            "ANNALS_ALLOWED_USERS or ANNALS_BASIC_USER + ANNALS_BASIC_PASSWORD, bind to 127.0.0.1, "
+            "or pass allow_open=True (--allow-open) if something in front of it does the gating."
+        )
+    app = mk_app(
+        data_dir=data_dir or os.environ.get(ENV_DATA_DIR),
+        base_path=base_path,
+        authorizer=authorizer,
+    )
     uvicorn.run(app, host=host, port=port, log_level="info")
