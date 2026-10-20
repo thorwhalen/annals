@@ -145,3 +145,27 @@ def test_copy_refuses_symlinked_content(env):
     code, _, err = _run(["copy", doc_id, "--to", "other"])
     assert code == 1 and "regular files" in err
     assert not (other / "docs" / doc_id).exists()
+
+
+def test_same_place_compares_host_and_normalised_root(tmp_path, monkeypatch):
+    from annals import tools
+    from annals.target import SshTarget
+
+    monkeypatch.setattr(SshTarget, "_ssh", lambda self, script, **kw: "/root")
+    assert not tools._same_place("tw:/x", "iq:/x")  # other host
+    assert not tools._same_place("tw:/x", "/x")  # ssh vs local
+    assert tools._same_place("tw:/x/", "tw:/x/./y/..")  # same host, same root
+    assert tools._same_place("tw:~/a", "tw:/root/a")  # same remote home
+    assert not tools._same_place("tw:~/a", "tw:/root/b")
+    assert tools._same_place(str(tmp_path), str(tmp_path) + "/")
+
+
+def test_same_place_survives_an_unreachable_host(monkeypatch):
+    from annals import tools
+    from annals.target import SshTarget
+
+    def boom(self, script, **kw):
+        raise RuntimeError("ssh failed")
+
+    monkeypatch.setattr(SshTarget, "_ssh", boom)
+    assert not tools._same_place("tw:~/a", "tw:/root/a")
