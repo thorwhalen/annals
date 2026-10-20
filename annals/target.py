@@ -51,9 +51,15 @@ class Target(Protocol):
 
     def get_tree(self, rel: str, dst_dir: Path) -> None: ...
 
-    def move(self, rel_src: str, rel_dst: str) -> None: ...
+    def move(self, rel_src: str, rel_dst: str) -> None:
+        """Rename; fails when the source is gone or the destination already exists."""
+        ...
 
     def remove_tree(self, rel: str) -> None: ...
+
+    def remove_empty_dir(self, rel: str) -> None:
+        """Remove a directory only if it is empty (fails otherwise): a safe cleanup."""
+        ...
 
     def exists(self, rel: str) -> bool: ...
 
@@ -107,11 +113,16 @@ class LocalTarget:
 
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
+        if dst.exists():
+            raise FileExistsError(rel_dst)
         dst.parent.mkdir(parents=True, exist_ok=True)
-        os.replace(src, dst)
+        os.rename(src, dst)
 
     def remove_tree(self, rel: str) -> None:
         shutil.rmtree(self._abs(rel))
+
+    def remove_empty_dir(self, rel: str) -> None:
+        os.rmdir(self._abs(rel))
 
     def exists(self, rel: str) -> bool:
         return self._abs(rel).exists()
@@ -154,6 +165,8 @@ class LocalTarget:
             return []
         metas = []
         for meta_path in base.glob("*/meta.json"):
+            if meta_path.parent.name.startswith("."):
+                continue  # work in progress (a replacement being applied), like ssh's glob
             try:
                 metas.append(
                     json.loads(
@@ -225,10 +238,15 @@ class SshTarget:
     def move(self, rel_src: str, rel_dst: str) -> None:
         src, dst = self._abs(rel_src), self._abs(rel_dst)
         parent = str(PurePosixPath(dst).parent)
-        self._ssh(f"mkdir -p {_q(parent)} && mv {_q(src)} {_q(dst)}")
+        self._ssh(
+            f"[ ! -e {_q(dst)} ] && mkdir -p {_q(parent)} && mv {_q(src)} {_q(dst)}"
+        )
 
     def remove_tree(self, rel: str) -> None:
         self._ssh(f"rm -rf {_q(self._abs(rel))}")
+
+    def remove_empty_dir(self, rel: str) -> None:
+        self._ssh(f"rmdir {_q(self._abs(rel))}")
 
     def exists(self, rel: str) -> bool:
         out = self._ssh(f"test -e {_q(self._abs(rel))} && echo yes || echo no")

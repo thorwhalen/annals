@@ -26,6 +26,7 @@ from __future__ import annotations
 import hashlib
 import mimetypes
 import os
+import re
 import shutil
 import tempfile
 import warnings
@@ -65,16 +66,26 @@ from annals.sources import (
     parse_sources_spec,
     with_thumb,
 )
-from annals.store import DOCS, TRASH, DocStore, TEXT_KINDS, kind_of
+from annals.store import DocStore, TEXT_KINDS, kind_of, split_version
 from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore
 from annals.target import check_rel
 
 UI_DIR = Path(__file__).parent / "data" / "ui"
 DFLT_BASE_PATH = f"/{APP_NAME}"
 NO_STORE = {"Cache-Control": "no-store"}
-# A document never changes after it is published (a new publish is a new id), so its
-# files can be cached by the reader's browser; "private" keeps shared caches out of it.
+# A version of a document never changes once written, so its files can be cached by the
+# reader's browser; "private" keeps shared caches out of it. The current version's files
+# change when the document is replaced, so those are revalidated (cheap: a 304).
 RAW_CACHE = "private, max-age=86400"
+CURRENT_CACHE = "private, no-cache"
+#: the doctype guard: a page without a doctype would render in quirks mode, so it is
+#: served after this skeleton (the parts the page lacks), as an artifact host does
+DOCTYPE = "<!doctype html>"
+CHARSET_META = '<meta charset="utf-8">'
+VIEWPORT_META = '<meta name="viewport" content="width=device-width, initial-scale=1">'
+#: how much of an html file is searched for a doctype, a charset and a viewport
+HTML_HEAD_BYTES = 4096
+_DOCTYPE_RE = re.compile(rb"^(\xef\xbb\xbf)?\s*(<!--.*?-->\s*)*<!doctype", re.I | re.S)
 # Every raw file is served under a sandbox policy, so a file that a browser renders as a
 # document (html, svg, any +xml, whatever the host's mime table says) cannot read the
 # platform's cookies or call any app's API on this shared origin. Harmless for media used
@@ -226,6 +237,13 @@ def mk_api(
     def get_doc(doc_id: str) -> dict:
         """One document's meta, each file's kind, and its text inline when markdown or text."""
         meta = _owner_tags(with_thumb(_meta_or_404(store, doc_id)))
+        if "version_of" in meta:  # a version's page lists its siblings
+            try:
+                current = store.meta(meta["version_of"])
+                meta["versions"] = current.get("versions", [])
+                meta["current_version"] = current.get("version")
+            except (KeyError, ValueError):
+                pass
         meta["file_kinds"] = {f: kind_of(f) for f in meta.get("files", [])}
         if meta["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:
             try:
@@ -354,7 +372,10 @@ def mk_api(
             check_rel(rel)
         except ValueError:
             raise HTTPException(404, "no such file in document")
-        doc_rel = f"{TRASH if meta['in_trash'] else DOCS}/{doc_id}"
+        try:
+            doc_rel = store.doc_rel(doc_id)
+        except (KeyError, ValueError):
+            raise HTTPException(404, "no such document")
         doc_dir = store.target.local_path(doc_rel)
         path = store.target.local_path(f"{doc_rel}/{rel}")
         if doc_dir is None:
@@ -371,7 +392,11 @@ def mk_api(
         file into memory, which is what a ``<video>`` element needs (Safari will not play
         without ranges).
         """
-        return _raw_response(_file_path(doc_id, rel), rel)
+        path = _file_path(doc_id, rel)
+        cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
+        if kind_of(rel) == "html":
+            return _html_response(path, rel, cache=cache)
+        return _raw_response(path, rel, cache=cache)
 
     # Waiting for a thumbnail slot must not hold one of the threads every app shares, so
     # the endpoint is async and only the work itself goes to a thread, two at a time.
@@ -387,7 +412,9 @@ def mk_api(
         path = await anyio.to_thread.run_sync(_file_path, doc_id, rel)
         width = next((x for x in THUMB_WIDTHS if x >= w), THUMB_WIDTHS[-1])
         if thumbnailer and Path(rel).suffix.lower() in THUMBNAILABLE:
-            key = hashlib.sha1(rel.encode("utf-8")).hexdigest()[:20]
+            # a replace reuses file names, so the thumbnail is the file's at this version
+            stamp = (await anyio.to_thread.run_sync(store.meta, doc_id)).get("updated", "")
+            key = hashlib.sha1(f"{rel}|{stamp}".encode("utf-8")).hexdigest()[:20]
             cached = _local_root() / THUMB_CACHE / doc_id / f"{key}.w{width}.webp"
             made = cached.is_file() or await anyio.to_thread.run_sync(
                 thumbnailer, path, cached, width, limiter=thumb_limiter
@@ -418,6 +445,46 @@ def _item_or_404(catalog: Catalog, key: str) -> dict:
         return catalog.item(key)
     except (KeyError, ValueError, OSError):
         raise HTTPException(404, "no such item")
+
+
+def _is_version(doc_id: str) -> bool:
+    try:
+        return split_version(doc_id)[1] is not None
+    except ValueError:
+        return False
+
+
+def doctype_guard(html: bytes) -> bytes:
+    """``html`` as a standards-mode page: the doctype, charset and viewport it lacks, first.
+
+    A page that already starts with a doctype (after a BOM, blanks or comments) is returned
+    as it is. Prepending is valid html: the parser takes a doctype before ``<html>``, and
+    ``<meta>`` before ``<html>`` goes into the head it opens.
+    """
+    if _DOCTYPE_RE.match(html):
+        return html
+    head = html[:HTML_HEAD_BYTES].lower()
+    missing = [DOCTYPE]
+    if b"charset" not in head:
+        missing.append(CHARSET_META)
+    if b'name="viewport"' not in head and b"name=viewport" not in head:
+        missing.append(VIEWPORT_META)
+    bom = b"\xef\xbb\xbf"
+    body = html[len(bom) :] if html.startswith(bom) else html
+    return ("\n".join(missing) + "\n").encode("utf-8") + body
+
+
+def _html_response(path: Path, rel: str, *, cache: str) -> Response:
+    """An html file through :func:`doctype_guard`, under the sandbox policy."""
+    return Response(
+        doctype_guard(path.read_bytes()),
+        media_type=_media_type(rel),
+        headers={
+            "Cache-Control": cache,
+            "X-Content-Type-Options": "nosniff",
+            "Content-Security-Policy": RAW_SANDBOX_CSP,
+        },
+    )
 
 
 def _raw_response(path: Path, rel: str, *, cache: str = RAW_CACHE) -> Response:

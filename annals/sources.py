@@ -132,9 +132,9 @@ class PublishedSource:
         self.store = store
         self.name = PUBLISHED
         self.title = title
-        self._texts: dict[
-            str, str
-        ] = {}  # a document never changes after it is published
+        # a version never changes, so a text is cached per (id, version stamp)
+        self._texts: dict[tuple[str, str], str] = {}
+        self._stamps: dict[str, str] = {}  # id -> its ``updated``, as last listed
 
     def _row(self, meta: dict) -> dict:
         row = list_meta(meta)
@@ -143,13 +143,15 @@ class PublishedSource:
             source=self.name,
             session=(meta.get("source") or {}).get("session", ""),
             host=(meta.get("source") or {}).get("host", ""),
-            time=meta.get("created", ""),
+            time=meta.get("updated") or meta.get("created", ""),
             tags=list(meta.get("tags") or []),
         )
         return row
 
     def rows(self, *, trash: bool = False) -> list[dict]:
-        return [self._row(m) for m in self.store.list(trash=trash)]
+        metas = self.store.list(trash=trash)
+        self._stamps.update((m["id"], m.get("updated", "")) for m in metas)
+        return [self._row(m) for m in metas]
 
     def item(self, item_id: str) -> dict:
         try:
@@ -164,17 +166,21 @@ class PublishedSource:
         return row
 
     def text(self, item_id: str) -> str:
-        if item_id not in self._texts:
-            try:
-                meta = self.store.meta(item_id)
+        key = (item_id, self._stamps.get(item_id, ""))
+        if key in self._texts:
+            return self._texts[key]
+        try:
+            meta = self.store.meta(item_id)
+            key = (item_id, meta.get("updated", ""))
+            if key not in self._texts:
                 ok = (
                     meta["kind"] in TEXT_KINDS
                     and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES
                 )
-                self._texts[item_id] = self.store.read_text(item_id) if ok else ""
-            except (KeyError, ValueError, OSError):
-                return ""
-        return self._texts[item_id]
+                self._texts[key] = self.store.read_text(item_id) if ok else ""
+        except (KeyError, ValueError, OSError):
+            return ""
+        return self._texts[key]
 
 
 # -- a folder read in place ------------------------------------------------------------

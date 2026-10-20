@@ -133,6 +133,7 @@ figure.player figcaption { font-size: .82rem; color: var(--muted); margin: 4px 0
 .filelist li { padding: 6px 0; border-bottom: 1px solid var(--line); font-size: .9rem; overflow-wrap: anywhere; }
 details.more-files { margin-top: 16px; }
 details.more-files summary { cursor: pointer; color: var(--accent); }
+.meta .updated { color: var(--accent); }
 .filenav { align-items: center; }
 .btn.more { display: block; margin: 12px auto 0; }
 .btn[disabled] { opacity: .45; cursor: default; }
