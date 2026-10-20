@@ -37,6 +37,7 @@ from typing import Callable
 from urllib.parse import quote
 
 import anyio
+import anyio.to_thread
 from fastapi import Body, FastAPI, Header, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
@@ -550,7 +551,8 @@ class _AuthGate:
             await self.app(scope, receive, send)
             return
         request = Request(scope)
-        who = self.authorizer(request)
+        # authorizers may block on the network: keep them off the event loop
+        who = await anyio.to_thread.run_sync(self.authorizer, request)
         if who is None:
             await self._deny(request)(scope, receive, send)
             return
