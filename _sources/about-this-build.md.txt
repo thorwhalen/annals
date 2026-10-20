@@ -5,19 +5,19 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-10-20 12:23 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd"><code>42eed3b</code></a> on branch <code>main</code>, for **annals 0.0.12** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 14:27 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2"><code>ff1d90f</code></a> on branch <code>main</code>, for **annals 0.0.13** (from <code>pyproject.toml</code>).
 
 :::{warning}
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.12) is behind the latest release on PyPI (0.0.13): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.13) is behind the latest release on PyPI (0.0.14): `pip install annals` gives newer code than these docs describe.
 :::
 
 ## Source
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd"><code>42eed3b3b070d9f97133f02ba38a6e7ef0a325cd</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2"><code>ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
@@ -28,15 +28,15 @@ The documentation and the package may be misaligned:
 | | |
 |---|---|
 | Repository | <code>thorwhalen/annals</code> |
-| Run | <a href="https://github.com/thorwhalen/annals/actions/runs/39421718747">39421718747</a> |
+| Run | <a href="https://github.com/thorwhalen/annals/actions/runs/39439083445">39439083445</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>42eed3b3b070d9f97133f02ba38a6e7ef0a325cd</code> (in the history of the built commit) |
+| Event commit | <code>ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2</code> (in the history of the built commit) |
 
 ## Tools
 
 | | |
 |---|---|
-| epythet | 0.2.20 |
+| epythet | 0.2.21 |
 | Sphinx | 9.1.1 |
 | docutils | 0.22.4 |
 | Python | 3.12.15 |
@@ -55,14 +55,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.13/">0.0.13</a>, newer than the documented version (0.0.12).
+Latest release: <a href="https://pypi.org/project/annals/0.0.14/">0.0.14</a>, newer than the documented version (0.0.13).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 42eed3b3b070d9f97133f02ba38a6e7ef0a325cd
-pip install "epythet==0.2.20"
+git checkout ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2
+pip install "epythet==0.2.21"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

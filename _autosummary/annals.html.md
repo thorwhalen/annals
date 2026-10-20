@@ -100,7 +100,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](#annals.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -113,6 +113,10 @@ skipped inside a directory (hidden files and caches by default; `()` keeps all).
 new document: same id, same link, the current files kept as a version. It is
 written as a pending replacement and applied at once when this store settles
 (otherwise where the store is read). The returned meta says `pending` until then.
+
+`artifact` (a claude.ai artifact link, see `check_artifact_url()`) is the
+interactive version of the page: the document’s page links out to it. A
+replacement that names none keeps the document’s current one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -269,7 +273,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -284,7 +288,9 @@ hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `annals configure --to`) instead of the default one. `replace` (a document’s link or
 id) publishes ONE path as a new version of that document: the link stays the same, the
 page shows the new version and offers the earlier ones. That is how a living page (a
-guide, a status page) keeps one link.
+guide, a status page) keeps one link. `artifact` (a claude.ai artifact link) is the
+interactive version of the page: the document’s page shows an “Open the interactive
+version” button. Publish the Artifact first, then the same page here with its link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

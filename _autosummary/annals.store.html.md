@@ -44,23 +44,33 @@ replacement twice and nothing is ever deleted.
 | [`SWAP_STEP_S`](#annals.store.SWAP_STEP_S)     | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
 | [`INCOMING_PREFIX`](#annals.store.INCOMING_PREFIX) | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
 | [`RESERVED`](#annals.store.RESERVED)        | the store's bookkeeping lives there                                                                                                                                                                                                               |
+| [`ARTIFACT_HOSTS`](#annals.store.ARTIFACT_HOSTS)  | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
 
 ### Functions
 
-| [`check_id`](#annals.store.check_id)(doc_id)                  | Raise `ValueError` on an id that could not have come from [`mk_id()`](#annals.store.mk_id).   |
-|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`kind_of`](#annals.store.kind_of)(filename)                 | The rendering kind of a file, from its extension.                                                                     |
-| [`mk_id`](#annals.store.mk_id)(title, \*[, when])          | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
-| [`mk_pending_id`](#annals.store.mk_pending_id)(doc_id, \*[, when]) | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                     |
-| [`now_iso`](#annals.store.now_iso)()                         | UTC timestamp with second precision, the format every meta.json uses.                                                 |
-| [`slugify`](#annals.store.slugify)(text, \*[, max_len])      | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
-| [`split_version`](#annals.store.split_version)(doc_id)             | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                             |
-| [`title_and_excerpt`](#annals.store.title_and_excerpt)(head, kind)     | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                       |
+| [`check_artifact_url`](#annals.store.check_artifact_url)(url, \*[, hosts])   | `url` if it is an `https` link to one of `hosts` (or a subdomain), else raise.                                      |
+|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| [`check_id`](#annals.store.check_id)(doc_id)                       | Raise `ValueError` on an id that could not have come from [`mk_id()`](#annals.store.mk_id). |
+| [`kind_of`](#annals.store.kind_of)(filename)                      | The rendering kind of a file, from its extension.                                                                   |
+| [`mk_id`](#annals.store.mk_id)(title, \*[, when])               | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                              |
+| [`mk_pending_id`](#annals.store.mk_pending_id)(doc_id, \*[, when])      | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                   |
+| [`now_iso`](#annals.store.now_iso)()                              | UTC timestamp with second precision, the format every meta.json uses.                                               |
+| [`slugify`](#annals.store.slugify)(text, \*[, max_len])           | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                 |
+| [`split_version`](#annals.store.split_version)(doc_id)                  | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                           |
+| [`title_and_excerpt`](#annals.store.title_and_excerpt)(head, kind)          | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                     |
 
 ### Classes
 
 | [`DocStore`](#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.   |
 |-----------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+
+### annals.store.ARTIFACT_HOSTS *= ('claude.ai',)*
+
+the interactive
+version of a page lives there, and the document’s page links out to it
+
+* **Type:**
+  hosts an artifact link (`publish(artifact=...)`) may point at
 
 ### annals.store.DFLT_EXCLUDE *= ('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo')*
 
@@ -140,7 +150,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](#annals.store.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -153,6 +163,10 @@ skipped inside a directory (hidden files and caches by default; `()` keeps all).
 new document: same id, same link, the current files kept as a version. It is
 written as a pending replacement and applied at once when this store settles
 (otherwise where the store is read). The returned meta says `pending` until then.
+
+`artifact` (a claude.ai artifact link, see [`check_artifact_url()`](#annals.store.check_artifact_url)) is the
+interactive version of the page: the document’s page links out to it. A
+replacement that names none keeps the document’s current one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -260,6 +274,17 @@ skips hidden names, and a document that carries one anyway is refused)
 ### annals.store.VERSION_SEP *= '@'*
 
 `<id>@<n>` names version `n` of a document; `@` is not an id character
+
+### annals.store.check_artifact_url(url, , hosts=('claude.ai',))
+
+`url` if it is an `https` link to one of `hosts` (or a subdomain), else raise.
+
+The link is shown on the document’s page as a button, so only a plain https URL to a
+known artifact host is accepted: no other scheme, no credentials, no port, a host of
+dns labels only, printable ascii without quotes, angle brackets or backslashes.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### annals.store.check_id(doc_id)
 

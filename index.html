@@ -93,6 +93,7 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#for-agents">For agents</a><ul>
+<li><a class="reference internal" href="#interactive-version-artifact">Interactive version (<code class="docutils literal notranslate"><span class="pre">--artifact</span></code>)</a></li>
 <li><a class="reference internal" href="#living-pages-replace">Living pages (<code class="docutils literal notranslate"><span class="pre">--replace</span></code>)</a></li>
 </ul>
 </li>
@@ -153,8 +154,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="6">annals<span class="w"> </span>publish<span class="w"> </span>clip.mp4<span class="w">                           </span><span class="c1"># media plays inline (streamed, seekable)</span>
 </span><span data-line="7">some-command<span class="w"> </span><span class="p">|</span><span class="w"> </span>annals<span class="w"> </span>publish<span class="w"> </span>-<span class="w"> </span>--title<span class="w"> </span><span class="s2">"Log"</span><span class="w">     </span><span class="c1"># from stdin</span>
 </span><span data-line="8">annals<span class="w"> </span>publish<span class="w"> </span>guide.html<span class="w"> </span>--replace<span class="w"> </span>&lt;link-or-id&gt;<span class="w">  </span><span class="c1"># a new version of a document: same link</span>
-</span><span data-line="9">annals<span class="w"> </span>ls<span class="w"> </span><span class="s2">"search words"</span><span class="w">                          </span><span class="c1"># what is there, newest first</span>
-</span><span data-line="10">annals<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>annals<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">         </span><span class="c1"># the recycle bin</span>
+</span><span data-line="9">annals<span class="w"> </span>publish<span class="w"> </span>page.html<span class="w"> </span>--artifact<span class="w"> </span>&lt;claude.ai<span class="w"> </span>artifact<span class="w"> </span>link&gt;<span class="w">  </span><span class="c1"># plus a button to its interactive version</span>
+</span><span data-line="10">annals<span class="w"> </span>ls<span class="w"> </span><span class="s2">"search words"</span><span class="w">                          </span><span class="c1"># what is there, newest first</span>
+</span><span data-line="11">annals<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>annals<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">         </span><span class="c1"># the recycle bin</span>
 </span></pre></div>
 </div>
 <p>What each kind looks like on the page:</p>
@@ -188,6 +190,10 @@ data-aria-dark="Switch to auto color mode">
 </table>
 </div>
 <p>A folder skips hidden files and caches (<code class="docutils literal notranslate"><span class="pre">.*</span></code>, <code class="docutils literal notranslate"><span class="pre">__pycache__</span></code>, <code class="docutils literal notranslate"><span class="pre">*.pyc</span></code>); <code class="docutils literal notranslate"><span class="pre">--all-files</span></code> keeps them.</p>
+<section id="interactive-version-artifact">
+<h3>Interactive version (<code class="docutils literal notranslate"><span class="pre">--artifact</span></code>)<a class="headerlink" href="#interactive-version-artifact" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">page.html</span> <span class="pre">--artifact</span> <span class="pre">https://claude.ai/...</span></code> stores the link of a Claude Artifact holding the same page in the document’s meta (<code class="docutils literal notranslate"><span class="pre">artifact</span></code>), and the document’s page shows an “Open the interactive version” button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only plain <code class="docutils literal notranslate"><span class="pre">https</span></code> links to <code class="docutils literal notranslate"><span class="pre">claude.ai</span></code> are accepted (<code class="docutils literal notranslate"><span class="pre">annals.store.ARTIFACT_HOSTS</span></code>; no port, credentials or odd characters), <code class="docutils literal notranslate"><span class="pre">--artifact</span></code> takes one path, and a <code class="docutils literal notranslate"><span class="pre">--replace</span></code> without <code class="docutils literal notranslate"><span class="pre">--artifact</span></code> keeps the current link.</p>
+</section>
 <section id="living-pages-replace">
 <h3>Living pages (<code class="docutils literal notranslate"><span class="pre">--replace</span></code>)<a class="headerlink" href="#living-pages-replace" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">&lt;path&gt;</span> <span class="pre">--replace</span> <span class="pre">&lt;link-or-id&gt;</span></code> publishes a new version of an existing document: the id and the link stay, the page shows the new version marked “updated” and lists the earlier ones, each readable at <code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;&#64;&lt;n&gt;</span></code>. The previous files are kept under the document’s <code class="docutils literal notranslate"><span class="pre">.versions/&lt;n&gt;/</span></code>; nothing is deleted. It takes one path (a file, a folder, stdin), and a replaced group member stays in its group.</p>
@@ -290,7 +296,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 12:23 UTC from <a href="https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd">42eed3b</a> (main) · annals 0.0.12 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 14:27 UTC from <a href="https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2">ff1d90f</a> (main) · annals 0.0.13 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -325,7 +331,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=3bbcec59"></script>
+      <script src="_static/documentation_options.js?v=9fc46840"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

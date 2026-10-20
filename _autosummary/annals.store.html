@@ -92,6 +92,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.store.ARTIFACT_HOSTS"><code class="docutils literal notranslate"><span class="pre">ARTIFACT_HOSTS</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DFLT_EXCLUDE"><code class="docutils literal notranslate"><span class="pre">DFLT_EXCLUDE</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore"><code class="docutils literal notranslate"><span class="pre">DocStore</span></code></a><ul>
 <li><a class="reference internal" href="#annals.store.DocStore.add_to_group"><code class="docutils literal notranslate"><span class="pre">DocStore.add_to_group()</span></code></a></li>
@@ -122,6 +123,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.SWAP_WAIT_S"><code class="docutils literal notranslate"><span class="pre">SWAP_WAIT_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.VERSIONS"><code class="docutils literal notranslate"><span class="pre">VERSIONS</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.VERSION_SEP"><code class="docutils literal notranslate"><span class="pre">VERSION_SEP</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.check_artifact_url"><code class="docutils literal notranslate"><span class="pre">check_artifact_url()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.check_id"><code class="docutils literal notranslate"><span class="pre">check_id()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.kind_of"><code class="docutils literal notranslate"><span class="pre">kind_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.mk_id"><code class="docutils literal notranslate"><span class="pre">mk_id()</span></code></a></li>
@@ -231,6 +233,9 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.RESERVED" title="annals.store.RESERVED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RESERVED</span></code></a></p></td>
 <td><p>the store's bookkeeping lives there</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.ARTIFACT_HOSTS" title="annals.store.ARTIFACT_HOSTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ARTIFACT_HOSTS</span></code></a></p></td>
+<td><p>the interactive version of a page lives there, and the document's page links out to it</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -238,28 +243,31 @@ replacement twice and nothing is ever deleted.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.check_id" title="annals.store.check_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_id</span></code></a>(doc_id)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.check_artifact_url" title="annals.store.check_artifact_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_artifact_url</span></code></a>(url, *[, hosts])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">url</span></code> if it is an <code class="docutils literal notranslate"><span class="pre">https</span></code> link to one of <code class="docutils literal notranslate"><span class="pre">hosts</span></code> (or a subdomain), else raise.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.check_id" title="annals.store.check_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_id</span></code></a>(doc_id)</p></td>
 <td><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on an id that could not have come from <a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">mk_id()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.kind_of" title="annals.store.kind_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of</span></code></a>(filename)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.kind_of" title="annals.store.kind_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of</span></code></a>(filename)</p></td>
 <td><p>The rendering kind of a file, from its extension.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_id</span></code></a>(title, *[, when])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_id</span></code></a>(title, *[, when])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">YYYYMMDD-HHMMSS-&lt;slug&gt;-&lt;4</span> <span class="pre">hex&gt;</span></code>: sortable by time, readable in a URL.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.mk_pending_id" title="annals.store.mk_pending_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_pending_id</span></code></a>(doc_id, *[, when])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.mk_pending_id" title="annals.store.mk_pending_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_pending_id</span></code></a>(doc_id, *[, when])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&lt;id&gt;.r&lt;YYYYMMDDHHMMSSffffff&gt;-&lt;hex&gt;</span></code>: sorts in publication order.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
 <td><p>UTC timestamp with second precision, the format every meta.json uses.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
 <td><p>Lowercase ascii words joined by hyphens; empty input becomes <code class="docutils literal notranslate"><span class="pre">doc</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">n)</span></code> from <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;&#64;&lt;n&gt;</span></code> (version <code class="docutils literal notranslate"><span class="pre">n</span></code>), <code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">None)</span></code> from an id.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
 <td><p>A title (markdown <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">h1</span></code> or html <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>) and a plain-text excerpt of <code class="docutils literal notranslate"><span class="pre">head</span></code>.</p></td>
 </tr>
 </tbody>
@@ -275,6 +283,18 @@ replacement twice and nothing is ever deleted.</p>
 </tbody>
 </table>
 </div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.store.ARTIFACT_HOSTS">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">ARTIFACT_HOSTS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('claude.ai',)</span></span><a class="headerlink" href="#annals.store.ARTIFACT_HOSTS" title="Link to this definition">#</a></dt>
+<dd><p>the interactive
+version of a page lives there, and the document’s page links out to it</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>hosts an artifact link (<code class="docutils literal notranslate"><span class="pre">publish(artifact=...)</span></code>) may point at</p>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py data">
 <dt class="sig sig-object py" id="annals.store.DFLT_EXCLUDE">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">DFLT_EXCLUDE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('.*',</span> <span class="pre">'__pycache__',</span> <span class="pre">'*.pyc',</span> <span class="pre">'*.pyo')</span></span><a class="headerlink" href="#annals.store.DFLT_EXCLUDE" title="Link to this definition">#</a></dt>
@@ -389,7 +409,7 @@ skips applying pending replacements (for a hot path such as a raw file).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.store.DocStore.publish">
-<span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'document.md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('.*',</span> <span class="pre">'__pycache__',</span> <span class="pre">'*.pyc',</span> <span class="pre">'*.pyo')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.publish" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'document.md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('.*',</span> <span class="pre">'__pycache__',</span> <span class="pre">'*.pyc',</span> <span class="pre">'*.pyo')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.publish" title="Link to this definition">#</a></dt>
 <dd><p>Publish files (or a directory, or <code class="docutils literal notranslate"><span class="pre">text</span></code>) as ONE document; return its meta.</p>
 <p>One markdown or html file is the common case. A directory is published whole, with
 <code class="docutils literal notranslate"><span class="pre">index.html</span></code> (or the first renderable file) as the page shown. <code class="docutils literal notranslate"><span class="pre">text</span></code> publishes a
@@ -399,6 +419,9 @@ skipped inside a directory (hidden files and caches by default; <code class="doc
 new document: same id, same link, the current files kept as a version. It is
 written as a pending replacement and applied at once when this store settles
 (otherwise where the store is read). The returned meta says <code class="docutils literal notranslate"><span class="pre">pending</span></code> until then.</p>
+<p><code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai artifact link, see <a class="reference internal" href="#annals.store.check_artifact_url" title="annals.store.check_artifact_url"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_artifact_url()</span></code></a>) is the
+interactive version of the page: the document’s page links out to it. A
+replacement that names none keeps the document’s current one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -566,6 +589,20 @@ skips hidden names, and a document that carries one anyway is refused)</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.store.check_artifact_url">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">check_artifact_url</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">hosts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('claude.ai',)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#check_artifact_url"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.check_artifact_url" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">url</span></code> if it is an <code class="docutils literal notranslate"><span class="pre">https</span></code> link to one of <code class="docutils literal notranslate"><span class="pre">hosts</span></code> (or a subdomain), else raise.</p>
+<p>The link is shown on the document’s page as a button, so only a plain https URL to a
+known artifact host is accepted: no other scheme, no credentials, no port, a host of
+dns labels only, printable ascii without quotes, angle brackets or backslashes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.store.check_id">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">check_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#check_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.check_id" title="Link to this definition">#</a></dt>
 <dd><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on an id that could not have come from <a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">mk_id()</span></code></a>.</p>
@@ -695,7 +732,7 @@ skips hidden names, and a document that carries one anyway is refused)</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=3bbcec59"></script>
+      <script src="../_static/documentation_options.js?v=9fc46840"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

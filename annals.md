@@ -1,4 +1,4 @@
-> built 2026-10-20 12:23 UTC from 42eed3b (main) · annals 0.0.12. Details: build_info.json
+> built 2026-10-20 14:27 UTC from ff1d90f (main) · annals 0.0.13. Details: build_info.json
 
 # index.html.md
 
@@ -31,6 +31,7 @@ annals publish ./site_dir                         # an html page with its assets
 annals publish clip.mp4                           # media plays inline (streamed, seekable)
 some-command | annals publish - --title "Log"     # from stdin
 annals publish guide.html --replace <link-or-id>  # a new version of a document: same link
+annals publish page.html --artifact <claude.ai artifact link>  # plus a button to its interactive version
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
 ```
@@ -47,6 +48,10 @@ What each kind looks like on the page:
 | anything else                                  | a download                                                                                                               |
 
 A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-files` keeps them.
+
+### Interactive version (`--artifact`)
+
+`annals publish page.html --artifact https://claude.ai/...` stores the link of a Claude Artifact holding the same page in the document’s meta (`artifact`), and the document’s page shows an “Open the interactive version” button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only plain `https` links to `claude.ai` are accepted (`annals.store.ARTIFACT_HOSTS`; no port, credentials or odd characters), `--artifact` takes one path, and a `--replace` without `--artifact` keeps the current link.
 
 ### Living pages (`--replace`)
 
@@ -538,7 +543,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](_autosummary/annals.html.md#annals.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -551,6 +556,10 @@ skipped inside a directory (hidden files and caches by default; `()` keeps all).
 new document: same id, same link, the current files kept as a version. It is
 written as a pending replacement and applied at once when this store settles
 (otherwise where the store is read). The returned meta says `pending` until then.
+
+`artifact` (a claude.ai artifact link, see `check_artifact_url()`) is the
+interactive version of the page: the document’s page links out to it. A
+replacement that names none keeps the document’s current one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -707,7 +716,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](_autosummary/annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -722,7 +731,9 @@ hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `annals configure --to`) instead of the default one. `replace` (a document’s link or
 id) publishes ONE path as a new version of that document: the link stays the same, the
 page shows the new version and offers the earlier ones. That is how a living page (a
-guide, a status page) keeps one link.
+guide, a status page) keeps one link. `artifact` (a claude.ai artifact link) is the
+interactive version of the page: the document’s page shows an “Open the interactive
+version” button. Publish the Artifact first, then the same page here with its link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1014,23 +1025,33 @@ replacement twice and nothing is ever deleted.
 | [`SWAP_STEP_S`](_autosummary/annals.store.html.md#annals.store.SWAP_STEP_S)     | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
 | [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX) | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
 | [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)        | the store's bookkeeping lives there                                                                                                                                                                                                               |
+| [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)  | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
 
 ### Functions
 
-| [`check_id`](_autosummary/annals.store.html.md#annals.store.check_id)(doc_id)                  | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id).   |
-|------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
-| [`kind_of`](_autosummary/annals.store.html.md#annals.store.kind_of)(filename)                 | The rendering kind of a file, from its extension.                                                                     |
-| [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])          | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                |
-| [`mk_pending_id`](_autosummary/annals.store.html.md#annals.store.mk_pending_id)(doc_id, \*[, when]) | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                     |
-| [`now_iso`](_autosummary/annals.store.html.md#annals.store.now_iso)()                         | UTC timestamp with second precision, the format every meta.json uses.                                                 |
-| [`slugify`](_autosummary/annals.store.html.md#annals.store.slugify)(text, \*[, max_len])      | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                   |
-| [`split_version`](_autosummary/annals.store.html.md#annals.store.split_version)(doc_id)             | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                             |
-| [`title_and_excerpt`](_autosummary/annals.store.html.md#annals.store.title_and_excerpt)(head, kind)     | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                       |
+| [`check_artifact_url`](_autosummary/annals.store.html.md#annals.store.check_artifact_url)(url, \*[, hosts])   | `url` if it is an `https` link to one of `hosts` (or a subdomain), else raise.                                      |
+|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| [`check_id`](_autosummary/annals.store.html.md#annals.store.check_id)(doc_id)                       | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id). |
+| [`kind_of`](_autosummary/annals.store.html.md#annals.store.kind_of)(filename)                      | The rendering kind of a file, from its extension.                                                                   |
+| [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])               | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                              |
+| [`mk_pending_id`](_autosummary/annals.store.html.md#annals.store.mk_pending_id)(doc_id, \*[, when])      | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                   |
+| [`now_iso`](_autosummary/annals.store.html.md#annals.store.now_iso)()                              | UTC timestamp with second precision, the format every meta.json uses.                                               |
+| [`slugify`](_autosummary/annals.store.html.md#annals.store.slugify)(text, \*[, max_len])           | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                 |
+| [`split_version`](_autosummary/annals.store.html.md#annals.store.split_version)(doc_id)                  | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                           |
+| [`title_and_excerpt`](_autosummary/annals.store.html.md#annals.store.title_and_excerpt)(head, kind)          | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                     |
 
 ### Classes
 
 | [`DocStore`](_autosummary/annals.store.html.md#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.   |
 |-----------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+
+### annals.store.ARTIFACT_HOSTS *= ('claude.ai',)*
+
+the interactive
+version of a page lives there, and the document’s page links out to it
+
+* **Type:**
+  hosts an artifact link (`publish(artifact=...)`) may point at
 
 ### annals.store.DFLT_EXCLUDE *= ('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo')*
 
@@ -1110,7 +1131,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -1123,6 +1144,10 @@ skipped inside a directory (hidden files and caches by default; `()` keeps all).
 new document: same id, same link, the current files kept as a version. It is
 written as a pending replacement and applied at once when this store settles
 (otherwise where the store is read). The returned meta says `pending` until then.
+
+`artifact` (a claude.ai artifact link, see [`check_artifact_url()`](_autosummary/annals.store.html.md#annals.store.check_artifact_url)) is the
+interactive version of the page: the document’s page links out to it. A
+replacement that names none keeps the document’s current one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1230,6 +1255,17 @@ skips hidden names, and a document that carries one anyway is refused)
 ### annals.store.VERSION_SEP *= '@'*
 
 `<id>@<n>` names version `n` of a document; `@` is not an id character
+
+### annals.store.check_artifact_url(url, , hosts=('claude.ai',))
+
+`url` if it is an `https` link to one of `hosts` (or a subdomain), else raise.
+
+The link is shown on the document’s page as a button, so only a plain https URL to a
+known artifact host is accepted: no other scheme, no credentials, no port, a host of
+dns labels only, printable ascii without quotes, angle brackets or backslashes.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### annals.store.check_id(doc_id)
 
@@ -1548,7 +1584,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -1563,7 +1599,9 @@ hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `annals configure --to`) instead of the default one. `replace` (a document’s link or
 id) publishes ONE path as a new version of that document: the link stays the same, the
 page shows the new version and offers the earlier ones. That is how a living page (a
-guide, a status page) keeps one link.
+guide, a status page) keeps one link. `artifact` (a claude.ai artifact link) is the
+interactive version of the page: the document’s page shows an “Open the interactive
+version” button. Publish the Artifact first, then the same page here with its link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1608,18 +1646,18 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-20 12:23 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd"><code>42eed3b</code></a> on branch <code>main</code>, for **annals 0.0.12** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 14:27 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2"><code>ff1d90f</code></a> on branch <code>main</code>, for **annals 0.0.13** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.12) is behind the latest release on PyPI (0.0.13): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.13) is behind the latest release on PyPI (0.0.14): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd"><code>42eed3b3b070d9f97133f02ba38a6e7ef0a325cd</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2"><code>ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1630,15 +1668,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39421718747">39421718747</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39439083445">39439083445</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>42eed3b3b070d9f97133f02ba38a6e7ef0a325cd</code> (in the history of the built commit) |
+| Event commit | <code>ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.20  |
+| epythet  | 0.2.21  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -1657,14 +1695,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.13/">0.0.13</a>, newer than the documented version (0.0.12).
+Latest release: <a href="https://pypi.org/project/annals/0.0.14/">0.0.14</a>, newer than the documented version (0.0.13).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 42eed3b3b070d9f97133f02ba38a6e7ef0a325cd
-pip install "epythet==0.2.20"
+git checkout ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2
+pip install "epythet==0.2.21"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

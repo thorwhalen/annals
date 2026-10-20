@@ -27,6 +27,7 @@ annals publish ./site_dir                         # an html page with its assets
 annals publish clip.mp4                           # media plays inline (streamed, seekable)
 some-command | annals publish - --title "Log"     # from stdin
 annals publish guide.html --replace <link-or-id>  # a new version of a document: same link
+annals publish page.html --artifact <claude.ai artifact link>  # plus a button to its interactive version
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
 ```
@@ -43,6 +44,10 @@ What each kind looks like on the page:
 | anything else                                  | a download                                                                                                               |
 
 A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-files` keeps them.
+
+### Interactive version (`--artifact`)
+
+`annals publish page.html --artifact https://claude.ai/...` stores the link of a Claude Artifact holding the same page in the document’s meta (`artifact`), and the document’s page shows an “Open the interactive version” button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only plain `https` links to `claude.ai` are accepted (`annals.store.ARTIFACT_HOSTS`; no port, credentials or odd characters), `--artifact` takes one path, and a `--replace` without `--artifact` keeps the current link.
 
 ### Living pages (`--replace`)
 

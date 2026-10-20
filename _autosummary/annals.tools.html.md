@@ -87,7 +87,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -102,7 +102,9 @@ hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `annals configure --to`) instead of the default one. `replace` (a document’s link or
 id) publishes ONE path as a new version of that document: the link stays the same, the
 page shows the new version and offers the earlier ones. That is how a living page (a
-guide, a status page) keeps one link.
+guide, a status page) keeps one link. `artifact` (a claude.ai artifact link) is the
+interactive version of the page: the document’s page shows an “Open the interactive
+version” button. Publish the Artifact first, then the same page here with its link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

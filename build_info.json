@@ -1,36 +1,36 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-20T12:23:46Z",
+  "built_at": "2026-10-20T14:27:09Z",
   "package": {
     "name": "annals",
-    "version": "0.0.12",
+    "version": "0.0.13",
     "display_name": "annals",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "42eed3b3b070d9f97133f02ba38a6e7ef0a325cd",
-    "short_commit": "42eed3b",
+    "commit": "ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2",
+    "short_commit": "ff1d90f",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/annals",
-    "commit_url": "https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd",
+    "commit_url": "https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/annals",
-    "sha": "42eed3b3b070d9f97133f02ba38a6e7ef0a325cd",
+    "sha": "ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "39421718747",
-    "run_url": "https://github.com/thorwhalen/annals/actions/runs/39421718747",
+    "run_id": "39439083445",
+    "run_url": "https://github.com/thorwhalen/annals/actions/runs/39439083445",
     "server_url": "https://github.com"
   },
   "tools": {
-    "epythet": "0.2.20",
+    "epythet": "0.2.21",
     "sphinx": "9.1.1",
     "docutils": "0.22.4",
     "python": "3.12.15"
@@ -56,20 +56,20 @@
   },
   "site": {
     "modules_documented": 10,
-    "objects_documented": 138
+    "objects_documented": 140
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.13",
+    "latest": "0.0.14",
     "relation": "behind",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout 42eed3b3b070d9f97133f02ba38a6e7ef0a325cd\npip install \"epythet==0.2.20\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2\npip install \"epythet==0.2.21\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": false,
     "notes": [
-      "The documented version (0.0.12) is behind the latest release on PyPI (0.0.13): `pip install annals` gives newer code than these docs describe."
+      "The documented version (0.0.13) is behind the latest release on PyPI (0.0.14): `pip install annals` gives newer code than these docs describe."
     ]
   }
 }

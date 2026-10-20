@@ -19,11 +19,13 @@ annals.store
       SWAP_STEP_S
       INCOMING_PREFIX
       RESERVED
+      ARTIFACT_HOSTS
    
    .. rubric:: Functions
 
    .. autosummary::
    
+      check_artifact_url
       check_id
       kind_of
       mk_id
