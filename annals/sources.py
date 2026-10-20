@@ -161,7 +161,9 @@ class PublishedSource:
     def rows(self, *, trash: bool = False) -> list[dict]:
         metas = self.store.list(trash=trash)
         with self._lock:
-            if not trash:  # a live listing is every id there is to cache; the rest are gone
+            if (
+                not trash
+            ):  # a live listing is every id there is to cache; the rest are gone
                 listed = {m["id"] for m in metas}
                 for gone in set(self._stamps) - listed:
                     self._stamps.pop(gone, None)

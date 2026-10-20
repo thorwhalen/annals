@@ -432,7 +432,11 @@ def serve(
     from annals.api import serve as _serve
 
     _serve(
-        host=host, port=port, data_dir=data_dir, base_path=base_path, allow_open=allow_open
+        host=host,
+        port=port,
+        data_dir=data_dir,
+        base_path=base_path,
+        allow_open=allow_open,
     )
 
 
