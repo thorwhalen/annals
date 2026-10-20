@@ -25,6 +25,7 @@ import base64
 import json
 import os
 import secrets
+import time
 import urllib.error
 import urllib.request
 from typing import Callable, Optional, Protocol
@@ -36,6 +37,9 @@ ENV_BASIC_USER = "ANNALS_BASIC_USER"
 ENV_BASIC_PASSWORD = "ANNALS_BASIC_PASSWORD"
 DFLT_LOGIN_URL = "/auth/login"
 WHOAMI_TIMEOUT_S = 3.0
+WHOAMI_CACHE_TTL_S = 30.0  # how long a whoami answer (yes or no) is reused per cookie
+WHOAMI_CACHE_MAX = 256
+_UNREACHABLE = object()  # identity endpoint failed: never cached
 
 
 class RequestLike(Protocol):
@@ -62,8 +66,13 @@ class CookieWhoami:
         allowed_users: list[str],
         *,
         login_url: str = DFLT_LOGIN_URL,
+        cache_ttl_s: float = WHOAMI_CACHE_TTL_S,
+        cache_max: int = WHOAMI_CACHE_MAX,
+        clock=time.monotonic,
     ):
         self.whoami_url = whoami_url
+        self._ttl, self._cache_max, self._clock = cache_ttl_s, cache_max, clock
+        self._cache: dict[str, tuple[float, Optional[str]]] = {}
         self.allowed = {u.strip().lower() for u in allowed_users if u.strip()}
         self.login_url = login_url
 
@@ -71,6 +80,19 @@ class CookieWhoami:
         cookie = request.headers.get("cookie")
         if not cookie:
             return None
+        now = self._clock()
+        hit = self._cache.get(cookie)
+        if hit and now - hit[0] < self._ttl:
+            return hit[1]
+        who = self._ask(cookie)
+        if who is not _UNREACHABLE:  # an outage is not an answer: retry next request
+            if len(self._cache) >= self._cache_max:
+                self._cache.clear()
+            self._cache[cookie] = (now, who)
+            return who
+        return None
+
+    def _ask(self, cookie: str):
         req = urllib.request.Request(
             self.whoami_url, headers={"Cookie": cookie, "Accept": "application/json"}
         )
@@ -78,7 +100,7 @@ class CookieWhoami:
             with urllib.request.urlopen(req, timeout=WHOAMI_TIMEOUT_S) as resp:
                 body = json.loads(resp.read().decode("utf-8"))
         except (urllib.error.URLError, json.JSONDecodeError, OSError):
-            return None
+            return _UNREACHABLE
         email = (body.get("email") or "").strip().lower()
         return email if email and email in self.allowed else None
 

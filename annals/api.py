@@ -548,7 +548,8 @@ class _AuthGate:
             await self.app(scope, receive, send)
             return
         request = Request(scope)
-        who = self.authorizer(request)
+        # authorizers may block on the network: keep them off the event loop
+        who = await anyio.to_thread.run_sync(self.authorizer, request)
         if who is None:
             await self._deny(request)(scope, receive, send)
             return

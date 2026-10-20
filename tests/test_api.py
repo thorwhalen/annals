@@ -257,3 +257,31 @@ def test_symlinks_out_of_the_data_root_are_not_followed(tmp_path, store, client)
     groups.mkdir(exist_ok=True)
     (groups / "x.json").symlink_to(secret)
     assert client.get("/annals/api/groups").status_code == 200
+
+
+def test_cookie_whoami_caches_answers_but_not_outages(monkeypatch):
+    import urllib.request
+    from types import SimpleNamespace
+
+    calls, now = [], [0.0]
+    mode = {"fail": True}
+
+    class Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"email": "owner@example.com"}'
+
+    def fake_urlopen(req, timeout):
+        calls.append(1)
+        if mode["fail"]:
+            raise OSError("down")
+        return Resp()
+
+    monkeypatch.setattr(urllib.request, "urlopen", fake_urlopen)
+    auth = CookieWhoami("http://identity/whoami", ["owner@example.com"], cache_ttl_s=10, clock=lambda: now[0])
+    req = SimpleNamespace(headers={"cookie": "s=1"})
+    assert auth(req) is None and auth(req) is None and len(calls) == 2  # outage: not cached
+    mode["fail"] = False
+    assert auth(req) == "owner@example.com" and auth(req) == "owner@example.com" and len(calls) == 3
+    now[0] = 11.0
+    assert auth(req) == "owner@example.com" and len(calls) == 4  # expired
