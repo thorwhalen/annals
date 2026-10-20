@@ -29,7 +29,7 @@ def test_a_reachable_host_without_auth_is_refused(ran, host) -> None:
     assert ran == []
 
 
-@pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1", "[::1]"])
+@pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1", "[::1]", "::ffff:127.0.0.1"])
 def test_loopback_without_auth_is_fine(ran, host) -> None:
     api.serve(host=host)
     assert ran[0]["host"] == host
@@ -73,3 +73,15 @@ def test_catalog_forget_reaches_the_published_text_cache(tmp_path) -> None:
     assert doc_id in source._texts
     catalog.forget(mk_key(PUBLISHED, doc_id))
     assert doc_id not in source._texts
+
+
+def test_a_live_listing_drops_documents_that_vanished_elsewhere(tmp_path) -> None:
+    store = DocStore(tmp_path)
+    doc_id = store.publish(text="# x", title="x")["id"]
+    source = PublishedSource(store)
+    source.rows()
+    source.text(doc_id)
+    store.trash(doc_id)
+    store.purge(doc_id)  # as another process would
+    source.rows()
+    assert doc_id not in source._texts and doc_id not in source._stamps

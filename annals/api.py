@@ -671,9 +671,12 @@ def _is_loopback(host: str) -> bool:
     if host.lower() == "localhost":
         return True
     try:
-        return ipaddress.ip_address(host.strip("[]")).is_loopback
+        ip = ipaddress.ip_address(host.strip("[]").partition("%")[0])
     except ValueError:
         return False
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped:
+        ip = ip.ipv4_mapped
+    return ip.is_loopback
 
 
 def serve(
