@@ -684,10 +684,15 @@
   }
 
   /* -------- the interactive version of a page (annals publish --artifact) ----------- */
-  /* The publisher validates the link; only a plain https URL is ever made a link here. */
+  /* The publisher and the API validate the link (annals.store.check_artifact_url); a meta
+     written elsewhere is checked again here: an https link to claude.ai, nothing else. */
+  var ARTIFACT_HOSTS = ["claude.ai"];
   function artifactLink(m) {
-    var url = typeof m.artifact === "string" ? m.artifact : "";
-    if (!/^https:\/\/[^\s"'<>]+$/i.test(url)) return null;
+    var url = typeof m.artifact === "string" ? m.artifact : "", u;
+    if (!/^https:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&()*+,;=%]+$/.test(url)) return null;
+    try { u = new URL(url); } catch (e) { return null; }
+    var known = ARTIFACT_HOSTS.some(function (d) { return u.hostname === d || u.hostname.slice(-d.length - 1) === "." + d; });
+    if (u.protocol !== "https:" || !known || u.username || u.password || u.port) return null;
     return h("a", { class: "btn primary", href: url, target: "_blank", rel: "noopener noreferrer" }, ["Open the interactive version"]);
   }
 

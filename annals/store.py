@@ -132,11 +132,20 @@ def check_id(doc_id: str) -> str:
     return doc_id
 
 
+#: a host name an artifact link may carry: lower-case dns labels, nothing else (a
+#: backslash or a ``;`` in it would make a browser go somewhere else than it reads)
+_DNS_HOST_RE = re.compile(r"[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+")
+#: the characters an artifact link may contain: printable ascii, minus space, quotes,
+#: angle brackets and backslash
+_URL_CHARS_RE = re.compile(r"[A-Za-z0-9\-._~:/?#\[\]@!$&()*+,;=%]+")
+
+
 def check_artifact_url(url: str, *, hosts: Iterable[str] = ARTIFACT_HOSTS) -> str:
     """``url`` if it is an ``https`` link to one of ``hosts`` (or a subdomain), else raise.
 
     The link is shown on the document's page as a button, so only a plain https URL to a
-    known artifact host is accepted: no other scheme, no credentials, no odd port.
+    known artifact host is accepted: no other scheme, no credentials, no port, a host of
+    dns labels only, printable ascii without quotes, angle brackets or backslashes.
     """
     url = url.strip()
     try:
@@ -144,15 +153,16 @@ def check_artifact_url(url: str, *, hosts: Iterable[str] = ARTIFACT_HOSTS) -> st
         port = parts.port
     except ValueError:
         raise ValueError(f"not an artifact link: {url!r}") from None
-    host = (parts.hostname or "").lower()
-    known = any(host == h or host.endswith("." + h) for h in hosts)
+    host = parts.hostname or ""
+    known = _DNS_HOST_RE.fullmatch(host) and any(
+        host == h or host.endswith("." + h) for h in hosts
+    )
     if (
         parts.scheme != "https"
         or not known
-        or parts.username is not None
-        or parts.password is not None
-        or port not in (None, 443)
-        or any(c.isspace() or ord(c) < 32 for c in url)
+        or parts.netloc != host  # no userinfo, no port, no upper case or odd characters
+        or port is not None
+        or not _URL_CHARS_RE.fullmatch(url)
     ):
         raise ValueError(
             f"not an artifact link: {url!r} (expected https://{'|'.join(hosts)}/...)"

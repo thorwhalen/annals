@@ -445,6 +445,13 @@ def test_artifact_link_is_stored_and_kept_by_a_replace(store, tmp_path):
         "https://claude.ai:8443/x",
         "https://claude.ai/x\n<script>",
         "https://claude.ai/a b",
+        "https://claude.ai:443/x",
+        "https://evil.com\\.claude.ai/x",
+        "https://evil.com;.claude.ai/",
+        "https://evil.com\\x.claude.ai/artifact/1",
+        "https://CLAUDE.ai/x",
+        "https://claude.ai/\u00e9",
+        'https://claude.ai/"x',
     ],
 )
 def test_artifact_link_must_be_https_claude_ai(store, tmp_path, bad):
@@ -468,3 +475,13 @@ def test_artifact_link_reaches_the_api_and_the_cli(tmp_path, monkeypatch):
     err = io.StringIO()
     assert run(["publish", str(src), "--artifact", "http://x"], out=io.StringIO(), err=err) == 1
     assert "artifact" in err.getvalue()
+
+
+def test_api_drops_an_artifact_link_it_would_not_accept(store, tmp_path):
+    doc_id = store.publish(_write(tmp_path / "p.html", "<title>P</title>x"))["id"]
+    meta_path = store.target.root / "docs" / doc_id / "meta.json"
+    meta = json.loads(meta_path.read_text())
+    meta["artifact"] = "https://evil.com\\.claude.ai/x"  # written by another publisher
+    meta_path.write_text(json.dumps(meta))
+    client = TestClient(mk_app(store=store, authorizer=no_auth))
+    assert "artifact" not in client.get(f"/annals/api/docs/{doc_id}").json()

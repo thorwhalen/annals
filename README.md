@@ -45,7 +45,7 @@ A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-fi
 
 ### Interactive version (`--artifact`)
 
-`annals publish page.html --artifact https://claude.ai/...` stores the link of a Claude Artifact holding the same page in the document's meta (`artifact`), and the document's page shows an "Open the interactive version" button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only `https` links to `claude.ai` are accepted (`annals.store.ARTIFACT_HOSTS`), and a `--replace` without `--artifact` keeps the current link.
+`annals publish page.html --artifact https://claude.ai/...` stores the link of a Claude Artifact holding the same page in the document's meta (`artifact`), and the document's page shows an "Open the interactive version" button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only plain `https` links to `claude.ai` are accepted (`annals.store.ARTIFACT_HOSTS`; no port, credentials or odd characters), `--artifact` takes one path, and a `--replace` without `--artifact` keeps the current link.
 
 ### Living pages (`--replace`)
 

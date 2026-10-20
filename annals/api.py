@@ -69,7 +69,7 @@ from annals.sources import (
     parse_sources_spec,
     with_thumb,
 )
-from annals.store import DocStore, TEXT_KINDS, kind_of, split_version
+from annals.store import DocStore, TEXT_KINDS, check_artifact_url, kind_of, split_version
 from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore
 from annals.target import check_rel
 
@@ -272,6 +272,11 @@ def mk_api(
                 meta["current_version"] = current.get("version")
             except (KeyError, ValueError):
                 pass
+        if "artifact" in meta:  # a meta written by another publisher is checked again
+            try:
+                check_artifact_url(str(meta["artifact"]))
+            except ValueError:
+                del meta["artifact"]
         meta["file_kinds"] = {f: kind_of(f) for f in meta.get("files", [])}
         if meta["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:
             try:

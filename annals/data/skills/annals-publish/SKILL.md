@@ -44,7 +44,7 @@ annals publish page.html --artifact <artifact-link> --session <name>
 annals publish page.html --replace <link-or-id> --artifact <artifact-link>   # later versions
 ```
 
-The annals page shows the frame as usual plus an "Open the interactive version" button. annals stays the owner's one in-tray; the interactive features live on the artifact. Only `https://claude.ai/...` links are accepted, with one path. A `--replace` that omits `--artifact` keeps the document's current link.
+The annals page shows the frame as usual plus an "Open the interactive version" button. annals stays the owner's one in-tray; the interactive features live on the artifact. Only `https://claude.ai/...` links are accepted, and `--artifact` takes one path (the page). A `--replace` that omits `--artifact` keeps the document's current link.
 
 ## Several documents under one link
 
