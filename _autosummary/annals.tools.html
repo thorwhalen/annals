@@ -176,7 +176,7 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.restore" title="annals.tools.restore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Bring documents back from the recycle bin.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path, ...])</p></td>
 <td><p>Serve the annals page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[server]'</span></code>).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
@@ -308,11 +308,12 @@ guide, a status page) keeps one link.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.tools.serve">
-<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">serve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'127.0.0.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8765</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/annals'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#serve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.serve" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">serve</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'127.0.0.1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8765</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'/annals'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allow_open</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#serve"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.serve" title="Link to this definition">#</a></dt>
 <dd><p>Serve the annals page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[server]'</span></code>).</p>
 <p>Auth comes from the environment: <code class="docutils literal notranslate"><span class="pre">ANNALS_WHOAMI_URL</span></code> + <code class="docutils literal notranslate"><span class="pre">ANNALS_ALLOWED_USERS</span></code> to sit
 behind an existing login, <code class="docutils literal notranslate"><span class="pre">ANNALS_BASIC_USER</span></code> + <code class="docutils literal notranslate"><span class="pre">ANNALS_BASIC_PASSWORD</span></code> for HTTP Basic,
-nothing for an open server on localhost.</p>
+nothing for an open server on localhost. A host reachable beyond this machine with no auth
+configured is refused unless <code class="docutils literal notranslate"><span class="pre">allow_open</span></code> (<code class="docutils literal notranslate"><span class="pre">--allow-open</span></code>) says something else gates it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
@@ -384,7 +385,7 @@ nothing for an open server on localhost.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=0c446633"></script>
+      <script src="../_static/documentation_options.js?v=3bbcec59"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

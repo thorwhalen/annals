@@ -18,7 +18,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                | The page's html shell, for a host that serves the API under its own prefix.        |
 | [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.   |
 | [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                         |
-| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path])      | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
+| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...]) | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
 | [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                          |
 | [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                    |
 
@@ -114,13 +114,14 @@ Bring documents back from the recycle bin.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/annals')
+### annals.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/annals', allow_open=False)
 
 Serve the annals page and API (needs `pip install 'annals[server]'`).
 
 Auth comes from the environment: `ANNALS_WHOAMI_URL` + `ANNALS_ALLOWED_USERS` to sit
 behind an existing login, `ANNALS_BASIC_USER` + `ANNALS_BASIC_PASSWORD` for HTTP Basic,
-nothing for an open server on localhost.
+nothing for an open server on localhost. A host reachable beyond this machine with no auth
+configured is refused unless `allow_open` (`--allow-open`) says something else gates it.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)

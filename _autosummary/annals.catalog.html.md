@@ -34,7 +34,7 @@ Named sources plus the owner’s tags, listed, searched and tagged as one collec
 
 #### forget(key)
 
-Drop an item’s tags (when the item itself is gone for good).
+Drop an item’s tags and any cached text (when the item itself is gone for good).
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)

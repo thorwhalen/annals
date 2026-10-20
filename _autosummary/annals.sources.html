@@ -97,7 +97,10 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.sources.FolderSource.text"><code class="docutils literal notranslate"><span class="pre">FolderSource.text()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#annals.sources.PublishedSource"><code class="docutils literal notranslate"><span class="pre">PublishedSource</span></code></a></li>
+<li><a class="reference internal" href="#annals.sources.PublishedSource"><code class="docutils literal notranslate"><span class="pre">PublishedSource</span></code></a><ul>
+<li><a class="reference internal" href="#annals.sources.PublishedSource.forget"><code class="docutils literal notranslate"><span class="pre">PublishedSource.forget()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#annals.sources.RESERVED_SOURCE_NAMES"><code class="docutils literal notranslate"><span class="pre">RESERVED_SOURCE_NAMES</span></code></a></li>
 <li><a class="reference internal" href="#annals.sources.SOURCE_NAME_RE"><code class="docutils literal notranslate"><span class="pre">SOURCE_NAME_RE</span></code></a></li>
 <li><a class="reference internal" href="#annals.sources.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a><ul>
@@ -223,7 +226,7 @@ of folder is a new class or a new keyword argument, never a change to the API.</
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.FolderSource" title="annals.sources.FolderSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FolderSource</span></code></a>(root, *, name[, title, ...])</p></td>
 <td><p>A folder of files, read in place and never written, as a <code class="docutils literal notranslate"><span class="pre">Mapping</span></code> of rows.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.PublishedSource" title="annals.sources.PublishedSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PublishedSource</span></code></a>(store, *[, title])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.PublishedSource" title="annals.sources.PublishedSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PublishedSource</span></code></a>(store, *[, title, ...])</p></td>
 <td><p>The documents agents published, as rows (a view over a <code class="xref py py-class docutils literal notranslate"><span class="pre">DocStore</span></code>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.Source" title="annals.sources.Source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Source</span></code></a>(*args, **kwargs)</p></td>
@@ -274,12 +277,23 @@ files and sub-folders (<a class="reference internal" href="#annals.sources.top_l
 
 <dl class="py class">
 <dt class="sig sig-object py" id="annals.sources.PublishedSource">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.sources.</span></span><span class="sig-name descname"><span class="pre">PublishedSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Published'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/sources.html#PublishedSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.sources.PublishedSource" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.sources.</span></span><span class="sig-name descname"><span class="pre">PublishedSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Published'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_cached_texts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">512</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/sources.html#PublishedSource"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.sources.PublishedSource" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>The documents agents published, as rows (a view over a <code class="xref py py-class docutils literal notranslate"><span class="pre">DocStore</span></code>).</p>
 <p>Always named <code class="docutils literal notranslate"><span class="pre">published</span></code>: the page links its items to <code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;</span></code>.</p>
 <dl class="field-list simple">
 </dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.sources.PublishedSource.forget">
+<span class="sig-name descname"><span class="pre">forget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">item_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/sources.html#PublishedSource.forget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.sources.PublishedSource.forget" title="Link to this definition">#</a></dt>
+<dd><p>Drop what is cached for a document that is gone for good (purged).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py data">
@@ -455,7 +469,7 @@ their kind is recomputed from the main file so they show inline too.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=0c446633"></script>
+      <script src="../_static/documentation_options.js?v=3bbcec59"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

@@ -1,4 +1,4 @@
-> built 2026-10-20 10:36 UTC from bce7044 (main) · annals 0.0.11. Details: build_info.json
+> built 2026-10-20 12:23 UTC from 42eed3b (main) · annals 0.0.12. Details: build_info.json
 
 # index.html.md
 
@@ -252,7 +252,7 @@ Named sources plus the owner’s tags, listed, searched and tagged as one collec
 
 #### forget(key)
 
-Drop an item’s tags (when the item itself is gone for good).
+Drop an item’s tags and any cached text (when the item itself is gone for good).
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -828,7 +828,7 @@ of folder is a new class or a new keyword argument, never a change to the API.
 
 | [`FolderSource`](_autosummary/annals.sources.html.md#annals.sources.FolderSource)(root, \*, name[, title, ...])   | A folder of files, read in place and never written, as a `Mapping` of rows.   |
 |-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [`PublishedSource`](_autosummary/annals.sources.html.md#annals.sources.PublishedSource)(store, \*[, title])          | The documents agents published, as rows (a view over a `DocStore`).           |
+| [`PublishedSource`](_autosummary/annals.sources.html.md#annals.sources.PublishedSource)(store, \*[, title, ...])     | The documents agents published, as rows (a view over a `DocStore`).           |
 | [`Source`](_autosummary/annals.sources.html.md#annals.sources.Source)(\*args, \*\*kwargs)                   | What the catalog needs from a source of items.                                |
 
 ### *class* annals.sources.FolderSource(root, \*, name, title=None, exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), session_of=<function top_level_name>)
@@ -863,13 +863,20 @@ The file’s text (cached until it changes); `""` for binaries and huge files.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### *class* annals.sources.PublishedSource(store, , title='Published')
+### *class* annals.sources.PublishedSource(store, , title='Published', max_cached_texts=512)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 The documents agents published, as rows (a view over a `DocStore`).
 
 Always named `published`: the page links its items to `/d/<id>`.
+
+#### forget(item_id)
+
+Drop what is cached for a document that is gone for good (purged).
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 ### annals.sources.RESERVED_SOURCE_NAMES *= frozenset({'all', 'published', 'trash'})*
 
@@ -1472,7 +1479,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                | The page's html shell, for a host that serves the API under its own prefix.        |
 | [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.   |
 | [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                         |
-| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path])      | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
+| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...]) | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
 | [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                          |
 | [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                    |
 
@@ -1568,13 +1575,14 @@ Bring documents back from the recycle bin.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/annals')
+### annals.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/annals', allow_open=False)
 
 Serve the annals page and API (needs `pip install 'annals[server]'`).
 
 Auth comes from the environment: `ANNALS_WHOAMI_URL` + `ANNALS_ALLOWED_USERS` to sit
 behind an existing login, `ANNALS_BASIC_USER` + `ANNALS_BASIC_PASSWORD` for HTTP Basic,
-nothing for an open server on localhost.
+nothing for an open server on localhost. A host reachable beyond this machine with no auth
+configured is refused unless `allow_open` (`--allow-open`) says something else gates it.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -1600,18 +1608,18 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-20 10:36 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/bce7044791963fd9fbf9e98f1b174617b66c278d"><code>bce7044</code></a> on branch <code>main</code>, for **annals 0.0.11** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 12:23 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd"><code>42eed3b</code></a> on branch <code>main</code>, for **annals 0.0.12** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.11) is behind the latest release on PyPI (0.0.12): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.12) is behind the latest release on PyPI (0.0.13): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/bce7044791963fd9fbf9e98f1b174617b66c278d"><code>bce7044791963fd9fbf9e98f1b174617b66c278d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/42eed3b3b070d9f97133f02ba38a6e7ef0a325cd"><code>42eed3b3b070d9f97133f02ba38a6e7ef0a325cd</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1622,15 +1630,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39408970595">39408970595</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39421718747">39421718747</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>bce7044791963fd9fbf9e98f1b174617b66c278d</code> (in the history of the built commit) |
+| Event commit | <code>42eed3b3b070d9f97133f02ba38a6e7ef0a325cd</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.18  |
+| epythet  | 0.2.20  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -1649,14 +1657,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.12/">0.0.12</a>, newer than the documented version (0.0.11).
+Latest release: <a href="https://pypi.org/project/annals/0.0.13/">0.0.13</a>, newer than the documented version (0.0.12).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout bce7044791963fd9fbf9e98f1b174617b66c278d
-pip install "epythet==0.2.18"
+git checkout 42eed3b3b070d9f97133f02ba38a6e7ef0a325cd
+pip install "epythet==0.2.20"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

@@ -43,7 +43,7 @@ of folder is a new class or a new keyword argument, never a change to the API.
 
 | [`FolderSource`](#annals.sources.FolderSource)(root, \*, name[, title, ...])   | A folder of files, read in place and never written, as a `Mapping` of rows.   |
 |-----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [`PublishedSource`](#annals.sources.PublishedSource)(store, \*[, title])          | The documents agents published, as rows (a view over a `DocStore`).           |
+| [`PublishedSource`](#annals.sources.PublishedSource)(store, \*[, title, ...])     | The documents agents published, as rows (a view over a `DocStore`).           |
 | [`Source`](#annals.sources.Source)(\*args, \*\*kwargs)                   | What the catalog needs from a source of items.                                |
 
 ### *class* annals.sources.FolderSource(root, \*, name, title=None, exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), session_of=<function top_level_name>)
@@ -78,13 +78,20 @@ The file’s text (cached until it changes); `""` for binaries and huge files.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### *class* annals.sources.PublishedSource(store, , title='Published')
+### *class* annals.sources.PublishedSource(store, , title='Published', max_cached_texts=512)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 The documents agents published, as rows (a view over a `DocStore`).
 
 Always named `published`: the page links its items to `/d/<id>`.
+
+#### forget(item_id)
+
+Drop what is cached for a document that is gone for good (purged).
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 ### annals.sources.RESERVED_SOURCE_NAMES *= frozenset({'all', 'published', 'trash'})*
 
