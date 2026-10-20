@@ -197,11 +197,11 @@ def _require_same_origin(request: Request) -> None:
             raise HTTPException(403, "cross-site request refused")
         return
     origin = request.headers.get("origin")
-    if origin is not None and origin != "null":
-        host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
-        if urlsplit(origin).netloc != host:
-            raise HTTPException(403, "cross-origin request refused")
-    elif origin == "null":
+    if origin is None:
+        return
+    forwarded = request.headers.get("x-forwarded-host", "").split(",")[0]
+    hosts = {h.strip().lower() for h in (request.headers.get("host", ""), forwarded) if h.strip()}
+    if origin == "null" or urlsplit(origin).netloc.lower() not in hosts:
         raise HTTPException(403, "cross-origin request refused")
 
 
