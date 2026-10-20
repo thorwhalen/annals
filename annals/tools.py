@@ -303,7 +303,7 @@ def _place_key(spec: str, *, resolve_home: bool = False) -> tuple:
         root = target.root
         if root == "~" or root.startswith("~/"):
             if resolve_home:
-                home = target._ssh("printf %s \"$HOME\"").strip()
+                home = target._ssh('printf %s "$HOME"').strip()
                 root = home + root[1:]
         return ("ssh", target.host, posixpath.normpath(root))
     if hasattr(target, "root"):
@@ -324,7 +324,9 @@ def _same_place(a: str, b: str) -> bool:
     if ka[0] == kb[0] == "ssh" and ka[1] == kb[1] and ("~" in (ka[2][:1], kb[2][:1])):
         try:
             return _place_key(a, resolve_home=True) == _place_key(b, resolve_home=True)
-        except Exception:  # remote unreachable: say "different"; the copy itself will fail loudly
+        except (
+            Exception
+        ):  # remote unreachable: say "different"; the copy itself will fail loudly
             return False
     return False
 
