@@ -683,6 +683,14 @@
     return h("details", { class: "more-files versions" }, [h("summary", null, ["Versions (" + (list.length + 1) + ")"]), h("ul", { class: "filelist" }, rows)]);
   }
 
+  /* -------- the interactive version of a page (annals publish --artifact) ----------- */
+  /* The publisher validates the link; only a plain https URL is ever made a link here. */
+  function artifactLink(m) {
+    var url = typeof m.artifact === "string" ? m.artifact : "";
+    if (!/^https:\/\/[^\s"'<>]+$/i.test(url)) return null;
+    return h("a", { class: "btn primary", href: url, target: "_blank", rel: "noopener noreferrer" }, ["Open the interactive version"]);
+  }
+
   /* -------- one document, or one file of it --------------------------------------- */
   function docView(id, rel) {
     page("Document", mainNav("published"), [h("p", { class: "muted" }, ["Loading…"])]);
@@ -707,7 +715,7 @@
           h("button", { class: "btn", disabled: next ? null : "", onclick: function () { go(fileUrl(m.id, next), true); } }, ["Next"])
         ]);
       }
-      var docTools = h("div", { class: "toolbar" }, tools.concat([
+      var docTools = h("div", { class: "toolbar" }, [artifactLink(m)].concat(tools, [
         h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"]),
         rel ? null : (m.in_trash
           ? h("button", { class: "btn", onclick: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }, ["Restore"])

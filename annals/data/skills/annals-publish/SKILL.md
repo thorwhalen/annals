@@ -34,6 +34,18 @@ The page shows the newest version, marked "updated", and lists the earlier ones 
 
 On a machine whose target is an outbox (`annals configure` shows `"outbox": true`: the server pulls the documents and empties the directory), the replacement is queued and applied when the server pulls it, about a minute later; the printed link is already the right one. Elsewhere it applies at once, and a `--replace` of an id that does not exist is an error.
 
+## Rich pages: link to an interactive Artifact
+
+A static html page is fully rendered here (scripts, CDN libraries, fonts). What annals does not have is what a Claude Artifact has: comments the publishing session can watch, per-viewer and shared state, asking Claude from the page, sharing by link. When a page needs those, publish it to both, Artifact first:
+
+```bash
+# 1. publish page.html with the Artifact tool; it returns https://claude.ai/... (the artifact link)
+annals publish page.html --artifact <artifact-link> --session <name>
+annals publish page.html --replace <link-or-id> --artifact <artifact-link>   # later versions
+```
+
+The annals page shows the frame as usual plus an "Open the interactive version" button. annals stays the owner's one in-tray; the interactive features live on the artifact. Only `https://claude.ai/...` links are accepted, with one path. A `--replace` that omits `--artifact` keeps the document's current link.
+
 ## Several documents under one link
 
 ```bash

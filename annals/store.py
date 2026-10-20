@@ -42,6 +42,7 @@ from contextlib import contextmanager, suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
+from urllib.parse import urlsplit
 
 from annals.target import LOCK_NOTE, LocalTarget, Target
 
@@ -76,6 +77,9 @@ SWAP_WAIT_S, SWAP_STEP_S = 2.0, 0.02
 INCOMING_PREFIX = ".incoming-"
 #: names a document's own files may not use: the store's bookkeeping lives there
 RESERVED = (VERSIONS,)
+#: hosts an artifact link (``publish(artifact=...)``) may point at: the interactive
+#: version of a page lives there, and the document's page links out to it
+ARTIFACT_HOSTS = ("claude.ai",)
 #: extension -> kind. ``html`` renders in a frame, ``md`` as markdown, ``text`` as
 #: preformatted text, ``image``/``video``/``audio``/``pdf`` inline in the page; anything
 #: else is a download. A document of several files with no single page to show is a
@@ -126,6 +130,34 @@ def check_id(doc_id: str) -> str:
     if not ID_RE.match(doc_id):
         raise ValueError(f"not a document id: {doc_id!r}")
     return doc_id
+
+
+def check_artifact_url(url: str, *, hosts: Iterable[str] = ARTIFACT_HOSTS) -> str:
+    """``url`` if it is an ``https`` link to one of ``hosts`` (or a subdomain), else raise.
+
+    The link is shown on the document's page as a button, so only a plain https URL to a
+    known artifact host is accepted: no other scheme, no credentials, no odd port.
+    """
+    url = url.strip()
+    try:
+        parts = urlsplit(url)
+        port = parts.port
+    except ValueError:
+        raise ValueError(f"not an artifact link: {url!r}") from None
+    host = (parts.hostname or "").lower()
+    known = any(host == h or host.endswith("." + h) for h in hosts)
+    if (
+        parts.scheme != "https"
+        or not known
+        or parts.username is not None
+        or parts.password is not None
+        or port not in (None, 443)
+        or any(c.isspace() or ord(c) < 32 for c in url)
+    ):
+        raise ValueError(
+            f"not an artifact link: {url!r} (expected https://{'|'.join(hosts)}/...)"
+        )
+    return url
 
 
 def split_version(doc_id: str) -> tuple[str, int | None]:
@@ -278,6 +310,7 @@ class DocStore:
         filename: str = "document.md",
         exclude: Iterable[str] = DFLT_EXCLUDE,
         replace: str | None = None,
+        artifact: str | None = None,
     ) -> dict:
         """Publish files (or a directory, or ``text``) as ONE document; return its meta.
 
@@ -290,7 +323,13 @@ class DocStore:
         new document: same id, same link, the current files kept as a version. It is
         written as a pending replacement and applied at once when this store settles
         (otherwise where the store is read). The returned meta says ``pending`` until then.
+
+        ``artifact`` (a claude.ai artifact link, see :func:`check_artifact_url`) is the
+        interactive version of the page: the document's page links out to it. A
+        replacement that names none keeps the document's current one.
         """
+        if artifact is not None:
+            artifact = check_artifact_url(artifact)
         if replace is not None:
             check_id(replace)
             if PENDING_SEP in replace and self._root_of(replace) is None:
@@ -335,6 +374,8 @@ class DocStore:
                 if kind == FOLDER
                 else _excerpt(main, kind),
             }
+            if artifact:
+                meta["artifact"] = artifact
             if replace is not None:
                 meta.update(replaces=replace, pending_id=mk_pending_id(replace))
             (tmp / META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
@@ -615,6 +656,8 @@ class DocStore:
             "versions": [*history, entry],
             "from_pending": name,
         }
+        if not meta.get("artifact") and prev.get("artifact"):
+            meta["artifact"] = prev["artifact"]  # kept when the replacement names none
         if "trashed" in prev:
             meta["trashed"] = prev["trashed"]
         nxt, old = f"{lock}/next", f"{lock}/old"
