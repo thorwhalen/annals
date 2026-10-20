@@ -313,3 +313,36 @@ def test_cookie_whoami_cache_eviction_is_thread_safe(monkeypatch):
     [t.join() for t in threads]
     assert not errors
     assert len(auth._cache) <= 4
+
+
+def test_state_changes_refuse_cross_site_browsers(client, store):
+    doc_id = store.list()[0]["id"]
+    url = f"/annals/api/docs/{doc_id}/trash"
+    bad = [{"Sec-Fetch-Site": "cross-site"}, {"Sec-Fetch-Site": "same-site"},
+           {"Origin": "https://evil.example"}, {"Origin": "null"}]
+    for headers in bad:
+        assert client.post(url, headers=headers).status_code == 403
+    assert not store.meta(doc_id).get("trashed")
+    ok = client.post(url, headers={"Sec-Fetch-Site": "same-origin"})
+    assert ok.status_code == 200
+    r = client.post(f"/annals/api/docs/{doc_id}/restore", headers={"Origin": "http://testserver"})
+    assert r.status_code == 200
+    assert client.post(url).status_code == 200  # non-browser client: no headers
+
+
+def test_origin_matching_rules(client, store):
+    doc_id = store.list()[0]["id"]
+    url = f"/annals/api/docs/{doc_id}/trash"
+    ok = [{"Origin": "HTTP://TestServer"},
+          {"Origin": "https://a.com", "X-Forwarded-Host": "a.com, b.com"}]
+    for h in ok:
+        assert client.post(url, headers=h).status_code == 200
+    bad = [{"Origin": "http://testserver:8080"},
+           {"Origin": "http://testserver", "Sec-Fetch-Site": "cross-site"},
+           {"Origin": "https://evil.com", "X-Forwarded-Host": "a.com"}]
+    for h in bad:
+        assert client.post(url, headers=h).status_code == 403
+    evil = {"Sec-Fetch-Site": "cross-site"}
+    assert client.post(f"/annals/api/docs/{doc_id}/restore", headers=evil).status_code == 403
+    assert client.delete(f"/annals/api/docs/{doc_id}", headers=evil).status_code == 403
+    assert client.patch(f"/annals/api/items/x", json={}, headers=evil).status_code == 403
