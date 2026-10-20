@@ -39,7 +39,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 HTTP Basic with one username and password, compared in constant time.
 
-### *class* annals.auth.CookieWhoami(whoami_url, allowed_users, , login_url='/auth/login')
+### *class* annals.auth.CookieWhoami(whoami_url, allowed_users, \*, login_url='/auth/login', cache_ttl_s=30.0, cache_max=256, clock=<built-in function monotonic>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 

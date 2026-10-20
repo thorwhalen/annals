@@ -1,4 +1,4 @@
-> built 2026-10-20 03:12 UTC from c2f422a (main) · annals 0.0.7. Details: build_info.json
+> built 2026-10-20 06:52 UTC from 20b3786 (main) · annals 0.0.8. Details: build_info.json
 
 # index.html.md
 
@@ -187,7 +187,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 HTTP Basic with one username and password, compared in constant time.
 
-### *class* annals.auth.CookieWhoami(whoami_url, allowed_users, , login_url='/auth/login')
+### *class* annals.auth.CookieWhoami(whoami_url, allowed_users, \*, login_url='/auth/login', cache_ttl_s=30.0, cache_max=256, clock=<built-in function monotonic>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1600,18 +1600,16 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-20 03:12 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/c2f422a3af6cfafb8b4affe06c99ace3cf06ed6a"><code>c2f422a</code></a> on branch <code>main</code>, for **annals 0.0.7** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-20 06:52 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/20b378620615a8c2ff382b05cf6a0a2ab4e0a12b"><code>20b3786</code></a> on branch <code>main</code>, for **annals 0.0.8** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.7) is behind the latest release on PyPI (0.0.8): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/c2f422a3af6cfafb8b4affe06c99ace3cf06ed6a"><code>c2f422a3af6cfafb8b4affe06c99ace3cf06ed6a</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/20b378620615a8c2ff382b05cf6a0a2ab4e0a12b"><code>20b378620615a8c2ff382b05cf6a0a2ab4e0a12b</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1622,9 +1620,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39362951270">39362951270</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39382774119">39382774119</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>c2f422a3af6cfafb8b4affe06c99ace3cf06ed6a</code> (in the history of the built commit) |
+| Event commit | <code>20b378620615a8c2ff382b05cf6a0a2ab4e0a12b</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1649,13 +1647,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.8/">0.0.8</a>, newer than the documented version (0.0.7).
+Latest release: <a href="https://pypi.org/project/annals/0.0.8/">0.0.8</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout c2f422a3af6cfafb8b4affe06c99ace3cf06ed6a
+git checkout 20b378620615a8c2ff382b05cf6a0a2ab4e0a12b
 pip install "epythet==0.2.18"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
