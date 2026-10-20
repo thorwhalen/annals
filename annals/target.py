@@ -21,11 +21,14 @@ import re
 import shlex
 import shutil
 import subprocess
+import tempfile
 from pathlib import Path, PurePosixPath
 from typing import Protocol
 
 #: Separator between concatenated meta.json files when reading many at once over ssh.
 RECORD_SEP = "\x1e"
+#: the note a lock directory is created with (see :meth:`Target.make_lock`)
+LOCK_NOTE = "lock.json"
 SSH_OPTS = ("-o", "BatchMode=yes", "-o", "ConnectTimeout=15")
 _SSH_TARGET_RE = re.compile(r"^(?P<host>[A-Za-z0-9][A-Za-z0-9_.@-]*):(?P<path>[~/].*)$")
 
@@ -57,8 +60,9 @@ class Target(Protocol):
 
     def remove_tree(self, rel: str) -> None: ...
 
-    def make_dir(self, rel: str) -> None:
-        """Create a directory; fails if it exists (an atomic test-and-set: a lock)."""
+    def make_lock(self, rel: str, note: str) -> None:
+        """Create directory ``rel`` holding ``lock.json`` (``note``) as one step; fail if
+        it exists. An atomic test-and-set: a lock that is never seen without its note."""
         ...
 
     def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
@@ -125,10 +129,16 @@ class LocalTarget:
     def remove_tree(self, rel: str) -> None:
         shutil.rmtree(self._abs(rel))
 
-    def make_dir(self, rel: str) -> None:
+    def make_lock(self, rel: str, note: str) -> None:
         path = self._abs(rel)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.mkdir()
+        prep = Path(tempfile.mkdtemp(prefix=".lockprep-", dir=path.parent))
+        (prep / LOCK_NOTE).write_text(note, encoding="utf-8")
+        try:  # a rename onto a lock (never empty) fails: only one taker wins
+            os.rename(prep, path)
+        except OSError:
+            shutil.rmtree(prep, ignore_errors=True)
+            raise
 
     def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
         base = self._abs(rel)
@@ -260,9 +270,13 @@ class SshTarget:
     def remove_tree(self, rel: str) -> None:
         self._ssh(f"rm -rf {_q(self._abs(rel))}")
 
-    def make_dir(self, rel: str) -> None:
+    def make_lock(self, rel: str, note: str) -> None:
         path = self._abs(rel)
-        self._ssh(f"mkdir -p {_q(str(PurePosixPath(path).parent))} && mkdir {_q(path)}")
+        parent = _q(str(PurePosixPath(path).parent))
+        self._ssh(  # one remote shell: the note follows the mkdir within a millisecond
+            f"mkdir -p {parent} && mkdir {_q(path)} && cat > {_q(path + '/' + LOCK_NOTE)}",
+            stdin=note,
+        )
 
     def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
         if not files:

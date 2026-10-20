@@ -23,6 +23,7 @@ small and the documents' lifecycle independent of whatever serves them.
 
 from __future__ import annotations
 
+import functools
 import hashlib
 import mimetypes
 import os
@@ -365,7 +366,7 @@ def mk_api(
         """The file on disk, or a 404: it must be listed in the meta AND stay inside the
         document's directory (meta.json is written by the publisher, so it is not trusted
         to keep paths in bounds)."""
-        meta = _meta_or_404(store, doc_id)
+        meta = _meta_or_404(store, doc_id, settle=False)  # hot path: the page settled it
         if rel not in meta["files"]:
             raise HTTPException(404, "no such file in document")
         try:
@@ -415,7 +416,10 @@ def mk_api(
         width = next((x for x in THUMB_WIDTHS if x >= w), THUMB_WIDTHS[-1])
         if thumbnailer and Path(rel).suffix.lower() in THUMBNAILABLE:
             # a replace reuses file names, so the thumbnail is the file's at this version
-            stamp = (await anyio.to_thread.run_sync(store.meta, doc_id)).get("updated", "")
+            meta = await anyio.to_thread.run_sync(
+                functools.partial(store.meta, doc_id, settle=False)
+            )
+            stamp = meta.get("updated", "")
             key = hashlib.sha1(f"{rel}|{stamp}".encode("utf-8")).hexdigest()[:20]
             cached = _local_root() / THUMB_CACHE / doc_id / f"{key}.w{width}.webp"
             made = cached.is_file() or await anyio.to_thread.run_sync(
@@ -625,9 +629,9 @@ def mk_app(
     return app
 
 
-def _meta_or_404(store: DocStore, doc_id: str) -> dict:
+def _meta_or_404(store: DocStore, doc_id: str, *, settle: bool = True) -> dict:
     try:
-        return store.meta(doc_id)
+        return store.meta(doc_id, settle=settle)
     except (KeyError, ValueError):
         raise HTTPException(404, "no such document")
 

@@ -30,18 +30,20 @@ replacement twice and nothing is ever deleted.
 from __future__ import annotations
 
 import json
+import os
 import re
 import secrets
+import socket
 import shutil
 import tempfile
 import time
 import unicodedata
-from contextlib import suppress
+from contextlib import contextmanager, suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-from annals.target import LocalTarget, Target
+from annals.target import LOCK_NOTE, LocalTarget, Target
 
 DOCS = "docs"
 TRASH = "trash"
@@ -65,7 +67,7 @@ PENDING_SEP = ".r"
 #: the working directory, holding ``next`` (the replacement) and ``old`` (the version
 #: being archived) between renames, and ``lock.json`` (what a recovery needs to know)
 LOCK_PREFIX = ".lock-"
-LOCK_INFO = "lock.json"
+LOCK_INFO = LOCK_NOTE
 #: a lock older than this was left by a crash: its work is finished or undone
 LOCK_STALE_S = 600
 #: a reader that misses a document being swapped waits for it this long, in steps
@@ -338,9 +340,12 @@ class DocStore:
             (tmp / META).write_text(json.dumps(meta, indent=1), encoding="utf-8")
             if replace is None:
                 self.target.put_tree(tmp, f"{DOCS}/{doc_id}")
-            else:  # appears whole, so no reader applies a half-written replacement
+            else:  # appears whole, meta last, so no reader takes a half-written one
                 incoming = f"{DOCS}/{INCOMING_PREFIX}{meta['pending_id']}"
+                meta_text = (tmp / META).read_text(encoding="utf-8")
+                (tmp / META).unlink()
                 self.target.put_tree(tmp, incoming)
+                self.target.write_text(f"{incoming}/{META}", meta_text)
                 self.target.move(incoming, f"{DOCS}/{meta['pending_id']}")
         if replace is None:
             return meta
@@ -360,11 +365,16 @@ class DocStore:
                 return root
         return None
 
-    def pending(self, doc_id: str | None = None) -> list[str]:
-        """Pending replacements (directory names), oldest first; of one document if given."""
+    def pending(
+        self, doc_id: str | None = None, *, names: list[str] | None = None
+    ) -> list[str]:
+        """Pending replacements (directory names), oldest first; of one document if given.
+
+        ``names``: the listing of ``docs/`` when the caller already has it.
+        """
         names = [
             n
-            for n in self.target.list_dirs(DOCS)
+            for n in (self.target.list_dirs(DOCS) if names is None else names)
             if PENDING_SEP in n and not n.startswith(".")
         ]
         if doc_id is not None:
@@ -377,12 +387,15 @@ class DocStore:
         A replacement whose document is not here yet (it is still on its way, or the
         document was purged) stays pending and is listed under its own id.
         """
-        for root in (DOCS, TRASH):  # first, what a crash left half done
-            for n in self.target.list_dirs(root):
+        listing = {root: self.target.list_dirs(root) for root in (DOCS, TRASH)}
+        recovered = False
+        for root, names in listing.items():  # first, what a crash left half done
+            for n in names:
                 base = n[len(LOCK_PREFIX) :]
                 if n.startswith(LOCK_PREFIX) and doc_id in (None, base):
-                    self._recover(f"{root}/{n}", root, base)
-        bases = {n.rpartition(PENDING_SEP)[0] for n in self.pending(doc_id)}
+                    recovered |= self._recover(f"{root}/{n}", root, base)
+        pending = self.pending(doc_id, names=None if recovered else listing[DOCS])
+        bases = {n.rpartition(PENDING_SEP)[0] for n in pending}
         return sorted(b for b in bases if self._apply(b))
 
     def _apply(self, base: str) -> bool:
@@ -409,29 +422,56 @@ class DocStore:
         return applied
 
     def _lock(self, root: str, base: str) -> str | None:
-        """Take ``<root>/.lock-<base>`` (an exclusive mkdir); recover a stale one first."""
+        """Take ``<root>/.lock-<base>`` (created with its note in one step); recover a
+        stale one first. ``None`` when another reader holds it."""
         lock = f"{root}/{LOCK_PREFIX}{base}"
         for _ in range(2):
             try:
-                self.target.make_dir(lock)
+                self.target.make_lock(lock, json.dumps(self._holder()))
             except (OSError, RuntimeError):
                 if not self._recover(lock, root, base):
                     return None
                 continue
-            self._lock_note(lock, {})
             return lock
         return None
 
+    @contextmanager
+    def _locked(self, root: str, base: str):
+        """Hold the document's lock for a move of the whole document (trash, restore)."""
+        lock = self._lock(root, base)
+        if lock is None:
+            raise RuntimeError(f"{base} is being replaced right now; try again")
+        try:
+            yield
+        finally:
+            self._unlock(lock)
+
+    @staticmethod
+    def _holder(**info) -> dict:
+        return {"since": time.time(), "host": socket.gethostname(), "pid": os.getpid(), **info}
+
     def _lock_note(self, lock: str, info: dict) -> None:
-        self.target.write_text(
-            f"{lock}/{LOCK_INFO}", json.dumps({"since": time.time(), **info})
-        )
+        self.target.write_text(f"{lock}/{LOCK_INFO}", json.dumps(self._holder(**info)))
+
+    @staticmethod
+    def _stale(info: dict) -> bool:
+        """Old, or held by a process of this host that is gone."""
+        if time.time() - float(info.get("since", 0)) >= LOCK_STALE_S:
+            return True
+        if info.get("host") == socket.gethostname() and info.get("pid"):
+            try:
+                os.kill(int(info["pid"]), 0)
+            except ProcessLookupError:
+                return True
+            except (PermissionError, ValueError, OverflowError):
+                return False
+        return False
 
     def _unlock(self, lock: str) -> None:
         """Release the lock, unless a failed step left files in it (recovery's job)."""
         if any(self.target.exists(f"{lock}/{d}") for d in ("next", "old")):
             return
-        self.target.remove_tree(lock)  # holds only lock.json now
+        self.target.remove_tree(lock)  # holds only its notes now
 
     def _recover(self, lock: str, root: str, base: str) -> bool:
         """Finish or undo the work of a lock left by a crash; True when it is released.
@@ -443,23 +483,27 @@ class DocStore:
         """
         try:
             info = json.loads(self.target.read_text(f"{lock}/{LOCK_INFO}"))
-        except (OSError, RuntimeError, ValueError):
-            time.sleep(SWAP_STEP_S)  # it may have been taken a moment ago
-            try:
-                info = json.loads(self.target.read_text(f"{lock}/{LOCK_INFO}"))
-            except (OSError, RuntimeError, ValueError):
+            if not isinstance(info, dict):
                 info = {"since": 0}
-        if time.time() - float(info.get("since", 0)) < LOCK_STALE_S:
+        except (OSError, RuntimeError, ValueError):
+            # the note is written with the lock, so none means a crash in between (or
+            # the lock is just gone, which the next take settles)
+            info = {"since": 0}
+        if not self._stale(info):
             return False
         live = f"{root}/{base}"
         nxt, old = f"{lock}/next", f"{lock}/old"
         try:
+            pend = f"{DOCS}/{info['pending']}" if "pending" in info else None
             if self.target.exists(nxt):  # interrupted before the new version went live
                 if not self.target.exists(f"{live}/{META}") and self.target.exists(old):
                     self.target.move(old, live)
-                self.target.move(nxt, f"{DOCS}/{info['pending']}")
-            elif self.target.exists(old):  # live; the old version was being archived
-                self._archive(old, live, int(info["n"]))
+                self.target.move(nxt, pend)
+            elif self.target.exists(old):
+                if "replaces" in json.loads(self.target.read_text(f"{live}/{META}")):
+                    self._roll_back(live, old, pend)  # live, but its meta never written
+                else:  # done but for archiving the old version
+                    self._archive(old, live, int(info["n"]))
             self.target.remove_tree(lock)
         except (OSError, RuntimeError, KeyError, ValueError):
             return False  # leave it as it is: nothing is lost, it stays retryable
@@ -493,13 +537,22 @@ class DocStore:
             return None
         return meta if all(on_disk.get(f) == sizes.get(f) for f in files) else None
 
+    def _roll_back(self, live: str, old: str, pend: str) -> None:
+        """Undo a swap whose new version went live without its final meta."""
+        nxt = f"{old.rpartition('/')[0]}/next"
+        self.target.move(live, nxt)
+        self.target.move(old, live)
+        self.target.move(nxt, pend)
+
     def _swap_in(self, root: str, base: str, name: str, lock: str) -> bool:
         """Make the pending replacement ``name`` the current version of ``base``.
 
         Everything that can fail is checked first. Then, renames only: the replacement
         into the lock (with its final meta), the document out of its place and the new
         version into it (the only moment the id has nothing behind it, and readers wait
-        through it), then the old version, whole, under ``.versions/<n>/``.
+        through it), the final meta written over the replacement's own, then the old
+        version, whole, under ``.versions/<n>/``. Until that meta is written, every step
+        is undone by renames alone, so a failing disk never strands a replacement.
         """
         live, pend = f"{root}/{base}", f"{DOCS}/{name}"
         new = self._ready(pend, base)
@@ -517,8 +570,10 @@ class DocStore:
             return False
         applied = {v.get("from_pending") for v in history} | {prev.get("from_pending")}
         if name in applied:  # pulled twice: already in the history; to the bin with it
-            with suppress(OSError, RuntimeError):
-                self.target.move(pend, f"{TRASH}/{name}")
+            try:
+                self.target.move(pend, f"{TRASH}/{name}-{secrets.token_hex(2)}")
+            except (OSError, RuntimeError):
+                return False
             return True
         if self.target.exists(f"{live}/{VERSIONS}/{n}"):
             return False
@@ -545,13 +600,12 @@ class DocStore:
         if "trashed" in prev:
             meta["trashed"] = prev["trashed"]
         nxt, old = f"{lock}/next", f"{lock}/old"
-        self._lock_note(lock, {"pending": name, "n": n})
         try:
+            self._lock_note(lock, {"pending": name, "n": n})
             self.target.move(pend, nxt)
         except (OSError, RuntimeError):
             return False
         try:
-            self.target.write_text(f"{nxt}/{META}", json.dumps(meta, indent=1))
             self.target.move(live, old)
         except (OSError, RuntimeError):
             self.target.move(nxt, pend)  # nothing changed: put it back
@@ -562,7 +616,17 @@ class DocStore:
             self.target.move(old, live)
             self.target.move(nxt, pend)
             return False
-        self._archive(old, live, n)
+        try:
+            self.target.write_text(f"{live}/{META}", json.dumps(meta, indent=1))
+        except (OSError, RuntimeError):
+            self._roll_back(live, old, pend)
+            return False
+        for _ in range(2):  # live already; a failure here leaves `old` to recovery
+            try:
+                self._archive(old, live, n)
+                break
+            except (OSError, RuntimeError):
+                time.sleep(SWAP_STEP_S)
         return True
 
     def _archive(self, old: str, live: str, n: int) -> None:
@@ -630,17 +694,37 @@ class DocStore:
             self.target.exists(f"{r}/{LOCK_PREFIX}{doc_id}/old") for r in (DOCS, TRASH)
         )
 
-    def meta(self, doc_id: str) -> dict:
+    def meta(self, doc_id: str, *, settle: bool = True) -> dict:
         """One document's meta; ``in_trash`` says which side of the bin it is on.
 
         ``<id>@<n>`` is version ``n``: its own meta, with ``version_of`` naming the document.
-        A pending replacement, read by its own id, says ``pending``.
+        A pending replacement, read by its own id, says ``pending``. ``settle=False``
+        skips applying pending replacements (for a hot path such as a raw file).
         """
         base, n = split_version(doc_id)
-        if n is None and self.auto_settle and PENDING_SEP not in base:
+        if settle and n is None and self.auto_settle and PENDING_SEP not in base:
             self.settle(base)
-        rel = self.doc_rel(doc_id)
-        meta = json.loads(self.target.read_text(f"{rel}/{META}"))
+        deadline = time.monotonic() + SWAP_WAIT_S
+        for attempt in range(2):
+            rel = self.doc_rel(doc_id)
+            try:
+                meta = json.loads(self.target.read_text(f"{rel}/{META}"))
+            except (OSError, RuntimeError):
+                if attempt:  # a swap landed between finding it and reading it: once more
+                    raise KeyError(doc_id) from None
+                continue
+            # a new version that went live a moment ago, its final meta not yet written
+            while (
+                "replaces" in meta
+                and n is None
+                and PENDING_SEP not in base
+                and time.monotonic() < deadline
+                and self._swapping(base)
+            ):
+                time.sleep(SWAP_STEP_S)
+                with suppress(OSError, RuntimeError, ValueError):
+                    meta = json.loads(self.target.read_text(f"{rel}/{META}"))
+            break
         meta["in_trash"] = rel.startswith(TRASH + "/")
         if n is not None:
             meta.update(id=doc_id, version_of=base, version=n)
@@ -682,7 +766,8 @@ class DocStore:
         """Move a document into the bin (idempotent)."""
         meta = self._whole(doc_id)
         if not meta["in_trash"]:
-            self.target.move(f"{DOCS}/{doc_id}", f"{TRASH}/{doc_id}")
+            with self._locked(DOCS, doc_id):
+                self.target.move(f"{DOCS}/{doc_id}", f"{TRASH}/{doc_id}")
             meta["trashed"] = now_iso()
             meta.pop("in_trash", None)
             self.target.write_text(
@@ -695,7 +780,8 @@ class DocStore:
         """Move a document out of the bin (idempotent)."""
         meta = self._whole(doc_id)
         if meta["in_trash"]:
-            self.target.move(f"{TRASH}/{doc_id}", f"{DOCS}/{doc_id}")
+            with self._locked(TRASH, doc_id):
+                self.target.move(f"{TRASH}/{doc_id}", f"{DOCS}/{doc_id}")
             meta.pop("trashed", None)
             meta.pop("in_trash", None)
             self.target.write_text(

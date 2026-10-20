@@ -272,7 +272,7 @@ def test_a_failure_mid_apply_leaves_the_document_readable(tmp_path, monkeypatch)
     real = store.target.write_text
 
     def full_disk(rel, text):
-        if rel.endswith("next/meta.json"):
+        if rel.endswith(f"{doc_id}/meta.json"):
             raise OSError(28, "No space left on device")
         return real(rel, text)
 
@@ -324,7 +324,7 @@ def test_a_replacement_pulled_twice_is_applied_once(tmp_path):
     shutil.copytree(copy, pend)  # a retried pull lands the same directory again
     store.settle()
     assert store.meta(doc_id)["version"] == 2 and store.pending() == []
-    assert (root / "trash" / pend.name).is_dir()  # set aside, not deleted
+    assert [p.name.startswith(pend.name) for p in (root / "trash").iterdir()] == [True]  # set aside
 
 
 def test_a_stale_lock_left_by_a_crash_is_recovered(tmp_path, monkeypatch):
@@ -371,3 +371,41 @@ def test_html_revalidates_with_an_etag(store, tmp_path):
     first = client.get(f"/annals/api/raw/{doc_id}/e.html")
     again = client.get(f"/annals/api/raw/{doc_id}/e.html", headers={"If-None-Match": first.headers["etag"]})
     assert again.status_code == 304
+
+
+def test_a_crash_after_going_live_but_before_the_meta_is_rolled_back(tmp_path):
+    root = tmp_path / "data"
+    store = DocStore(root)
+    doc_id = store.publish(text="# L\n\nv1", title="L")["id"]
+    pend = _queue(root, doc_id, "# L\n\nv2")
+    lock = root / "docs" / f".lock-{doc_id}"
+    lock.mkdir()
+    (lock / "lock.json").write_text(json.dumps({"since": 0, "pending": pend.name, "n": 1}))
+    (root / "docs" / doc_id).rename(lock / "old")
+    pend.rename(root / "docs" / doc_id)  # live, still carrying the replacement's meta
+    assert store.settle() == [doc_id]
+    assert store.meta(doc_id)["version"] == 2 and store.read_text(f"{doc_id}@1").endswith("v1")
+
+
+def test_locks_are_exclusive_and_block_trash_while_held(tmp_path):
+    store = DocStore(tmp_path / "data")
+    doc_id = store.publish(text="# X\n\nv1", title="X")["id"]
+    lock = store._lock("docs", doc_id)
+    assert lock and json.loads((tmp_path / "data" / lock / "lock.json").read_text())["pid"]
+    assert store._lock("docs", doc_id) is None  # held by a live process: not stale
+    with pytest.raises(RuntimeError):
+        store.trash(doc_id)
+    store._unlock(lock)
+    assert store.trash(doc_id)["in_trash"] is True
+
+
+@pytest.mark.skipif(not shutil.which("rsync"), reason="needs rsync")
+def test_ssh_lock_is_created_with_its_note(tmp_path, loopback_ssh):
+    t = SshTarget("loop", str(tmp_path / "remote"))
+    t.make_lock("docs/.lock-a", '{"since": 1}')
+    assert (tmp_path / "remote" / "docs" / ".lock-a" / "lock.json").read_text() == '{"since": 1}'
+    with pytest.raises(RuntimeError):
+        t.make_lock("docs/.lock-a", "{}")
+    (tmp_path / "remote" / "docs" / "f").mkdir()
+    (tmp_path / "remote" / "docs" / "f" / "a b.txt").write_text("hello")
+    assert t.file_sizes("docs/f", ["a b.txt", "nope"]) == {"a b.txt": 5}
