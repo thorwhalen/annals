@@ -285,3 +285,30 @@ def test_cookie_whoami_caches_answers_but_not_outages(monkeypatch):
     assert auth(req) == "owner@example.com" and auth(req) == "owner@example.com" and len(calls) == 3
     now[0] = 11.0
     assert auth(req) == "owner@example.com" and len(calls) == 4  # expired
+
+
+def test_cookie_whoami_cache_eviction_is_thread_safe(monkeypatch):
+    import threading
+    import urllib.request
+    from types import SimpleNamespace
+
+    class Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"email": "owner@example.com"}'
+
+    monkeypatch.setattr(urllib.request, "urlopen", lambda req, timeout: Resp())
+    auth = CookieWhoami("http://identity/whoami", ["owner@example.com"], cache_max=4)
+    errors = []
+
+    def hammer(n):
+        try:
+            for i in range(3000):
+                auth(SimpleNamespace(headers={"cookie": f"s={n}-{i}"}))
+        except Exception as e:  # noqa: BLE001
+            errors.append(e)
+
+    threads = [threading.Thread(target=hammer, args=(n,)) for n in range(8)]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert not errors
