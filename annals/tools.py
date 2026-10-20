@@ -15,7 +15,7 @@ from pathlib import Path
 
 from annals.config import Settings, default_data_dir, load_settings, write_config
 from annals.store import DocStore, check_id, split_version
-from annals.target import parse_target
+from annals.target import SshTarget, parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
 
@@ -289,14 +289,44 @@ def _parse_ref(ref: str) -> tuple[str, str]:
     return "id", parts[-1]
 
 
+def _place_key(spec: str, *, resolve_home: bool = False) -> tuple:
+    """``("ssh", host, root)`` or ``("local", root)``: what makes two target specs one place.
+
+    Roots are normalised (``..``, repeated or trailing slashes). A ``~/`` root on an ssh
+    target is the remote home, which only the remote knows; ``resolve_home`` asks it (one
+    ssh call), otherwise the ``~`` stays literal.
+    """
+    import posixpath
+
+    target = parse_target(spec)
+    if isinstance(target, SshTarget):
+        root = target.root
+        if root == "~" or root.startswith("~/"):
+            if resolve_home:
+                home = target._ssh("printf %s \"$HOME\"").strip()
+                root = home + root[1:]
+        return ("ssh", target.host, posixpath.normpath(root))
+    if hasattr(target, "root"):
+        return ("local", str(Path(target.root).expanduser().resolve()))
+    return ("other", spec.rstrip("/"))
+
+
 def _same_place(a: str, b: str) -> bool:
-    """True when two target specs name the same directory (or the same ssh host:path)."""
-    ta, tb = parse_target(a), parse_target(b)
-    if hasattr(ta, "root") and hasattr(tb, "root"):
-        return (
-            Path(ta.root).expanduser().resolve() == Path(tb.root).expanduser().resolve()
-        )
-    return a.rstrip("/") == b.rstrip("/")
+    """True when two target specs name the same directory, or the same directory on the same ssh host.
+
+    A local path and an ssh target are never the same place, nor are two hosts with equal roots.
+    ``host:~/x`` and ``host:/home/u/x`` are compared by asking the host for its home, only when
+    that is the one thing that could make them equal.
+    """
+    ka, kb = _place_key(a), _place_key(b)
+    if ka == kb:
+        return True
+    if ka[0] == kb[0] == "ssh" and ka[1] == kb[1] and ("~" in (ka[2][:1], kb[2][:1])):
+        try:
+            return _place_key(a, resolve_home=True) == _place_key(b, resolve_home=True)
+        except Exception:  # remote unreachable: say "different"; the copy itself will fail loudly
+            return False
+    return False
 
 
 def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
