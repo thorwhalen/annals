@@ -26,6 +26,7 @@ import hashlib
 import json
 import os
 import secrets
+import threading
 import time
 import urllib.error
 import urllib.request
@@ -74,6 +75,7 @@ class CookieWhoami:
         self.whoami_url = whoami_url
         self._ttl, self._cache_max, self._clock = cache_ttl_s, cache_max, clock
         self._cache: dict[str, tuple[float, Optional[str]]] = {}
+        self._lock = threading.Lock()  # guards the cache dict only, never the network call
         self.allowed = {u.strip().lower() for u in allowed_users if u.strip()}
         self.login_url = login_url
 
@@ -83,14 +85,16 @@ class CookieWhoami:
             return None
         now = self._clock()
         key = hashlib.sha256(cookie.encode()).hexdigest()  # bounded key size
-        hit = self._cache.get(key)
+        with self._lock:
+            hit = self._cache.get(key)
         if hit and now - hit[0] < self._ttl:
             return hit[1]
         who = self._ask(cookie)
         if who is not _UNREACHABLE:  # an outage is not an answer: retry next request
-            if len(self._cache) >= self._cache_max:
-                self._cache.pop(next(iter(self._cache)), None)  # evict oldest
-            self._cache[key] = (now, who)
+            with self._lock:
+                if len(self._cache) >= self._cache_max:
+                    self._cache.pop(next(iter(self._cache)), None)  # evict oldest
+                self._cache[key] = (now, who)
             return who
         return None
 
