@@ -312,3 +312,4 @@ def test_cookie_whoami_cache_eviction_is_thread_safe(monkeypatch):
     [t.start() for t in threads]
     [t.join() for t in threads]
     assert not errors
+    assert len(auth._cache) <= 4
