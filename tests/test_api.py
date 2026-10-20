@@ -313,3 +313,18 @@ def test_cookie_whoami_cache_eviction_is_thread_safe(monkeypatch):
     [t.join() for t in threads]
     assert not errors
     assert len(auth._cache) <= 4
+
+
+def test_state_changes_refuse_cross_site_browsers(client, store):
+    doc_id = store.list()[0]["id"]
+    url = f"/annals/api/docs/{doc_id}/trash"
+    bad = [{"Sec-Fetch-Site": "cross-site"}, {"Sec-Fetch-Site": "same-site"},
+           {"Origin": "https://evil.example"}, {"Origin": "null"}]
+    for headers in bad:
+        assert client.post(url, headers=headers).status_code == 403
+    assert not store.meta(doc_id).get("trashed")
+    ok = client.post(url, headers={"Sec-Fetch-Site": "same-origin"})
+    assert ok.status_code == 200
+    r = client.post(f"/annals/api/docs/{doc_id}/restore", headers={"Origin": "http://testserver"})
+    assert r.status_code == 200
+    assert client.post(url).status_code == 200  # non-browser client: no headers

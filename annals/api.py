@@ -34,11 +34,11 @@ import warnings
 from pathlib import Path
 from collections.abc import Mapping, MutableMapping
 from typing import Callable
-from urllib.parse import quote
+from urllib.parse import quote, urlsplit
 
 import anyio
 import anyio.to_thread
-from fastapi import Body, FastAPI, Header, HTTPException, Request
+from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -184,6 +184,27 @@ def _default_thumbnailer() -> Thumbnailer | None:
     return pillow_thumbnailer
 
 
+def _require_same_origin(request: Request) -> None:
+    """Refuse a state-changing request a browser sent from another site (CSRF).
+
+    Browsers label every fetch with ``Sec-Fetch-Site`` and, on cross-origin posts, an
+    ``Origin``; a page on another site cannot forge or drop either. Requests carrying
+    neither (curl, the CLI, tests) are not browser-driven and pass.
+    """
+    site = request.headers.get("sec-fetch-site")
+    if site is not None:
+        if site not in ("same-origin", "none"):
+            raise HTTPException(403, "cross-site request refused")
+        return
+    origin = request.headers.get("origin")
+    if origin is not None and origin != "null":
+        host = request.headers.get("x-forwarded-host") or request.headers.get("host", "")
+        if urlsplit(origin).netloc != host:
+            raise HTTPException(403, "cross-origin request refused")
+    elif origin == "null":
+        raise HTTPException(403, "cross-origin request refused")
+
+
 def _media_type(rel: str) -> str:
     override = TEXT_TYPE_OVERRIDES.get(Path(rel).suffix.lower())
     return override or mimetypes.guess_type(rel)[0] or "application/octet-stream"
@@ -258,19 +279,19 @@ def mk_api(
                 raise HTTPException(404, "no readable text for this document")
         return meta
 
-    @api.post("/docs/{doc_id}/trash")
+    @api.post("/docs/{doc_id}/trash", dependencies=[Depends(_require_same_origin)])
     def trash_doc(doc_id: str) -> dict:
         """Move a document to the recycle bin."""
         _meta_or_404(store, doc_id)
         return store.trash(doc_id)
 
-    @api.post("/docs/{doc_id}/restore")
+    @api.post("/docs/{doc_id}/restore", dependencies=[Depends(_require_same_origin)])
     def restore_doc(doc_id: str) -> dict:
         """Bring a document back from the bin."""
         _meta_or_404(store, doc_id)
         return store.restore(doc_id)
 
-    @api.delete("/docs/{doc_id}")
+    @api.delete("/docs/{doc_id}", dependencies=[Depends(_require_same_origin)])
     def purge_doc(doc_id: str) -> dict:
         """Delete forever; only allowed for a document already in the bin."""
         _meta_or_404(store, doc_id)
@@ -327,7 +348,7 @@ def mk_api(
         """One item: its row, plus its text when it is markdown or text."""
         return _item_or_404(catalog, key)
 
-    @api.patch("/items/{key:path}")
+    @api.patch("/items/{key:path}", dependencies=[Depends(_require_same_origin)])
     def patch_item(key: str, patch: dict = Body(...)) -> dict:
         """Change an item's tags, the one thing the owner edits: ``{"tags": [...]}``."""
         extra = set(patch) - {"tags"}
