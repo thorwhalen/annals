@@ -16,8 +16,9 @@ endpoint) is the declared replacement for the ssh one and is not built yet.
 
 ### Module Attributes
 
-| [`RECORD_SEP`](#annals.target.RECORD_SEP)   | Separator between concatenated meta.json files when reading many at once over ssh.   |
-|---------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`RECORD_SEP`](#annals.target.RECORD_SEP)   | Separator between concatenated meta.json files when reading many at once over ssh.                                  |
+|---------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| [`LOCK_NOTE`](#annals.target.LOCK_NOTE)    | the note a lock directory is created with (see [`Target.make_lock()`](#annals.target.Target.make_lock)) |
 
 ### Functions
 
@@ -31,6 +32,10 @@ endpoint) is the declared replacement for the ssh one and is not built yet.
 |-----------------------------------------------------------------------------|-----------------------------------------------------------------------------|
 | [`SshTarget`](#annals.target.SshTarget)(host, root)      | `host:path` on another machine, via the system ssh and rsync in batch mode. |
 | [`Target`](#annals.target.Target)(\*args, \*\*kwargs) | What the store needs from wherever the documents live.                      |
+
+### annals.target.LOCK_NOTE *= 'lock.json'*
+
+the note a lock directory is created with (see [`Target.make_lock()`](#annals.target.Target.make_lock))
 
 ### *class* annals.target.LocalTarget(root)
 
@@ -61,12 +66,34 @@ Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protoco
 
 What the store needs from wherever the documents live.
 
+#### file_sizes(rel, files)
+
+The byte size of each of `files` under `rel` that is a regular file.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
+
 #### local_path(rel)
 
 The file on this machine’s disk, when the documents are local (to stream it).
 
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### make_lock(rel, note)
+
+Create directory `rel` holding `lock.json` (`note`) as one step; fail if
+it exists. An atomic test-and-set: a lock that is never seen without its note.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### move(rel_src, rel_dst)
+
+Rename; fails when the source is gone or the destination already exists.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 ### annals.target.check_rel(rel)
 

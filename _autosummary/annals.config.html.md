@@ -20,6 +20,11 @@ file holds them as `[targets.NAME]` tables with the same two keys; `annals confi
 NAME --target ... --base-url ...` writes one. `to` picks it over the environment and the
 file’s default, and explicit `target`/`base_url` arguments still win over `to`.
 
+A third, `outbox`, is true for a target another machine pulls and empties (the server
+fetches documents from it rather than being written to): a replacement published there
+travels as it is and is applied where it lands (see [`annals.store`](annals.store.html.md#module-annals.store)). `ANNALS_OUTBOX`
+overrides it.
+
 The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
 reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
 so with no configuration at all `annals publish` and `annals serve` meet in the same
@@ -42,8 +47,8 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Classes
 
-| [`Settings`](#annals.config.Settings)(target, base_url[, configured])   | Where to publish and what link to print.   |
-|---------------------------------------------------------------------------------------------|--------------------------------------------|
+| [`Settings`](#annals.config.Settings)(target, base_url[, configured, outbox])   | Where to publish and what link to print.   |
+|-----------------------------------------------------------------------------------------------------|--------------------------------------------|
 
 ### annals.config.ENV_SOURCES *= 'ANNALS_SOURCES'*
 
@@ -52,7 +57,7 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 * **Type:**
   extra folders the page lists beside the published documents
 
-### *class* annals.config.Settings(target, base_url, configured=True)
+### *class* annals.config.Settings(target, base_url, configured=True, outbox=False)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -73,6 +78,10 @@ in the local data dir and the link points at a local server, which is rarely mea
 * **Type:**
   False when nothing (argument, env, config file) named a target
 
+#### outbox *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= False*
+
+the target is pulled and emptied by another machine; replacements apply there
+
 ### annals.config.default_config_path()
 
 `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.
@@ -87,7 +96,7 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### annals.config.load_settings(, target=None, base_url=None, to=None, config_path=None)
+### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 

@@ -12,7 +12,7 @@ Skills are folders holding a `SKILL.md` (the [Agent Skills](https://agentskills.
 
 ### `annals-publish`
 
-Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner’s private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to “publish this”, “post it to my annals”, “put it where I can read it on my phone”, “give me a link to that report”, “show me the images”, “where can I see the renders”, “share the page with me”, or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.
+Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner’s private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to “publish this”, “post it to my annals”, “put it where I can read it on my phone”, “give me a link to that report”, “show me the images”, “where can I see the renders”, “share the page with me”, or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers living pages (one link that stays current: `--replace`), grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.
 
 ```bash
 gh skill install thorwhalen/annals annals-publish --agent claude-code

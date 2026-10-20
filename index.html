@@ -7,6 +7,7 @@
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d88b86f9" />
     <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,7 +92,10 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
-<li><a class="reference internal" href="#for-agents">For agents</a></li>
+<li><a class="reference internal" href="#for-agents">For agents</a><ul>
+<li><a class="reference internal" href="#living-pages-replace">Living pages (<code class="docutils literal notranslate"><span class="pre">--replace</span></code>)</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#where-documents-go">Where documents go</a><ul>
 <li><a class="reference internal" href="#a-second-place-to">A second place (<code class="docutils literal notranslate"><span class="pre">--to</span></code>)</a></li>
 </ul>
@@ -148,8 +152,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="5">annals<span class="w"> </span>publish<span class="w"> </span>./site_dir<span class="w">                         </span><span class="c1"># an html page with its assets, as one document</span>
 </span><span data-line="6">annals<span class="w"> </span>publish<span class="w"> </span>clip.mp4<span class="w">                           </span><span class="c1"># media plays inline (streamed, seekable)</span>
 </span><span data-line="7">some-command<span class="w"> </span><span class="p">|</span><span class="w"> </span>annals<span class="w"> </span>publish<span class="w"> </span>-<span class="w"> </span>--title<span class="w"> </span><span class="s2">"Log"</span><span class="w">     </span><span class="c1"># from stdin</span>
-</span><span data-line="8">annals<span class="w"> </span>ls<span class="w"> </span><span class="s2">"search words"</span><span class="w">                          </span><span class="c1"># what is there, newest first</span>
-</span><span data-line="9">annals<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>annals<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">         </span><span class="c1"># the recycle bin</span>
+</span><span data-line="8">annals<span class="w"> </span>publish<span class="w"> </span>guide.html<span class="w"> </span>--replace<span class="w"> </span>&lt;link-or-id&gt;<span class="w">  </span><span class="c1"># a new version of a document: same link</span>
+</span><span data-line="9">annals<span class="w"> </span>ls<span class="w"> </span><span class="s2">"search words"</span><span class="w">                          </span><span class="c1"># what is there, newest first</span>
+</span><span data-line="10">annals<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>annals<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">         </span><span class="c1"># the recycle bin</span>
 </span></pre></div>
 </div>
 <p>What each kind looks like on the page:</p>
@@ -183,7 +188,12 @@ data-aria-dark="Switch to auto color mode">
 </table>
 </div>
 <p>A folder skips hidden files and caches (<code class="docutils literal notranslate"><span class="pre">.*</span></code>, <code class="docutils literal notranslate"><span class="pre">__pycache__</span></code>, <code class="docutils literal notranslate"><span class="pre">*.pyc</span></code>); <code class="docutils literal notranslate"><span class="pre">--all-files</span></code> keeps them.</p>
+<section id="living-pages-replace">
+<h3>Living pages (<code class="docutils literal notranslate"><span class="pre">--replace</span></code>)<a class="headerlink" href="#living-pages-replace" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">&lt;path&gt;</span> <span class="pre">--replace</span> <span class="pre">&lt;link-or-id&gt;</span></code> publishes a new version of an existing document: the id and the link stay, the page shows the new version marked “updated” and lists the earlier ones, each readable at <code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;&#64;&lt;n&gt;</span></code>. The previous files are kept under the document’s <code class="docutils literal notranslate"><span class="pre">.versions/&lt;n&gt;/</span></code>; nothing is deleted. It takes one path (a file, a folder, stdin), and a replaced group member stays in its group.</p>
+<p>A replacement is written next to the document as a pending directory (<code class="docutils literal notranslate"><span class="pre">docs/&lt;id&gt;.r&lt;stamp&gt;-&lt;hex&gt;/</span></code>), never over it, and applied by whoever reads the store (the server, or the next publish): a few renames, the first of which claims the document, so concurrent readers never apply one twice or out of order. That is what lets a replace travel through an <strong>outbox</strong>, a directory another machine pulls and empties: mark it with <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--outbox</span></code> (or <code class="docutils literal notranslate"><span class="pre">ANNALS_OUTBOX=1</span></code>), and replacements published there are left for the server to apply when they land. HTML pages without a doctype are served with <code class="docutils literal notranslate"><span class="pre">&lt;!doctype</span> <span class="pre">html&gt;</span></code> (plus a charset and viewport when missing), so they render in standards mode.</p>
 <p>With <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[mcp]'</span></code>, the same operations are an MCP server: <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">annals.mcp</span></code>.</p>
+</section>
 </section>
 <section id="where-documents-go">
 <h2>Where documents go<a class="headerlink" href="#where-documents-go" title="Link to this heading">#</a></h2>
@@ -280,7 +290,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-13 07:35 UTC from <a href="https://github.com/thorwhalen/annals/commit/db6fe21e6cd4e8aeb04a67a0bbda4017aca3211f">db6fe21</a> (main) · annals 0.0.6 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-20 03:12 UTC from <a href="https://github.com/thorwhalen/annals/commit/c2f422a3af6cfafb8b4affe06c99ace3cf06ed6a">c2f422a</a> (main) · annals 0.0.7 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -315,7 +325,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=1fd71caa"></script>
+      <script src="_static/documentation_options.js?v=bbaf98b3"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

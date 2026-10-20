@@ -9,6 +9,7 @@ annals.target
    .. autosummary::
    
       RECORD_SEP
+      LOCK_NOTE
    
    .. rubric:: Functions
 

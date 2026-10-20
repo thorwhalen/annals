@@ -9,7 +9,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](#annals.tools.configure)(\*[, target, base_url, to])             | Write the publisher config (where to publish, what link to print) and show it.     |
+| [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox])     | Write the publisher config (where to publish, what link to print) and show it.     |
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
 | [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])    | Copy documents or groups to a named target, keeping their ids; print the new link. |
 | [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.          |
@@ -22,18 +22,21 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                          |
 | [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                    |
 
-### annals.tools.configure(, target=None, base_url=None, to=None)
+### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False)
 
 Write the publisher config (where to publish, what link to print) and show it.
-
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### Example
 
 `annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals`.
 `--to NAME` saves the target and base url as a named target (`annals publish --to NAME`)
-and leaves the default alone. With no arguments, shows the resolved settings without writing.
+and leaves the default alone. `--outbox` marks the target as an outbox: a directory
+the server pulls and empties (it cannot be written to from here), so replacements are
+left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
+edit of the file turns it off). With no arguments, shows the resolved settings without writing.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.tools.copy(refs, , to, source=None, target=None, base_url=None)
 
@@ -84,7 +87,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -96,7 +99,10 @@ names a group to create from the published documents; the reply then carries
 printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `to` publishes to a named target of the config file (`[targets.NAME]`, see
-`annals configure --to`) instead of the default one.
+`annals configure --to`) instead of the default one. `replace` (a document’s link or
+id) publishes ONE path as a new version of that document: the link stays the same, the
+page shows the new version and offers the earlier ones. That is how a living page (a
+guide, a status page) keeps one link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

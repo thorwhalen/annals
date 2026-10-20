@@ -7,6 +7,7 @@
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
     <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -95,6 +96,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.config.Settings"><code class="docutils literal notranslate"><span class="pre">Settings</span></code></a><ul>
 <li><a class="reference internal" href="#annals.config.Settings.as_dict"><code class="docutils literal notranslate"><span class="pre">Settings.as_dict()</span></code></a></li>
 <li><a class="reference internal" href="#annals.config.Settings.configured"><code class="docutils literal notranslate"><span class="pre">Settings.configured</span></code></a></li>
+<li><a class="reference internal" href="#annals.config.Settings.outbox"><code class="docutils literal notranslate"><span class="pre">Settings.outbox</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#annals.config.default_config_path"><code class="docutils literal notranslate"><span class="pre">default_config_path()</span></code></a></li>
@@ -159,6 +161,10 @@ local defaults (publish into the local data dir, link to a local <code class="do
 file holds them as <code class="docutils literal notranslate"><span class="pre">[targets.NAME]</span></code> tables with the same two keys; <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--to</span>
 <span class="pre">NAME</span> <span class="pre">--target</span> <span class="pre">...</span> <span class="pre">--base-url</span> <span class="pre">...</span></code> writes one. <code class="docutils literal notranslate"><span class="pre">to</span></code> picks it over the environment and the
 file’s default, and explicit <code class="docutils literal notranslate"><span class="pre">target</span></code>/<code class="docutils literal notranslate"><span class="pre">base_url</span></code> arguments still win over <code class="docutils literal notranslate"><span class="pre">to</span></code>.</p>
+<p>A third, <code class="docutils literal notranslate"><span class="pre">outbox</span></code>, is true for a target another machine pulls and empties (the server
+fetches documents from it rather than being written to): a replacement published there
+travels as it is and is applied where it lands (see <a class="reference internal" href="annals.store.html#module-annals.store" title="annals.store"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.store</span></code></a>). <code class="docutils literal notranslate"><span class="pre">ANNALS_OUTBOX</span></code>
+overrides it.</p>
 <p>The server side has two knobs of its own. <code class="docutils literal notranslate"><span class="pre">ANNALS_DATA_DIR</span></code> is the directory the API
 reads. It defaults to <code class="docutils literal notranslate"><span class="pre">~/.local/share/annals</span></code>, which is also the default publish target,
 so with no configuration at all <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span></code> and <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code> meet in the same
@@ -200,7 +206,7 @@ read in place (<code class="docutils literal notranslate"><span class="pre">ledg
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.config.Settings" title="annals.config.Settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Settings</span></code></a>(target, base_url[, configured])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.config.Settings" title="annals.config.Settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Settings</span></code></a>(target, base_url[, configured, outbox])</p></td>
 <td><p>Where to publish and what link to print.</p></td>
 </tr>
 </tbody>
@@ -219,7 +225,7 @@ read in place (<code class="docutils literal notranslate"><span class="pre">ledg
 
 <dl class="py class">
 <dt class="sig sig-object py" id="annals.config.Settings">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">Settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configured</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#Settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.Settings" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">Settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configured</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#Settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.Settings" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Where to publish and what link to print. See the module docstring for precedence.</p>
 <dl class="field-list simple">
@@ -245,6 +251,12 @@ in the local data dir and the link points at a local server, which is rarely mea
 <dd class="field-odd"><p>False when nothing (argument, env, config file) named a target</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="annals.config.Settings.outbox">
+<span class="sig-name descname"><span class="pre">outbox</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#annals.config.Settings.outbox" title="Link to this definition">#</a></dt>
+<dd><p>the target is pulled and emptied by another machine; replacements apply there</p>
 </dd></dl>
 
 </dd></dl>
@@ -273,7 +285,7 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.config.load_settings">
-<span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">load_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#load_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.load_settings" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.config.</span></span><span class="sig-name descname"><span class="pre">load_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#load_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.config.load_settings" title="Link to this definition">#</a></dt>
 <dd><p>Resolve settings: arguments, then <code class="docutils literal notranslate"><span class="pre">to</span></code>, env, the config file, then local defaults.</p>
 <p><code class="docutils literal notranslate"><span class="pre">to</span></code> names a <code class="docutils literal notranslate"><span class="pre">[targets.NAME]</span></code> table of the config file; it replaces the environment
 and the file’s default target for this call (explicit arguments still win).</p>
@@ -351,7 +363,7 @@ way the other tables are kept.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=1fd71caa"></script>
+      <script src="../_static/documentation_options.js?v=bbaf98b3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

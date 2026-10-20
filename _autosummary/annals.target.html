@@ -7,6 +7,7 @@
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
     <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
     <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -91,6 +92,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.target.LOCK_NOTE"><code class="docutils literal notranslate"><span class="pre">LOCK_NOTE</span></code></a></li>
 <li><a class="reference internal" href="#annals.target.LocalTarget"><code class="docutils literal notranslate"><span class="pre">LocalTarget</span></code></a><ul>
 <li><a class="reference internal" href="#annals.target.LocalTarget.local_path"><code class="docutils literal notranslate"><span class="pre">LocalTarget.local_path()</span></code></a></li>
 </ul>
@@ -98,7 +100,10 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.target.RECORD_SEP"><code class="docutils literal notranslate"><span class="pre">RECORD_SEP</span></code></a></li>
 <li><a class="reference internal" href="#annals.target.SshTarget"><code class="docutils literal notranslate"><span class="pre">SshTarget</span></code></a></li>
 <li><a class="reference internal" href="#annals.target.Target"><code class="docutils literal notranslate"><span class="pre">Target</span></code></a><ul>
+<li><a class="reference internal" href="#annals.target.Target.file_sizes"><code class="docutils literal notranslate"><span class="pre">Target.file_sizes()</span></code></a></li>
 <li><a class="reference internal" href="#annals.target.Target.local_path"><code class="docutils literal notranslate"><span class="pre">Target.local_path()</span></code></a></li>
+<li><a class="reference internal" href="#annals.target.Target.make_lock"><code class="docutils literal notranslate"><span class="pre">Target.make_lock()</span></code></a></li>
+<li><a class="reference internal" href="#annals.target.Target.move"><code class="docutils literal notranslate"><span class="pre">Target.move()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#annals.target.check_rel"><code class="docutils literal notranslate"><span class="pre">check_rel()</span></code></a></li>
@@ -162,6 +167,9 @@ endpoint) is the declared replacement for the ssh one and is not built yet.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.target.RECORD_SEP" title="annals.target.RECORD_SEP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RECORD_SEP</span></code></a></p></td>
 <td><p>Separator between concatenated meta.json files when reading many at once over ssh.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.target.LOCK_NOTE" title="annals.target.LOCK_NOTE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LOCK_NOTE</span></code></a></p></td>
+<td><p>the note a lock directory is created with (see <a class="reference internal" href="#annals.target.Target.make_lock" title="annals.target.Target.make_lock"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Target.make_lock()</span></code></a>)</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -194,6 +202,12 @@ endpoint) is the declared replacement for the ssh one and is not built yet.</p>
 </tbody>
 </table>
 </div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.target.LOCK_NOTE">
+<span class="sig-prename descclassname"><span class="pre">annals.target.</span></span><span class="sig-name descname"><span class="pre">LOCK_NOTE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'lock.json'</span></span><a class="headerlink" href="#annals.target.LOCK_NOTE" title="Link to this definition">#</a></dt>
+<dd><p>the note a lock directory is created with (see <a class="reference internal" href="#annals.target.Target.make_lock" title="annals.target.Target.make_lock"><code class="xref py py-meth docutils literal notranslate"><span class="pre">Target.make_lock()</span></code></a>)</p>
+</dd></dl>
+
 <dl class="py class">
 <dt class="sig sig-object py" id="annals.target.LocalTarget">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.target.</span></span><span class="sig-name descname"><span class="pre">LocalTarget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/target.html#LocalTarget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.target.LocalTarget" title="Link to this definition">#</a></dt>
@@ -207,7 +221,7 @@ endpoint) is the declared replacement for the ssh one and is not built yet.</p>
 <dd><p><code class="docutils literal notranslate"><span class="pre">rel</span></code> under the root, resolved; <code class="docutils literal notranslate"><span class="pre">None</span></code> if it escapes the root (a symlink).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -235,12 +249,46 @@ endpoint) is the declared replacement for the ssh one and is not built yet.</p>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
 <p>What the store needs from wherever the documents live.</p>
 <dl class="py method">
+<dt class="sig sig-object py" id="annals.target.Target.file_sizes">
+<span class="sig-name descname"><span class="pre">file_sizes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/target.html#Target.file_sizes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.target.Target.file_sizes" title="Link to this definition">#</a></dt>
+<dd><p>The byte size of each of <code class="docutils literal notranslate"><span class="pre">files</span></code> under <code class="docutils literal notranslate"><span class="pre">rel</span></code> that is a regular file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="annals.target.Target.local_path">
 <span class="sig-name descname"><span class="pre">local_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/target.html#Target.local_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.target.Target.local_path" title="Link to this definition">#</a></dt>
 <dd><p>The file on this machine’s disk, when the documents are local (to stream it).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.target.Target.make_lock">
+<span class="sig-name descname"><span class="pre">make_lock</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">note</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/target.html#Target.make_lock"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.target.Target.make_lock" title="Link to this definition">#</a></dt>
+<dd><p>Create directory <code class="docutils literal notranslate"><span class="pre">rel</span></code> holding <code class="docutils literal notranslate"><span class="pre">lock.json</span></code> (<code class="docutils literal notranslate"><span class="pre">note</span></code>) as one step; fail if
+it exists. An atomic test-and-set: a lock that is never seen without its note.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.target.Target.move">
+<span class="sig-name descname"><span class="pre">move</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel_src</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel_dst</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/target.html#Target.move"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.target.Target.move" title="Link to this definition">#</a></dt>
+<dd><p>Rename; fails when the source is gone or the destination already exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -311,7 +359,7 @@ endpoint) is the declared replacement for the ssh one and is not built yet.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=1fd71caa"></script>
+      <script src="../_static/documentation_options.js?v=bbaf98b3"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

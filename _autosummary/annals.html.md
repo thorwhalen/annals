@@ -9,7 +9,7 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 ### Functions
 
-| [`configure`](#annals.configure)(\*[, target, base_url, to])             | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
+| [`configure`](#annals.configure)(\*[, target, base_url, to, outbox])     | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
 |----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`group`](#annals.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
 | [`groups`](#annals.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                                                                                                        |
@@ -23,13 +23,13 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 ### Classes
 
-| [`DocStore`](#annals.DocStore)(target)                         | Publish, list, read, trash, restore and group documents on a `Target`.      |
-|-------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| [`LocalTarget`](#annals.LocalTarget)(root)                        | A directory on this machine.                                                |
-| [`Settings`](#annals.Settings)(target, base_url[, configured]) | Where to publish and what link to print.                                    |
-| [`SshTarget`](#annals.SshTarget)(host, root)                    | `host:path` on another machine, via the system ssh and rsync in batch mode. |
+| [`DocStore`](#annals.DocStore)(target, \*[, settle])                   | Publish, list, read, trash, restore and group documents on a `Target`.      |
+|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`LocalTarget`](#annals.LocalTarget)(root)                                | A directory on this machine.                                                |
+| [`Settings`](#annals.Settings)(target, base_url[, configured, outbox]) | Where to publish and what link to print.                                    |
+| [`SshTarget`](#annals.SshTarget)(host, root)                            | `host:path` on another machine, via the system ssh and rsync in batch mode. |
 
-### *class* annals.DocStore(target)
+### *class* annals.DocStore(target, , settle=True)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -42,6 +42,13 @@ Append ids to an existing group, keeping order and skipping duplicates.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+#### doc_rel(doc_id)
+
+The directory of a document (or of a version, `<id>@<n>`) under the data root.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 #### group(gid)
 
 One group, by id.
@@ -51,7 +58,10 @@ One group, by id.
 
 #### list(, trash=False)
 
-Every document’s meta, newest first (ids sort by time; `created` breaks ties).
+Every document’s meta, last changed first (`updated`, else `created`).
+
+Pending replacements are applied first (when this store settles). One whose
+document is not here is listed under its own id, so it is never out of sight.
 
 * **Return type:**
   [`list`](#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -70,14 +80,27 @@ Create (or overwrite) a group: a titled, ordered list of document ids.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-#### meta(doc_id)
+#### meta(doc_id, , settle=True)
 
 One document’s meta; `in_trash` says which side of the bin it is on.
+
+`<id>@<n>` is version `n`: its own meta, with `version_of` naming the document.
+A pending replacement, read by its own id, says `pending`. `settle=False`
+skips applying pending replacements (for a hot path such as a raw file).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'))
+#### pending(doc_id=None, , names=None)
+
+Pending replacements (directory names), oldest first; of one document if given.
+
+`names`: the listing of `docs/` when the caller already has it.
+
+* **Return type:**
+  [`list`](#annals.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None)
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -85,6 +108,11 @@ One markdown or html file is the common case. A directory is published whole, wi
 `index.html` (or the first renderable file) as the page shown. `text` publishes a
 string as `filename` instead of reading sources. `exclude` lists glob patterns
 skipped inside a directory (hidden files and caches by default; `()` keeps all).
+
+`replace` (a document id) publishes a new version of that document instead of a
+new document: same id, same link, the current files kept as a version. It is
+written as a pending replacement and applied at once when this store settles
+(otherwise where the store is read). The returned meta says `pending` until then.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -117,12 +145,29 @@ Case-insensitive match of every query word against title, tags, excerpt, source.
 * **Return type:**
   [`list`](#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+#### settle(doc_id=None)
+
+Apply pending replacements (of one document, or all); return the ids replaced.
+
+A replacement whose document is not here yet (it is still on its way, or the
+document was purged) stays pending and is listed under its own id.
+
+* **Return type:**
+  [`list`](#annals.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
 #### trash(doc_id)
 
 Move a document into the bin (idempotent).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### versions(doc_id)
+
+Every version of a document, oldest first, the current one last.
+
+* **Return type:**
+  [`list`](#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 ### *class* annals.LocalTarget(root)
 
@@ -137,7 +182,7 @@ A directory on this machine.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### *class* annals.Settings(target, base_url, configured=True)
+### *class* annals.Settings(target, base_url, configured=True, outbox=False)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -158,24 +203,31 @@ in the local data dir and the link points at a local server, which is rarely mea
 * **Type:**
   False when nothing (argument, env, config file) named a target
 
+#### outbox *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= False*
+
+the target is pulled and emptied by another machine; replacements apply there
+
 ### *class* annals.SshTarget(host, root)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### annals.configure(, target=None, base_url=None, to=None)
+### annals.configure(, target=None, base_url=None, to=None, outbox=False)
 
 Write the publisher config (where to publish, what link to print) and show it.
-
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### Example
 
 `annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals`.
 `--to NAME` saves the target and base url as a named target (`annals publish --to NAME`)
-and leaves the default alone. With no arguments, shows the resolved settings without writing.
+and leaves the default alone. `--outbox` marks the target as an outbox: a directory
+the server pulls and empties (it cannot be written to from here), so replacements are
+left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
+edit of the file turns it off). With no arguments, shows the resolved settings without writing.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.group(title, doc_ids, , target=None, base_url=None, to=None)
 
@@ -191,7 +243,7 @@ List groups, newest first.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.load_settings(, target=None, base_url=None, to=None, config_path=None)
+### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 
@@ -217,7 +269,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -229,7 +281,10 @@ names a group to create from the published documents; the reply then carries
 printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `to` publishes to a named target of the config file (`[targets.NAME]`, see
-`annals configure --to`) instead of the default one.
+`annals configure --to`) instead of the default one. `replace` (a document’s link or
+id) publishes ONE path as a new version of that document: the link stays the same, the
+page shows the new version and offers the earlier ones. That is how a living page (a
+guide, a status page) keeps one link.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

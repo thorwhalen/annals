@@ -7,6 +7,7 @@
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="_static/pygments.css?v=d88b86f9" />
     <link rel="stylesheet" type="text/css" href="_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
     <link media="print" rel="stylesheet" type="text/css" href="_static/print.css?v=20ff2c19" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -137,7 +138,7 @@ machine-readable copies of this documentation.</p>
 <p>Skills are folders holding a <code class="docutils literal notranslate"><span class="pre">SKILL.md</span></code> (the <a class="reference external" href="https://agentskills.io">Agent Skills</a> format): a description that tells an agent when to use it and a body with the procedure. Install one into your agent with <code class="docutils literal notranslate"><span class="pre">gh</span> <span class="pre">skill</span></code> (any host: <code class="docutils literal notranslate"><span class="pre">--agent</span> <span class="pre">claude-code</span></code>, <code class="docutils literal notranslate"><span class="pre">copilot</span></code>, <code class="docutils literal notranslate"><span class="pre">cursor</span></code>, <code class="docutils literal notranslate"><span class="pre">codex</span></code>, <code class="docutils literal notranslate"><span class="pre">gemini</span></code>), or use the copy bundled in the wheel.</p>
 <section id="annals-publish">
 <h3><code class="docutils literal notranslate"><span class="pre">annals-publish</span></code><a class="headerlink" href="#annals-publish" title="Link to this heading">#</a></h3>
-<p>Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner’s private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to “publish this”, “post it to my annals”, “put it where I can read it on my phone”, “give me a link to that report”, “show me the images”, “where can I see the renders”, “share the page with me”, or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.</p>
+<p>Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner’s private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to “publish this”, “post it to my annals”, “put it where I can read it on my phone”, “give me a link to that report”, “show me the images”, “where can I see the renders”, “share the page with me”, or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers living pages (one link that stays current: <code class="docutils literal notranslate"><span class="pre">--replace</span></code>), grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">gh<span class="w"> </span>skill<span class="w"> </span>install<span class="w"> </span>thorwhalen/annals<span class="w"> </span>annals-publish<span class="w"> </span>--agent<span class="w"> </span>claude-code
 </span></pre></div>
 </div>
@@ -189,7 +190,7 @@ machine-readable copies of this documentation.</p>
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=1fd71caa"></script>
+      <script src="_static/documentation_options.js?v=bbaf98b3"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

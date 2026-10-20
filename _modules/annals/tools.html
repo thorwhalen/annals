@@ -7,6 +7,7 @@
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d88b86f9" />
     <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
     <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
     <link media="print" rel="stylesheet" type="text/css" href="../../_static/print.css?v=20ff2c19" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -137,14 +138,14 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="14"><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
 </span><span data-line="15">
 </span><span data-line="16"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">Settings</span><span class="p">,</span> <span class="n">default_data_dir</span><span class="p">,</span> <span class="n">load_settings</span><span class="p">,</span> <span class="n">write_config</span>
-</span><span data-line="17"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">check_id</span>
+</span><span data-line="17"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">check_id</span><span class="p">,</span> <span class="n">split_version</span>
 </span><span data-line="18"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.target</span><span class="w"> </span><span class="kn">import</span> <span class="n">parse_target</span>
 </span><span data-line="19">
 </span><span data-line="20"><span class="n">_dispatch_funcs</span><span class="p">:</span> <span class="nb">list</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># filled at the bottom; the SSOT list every surface reads</span>
 </span><span data-line="21">
 </span><span data-line="22">
 </span><span data-line="23"><span class="k">def</span><span class="w"> </span><span class="nf">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DocStore</span><span class="p">:</span>
-</span><span data-line="24">    <span class="k">return</span> <span class="n">DocStore</span><span class="p">(</span><span class="n">parse_target</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="p">))</span>
+</span><span data-line="24">    <span class="k">return</span> <span class="n">DocStore</span><span class="p">(</span><span class="n">parse_target</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="p">),</span> <span class="n">settle</span><span class="o">=</span><span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span>
 </span><span data-line="25">
 </span><span data-line="26">
 </span><span data-line="27"><span class="k">def</span><span class="w"> </span><span class="nf">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -185,372 +186,401 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="60">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="61">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span data-line="62">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="63"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="64"><span class="w">    </span><span class="sd">"""Publish one document and print its link; several paths become several documents.</span>
-</span><span data-line="65">
-</span><span data-line="66"><span class="sd">    ``paths``: files of any kind (markdown, html, images, video, audio, pdf, text), a</span>
-</span><span data-line="67"><span class="sd">    directory (one document: an ``index.html`` or single page with its assets, else a</span>
-</span><span data-line="68"><span class="sd">    gallery of everything in it), or ``-`` for stdin (markdown). ``tags`` is comma separated. ``group``</span>
-</span><span data-line="69"><span class="sd">    names a group to create from the published documents; the reply then carries</span>
-</span><span data-line="70"><span class="sd">    ``group_url`` too. ``add_to`` appends them to an existing group instead (its id, as</span>
-</span><span data-line="71"><span class="sd">    printed in a group link), so a second batch lands under the link the owner already has. ``session`` records who published (the source shown on the page). A directory skips</span>
-</span><span data-line="72"><span class="sd">    hidden files and caches (``.*``, ``__pycache__``, ``*.pyc``) unless ``all_files``.</span>
-</span><span data-line="73"><span class="sd">    ``to`` publishes to a named target of the config file (``[targets.NAME]``, see</span>
-</span><span data-line="74"><span class="sd">    ``annals configure --to``) instead of the default one.</span>
-</span><span data-line="75"><span class="sd">    """</span>
-</span><span data-line="76">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="77">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
-</span><span data-line="78">    <span class="n">tag_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tags</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
-</span><span data-line="79">    <span class="n">source</span> <span class="o">=</span> <span class="n">_default_source</span><span class="p">()</span>
-</span><span data-line="80">    <span class="k">if</span> <span class="n">session</span><span class="p">:</span>
-</span><span data-line="81">        <span class="n">source</span><span class="p">[</span><span class="s2">"session"</span><span class="p">]</span> <span class="o">=</span> <span class="n">session</span>
-</span><span data-line="82">    <span class="n">docs</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="83">    <span class="n">paths</span> <span class="o">=</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
-</span><span data-line="84">    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
-</span><span data-line="85">        <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="s2">"-"</span><span class="p">:</span>
-</span><span data-line="86">            <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-</span><span data-line="87">
-</span><span data-line="88">            <span class="n">text</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-</span><span data-line="89">            <span class="n">meta</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tag_list</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
-</span><span data-line="90">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="91">            <span class="n">meta</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
-</span><span data-line="92">                <span class="n">Path</span><span class="p">(</span><span class="n">p</span><span class="p">),</span>
-</span><span data-line="93">                <span class="n">title</span><span class="o">=</span><span class="n">title</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="94">                <span class="n">tags</span><span class="o">=</span><span class="n">tag_list</span><span class="p">,</span>
-</span><span data-line="95">                <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
-</span><span data-line="96">                <span class="o">**</span><span class="p">({</span><span class="s2">"exclude"</span><span class="p">:</span> <span class="p">()}</span> <span class="k">if</span> <span class="n">all_files</span> <span class="k">else</span> <span class="p">{}),</span>
-</span><span data-line="97">            <span class="p">)</span>
-</span><span data-line="98">        <span class="n">docs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="99">            <span class="p">{</span>
-</span><span data-line="100">                <span class="s2">"id"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="101">                <span class="s2">"title"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
-</span><span data-line="102">                <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
-</span><span data-line="103">            <span class="p">}</span>
-</span><span data-line="104">        <span class="p">)</span>
-</span><span data-line="105">    <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">{</span><span class="s2">"docs"</span><span class="p">:</span> <span class="n">docs</span><span class="p">}</span>
-</span><span data-line="106">    <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">configured</span><span class="p">:</span>
-</span><span data-line="107">        <span class="n">result</span><span class="p">[</span><span class="s2">"warning"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="108">            <span class="sa">f</span><span class="s2">"no annals config: published to the local </span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2"> and linked to a local "</span>
-</span><span data-line="109">            <span class="sa">f</span><span class="s2">"server. To publish where the owner reads, run `annals configure --target "</span>
-</span><span data-line="110">            <span class="sa">f</span><span class="s2">"host:/path --base-url https://.../annals` (see `annals configure`)."</span>
-</span><span data-line="111">        <span class="p">)</span>
-</span><span data-line="112">    <span class="k">if</span> <span class="n">group</span> <span class="ow">and</span> <span class="n">add_to</span><span class="p">:</span>
-</span><span data-line="113">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="114">            <span class="s2">"pass --group (a new group) or --add-to (an existing one), not both"</span>
-</span><span data-line="115">        <span class="p">)</span>
-</span><span data-line="116">    <span class="k">if</span> <span class="n">group</span> <span class="ow">or</span> <span class="n">add_to</span><span class="p">:</span>
-</span><span data-line="117">        <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">]</span>
-</span><span data-line="118">        <span class="n">g</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">add_to_group</span><span class="p">(</span><span class="n">add_to</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span> <span class="k">if</span> <span class="n">add_to</span> <span class="k">else</span> <span class="n">store</span><span class="o">.</span><span class="n">make_group</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
-</span><span data-line="119">        <span class="n">result</span><span class="p">[</span><span class="s2">"group_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
-</span><span data-line="120">        <span class="n">result</span><span class="p">[</span><span class="s2">"group_url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
-</span><span data-line="121">        <span class="n">result</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"group_url"</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">result</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span>
-</span><span data-line="122">    <span class="k">return</span> <span class="n">result</span></div>
+</span><span data-line="63">    <span class="n">replace</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="64"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="65"><span class="w">    </span><span class="sd">"""Publish one document and print its link; several paths become several documents.</span>
+</span><span data-line="66">
+</span><span data-line="67"><span class="sd">    ``paths``: files of any kind (markdown, html, images, video, audio, pdf, text), a</span>
+</span><span data-line="68"><span class="sd">    directory (one document: an ``index.html`` or single page with its assets, else a</span>
+</span><span data-line="69"><span class="sd">    gallery of everything in it), or ``-`` for stdin (markdown). ``tags`` is comma separated. ``group``</span>
+</span><span data-line="70"><span class="sd">    names a group to create from the published documents; the reply then carries</span>
+</span><span data-line="71"><span class="sd">    ``group_url`` too. ``add_to`` appends them to an existing group instead (its id, as</span>
+</span><span data-line="72"><span class="sd">    printed in a group link), so a second batch lands under the link the owner already has. ``session`` records who published (the source shown on the page). A directory skips</span>
+</span><span data-line="73"><span class="sd">    hidden files and caches (``.*``, ``__pycache__``, ``*.pyc``) unless ``all_files``.</span>
+</span><span data-line="74"><span class="sd">    ``to`` publishes to a named target of the config file (``[targets.NAME]``, see</span>
+</span><span data-line="75"><span class="sd">    ``annals configure --to``) instead of the default one. ``replace`` (a document's link or</span>
+</span><span data-line="76"><span class="sd">    id) publishes ONE path as a new version of that document: the link stays the same, the</span>
+</span><span data-line="77"><span class="sd">    page shows the new version and offers the earlier ones. That is how a living page (a</span>
+</span><span data-line="78"><span class="sd">    guide, a status page) keeps one link.</span>
+</span><span data-line="79"><span class="sd">    """</span>
+</span><span data-line="80">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="81">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</span><span data-line="82">    <span class="n">tag_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tags</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+</span><span data-line="83">    <span class="n">source</span> <span class="o">=</span> <span class="n">_default_source</span><span class="p">()</span>
+</span><span data-line="84">    <span class="k">if</span> <span class="n">session</span><span class="p">:</span>
+</span><span data-line="85">        <span class="n">source</span><span class="p">[</span><span class="s2">"session"</span><span class="p">]</span> <span class="o">=</span> <span class="n">session</span>
+</span><span data-line="86">    <span class="n">docs</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="87">    <span class="n">paths</span> <span class="o">=</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span>
+</span><span data-line="88">    <span class="n">replace_id</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="89">    <span class="k">if</span> <span class="n">replace</span><span class="p">:</span>
+</span><span data-line="90">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="91">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"--replace takes one path: the new version of one document"</span><span class="p">)</span>
+</span><span data-line="92">        <span class="n">kind</span><span class="p">,</span> <span class="n">replace_id</span> <span class="o">=</span> <span class="n">_parse_ref</span><span class="p">(</span><span class="n">replace</span><span class="p">)</span>
+</span><span data-line="93">        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"group"</span><span class="p">:</span>
+</span><span data-line="94">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"--replace names a document, not a group"</span><span class="p">)</span>
+</span><span data-line="95">    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">paths</span><span class="p">:</span>
+</span><span data-line="96">        <span class="k">if</span> <span class="n">p</span> <span class="o">==</span> <span class="s2">"-"</span><span class="p">:</span>
+</span><span data-line="97">            <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+</span><span data-line="98">
+</span><span data-line="99">            <span class="n">text</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+</span><span data-line="100">            <span class="n">meta</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+</span><span data-line="101">                <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tag_list</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace_id</span>
+</span><span data-line="102">            <span class="p">)</span>
+</span><span data-line="103">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="104">            <span class="n">meta</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+</span><span data-line="105">                <span class="n">Path</span><span class="p">(</span><span class="n">p</span><span class="p">),</span>
+</span><span data-line="106">                <span class="n">title</span><span class="o">=</span><span class="n">title</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="107">                <span class="n">tags</span><span class="o">=</span><span class="n">tag_list</span><span class="p">,</span>
+</span><span data-line="108">                <span class="n">source</span><span class="o">=</span><span class="n">source</span><span class="p">,</span>
+</span><span data-line="109">                <span class="n">replace</span><span class="o">=</span><span class="n">replace_id</span><span class="p">,</span>
+</span><span data-line="110">                <span class="o">**</span><span class="p">({</span><span class="s2">"exclude"</span><span class="p">:</span> <span class="p">()}</span> <span class="k">if</span> <span class="n">all_files</span> <span class="k">else</span> <span class="p">{}),</span>
+</span><span data-line="111">            <span class="p">)</span>
+</span><span data-line="112">        <span class="n">docs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="113">            <span class="p">{</span>
+</span><span data-line="114">                <span class="s2">"id"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="115">                <span class="s2">"title"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+</span><span data-line="116">                <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
+</span><span data-line="117">            <span class="p">}</span>
+</span><span data-line="118">        <span class="p">)</span>
+</span><span data-line="119">    <span class="n">result</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">{</span><span class="s2">"docs"</span><span class="p">:</span> <span class="n">docs</span><span class="p">}</span>
+</span><span data-line="120">    <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">configured</span><span class="p">:</span>
+</span><span data-line="121">        <span class="n">result</span><span class="p">[</span><span class="s2">"warning"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="122">            <span class="sa">f</span><span class="s2">"no annals config: published to the local </span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2"> and linked to a local "</span>
+</span><span data-line="123">            <span class="sa">f</span><span class="s2">"server. To publish where the owner reads, run `annals configure --target "</span>
+</span><span data-line="124">            <span class="sa">f</span><span class="s2">"host:/path --base-url https://.../annals` (see `annals configure`)."</span>
+</span><span data-line="125">        <span class="p">)</span>
+</span><span data-line="126">    <span class="k">if</span> <span class="n">group</span> <span class="ow">and</span> <span class="n">add_to</span><span class="p">:</span>
+</span><span data-line="127">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="128">            <span class="s2">"pass --group (a new group) or --add-to (an existing one), not both"</span>
+</span><span data-line="129">        <span class="p">)</span>
+</span><span data-line="130">    <span class="k">if</span> <span class="n">group</span> <span class="ow">or</span> <span class="n">add_to</span><span class="p">:</span>
+</span><span data-line="131">        <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">]</span>
+</span><span data-line="132">        <span class="n">g</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">add_to_group</span><span class="p">(</span><span class="n">add_to</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span> <span class="k">if</span> <span class="n">add_to</span> <span class="k">else</span> <span class="n">store</span><span class="o">.</span><span class="n">make_group</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">ids</span><span class="p">)</span>
+</span><span data-line="133">        <span class="n">result</span><span class="p">[</span><span class="s2">"group_id"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
+</span><span data-line="134">        <span class="n">result</span><span class="p">[</span><span class="s2">"group_url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
+</span><span data-line="135">        <span class="n">result</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">"group_url"</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="n">result</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span>
+</span><span data-line="136">    <span class="k">return</span> <span class="n">result</span></div>
 
-</span><span data-line="123">
-</span><span data-line="124">
+</span><span data-line="137">
+</span><span data-line="138">
 <div class="viewcode-block" id="ls">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.ls">[docs]</a>
-</span><span data-line="125"><span class="k">def</span><span class="w"> </span><span class="nf">ls</span><span class="p">(</span>
-</span><span data-line="126">    <span class="n">q</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-</span><span data-line="127">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="128">    <span class="n">trash</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="129">    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
-</span><span data-line="130">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="131">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="132">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="133"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="134"><span class="w">    </span><span class="sd">"""List documents (newest first), optionally filtered by words or showing the bin.</span>
-</span><span data-line="135">
-</span><span data-line="136"><span class="sd">    ``to`` lists a named target instead of the default one.</span>
-</span><span data-line="137"><span class="sd">    """</span>
-</span><span data-line="138">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="139">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
-</span><span data-line="140">    <span class="n">docs</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">trash</span><span class="o">=</span><span class="n">trash</span><span class="p">)</span> <span class="k">if</span> <span class="n">q</span> <span class="k">else</span> <span class="n">store</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">trash</span><span class="o">=</span><span class="n">trash</span><span class="p">)</span>
-</span><span data-line="141">    <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="142">        <span class="s2">"docs"</span><span class="p">:</span> <span class="p">[</span>
-</span><span data-line="143">            <span class="p">{</span>
-</span><span data-line="144">                <span class="s2">"id"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="145">                <span class="s2">"title"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
-</span><span data-line="146">                <span class="s2">"kind"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">],</span>
-</span><span data-line="147">                <span class="s2">"tags"</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">,</span> <span class="p">[]),</span>
-</span><span data-line="148">                <span class="s2">"created"</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">),</span>
-</span><span data-line="149">                <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
-</span><span data-line="150">            <span class="p">}</span>
-</span><span data-line="151">            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">[:</span><span class="n">limit</span><span class="p">]</span>
-</span><span data-line="152">        <span class="p">],</span>
-</span><span data-line="153">        <span class="s2">"total"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">),</span>
-</span><span data-line="154">    <span class="p">}</span></div>
-
-</span><span data-line="155">
-</span><span data-line="156">
-<div class="viewcode-block" id="show">
-<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.show">[docs]</a>
-</span><span data-line="157"><span class="k">def</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span>
-</span><span data-line="158">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="159">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="160">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="161">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="162">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="163"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="164"><span class="w">    </span><span class="sd">"""A document's metadata and link (``to``: on a named target)."""</span>
-</span><span data-line="165">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="166">    <span class="n">meta</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="167">    <span class="n">meta</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="168">    <span class="k">return</span> <span class="n">meta</span></div>
+</span><span data-line="139"><span class="k">def</span><span class="w"> </span><span class="nf">ls</span><span class="p">(</span>
+</span><span data-line="140">    <span class="n">q</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="141">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="142">    <span class="n">trash</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="143">    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+</span><span data-line="144">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="145">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="146">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="147"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="148"><span class="w">    </span><span class="sd">"""List documents (newest first), optionally filtered by words or showing the bin.</span>
+</span><span data-line="149">
+</span><span data-line="150"><span class="sd">    ``to`` lists a named target instead of the default one.</span>
+</span><span data-line="151"><span class="sd">    """</span>
+</span><span data-line="152">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="153">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</span><span data-line="154">    <span class="n">docs</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">trash</span><span class="o">=</span><span class="n">trash</span><span class="p">)</span> <span class="k">if</span> <span class="n">q</span> <span class="k">else</span> <span class="n">store</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">trash</span><span class="o">=</span><span class="n">trash</span><span class="p">)</span>
+</span><span data-line="155">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="156">        <span class="s2">"docs"</span><span class="p">:</span> <span class="p">[</span>
+</span><span data-line="157">            <span class="p">{</span>
+</span><span data-line="158">                <span class="s2">"id"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="159">                <span class="s2">"title"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+</span><span data-line="160">                <span class="s2">"kind"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">],</span>
+</span><span data-line="161">                <span class="s2">"tags"</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">,</span> <span class="p">[]),</span>
+</span><span data-line="162">                <span class="s2">"created"</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">),</span>
+</span><span data-line="163">                <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
+</span><span data-line="164">            <span class="p">}</span>
+</span><span data-line="165">            <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">[:</span><span class="n">limit</span><span class="p">]</span>
+</span><span data-line="166">        <span class="p">],</span>
+</span><span data-line="167">        <span class="s2">"total"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">),</span>
+</span><span data-line="168">    <span class="p">}</span></div>
 
 </span><span data-line="169">
 </span><span data-line="170">
+<div class="viewcode-block" id="show">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.show">[docs]</a>
+</span><span data-line="171"><span class="k">def</span><span class="w"> </span><span class="nf">show</span><span class="p">(</span>
+</span><span data-line="172">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="173">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="174">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="175">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="176">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="177"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="178"><span class="w">    </span><span class="sd">"""A document's metadata and link (``to``: on a named target)."""</span>
+</span><span data-line="179">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="180">    <span class="n">meta</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="181">    <span class="n">meta</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="182">    <span class="k">return</span> <span class="n">meta</span></div>
+
+</span><span data-line="183">
+</span><span data-line="184">
 <div class="viewcode-block" id="trash">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.trash">[docs]</a>
-</span><span data-line="171"><span class="k">def</span><span class="w"> </span><span class="nf">trash</span><span class="p">(</span>
-</span><span data-line="172">    <span class="n">doc_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="173"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="174"><span class="w">    </span><span class="sd">"""Move documents to the recycle bin (restorable)."""</span>
-</span><span data-line="175">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">))</span>
-</span><span data-line="176">    <span class="k">return</span> <span class="p">{</span><span class="s2">"trashed"</span><span class="p">:</span> <span class="p">[</span><span class="n">store</span><span class="o">.</span><span class="n">trash</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">doc_ids</span><span class="p">)]}</span></div>
+</span><span data-line="185"><span class="k">def</span><span class="w"> </span><span class="nf">trash</span><span class="p">(</span>
+</span><span data-line="186">    <span class="n">doc_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="187"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="188"><span class="w">    </span><span class="sd">"""Move documents to the recycle bin (restorable)."""</span>
+</span><span data-line="189">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">))</span>
+</span><span data-line="190">    <span class="k">return</span> <span class="p">{</span><span class="s2">"trashed"</span><span class="p">:</span> <span class="p">[</span><span class="n">store</span><span class="o">.</span><span class="n">trash</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">doc_ids</span><span class="p">)]}</span></div>
 
-</span><span data-line="177">
-</span><span data-line="178">
+</span><span data-line="191">
+</span><span data-line="192">
 <div class="viewcode-block" id="restore">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.restore">[docs]</a>
-</span><span data-line="179"><span class="k">def</span><span class="w"> </span><span class="nf">restore</span><span class="p">(</span>
-</span><span data-line="180">    <span class="n">doc_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="181"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="182"><span class="w">    </span><span class="sd">"""Bring documents back from the recycle bin."""</span>
-</span><span data-line="183">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">))</span>
-</span><span data-line="184">    <span class="k">return</span> <span class="p">{</span><span class="s2">"restored"</span><span class="p">:</span> <span class="p">[</span><span class="n">store</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">doc_ids</span><span class="p">)]}</span></div>
+</span><span data-line="193"><span class="k">def</span><span class="w"> </span><span class="nf">restore</span><span class="p">(</span>
+</span><span data-line="194">    <span class="n">doc_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="195"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="196"><span class="w">    </span><span class="sd">"""Bring documents back from the recycle bin."""</span>
+</span><span data-line="197">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">))</span>
+</span><span data-line="198">    <span class="k">return</span> <span class="p">{</span><span class="s2">"restored"</span><span class="p">:</span> <span class="p">[</span><span class="n">store</span><span class="o">.</span><span class="n">restore</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">doc_ids</span><span class="p">)]}</span></div>
 
-</span><span data-line="185">
-</span><span data-line="186">
+</span><span data-line="199">
+</span><span data-line="200">
 <div class="viewcode-block" id="group">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.group">[docs]</a>
-</span><span data-line="187"><span class="k">def</span><span class="w"> </span><span class="nf">group</span><span class="p">(</span>
-</span><span data-line="188">    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="189">    <span class="n">doc_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-</span><span data-line="190">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="191">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="192">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="193">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="194"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="195"><span class="w">    </span><span class="sd">"""Make a group (one URL for a set of documents) from existing document ids."""</span>
-</span><span data-line="196">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="197">    <span class="n">g</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">make_group</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">doc_ids</span><span class="p">))</span>
-</span><span data-line="198">    <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="199">        <span class="s2">"id"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="200">        <span class="s2">"title"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
-</span><span data-line="201">        <span class="s2">"docs"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">],</span>
-</span><span data-line="202">        <span class="s2">"url"</span><span class="p">:</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
-</span><span data-line="203">    <span class="p">}</span></div>
+</span><span data-line="201"><span class="k">def</span><span class="w"> </span><span class="nf">group</span><span class="p">(</span>
+</span><span data-line="202">    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="203">    <span class="n">doc_ids</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="204">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="205">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="206">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="207">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="208"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="209"><span class="w">    </span><span class="sd">"""Make a group (one URL for a set of documents) from existing document ids."""</span>
+</span><span data-line="210">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="211">    <span class="n">g</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">make_group</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">doc_ids</span><span class="p">))</span>
+</span><span data-line="212">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="213">        <span class="s2">"id"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="214">        <span class="s2">"title"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+</span><span data-line="215">        <span class="s2">"docs"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">],</span>
+</span><span data-line="216">        <span class="s2">"url"</span><span class="p">:</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
+</span><span data-line="217">    <span class="p">}</span></div>
 
-</span><span data-line="204">
-</span><span data-line="205">
+</span><span data-line="218">
+</span><span data-line="219">
 <div class="viewcode-block" id="groups">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.groups">[docs]</a>
-</span><span data-line="206"><span class="k">def</span><span class="w"> </span><span class="nf">groups</span><span class="p">(</span>
-</span><span data-line="207">    <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="208"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="209"><span class="w">    </span><span class="sd">"""List groups, newest first."""</span>
-</span><span data-line="210">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="211">    <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="212">        <span class="s2">"groups"</span><span class="p">:</span> <span class="p">[</span>
-</span><span data-line="213">            <span class="p">{</span>
-</span><span data-line="214">                <span class="s2">"id"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="215">                <span class="s2">"title"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
-</span><span data-line="216">                <span class="s2">"n"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">]),</span>
-</span><span data-line="217">                <span class="s2">"url"</span><span class="p">:</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
-</span><span data-line="218">            <span class="p">}</span>
-</span><span data-line="219">            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">list_groups</span><span class="p">()</span>
-</span><span data-line="220">        <span class="p">]</span>
-</span><span data-line="221">    <span class="p">}</span></div>
+</span><span data-line="220"><span class="k">def</span><span class="w"> </span><span class="nf">groups</span><span class="p">(</span>
+</span><span data-line="221">    <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="222"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="223"><span class="w">    </span><span class="sd">"""List groups, newest first."""</span>
+</span><span data-line="224">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="225">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="226">        <span class="s2">"groups"</span><span class="p">:</span> <span class="p">[</span>
+</span><span data-line="227">            <span class="p">{</span>
+</span><span data-line="228">                <span class="s2">"id"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="229">                <span class="s2">"title"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+</span><span data-line="230">                <span class="s2">"n"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">]),</span>
+</span><span data-line="231">                <span class="s2">"url"</span><span class="p">:</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
+</span><span data-line="232">            <span class="p">}</span>
+</span><span data-line="233">            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">list_groups</span><span class="p">()</span>
+</span><span data-line="234">        <span class="p">]</span>
+</span><span data-line="235">    <span class="p">}</span></div>
 
-</span><span data-line="222">
-</span><span data-line="223">
+</span><span data-line="236">
+</span><span data-line="237">
 <div class="viewcode-block" id="configure">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.configure">[docs]</a>
-</span><span data-line="224"><span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span>
-</span><span data-line="225">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="226">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="227">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="228">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="229"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="230"><span class="w">    </span><span class="sd">"""Write the publisher config (where to publish, what link to print) and show it.</span>
-</span><span data-line="231">
-</span><span data-line="232"><span class="sd">    Example: ``annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals``.</span>
-</span><span data-line="233"><span class="sd">    ``--to NAME`` saves the target and base url as a named target (``annals publish --to NAME``)</span>
-</span><span data-line="234"><span class="sd">    and leaves the default alone. With no arguments, shows the resolved settings without writing.</span>
-</span><span data-line="235"><span class="sd">    """</span>
-</span><span data-line="236">    <span class="k">if</span> <span class="n">to</span> <span class="ow">and</span> <span class="p">(</span><span class="n">target</span> <span class="ow">or</span> <span class="n">base_url</span><span class="p">):</span>
-</span><span data-line="237">        <span class="c1"># Resolve a partly-given named target against what is already saved under it.</span>
-</span><span data-line="238">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="239">            <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="240">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-</span><span data-line="241">            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">target</span> <span class="ow">and</span> <span class="n">base_url</span><span class="p">):</span>
-</span><span data-line="242">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="243">                    <span class="sa">f</span><span class="s2">"a new named target needs both --target and --base-url (</span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2"> is not saved yet)"</span>
-</span><span data-line="244">                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
-</span><span data-line="245">            <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">)</span>
-</span><span data-line="246">    <span class="k">else</span><span class="p">:</span>
-</span><span data-line="247">        <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="248">    <span class="n">out</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
-</span><span data-line="249">    <span class="k">if</span> <span class="n">target</span> <span class="ow">or</span> <span class="n">base_url</span><span class="p">:</span>
-</span><span data-line="250">        <span class="n">out</span><span class="p">[</span><span class="s2">"config_path"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">write_config</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">))</span>
-</span><span data-line="251">    <span class="n">out</span><span class="p">[</span><span class="s2">"local_data_dir"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">default_data_dir</span><span class="p">())</span>
-</span><span data-line="252">    <span class="k">return</span> <span class="n">out</span></div>
+</span><span data-line="238"><span class="k">def</span><span class="w"> </span><span class="nf">configure</span><span class="p">(</span>
+</span><span data-line="239">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="240">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="241">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="242">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="243">    <span class="n">outbox</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="244"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="245"><span class="w">    </span><span class="sd">"""Write the publisher config (where to publish, what link to print) and show it.</span>
+</span><span data-line="246">
+</span><span data-line="247"><span class="sd">    Example: ``annals configure --target tw:/root/.local/share/annals --base-url https://apps.example.com/annals``.</span>
+</span><span data-line="248"><span class="sd">    ``--to NAME`` saves the target and base url as a named target (``annals publish --to NAME``)</span>
+</span><span data-line="249"><span class="sd">    and leaves the default alone. ``--outbox`` marks the target as an outbox: a directory</span>
+</span><span data-line="250"><span class="sd">    the server pulls and empties (it cannot be written to from here), so replacements are</span>
+</span><span data-line="251"><span class="sd">    left for the server to apply; it is kept by later changes (``ANNALS_OUTBOX=0`` or an</span>
+</span><span data-line="252"><span class="sd">    edit of the file turns it off). With no arguments, shows the resolved settings without writing.</span>
+</span><span data-line="253"><span class="sd">    """</span>
+</span><span data-line="254">    <span class="n">writing</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">target</span> <span class="ow">or</span> <span class="n">base_url</span> <span class="ow">or</span> <span class="n">outbox</span><span class="p">)</span>
+</span><span data-line="255">    <span class="k">if</span> <span class="n">to</span> <span class="ow">and</span> <span class="n">writing</span><span class="p">:</span>
+</span><span data-line="256">        <span class="c1"># Resolve a partly-given named target against what is already saved under it.</span>
+</span><span data-line="257">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="258">            <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span>
+</span><span data-line="259">                <span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">,</span> <span class="n">outbox</span><span class="o">=</span><span class="n">outbox</span> <span class="ow">or</span> <span class="kc">None</span>
+</span><span data-line="260">            <span class="p">)</span>
+</span><span data-line="261">        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span data-line="262">            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">target</span> <span class="ow">and</span> <span class="n">base_url</span><span class="p">):</span>
+</span><span data-line="263">                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="264">                    <span class="sa">f</span><span class="s2">"a new named target needs both --target and --base-url (</span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2"> is not saved yet)"</span>
+</span><span data-line="265">                <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+</span><span data-line="266">            <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">outbox</span><span class="o">=</span><span class="n">outbox</span><span class="p">)</span>
+</span><span data-line="267">    <span class="k">else</span><span class="p">:</span>
+</span><span data-line="268">        <span class="n">current</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>  <span class="c1"># what a partial change applies to</span>
+</span><span data-line="269">        <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span>
+</span><span data-line="270">            <span class="n">target</span><span class="o">=</span><span class="n">target</span> <span class="ow">or</span> <span class="p">(</span><span class="n">current</span><span class="o">.</span><span class="n">target</span> <span class="k">if</span> <span class="n">writing</span> <span class="k">else</span> <span class="kc">None</span><span class="p">),</span>
+</span><span data-line="271">            <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span>
+</span><span data-line="272">            <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">,</span>
+</span><span data-line="273">            <span class="n">outbox</span><span class="o">=</span><span class="p">(</span><span class="n">outbox</span> <span class="ow">or</span> <span class="n">current</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span> <span class="k">if</span> <span class="n">writing</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="274">        <span class="p">)</span>
+</span><span data-line="275">    <span class="n">out</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
+</span><span data-line="276">    <span class="k">if</span> <span class="n">writing</span><span class="p">:</span>
+</span><span data-line="277">        <span class="n">out</span><span class="p">[</span><span class="s2">"config_path"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">write_config</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">))</span>
+</span><span data-line="278">    <span class="n">out</span><span class="p">[</span><span class="s2">"local_data_dir"</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">default_data_dir</span><span class="p">())</span>
+</span><span data-line="279">    <span class="k">return</span> <span class="n">out</span></div>
 
-</span><span data-line="253">
-</span><span data-line="254">
-</span><span data-line="255"><span class="k">def</span><span class="w"> </span><span class="nf">_parse_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span data-line="256"><span class="w">    </span><span class="sd">"""``("group"|"doc"|"id", id)`` from a link (``.../g/&lt;id&gt;``, ``.../d/&lt;id&gt;``) or a bare id."""</span>
-</span><span data-line="257">    <span class="n">parts</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
-</span><span data-line="258">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"g"</span><span class="p">,</span> <span class="s2">"d"</span><span class="p">):</span>
-</span><span data-line="259">        <span class="k">return</span> <span class="p">(</span><span class="s2">"group"</span> <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"g"</span> <span class="k">else</span> <span class="s2">"doc"</span><span class="p">),</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="260">    <span class="k">return</span> <span class="s2">"id"</span><span class="p">,</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-</span><span data-line="261">
-</span><span data-line="262">
-</span><span data-line="263"><span class="k">def</span><span class="w"> </span><span class="nf">_same_place</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span data-line="264"><span class="w">    </span><span class="sd">"""True when two target specs name the same directory (or the same ssh host:path)."""</span>
-</span><span data-line="265">    <span class="n">ta</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">parse_target</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">parse_target</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
-</span><span data-line="266">    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ta</span><span class="p">,</span> <span class="s2">"root"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="s2">"root"</span><span class="p">):</span>
-</span><span data-line="267">        <span class="k">return</span> <span class="p">(</span>
-</span><span data-line="268">            <span class="n">Path</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span> <span class="o">==</span> <span class="n">Path</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
-</span><span data-line="269">        <span class="p">)</span>
-</span><span data-line="270">    <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span> <span class="o">==</span> <span class="n">b</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
-</span><span data-line="271">
-</span><span data-line="272">
-</span><span data-line="273"><span class="k">def</span><span class="w"> </span><span class="nf">_copy_doc</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">dst</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="274">    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
-</span><span data-line="275">
-</span><span data-line="276">    <span class="n">meta</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="277">    <span class="n">rel</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="s1">'trash'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'in_trash'</span><span class="p">)</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">'docs'</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">"</span>
-</span><span data-line="278">    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">"annals-copy-"</span><span class="p">)</span> <span class="k">as</span> <span class="n">td</span><span class="p">:</span>
-</span><span data-line="279">        <span class="n">src</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">get_tree</span><span class="p">(</span><span class="n">rel</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"doc"</span><span class="p">)</span>
-</span><span data-line="280">        <span class="n">odd</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="281">            <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">td</span><span class="p">))</span>
-</span><span data-line="282">            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"doc"</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">)</span>
-</span><span data-line="283">            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">is_symlink</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">or</span> <span class="n">p</span><span class="o">.</span><span class="n">is_dir</span><span class="p">())</span>
-</span><span data-line="284">        <span class="p">]</span>
-</span><span data-line="285">        <span class="k">if</span> <span class="n">odd</span><span class="p">:</span>
-</span><span data-line="286">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"refusing to copy </span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">: not regular files: </span><span class="si">{</span><span class="n">odd</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="287">        <span class="n">dst</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">put_tree</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"doc"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"docs/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="288">    <span class="k">return</span> <span class="n">meta</span>
+</span><span data-line="280">
+</span><span data-line="281">
+</span><span data-line="282"><span class="k">def</span><span class="w"> </span><span class="nf">_parse_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="283"><span class="w">    </span><span class="sd">"""``("group"|"doc"|"id", id)`` from a link (``.../g/&lt;id&gt;``, ``.../d/&lt;id&gt;``) or a bare id."""</span>
+</span><span data-line="284">    <span class="n">parts</span> <span class="o">=</span> <span class="n">ref</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+</span><span data-line="285">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"g"</span><span class="p">,</span> <span class="s2">"d"</span><span class="p">):</span>
+</span><span data-line="286">        <span class="k">return</span> <span class="p">(</span><span class="s2">"group"</span> <span class="k">if</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"g"</span> <span class="k">else</span> <span class="s2">"doc"</span><span class="p">),</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="287">    <span class="k">return</span> <span class="s2">"id"</span><span class="p">,</span> <span class="n">parts</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="288">
 </span><span data-line="289">
-</span><span data-line="290">
+</span><span data-line="290"><span class="k">def</span><span class="w"> </span><span class="nf">_same_place</span><span class="p">(</span><span class="n">a</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="291"><span class="w">    </span><span class="sd">"""True when two target specs name the same directory (or the same ssh host:path)."""</span>
+</span><span data-line="292">    <span class="n">ta</span><span class="p">,</span> <span class="n">tb</span> <span class="o">=</span> <span class="n">parse_target</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="n">parse_target</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+</span><span data-line="293">    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">ta</span><span class="p">,</span> <span class="s2">"root"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">tb</span><span class="p">,</span> <span class="s2">"root"</span><span class="p">):</span>
+</span><span data-line="294">        <span class="k">return</span> <span class="p">(</span>
+</span><span data-line="295">            <span class="n">Path</span><span class="p">(</span><span class="n">ta</span><span class="o">.</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span> <span class="o">==</span> <span class="n">Path</span><span class="p">(</span><span class="n">tb</span><span class="o">.</span><span class="n">root</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span><span class="o">.</span><span class="n">resolve</span><span class="p">()</span>
+</span><span data-line="296">        <span class="p">)</span>
+</span><span data-line="297">    <span class="k">return</span> <span class="n">a</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span> <span class="o">==</span> <span class="n">b</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+</span><span data-line="298">
+</span><span data-line="299">
+</span><span data-line="300"><span class="k">def</span><span class="w"> </span><span class="nf">_copy_doc</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">dst</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="301">    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+</span><span data-line="302">
+</span><span data-line="303">    <span class="k">if</span> <span class="n">split_version</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="304">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2"> is a version; copy the document (it keeps its versions)"</span><span class="p">)</span>
+</span><span data-line="305">    <span class="n">meta</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="306">    <span class="n">rel</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">doc_rel</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="307">    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">"annals-copy-"</span><span class="p">)</span> <span class="k">as</span> <span class="n">td</span><span class="p">:</span>
+</span><span data-line="308">        <span class="n">src</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">get_tree</span><span class="p">(</span><span class="n">rel</span><span class="p">,</span> <span class="n">Path</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"doc"</span><span class="p">)</span>
+</span><span data-line="309">        <span class="n">odd</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="310">            <span class="nb">str</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">relative_to</span><span class="p">(</span><span class="n">td</span><span class="p">))</span>
+</span><span data-line="311">            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"doc"</span><span class="p">)</span><span class="o">.</span><span class="n">rglob</span><span class="p">(</span><span class="s2">"*"</span><span class="p">)</span>
+</span><span data-line="312">            <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">is_symlink</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">or</span> <span class="n">p</span><span class="o">.</span><span class="n">is_dir</span><span class="p">())</span>
+</span><span data-line="313">        <span class="p">]</span>
+</span><span data-line="314">        <span class="k">if</span> <span class="n">odd</span><span class="p">:</span>
+</span><span data-line="315">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"refusing to copy </span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">: not regular files: </span><span class="si">{</span><span class="n">odd</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="316">        <span class="n">dst</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">put_tree</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">td</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"doc"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"docs/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="317">    <span class="k">return</span> <span class="n">meta</span>
+</span><span data-line="318">
+</span><span data-line="319">
 <div class="viewcode-block" id="copy">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.copy">[docs]</a>
-</span><span data-line="291"><span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span>
-</span><span data-line="292">    <span class="n">refs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-</span><span data-line="293">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="294">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="295">    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="296">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="297">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="298"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="299"><span class="w">    </span><span class="sd">"""Copy documents or groups to a named target, keeping their ids; print the new link.</span>
-</span><span data-line="300">
-</span><span data-line="301"><span class="sd">    ``refs`` are links (``https://.../annals/d/&lt;id&gt;``, ``.../g/&lt;group-id&gt;``) or bare ids; only</span>
-</span><span data-line="302"><span class="sd">    the id is used, so the link may point at any instance. They are read from the default</span>
-</span><span data-line="303"><span class="sd">    target (or the named target ``source``) and written to the named target ``to``. A group</span>
-</span><span data-line="304"><span class="sd">    is copied with its documents and keeps its id and title. Copying again refreshes the</span>
-</span><span data-line="305"><span class="sd">    copy. The source must be readable from this machine (a directory, or ``host:/path``).</span>
-</span><span data-line="306"><span class="sd">    ``target``/``base_url`` override the DESTINATION's location, as in ``publish``.</span>
-</span><span data-line="307"><span class="sd">    """</span>
-</span><span data-line="308">    <span class="n">src_settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">to</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
-</span><span data-line="309">    <span class="n">dst_settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="310">    <span class="k">if</span> <span class="n">_same_place</span><span class="p">(</span><span class="n">src_settings</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">dst_settings</span><span class="o">.</span><span class="n">target</span><span class="p">):</span>
-</span><span data-line="311">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="312">            <span class="sa">f</span><span class="s2">"source and destination are the same place: </span><span class="si">{</span><span class="n">src_settings</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2">"</span>
-</span><span data-line="313">        <span class="p">)</span>
-</span><span data-line="314">    <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">src_settings</span><span class="p">),</span> <span class="n">_store</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">)</span>
-</span><span data-line="315">    <span class="n">copied</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="316">    <span class="n">group_out</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="317">    <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">refs</span><span class="p">):</span>
-</span><span data-line="318">        <span class="n">kind</span><span class="p">,</span> <span class="n">ident</span> <span class="o">=</span> <span class="n">_parse_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
-</span><span data-line="319">        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"id"</span><span class="p">:</span>
-</span><span data-line="320">            <span class="k">try</span><span class="p">:</span>
-</span><span data-line="321">                <span class="n">src</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">ident</span><span class="p">)</span>
-</span><span data-line="322">                <span class="n">kind</span> <span class="o">=</span> <span class="s2">"group"</span>
-</span><span data-line="323">            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-</span><span data-line="324">                <span class="n">kind</span> <span class="o">=</span> <span class="s2">"doc"</span>
-</span><span data-line="325">        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"group"</span><span class="p">:</span>
-</span><span data-line="326">            <span class="n">g</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">ident</span><span class="p">)</span>
-</span><span data-line="327">            <span class="n">check_id</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
-</span><span data-line="328">            <span class="k">for</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">]:</span>
-</span><span data-line="329">                <span class="n">m</span> <span class="o">=</span> <span class="n">_copy_doc</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="330">                <span class="n">copied</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="331">                    <span class="p">{</span>
-</span><span data-line="332">                        <span class="s2">"id"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span>
-</span><span data-line="333">                        <span class="s2">"title"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
-</span><span data-line="334">                        <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">),</span>
-</span><span data-line="335">                    <span class="p">}</span>
-</span><span data-line="336">                <span class="p">)</span>
-</span><span data-line="337">            <span class="n">dst</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"groups/</span><span class="si">{</span><span class="n">g</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">.json"</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
-</span><span data-line="338">            <span class="n">group_out</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="339">                <span class="s2">"group_id"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="340">                <span class="s2">"group_url"</span><span class="p">:</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
-</span><span data-line="341">            <span class="p">}</span>
-</span><span data-line="342">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="343">            <span class="n">m</span> <span class="o">=</span> <span class="n">_copy_doc</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">ident</span><span class="p">)</span>
-</span><span data-line="344">            <span class="n">copied</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="345">                <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">ident</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">,</span> <span class="n">ident</span><span class="p">)}</span>
-</span><span data-line="346">            <span class="p">)</span>
-</span><span data-line="347">    <span class="k">if</span> <span class="n">group_out</span><span class="p">:</span>
-</span><span data-line="348">        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">group_out</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">group_out</span><span class="p">[</span><span class="s2">"group_url"</span><span class="p">],</span> <span class="s2">"docs"</span><span class="p">:</span> <span class="n">copied</span><span class="p">}</span>
-</span><span data-line="349">    <span class="k">return</span> <span class="n">copied</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">copied</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">{</span><span class="s2">"docs"</span><span class="p">:</span> <span class="n">copied</span><span class="p">}</span></div>
+</span><span data-line="320"><span class="k">def</span><span class="w"> </span><span class="nf">copy</span><span class="p">(</span>
+</span><span data-line="321">    <span class="n">refs</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="322">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="323">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="324">    <span class="n">source</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="325">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="326">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="327"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="328"><span class="w">    </span><span class="sd">"""Copy documents or groups to a named target, keeping their ids; print the new link.</span>
+</span><span data-line="329">
+</span><span data-line="330"><span class="sd">    ``refs`` are links (``https://.../annals/d/&lt;id&gt;``, ``.../g/&lt;group-id&gt;``) or bare ids; only</span>
+</span><span data-line="331"><span class="sd">    the id is used, so the link may point at any instance. They are read from the default</span>
+</span><span data-line="332"><span class="sd">    target (or the named target ``source``) and written to the named target ``to``. A group</span>
+</span><span data-line="333"><span class="sd">    is copied with its documents and keeps its id and title. Copying again refreshes the</span>
+</span><span data-line="334"><span class="sd">    copy. The source must be readable from this machine (a directory, or ``host:/path``).</span>
+</span><span data-line="335"><span class="sd">    ``target``/``base_url`` override the DESTINATION's location, as in ``publish``.</span>
+</span><span data-line="336"><span class="sd">    """</span>
+</span><span data-line="337">    <span class="n">src_settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">to</span><span class="o">=</span><span class="n">source</span><span class="p">)</span>
+</span><span data-line="338">    <span class="n">dst_settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="339">    <span class="k">if</span> <span class="n">_same_place</span><span class="p">(</span><span class="n">src_settings</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">dst_settings</span><span class="o">.</span><span class="n">target</span><span class="p">):</span>
+</span><span data-line="340">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="341">            <span class="sa">f</span><span class="s2">"source and destination are the same place: </span><span class="si">{</span><span class="n">src_settings</span><span class="o">.</span><span class="n">target</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="342">        <span class="p">)</span>
+</span><span data-line="343">    <span class="n">src</span><span class="p">,</span> <span class="n">dst</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">src_settings</span><span class="p">),</span> <span class="n">_store</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">)</span>
+</span><span data-line="344">    <span class="n">copied</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="345">    <span class="n">group_out</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="346">    <span class="k">for</span> <span class="n">ref</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">refs</span><span class="p">):</span>
+</span><span data-line="347">        <span class="n">kind</span><span class="p">,</span> <span class="n">ident</span> <span class="o">=</span> <span class="n">_parse_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+</span><span data-line="348">        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"id"</span><span class="p">:</span>
+</span><span data-line="349">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="350">                <span class="n">src</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">ident</span><span class="p">)</span>
+</span><span data-line="351">                <span class="n">kind</span> <span class="o">=</span> <span class="s2">"group"</span>
+</span><span data-line="352">            <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+</span><span data-line="353">                <span class="n">kind</span> <span class="o">=</span> <span class="s2">"doc"</span>
+</span><span data-line="354">        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">"group"</span><span class="p">:</span>
+</span><span data-line="355">            <span class="n">g</span> <span class="o">=</span> <span class="n">src</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">ident</span><span class="p">)</span>
+</span><span data-line="356">            <span class="n">check_id</span><span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
+</span><span data-line="357">            <span class="k">for</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">]:</span>
+</span><span data-line="358">                <span class="n">m</span> <span class="o">=</span> <span class="n">_copy_doc</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="359">                <span class="n">copied</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="360">                    <span class="p">{</span>
+</span><span data-line="361">                        <span class="s2">"id"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="362">                        <span class="s2">"title"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+</span><span data-line="363">                        <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">),</span>
+</span><span data-line="364">                    <span class="p">}</span>
+</span><span data-line="365">                <span class="p">)</span>
+</span><span data-line="366">            <span class="n">dst</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"groups/</span><span class="si">{</span><span class="n">g</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">.json"</span><span class="p">,</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</span><span data-line="367">            <span class="n">group_out</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="368">                <span class="s2">"group_id"</span><span class="p">:</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="369">                <span class="s2">"group_url"</span><span class="p">:</span> <span class="n">_group_url</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">,</span> <span class="n">g</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span>
+</span><span data-line="370">            <span class="p">}</span>
+</span><span data-line="371">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="372">            <span class="n">m</span> <span class="o">=</span> <span class="n">_copy_doc</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">ident</span><span class="p">)</span>
+</span><span data-line="373">            <span class="n">copied</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="374">                <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">ident</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="n">m</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">dst_settings</span><span class="p">,</span> <span class="n">ident</span><span class="p">)}</span>
+</span><span data-line="375">            <span class="p">)</span>
+</span><span data-line="376">    <span class="k">if</span> <span class="n">group_out</span><span class="p">:</span>
+</span><span data-line="377">        <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">group_out</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">group_out</span><span class="p">[</span><span class="s2">"group_url"</span><span class="p">],</span> <span class="s2">"docs"</span><span class="p">:</span> <span class="n">copied</span><span class="p">}</span>
+</span><span data-line="378">    <span class="k">return</span> <span class="n">copied</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">copied</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">{</span><span class="s2">"docs"</span><span class="p">:</span> <span class="n">copied</span><span class="p">}</span></div>
 
-</span><span data-line="350">
-</span><span data-line="351">
+</span><span data-line="379">
+</span><span data-line="380">
 <div class="viewcode-block" id="serve">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.serve">[docs]</a>
-</span><span data-line="352"><span class="k">def</span><span class="w"> </span><span class="nf">serve</span><span class="p">(</span>
-</span><span data-line="353">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="354">    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"127.0.0.1"</span><span class="p">,</span>
-</span><span data-line="355">    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8765</span><span class="p">,</span>
-</span><span data-line="356">    <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="357">    <span class="n">base_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span>
-</span><span data-line="358"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="359"><span class="w">    </span><span class="sd">"""Serve the annals page and API (needs ``pip install 'annals[server]'``).</span>
-</span><span data-line="360">
-</span><span data-line="361"><span class="sd">    Auth comes from the environment: ``ANNALS_WHOAMI_URL`` + ``ANNALS_ALLOWED_USERS`` to sit</span>
-</span><span data-line="362"><span class="sd">    behind an existing login, ``ANNALS_BASIC_USER`` + ``ANNALS_BASIC_PASSWORD`` for HTTP Basic,</span>
-</span><span data-line="363"><span class="sd">    nothing for an open server on localhost.</span>
-</span><span data-line="364"><span class="sd">    """</span>
-</span><span data-line="365">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">serve</span> <span class="k">as</span> <span class="n">_serve</span>
-</span><span data-line="366">
-</span><span data-line="367">    <span class="n">_serve</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">base_path</span><span class="o">=</span><span class="n">base_path</span><span class="p">)</span></div>
+</span><span data-line="381"><span class="k">def</span><span class="w"> </span><span class="nf">serve</span><span class="p">(</span>
+</span><span data-line="382">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="383">    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"127.0.0.1"</span><span class="p">,</span>
+</span><span data-line="384">    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8765</span><span class="p">,</span>
+</span><span data-line="385">    <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="386">    <span class="n">base_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span>
+</span><span data-line="387"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="388"><span class="w">    </span><span class="sd">"""Serve the annals page and API (needs ``pip install 'annals[server]'``).</span>
+</span><span data-line="389">
+</span><span data-line="390"><span class="sd">    Auth comes from the environment: ``ANNALS_WHOAMI_URL`` + ``ANNALS_ALLOWED_USERS`` to sit</span>
+</span><span data-line="391"><span class="sd">    behind an existing login, ``ANNALS_BASIC_USER`` + ``ANNALS_BASIC_PASSWORD`` for HTTP Basic,</span>
+</span><span data-line="392"><span class="sd">    nothing for an open server on localhost.</span>
+</span><span data-line="393"><span class="sd">    """</span>
+</span><span data-line="394">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">serve</span> <span class="k">as</span> <span class="n">_serve</span>
+</span><span data-line="395">
+</span><span data-line="396">    <span class="n">_serve</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span> <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">base_path</span><span class="o">=</span><span class="n">base_path</span><span class="p">)</span></div>
 
-</span><span data-line="368">
-</span><span data-line="369">
+</span><span data-line="397">
+</span><span data-line="398">
 <div class="viewcode-block" id="page_shell">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.page_shell">[docs]</a>
-</span><span data-line="370"><span class="k">def</span><span class="w"> </span><span class="nf">page_shell</span><span class="p">(</span>
-</span><span data-line="371">    <span class="o">*</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/api/annals"</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"annals"</span>
-</span><span data-line="372"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="373"><span class="w">    </span><span class="sd">"""The page's html shell, for a host that serves the API under its own prefix.</span>
-</span><span data-line="374">
-</span><span data-line="375"><span class="sd">    An enlace app writes it once as its frontend:</span>
-</span><span data-line="376"><span class="sd">    ``annals page-shell --api /api/annals --base /annals &gt; frontend/index.html``.</span>
-</span><span data-line="377"><span class="sd">    The shell only names the two paths; the page's code loads from the API, so it upgrades</span>
-</span><span data-line="378"><span class="sd">    with the package.</span>
-</span><span data-line="379"><span class="sd">    """</span>
-</span><span data-line="380">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">page_html</span>
-</span><span data-line="381">
-</span><span data-line="382">    <span class="k">return</span> <span class="n">page_html</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">api</span><span class="o">=</span><span class="n">api</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">)</span></div>
+</span><span data-line="399"><span class="k">def</span><span class="w"> </span><span class="nf">page_shell</span><span class="p">(</span>
+</span><span data-line="400">    <span class="o">*</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/api/annals"</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"annals"</span>
+</span><span data-line="401"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="402"><span class="w">    </span><span class="sd">"""The page's html shell, for a host that serves the API under its own prefix.</span>
+</span><span data-line="403">
+</span><span data-line="404"><span class="sd">    An enlace app writes it once as its frontend:</span>
+</span><span data-line="405"><span class="sd">    ``annals page-shell --api /api/annals --base /annals &gt; frontend/index.html``.</span>
+</span><span data-line="406"><span class="sd">    The shell only names the two paths; the page's code loads from the API, so it upgrades</span>
+</span><span data-line="407"><span class="sd">    with the package.</span>
+</span><span data-line="408"><span class="sd">    """</span>
+</span><span data-line="409">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">page_html</span>
+</span><span data-line="410">
+</span><span data-line="411">    <span class="k">return</span> <span class="n">page_html</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">api</span><span class="o">=</span><span class="n">api</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">)</span></div>
 
-</span><span data-line="383">
-</span><span data-line="384">
-</span><span data-line="385"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="386">    <span class="n">publish</span><span class="p">,</span>
-</span><span data-line="387">    <span class="n">ls</span><span class="p">,</span>
-</span><span data-line="388">    <span class="n">show</span><span class="p">,</span>
-</span><span data-line="389">    <span class="n">trash</span><span class="p">,</span>
-</span><span data-line="390">    <span class="n">restore</span><span class="p">,</span>
-</span><span data-line="391">    <span class="n">group</span><span class="p">,</span>
-</span><span data-line="392">    <span class="n">groups</span><span class="p">,</span>
-</span><span data-line="393">    <span class="n">copy</span><span class="p">,</span>
-</span><span data-line="394">    <span class="n">configure</span><span class="p">,</span>
-</span><span data-line="395">    <span class="n">serve</span><span class="p">,</span>
-</span><span data-line="396">    <span class="n">page_shell</span><span class="p">,</span>
-</span><span data-line="397"><span class="p">]</span>
+</span><span data-line="412">
+</span><span data-line="413">
+</span><span data-line="414"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="415">    <span class="n">publish</span><span class="p">,</span>
+</span><span data-line="416">    <span class="n">ls</span><span class="p">,</span>
+</span><span data-line="417">    <span class="n">show</span><span class="p">,</span>
+</span><span data-line="418">    <span class="n">trash</span><span class="p">,</span>
+</span><span data-line="419">    <span class="n">restore</span><span class="p">,</span>
+</span><span data-line="420">    <span class="n">group</span><span class="p">,</span>
+</span><span data-line="421">    <span class="n">groups</span><span class="p">,</span>
+</span><span data-line="422">    <span class="n">copy</span><span class="p">,</span>
+</span><span data-line="423">    <span class="n">configure</span><span class="p">,</span>
+</span><span data-line="424">    <span class="n">serve</span><span class="p">,</span>
+</span><span data-line="425">    <span class="n">page_shell</span><span class="p">,</span>
+</span><span data-line="426"><span class="p">]</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -578,7 +608,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=1fd71caa"></script>
+      <script src="../../_static/documentation_options.js?v=bbaf98b3"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

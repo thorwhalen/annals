@@ -26,6 +26,7 @@ annals publish ./renders                          # a folder: a gallery with inl
 annals publish ./site_dir                         # an html page with its assets, as one document
 annals publish clip.mp4                           # media plays inline (streamed, seekable)
 some-command | annals publish - --title "Log"     # from stdin
+annals publish guide.html --replace <link-or-id>  # a new version of a document: same link
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
 ```
@@ -42,6 +43,12 @@ What each kind looks like on the page:
 | anything else                                  | a download                                                                                                               |
 
 A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-files` keeps them.
+
+### Living pages (`--replace`)
+
+`annals publish <path> --replace <link-or-id>` publishes a new version of an existing document: the id and the link stay, the page shows the new version marked “updated” and lists the earlier ones, each readable at `/d/<id>@<n>`. The previous files are kept under the document’s `.versions/<n>/`; nothing is deleted. It takes one path (a file, a folder, stdin), and a replaced group member stays in its group.
+
+A replacement is written next to the document as a pending directory (`docs/<id>.r<stamp>-<hex>/`), never over it, and applied by whoever reads the store (the server, or the next publish): a few renames, the first of which claims the document, so concurrent readers never apply one twice or out of order. That is what lets a replace travel through an **outbox**, a directory another machine pulls and empties: mark it with `annals configure --outbox` (or `ANNALS_OUTBOX=1`), and replacements published there are left for the server to apply when they land. HTML pages without a doctype are served with `<!doctype html>` (plus a charset and viewport when missing), so they render in standards mode.
 
 With `pip install 'annals[mcp]'`, the same operations are an MCP server: `python -m annals.mcp`.
 

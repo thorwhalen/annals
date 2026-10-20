@@ -10,6 +10,15 @@ annals.store
    
       HEAD_CHARS
       DFLT_EXCLUDE
+      VERSIONS
+      VERSION_SEP
+      PENDING_SEP
+      LOCK_PREFIX
+      LOCK_STALE_S
+      SWAP_WAIT_S
+      SWAP_STEP_S
+      INCOMING_PREFIX
+      RESERVED
    
    .. rubric:: Functions
 
@@ -18,8 +27,10 @@ annals.store
       check_id
       kind_of
       mk_id
+      mk_pending_id
       now_iso
       slugify
+      split_version
       title_and_excerpt
    
    .. rubric:: Classes
