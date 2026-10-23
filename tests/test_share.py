@@ -1,5 +1,6 @@
 """Share links: scope isolation, expiry, the password gate, revocation, filtered references."""
 
+import json
 from datetime import datetime, timedelta, timezone
 
 import pytest
@@ -99,6 +100,29 @@ def test_hasher_roundtrip_and_never_stores_plaintext(shares, report):
     assert shares.check_password(stored, "hunter22")
     assert not shares.check_password(stored, "hunter23")
     assert len(rec["token"]) >= 22
+
+
+def test_a_record_written_before_caplinks_still_opens(shares, store, report):
+    """Records on disk predate the move to caplinks; they need no migration."""
+    meta, _ = report
+    token = "Legacy0Record0Token0aa"
+    legacy = {
+        "token": token,
+        "title": "Report",
+        "created": T0.isoformat(),
+        "root": {"kind": "doc", "id": meta["id"]},
+        "docs": {meta["id"]: meta["files"]},
+        "expires": (T0 + timedelta(days=7)).isoformat(),
+        "password": ScryptHasher(n=2**4).hash("hunter22"),
+        "revoked": None,
+    }
+    store.target.write_text(f"shares/{token}.json", json.dumps(legacy, indent=1))
+    state, rec = shares.status(token)
+    assert state == "ok" and rec["docs"] == legacy["docs"]
+    assert shares.check_password(rec, "hunter22")
+    assert [r["token"] for r in shares.list()] == [token]
+    store.target.write_text(f"shares/{token}.json", json.dumps({**legacy, "docs": []}))
+    assert shares.status(token) == ("missing", None)  # no scope: grants nothing
 
 
 def test_scope_defaults_and_include(shares, report):

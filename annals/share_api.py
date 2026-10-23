@@ -26,14 +26,12 @@ from __future__ import annotations
 import html
 import json
 import secrets
-import threading
 import time
-from datetime import datetime, timezone
-from collections import OrderedDict, deque
 from pathlib import Path
-from typing import Callable, Protocol
+from typing import Callable
 from urllib.parse import parse_qs
 
+from caplinks import RateLimiter, SlidingWindowLimiter  # noqa: F401  (re-exported)
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
@@ -77,52 +75,6 @@ DFLT_TRUSTED_PROXIES = ("127.0.0.1", "::1")
 MAX_FORM_BYTES = 4096
 #: a shared page is filtered whole in memory before it is sent; larger ones are refused
 MAX_SHARED_PAGE_BYTES = 20_000_000
-
-
-class RateLimiter(Protocol):
-    """``allow(key) -> bool``: the shape of ``heed.security``'s limiters, which fit here."""
-
-    def allow(self, key: str) -> bool: ...
-
-
-class SlidingWindowLimiter:
-    """At most ``max_per_window`` hits per key per window; in memory, per process.
-
-    Each worker counts alone (two workers allow twice the attempts); pass a shared
-    limiter (``heed.security.RedisRateLimiter``) as ``rate_limiter`` when that matters.
-    The keys tracked are bounded, so a flood of addresses cannot exhaust memory.
-    """
-
-    def __init__(
-        self,
-        *,
-        max_per_window: int = DFLT_MAX_ATTEMPTS,
-        window_s: float = DFLT_ATTEMPT_WINDOW_S,
-        max_keys: int = 50_000,
-        clock: Callable[[], float] = time.monotonic,
-    ):
-        self.max_per_window, self.window_s, self.max_keys = (
-            max_per_window,
-            window_s,
-            max_keys,
-        )
-        self._clock = clock
-        self._hits: OrderedDict[str, deque] = OrderedDict()
-        self._lock = threading.Lock()
-
-    def allow(self, key: str) -> bool:
-        with self._lock:
-            now = self._clock()
-            hits = self._hits.setdefault(key, deque())
-            self._hits.move_to_end(key)
-            while len(self._hits) > self.max_keys:
-                self._hits.popitem(last=False)
-            while hits and hits[0] <= now - self.window_s:
-                hits.popleft()
-            if len(hits) >= self.max_per_window:
-                return False
-            hits.append(now)
-            return True
 
 
 def _csp(nonce: str) -> str:
@@ -205,9 +157,11 @@ def mk_share_api(
     store = store or (shares.store if shares else None)
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     shares = shares or Shares(store)
-    limiter = rate_limiter or SlidingWindowLimiter()
+    limiter = rate_limiter or SlidingWindowLimiter(
+        max_per_window=DFLT_MAX_ATTEMPTS, window_s=DFLT_ATTEMPT_WINDOW_S
+    )
     link_failures = link_failure_limiter or SlidingWindowLimiter(
-        max_per_window=DFLT_MAX_LINK_FAILURES
+        max_per_window=DFLT_MAX_LINK_FAILURES, window_s=DFLT_ATTEMPT_WINDOW_S
     )
     locked: dict[str, float] = {}  # token -> monotonic time its lock ends
     trusted = set(trusted_proxies)
@@ -384,12 +338,7 @@ def mk_share_api(
             return _password_page(
                 name, f"{link}/unlock", nxt, ui, error="That password is not right."
             )
-        max_age = unlock_max_age_s
-        if rec.get("expires"):
-            ends = datetime.fromisoformat(rec["expires"])
-            ends = ends if ends.tzinfo else ends.replace(tzinfo=timezone.utc)
-            left = ends - shares.clock()
-            max_age = max(1, min(max_age, int(left.total_seconds())))
+        max_age = shares.links.unlock_max_age(rec, max_age_s=unlock_max_age_s)
         secure = cookie_secure
         if secure is None:
             proto = request.headers.get("x-forwarded-proto", request.url.scheme)
