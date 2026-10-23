@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-23T00:23:24Z",
+  "built_at": "2026-10-23T03:00:12Z",
   "package": {
     "name": "annals",
-    "version": "0.0.14",
+    "version": "0.0.15",
     "display_name": "annals",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3",
-    "short_commit": "0d6e9c6",
+    "commit": "a4312a9a82c02a40875376ec99eeec6b8eb10ebe",
+    "short_commit": "a4312a9",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/annals",
-    "commit_url": "https://github.com/thorwhalen/annals/commit/0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3",
+    "commit_url": "https://github.com/thorwhalen/annals/commit/a4312a9a82c02a40875376ec99eeec6b8eb10ebe",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/annals",
-    "sha": "0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3",
+    "sha": "a4312a9a82c02a40875376ec99eeec6b8eb10ebe",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "39877662716",
-    "run_url": "https://github.com/thorwhalen/annals/actions/runs/39877662716",
+    "run_id": "39892467208",
+    "run_url": "https://github.com/thorwhalen/annals/actions/runs/39892467208",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -60,11 +60,11 @@
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.14",
+    "latest": "0.0.15",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout 0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout a4312a9a82c02a40875376ec99eeec6b8eb10ebe\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,
