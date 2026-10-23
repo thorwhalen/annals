@@ -26,68 +26,35 @@ the shared page, and a page or a link of the shared text that points outside the
 removed before the text leaves the server ([`filter_refs()`](#annals.share.filter_refs)), so the recipient sees
 neither private ids nor private paths.
 
-The password is a gate on the link, not an account: anyone who knows both may read. It
-is hashed with stdlib `scrypt` (the `hasher` seam takes argon2 or anything with
-`hash`/`verify`), and a correct one earns an HMAC cookie keyed by that hash, so
-changing the password or revoking the link ends every open session.
-
-Tokens come from [`secrets.token_urlsafe()`](https://docs.python.org/3/library/secrets.html#secrets.token_urlsafe) with 128 bits, as heed’s review pages do.
+The link itself (the token, the password gate, expiry, revocation) is a
+`caplinks.CapabilityLinks` over these records; what is annals’ own is the scope
+and the filtering. The password is a gate on the link, not an account: anyone who knows
+both may read. It is hashed (stdlib `scrypt` by default, the `hasher` seam takes
+argon2), and a correct one earns an HMAC cookie keyed by that hash, so changing the
+password or revoking the link ends every open session.
 
 ### Module Attributes
 
-| [`ANNALS_ID`](#annals.share.ANNALS_ID)        | an annals id (doc or group) as [`annals.store.mk_id()`](annals.store.html.md#annals.store.mk_id) makes them   |
-|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
-| [`DFLT_EXPIRES`](#annals.share.DFLT_EXPIRES)     | a share lasts this long unless told otherwise (`"never"` for no expiry)                                                              |
-| [`MIN_PASSWORD_LEN`](#annals.share.MIN_PASSWORD_LEN) | the shortest link password accepted (a gate tried from anywhere must not be guessable)                                               |
+| [`ANNALS_ID`](#annals.share.ANNALS_ID)   | an annals id (doc or group) as [`annals.store.mk_id()`](annals.store.html.md#annals.store.mk_id) makes them   |
+|--------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
 
 ### Functions
 
-| [`check_token`](#annals.share.check_token)(token)                                | Raise `ValueError` on anything that could not be a token (a path, a dot, ...).      |
-|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | [`dir_of`](#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).   |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | [`filter_refs`](#annals.share.filter_refs)(text, kind, \*, files, shared[, ...]) | `text` with every reference outside the share removed (or rewritten).               |
-| [`is_expired`](#annals.share.is_expired)(record, \*[, now])                     | True when the record has an expiry and it is reached (a bad one counts as reached). |
-| [`new_token`](#annals.share.new_token)()                                       | A fresh link token: 128 random bits, url-safe.                                      |
-| [`now_utc`](#annals.share.now_utc)()                                         | The current time, UTC, second precision (the clock every default reads).            |
-| [`parse_expires`](#annals.share.parse_expires)(value, \*[, now])                   | An expiry as an ISO UTC timestamp, or `None` for never.                             |
-| [`public_record`](#annals.share.public_record)(record)                             | A record without its password hash (`protected` says whether it has one).           |
 | [`references`](#annals.share.references)(text, kind, \*[, from_dir])            | What a page points at: files of its document, and annals pages (by id).             |
 | [`resolve_rel`](#annals.share.resolve_rel)(url[, from_dir])                      | A relative url as a file path inside the document, or `None` if it is not one.      |
 | [`share_url`](#annals.share.share_url)(base, token)                            | The link a recipient opens, or `None` when no share server is configured.           |
 
 ### Classes
 
-| [`PasswordHasher`](#annals.share.PasswordHasher)(\*args, \*\*kwargs)         | What a share needs to gate a link on a password.                      |
-|---------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
-| [`ScryptHasher`](#annals.share.ScryptHasher)([n, r, p, salt_bytes, dklen]) | Stdlib `hashlib.scrypt`, stored as `scrypt$n$r$p$salt$hash` (base64). |
-| [`Shares`](#annals.share.Shares)(store, \*[, hasher, clock])         | Create, read, list and revoke shares of a `DocStore`'s documents.     |
+| [`Shares`](#annals.share.Shares)(store, \*[, hasher, clock])   | Create, read, list and revoke shares of a `DocStore`'s documents.   |
+|---------------------------------------------------------------------------------------|---------------------------------------------------------------------|
 
 ### annals.share.ANNALS_ID *= '\\\\d{8}-\\\\d{6}-[a-z0-9]+(?:-[a-z0-9]+)\*'*
 
 an annals id (doc or group) as [`annals.store.mk_id()`](annals.store.html.md#annals.store.mk_id) makes them
-
-### annals.share.DFLT_EXPIRES *= '7d'*
-
-a share lasts this long unless told otherwise (`"never"` for no expiry)
-
-### annals.share.MIN_PASSWORD_LEN *= 8*
-
-the shortest link password accepted (a gate tried from anywhere must not be guessable)
-
-### *class* annals.share.PasswordHasher(\*args, \*\*kwargs)
-
-Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
-
-What a share needs to gate a link on a password.
-
-### *class* annals.share.ScryptHasher(n=16384, r=8, p=1, salt_bytes=16, dklen=32)
-
-Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
-
-Stdlib `hashlib.scrypt`, stored as `scrypt$n$r$p$salt$hash` (base64).
-
-The default needs no dependency; `n=2**14, r=8` costs ~16 MB and tens of ms per
-check, which the attempt limit of the share server bounds.
 
 ### *class* annals.share.Shares(store, \*, hasher=None, clock=<function now_utc>)
 
@@ -95,12 +62,14 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 Create, read, list and revoke shares of a `DocStore`’s documents.
 
-`hasher` hashes link passwords (stdlib scrypt by default); `clock` returns the
-current UTC `datetime` (tests pin it).
+What a share reaches (its scope) is decided here; the link itself is `links`, a
+`caplinks.CapabilityLinks` over the records under `shares/`. `hasher`
+hashes link passwords (stdlib scrypt by default); `clock` returns the current UTC
+`datetime` (tests pin it).
 
 #### check_password(record, password)
 
-Whether `password` opens `record` (constant time inside the hasher).
+Whether `password` opens `record`.
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
@@ -114,8 +83,8 @@ itself always goes); `include` may also name annals pages the document links
 to, which then open inside the share. A group is shared with all its documents
 unless `include` names some. `exclude` removes files (or a group’s documents).
 A linked page goes with the files it shows. `expires` is anything
-[`parse_expires()`](#annals.share.parse_expires) reads, 7 days by default (`"never"` for none); `password`
-gates the link (at least `MIN_PASSWORD_LEN` characters).
+`parse_expires()` reads, 7 days by default (`"never"` for none); `password`
+gates the link (at least `caplinks.MIN_PASSWORD_LEN` characters).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -161,7 +130,7 @@ End a link now (idempotent). The record stays, as a tombstone, for the list.
 
 #### unlock_value(record)
 
-The cookie value a correct password earns: `<issued epoch>.<hmac>`.
+The cookie value a correct password earns.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -172,13 +141,6 @@ Whether a cookie value is a live unlock of this record (no password: always).
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
-### annals.share.check_token(token)
-
-Raise `ValueError` on anything that could not be a token (a path, a dot, …).
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### annals.share.dir_of(rel)
 
@@ -203,52 +165,6 @@ for anything outside the share however the text names it.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
-### annals.share.is_expired(record, , now=None)
-
-True when the record has an expiry and it is reached (a bad one counts as reached).
-
-* **Return type:**
-  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
-
-### annals.share.new_token()
-
-A fresh link token: 128 random bits, url-safe.
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
-### annals.share.now_utc()
-
-The current time, UTC, second precision (the clock every default reads).
-
-* **Return type:**
-  [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
-
-### annals.share.parse_expires(value, , now=None)
-
-An expiry as an ISO UTC timestamp, or `None` for never.
-
-`None`, `""` and `"never"` mean never. Accepts a duration (`30m`, `12h`, `7d`, `2w`), a date (`2026-11-01`: the
-END of that day, UTC, so the link works through the day named), an ISO timestamp (a
-naive one is UTC), or a `datetime`. A moment already past is refused.
-
-```pycon
->>> parse_expires("2d", now=datetime(2026, 1, 1, tzinfo=timezone.utc))
-'2026-01-03T00:00:00+00:00'
->>> parse_expires("2026-01-05", now=datetime(2026, 1, 1, tzinfo=timezone.utc))
-'2026-01-05T23:59:59+00:00'
-```
-
-* **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
-
-### annals.share.public_record(record)
-
-A record without its password hash (`protected` says whether it has one).
-
-* **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.share.references(text, kind, , from_dir='')
 

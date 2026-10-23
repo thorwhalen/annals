@@ -94,10 +94,6 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#annals.share.ANNALS_ID"><code class="docutils literal notranslate"><span class="pre">ANNALS_ID</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.DFLT_EXPIRES"><code class="docutils literal notranslate"><span class="pre">DFLT_EXPIRES</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.MIN_PASSWORD_LEN"><code class="docutils literal notranslate"><span class="pre">MIN_PASSWORD_LEN</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.PasswordHasher"><code class="docutils literal notranslate"><span class="pre">PasswordHasher</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.ScryptHasher"><code class="docutils literal notranslate"><span class="pre">ScryptHasher</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.Shares"><code class="docutils literal notranslate"><span class="pre">Shares</span></code></a><ul>
 <li><a class="reference internal" href="#annals.share.Shares.check_password"><code class="docutils literal notranslate"><span class="pre">Shares.check_password()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.Shares.create"><code class="docutils literal notranslate"><span class="pre">Shares.create()</span></code></a></li>
@@ -110,14 +106,8 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.share.Shares.unlocked"><code class="docutils literal notranslate"><span class="pre">Shares.unlocked()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#annals.share.check_token"><code class="docutils literal notranslate"><span class="pre">check_token()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.dir_of"><code class="docutils literal notranslate"><span class="pre">dir_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.filter_refs"><code class="docutils literal notranslate"><span class="pre">filter_refs()</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.is_expired"><code class="docutils literal notranslate"><span class="pre">is_expired()</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.new_token"><code class="docutils literal notranslate"><span class="pre">new_token()</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.now_utc"><code class="docutils literal notranslate"><span class="pre">now_utc()</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.parse_expires"><code class="docutils literal notranslate"><span class="pre">parse_expires()</span></code></a></li>
-<li><a class="reference internal" href="#annals.share.public_record"><code class="docutils literal notranslate"><span class="pre">public_record()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.references"><code class="docutils literal notranslate"><span class="pre">references()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.resolve_rel"><code class="docutils literal notranslate"><span class="pre">resolve_rel()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.share_url"><code class="docutils literal notranslate"><span class="pre">share_url()</span></code></a></li>
@@ -183,23 +173,18 @@ against what the link was made from: a file not listed is a 404 even when it sit
 the shared page, and a page or a link of the shared text that points outside the scope is
 removed before the text leaves the server (<a class="reference internal" href="#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-func docutils literal notranslate"><span class="pre">filter_refs()</span></code></a>), so the recipient sees
 neither private ids nor private paths.</p>
-<p>The password is a gate on the link, not an account: anyone who knows both may read. It
-is hashed with stdlib <code class="docutils literal notranslate"><span class="pre">scrypt</span></code> (the <code class="docutils literal notranslate"><span class="pre">hasher</span></code> seam takes argon2 or anything with
-<code class="docutils literal notranslate"><span class="pre">hash</span></code>/<code class="docutils literal notranslate"><span class="pre">verify</span></code>), and a correct one earns an HMAC cookie keyed by that hash, so
-changing the password or revoking the link ends every open session.</p>
-<p>Tokens come from <a class="reference external" href="https://docs.python.org/3/library/secrets.html#secrets.token_urlsafe" title="(in Python v3.15)"><code class="xref py py-func docutils literal notranslate"><span class="pre">secrets.token_urlsafe()</span></code></a> with 128 bits, as heed’s review pages do.</p>
+<p>The link itself (the token, the password gate, expiry, revocation) is a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">caplinks.CapabilityLinks</span></code> over these records; what is annals’ own is the scope
+and the filtering. The password is a gate on the link, not an account: anyone who knows
+both may read. It is hashed (stdlib <code class="docutils literal notranslate"><span class="pre">scrypt</span></code> by default, the <code class="docutils literal notranslate"><span class="pre">hasher</span></code> seam takes
+argon2), and a correct one earns an HMAC cookie keyed by that hash, so changing the
+password or revoking the link ends every open session.</p>
 <p class="rubric">Module Attributes</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.ANNALS_ID" title="annals.share.ANNALS_ID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ANNALS_ID</span></code></a></p></td>
 <td><p>an annals id (doc or group) as <a class="reference internal" href="annals.store.html#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.store.mk_id()</span></code></a> makes them</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.DFLT_EXPIRES" title="annals.share.DFLT_EXPIRES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_EXPIRES</span></code></a></p></td>
-<td><p>a share lasts this long unless told otherwise (<code class="docutils literal notranslate"><span class="pre">&quot;never&quot;</span></code> for no expiry)</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.MIN_PASSWORD_LEN" title="annals.share.MIN_PASSWORD_LEN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MIN_PASSWORD_LEN</span></code></a></p></td>
-<td><p>the shortest link password accepted (a gate tried from anywhere must not be guessable)</p></td>
 </tr>
 </tbody>
 </table>
@@ -208,29 +193,11 @@ changing the password or revoking the link ends every open session.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.check_token" title="annals.share.check_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_token</span></code></a>(token)</p></td>
-<td><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on anything that could not be a token (a path, a dot, ...).</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.dir_of" title="annals.share.dir_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dir_of</span></code></a>(rel)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.dir_of" title="annals.share.dir_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dir_of</span></code></a>(rel)</p></td>
 <td><p>The directory part of a relative path, with its trailing slash (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> at the top).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_refs</span></code></a>(text, kind, *, files, shared[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_refs</span></code></a>(text, kind, *, files, shared[, ...])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every reference outside the share removed (or rewritten).</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.is_expired" title="annals.share.is_expired"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_expired</span></code></a>(record, *[, now])</p></td>
-<td><p>True when the record has an expiry and it is reached (a bad one counts as reached).</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.new_token" title="annals.share.new_token"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_token</span></code></a>()</p></td>
-<td><p>A fresh link token: 128 random bits, url-safe.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.now_utc" title="annals.share.now_utc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_utc</span></code></a>()</p></td>
-<td><p>The current time, UTC, second precision (the clock every default reads).</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.parse_expires" title="annals.share.parse_expires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_expires</span></code></a>(value, *[, now])</p></td>
-<td><p>An expiry as an ISO UTC timestamp, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for never.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.public_record" title="annals.share.public_record"><code class="xref py py-obj docutils literal notranslate"><span class="pre">public_record</span></code></a>(record)</p></td>
-<td><p>A record without its password hash (<code class="docutils literal notranslate"><span class="pre">protected</span></code> says whether it has one).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.references" title="annals.share.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a>(text, kind, *[, from_dir])</p></td>
 <td><p>What a page points at: files of its document, and annals pages (by id).</p></td>
@@ -248,12 +215,6 @@ changing the password or revoking the link ends every open session.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.PasswordHasher" title="annals.share.PasswordHasher"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PasswordHasher</span></code></a>(*args, **kwargs)</p></td>
-<td><p>What a share needs to gate a link on a password.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.ScryptHasher" title="annals.share.ScryptHasher"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ScryptHasher</span></code></a>([n, r, p, salt_bytes, dklen])</p></td>
-<td><p>Stdlib <code class="docutils literal notranslate"><span class="pre">hashlib.scrypt</span></code>, stored as <code class="docutils literal notranslate"><span class="pre">scrypt$n$r$p$salt$hash</span></code> (base64).</p></td>
-</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.Shares" title="annals.share.Shares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shares</span></code></a>(store, *[, hasher, clock])</p></td>
 <td><p>Create, read, list and revoke shares of a <code class="xref py py-class docutils literal notranslate"><span class="pre">DocStore</span></code>'s documents.</p></td>
 </tr>
@@ -266,49 +227,21 @@ changing the password or revoking the link ends every open session.</p>
 <dd><p>an annals id (doc or group) as <a class="reference internal" href="annals.store.html#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.store.mk_id()</span></code></a> makes them</p>
 </dd></dl>
 
-<dl class="py data">
-<dt class="sig sig-object py" id="annals.share.DFLT_EXPIRES">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">DFLT_EXPIRES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'7d'</span></span><a class="headerlink" href="#annals.share.DFLT_EXPIRES" title="Link to this definition">#</a></dt>
-<dd><p>a share lasts this long unless told otherwise (<code class="docutils literal notranslate"><span class="pre">&quot;never&quot;</span></code> for no expiry)</p>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="annals.share.MIN_PASSWORD_LEN">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">MIN_PASSWORD_LEN</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">8</span></span><a class="headerlink" href="#annals.share.MIN_PASSWORD_LEN" title="Link to this definition">#</a></dt>
-<dd><p>the shortest link password accepted (a gate tried from anywhere must not be guessable)</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="annals.share.PasswordHasher">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">PasswordHasher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#PasswordHasher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.PasswordHasher" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
-<p>What a share needs to gate a link on a password.</p>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="annals.share.ScryptHasher">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">ScryptHasher</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16384</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">salt_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dklen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">32</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#ScryptHasher"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.ScryptHasher" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
-<p>Stdlib <code class="docutils literal notranslate"><span class="pre">hashlib.scrypt</span></code>, stored as <code class="docutils literal notranslate"><span class="pre">scrypt$n$r$p$salt$hash</span></code> (base64).</p>
-<p>The default needs no dependency; <code class="docutils literal notranslate"><span class="pre">n=2**14,</span> <span class="pre">r=8</span></code> costs ~16 MB and tens of ms per
-check, which the attempt limit of the share server bounds.</p>
-<dl class="field-list simple">
-</dl>
-</dd></dl>
-
 <dl class="py class">
 <dt class="sig sig-object py" id="annals.share.Shares">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">Shares</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hasher</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clock</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">now_utc&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#Shares"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.Shares" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Create, read, list and revoke shares of a <code class="xref py py-class docutils literal notranslate"><span class="pre">DocStore</span></code>’s documents.</p>
-<p><code class="docutils literal notranslate"><span class="pre">hasher</span></code> hashes link passwords (stdlib scrypt by default); <code class="docutils literal notranslate"><span class="pre">clock</span></code> returns the
-current UTC <code class="docutils literal notranslate"><span class="pre">datetime</span></code> (tests pin it).</p>
+<p>What a share reaches (its scope) is decided here; the link itself is <code class="docutils literal notranslate"><span class="pre">links</span></code>, a
+<code class="xref py py-class docutils literal notranslate"><span class="pre">caplinks.CapabilityLinks</span></code> over the records under <code class="docutils literal notranslate"><span class="pre">shares/</span></code>. <code class="docutils literal notranslate"><span class="pre">hasher</span></code>
+hashes link passwords (stdlib scrypt by default); <code class="docutils literal notranslate"><span class="pre">clock</span></code> returns the current UTC
+<code class="docutils literal notranslate"><span class="pre">datetime</span></code> (tests pin it).</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.share.Shares.check_password">
 <span class="sig-name descname"><span class="pre">check_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#Shares.check_password"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.Shares.check_password" title="Link to this definition">#</a></dt>
-<dd><p>Whether <code class="docutils literal notranslate"><span class="pre">password</span></code> opens <code class="docutils literal notranslate"><span class="pre">record</span></code> (constant time inside the hasher).</p>
+<dd><p>Whether <code class="docutils literal notranslate"><span class="pre">password</span></code> opens <code class="docutils literal notranslate"><span class="pre">record</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
@@ -325,8 +258,8 @@ itself always goes); <code class="docutils literal notranslate"><span class="pre
 to, which then open inside the share. A group is shared with all its documents
 unless <code class="docutils literal notranslate"><span class="pre">include</span></code> names some. <code class="docutils literal notranslate"><span class="pre">exclude</span></code> removes files (or a group’s documents).
 A linked page goes with the files it shows. <code class="docutils literal notranslate"><span class="pre">expires</span></code> is anything
-<a class="reference internal" href="#annals.share.parse_expires" title="annals.share.parse_expires"><code class="xref py py-func docutils literal notranslate"><span class="pre">parse_expires()</span></code></a> reads, 7 days by default (<code class="docutils literal notranslate"><span class="pre">&quot;never&quot;</span></code> for none); <code class="docutils literal notranslate"><span class="pre">password</span></code>
-gates the link (at least <code class="docutils literal notranslate"><span class="pre">MIN_PASSWORD_LEN</span></code> characters).</p>
+<code class="xref py py-func docutils literal notranslate"><span class="pre">parse_expires()</span></code> reads, 7 days by default (<code class="docutils literal notranslate"><span class="pre">&quot;never&quot;</span></code> for none); <code class="docutils literal notranslate"><span class="pre">password</span></code>
+gates the link (at least <code class="docutils literal notranslate"><span class="pre">caplinks.MIN_PASSWORD_LEN</span></code> characters).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -395,7 +328,7 @@ links; <code class="docutils literal notranslate"><span class="pre">pages</span>
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.share.Shares.unlock_value">
 <span class="sig-name descname"><span class="pre">unlock_value</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#Shares.unlock_value"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.Shares.unlock_value" title="Link to this definition">#</a></dt>
-<dd><p>The cookie value a correct password earns: <code class="docutils literal notranslate"><span class="pre">&lt;issued</span> <span class="pre">epoch&gt;.&lt;hmac&gt;</span></code>.</p>
+<dd><p>The cookie value a correct password earns.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -414,17 +347,6 @@ links; <code class="docutils literal notranslate"><span class="pre">pages</span>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="annals.share.check_token">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">check_token</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">token</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#check_token"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.check_token" title="Link to this definition">#</a></dt>
-<dd><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on anything that could not be a token (a path, a dot, …).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -454,70 +376,6 @@ for anything outside the share however the text names it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="annals.share.is_expired">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">is_expired</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#is_expired"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.is_expired" title="Link to this definition">#</a></dt>
-<dd><p>True when the record has an expiry and it is reached (a bad one counts as reached).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="annals.share.new_token">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">new_token</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#new_token"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.new_token" title="Link to this definition">#</a></dt>
-<dd><p>A fresh link token: 128 random bits, url-safe.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="annals.share.now_utc">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">now_utc</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#now_utc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.now_utc" title="Link to this definition">#</a></dt>
-<dd><p>The current time, UTC, second precision (the clock every default reads).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="annals.share.parse_expires">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">parse_expires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#parse_expires"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.parse_expires" title="Link to this definition">#</a></dt>
-<dd><p>An expiry as an ISO UTC timestamp, or <code class="docutils literal notranslate"><span class="pre">None</span></code> for never.</p>
-<p><code class="docutils literal notranslate"><span class="pre">None</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;never&quot;</span></code> mean never. Accepts a duration (<code class="docutils literal notranslate"><span class="pre">30m</span></code>, <code class="docutils literal notranslate"><span class="pre">12h</span></code>, <code class="docutils literal notranslate"><span class="pre">7d</span></code>, <code class="docutils literal notranslate"><span class="pre">2w</span></code>), a date (<code class="docutils literal notranslate"><span class="pre">2026-11-01</span></code>: the
-END of that day, UTC, so the link works through the day named), an ISO timestamp (a
-naive one is UTC), or a <code class="docutils literal notranslate"><span class="pre">datetime</span></code>. A moment already past is refused.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_expires</span><span class="p">(</span><span class="s2">"2d"</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span>
-</span><span data-line="2"><span class="go">'2026-01-03T00:00:00+00:00'</span>
-</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_expires</span><span class="p">(</span><span class="s2">"2026-01-05"</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span>
-</span><span data-line="4"><span class="go">'2026-01-05T23:59:59+00:00'</span>
-</span></pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="annals.share.public_record">
-<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">public_record</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#public_record"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.public_record" title="Link to this definition">#</a></dt>
-<dd><p>A record without its password hash (<code class="docutils literal notranslate"><span class="pre">protected</span></code> says whether it has one).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -605,7 +463,7 @@ feeds the Share dialog, which offers them to the owner.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=f0357c94"></script>
+      <script src="../_static/documentation_options.js?v=c7cdf6fe"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
