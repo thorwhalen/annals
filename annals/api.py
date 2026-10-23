@@ -54,6 +54,7 @@ from annals.config import (
     APP_NAME,
     DFLT_SERVE_PORT,
     ENV_DATA_DIR,
+    ENV_SHARE_BASE_URL,
     ENV_SOURCES,
     MAX_INLINE_TEXT_BYTES,
     default_data_dir,
@@ -69,6 +70,7 @@ from annals.sources import (
     parse_sources_spec,
     with_thumb,
 )
+from annals.share import Shares, share_url
 from annals.store import (
     DocStore,
     TEXT_KINDS,
@@ -228,6 +230,7 @@ def mk_api(
     thumbnailer: Thumbnailer | None | bool = True,
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
+    share_base_url: str | None = None,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The JSON API, raw files and page assets, rooted at ``/``, with no auth of its own.
@@ -241,8 +244,17 @@ def mk_api(
     folders named in ``ANNALS_SOURCES``. ``tags`` is where the owner's tags live, any
     ``MutableMapping`` from item key to tag list; by default one JSON file under the data
     root (``tags/tags.json``), or a dict when the data root is not on this machine.
+    ``share_base_url`` is where the public share server (:mod:`annals.share_api`) answers,
+    so a new share comes back with its link (by default ``ANNALS_SHARE_BASE_URL``; with
+    neither, shares are made but carry no link, since nothing public serves them here).
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
+    shares = Shares(store)
+    share_base = (
+        share_base_url
+        if share_base_url is not None
+        else os.environ.get(ENV_SHARE_BASE_URL)
+    )
     if thumbnailer is True:
         thumbnailer = _default_thumbnailer()
     catalog = mk_catalog(store, sources=sources, tags=tags)
@@ -316,7 +328,7 @@ def mk_api(
         except PermissionError as e:
             raise HTTPException(409, str(e))
         catalog.forget(mk_key(PUBLISHED, doc_id))
-        root = _local_root()
+        root = store.target.local_path(".")
         if root is not None:
             shutil.rmtree(root / THUMB_CACHE / doc_id, ignore_errors=True)
         return {"ok": True, "id": doc_id}
@@ -340,6 +352,72 @@ def mk_api(
             except (KeyError, ValueError):
                 continue
         return {**group, "items": docs}
+
+    # -- shares: public links to one document or group (the owner's side) -------------
+    # The recipient's side is annals.share_api, mounted where this API's login does not
+    # reach. Here the owner makes, lists and revokes them; a password arrives in the clear
+    # over the owner's own session and only its hash is stored.
+
+    def _with_link(rec: dict) -> dict:
+        rec["url"] = share_url(share_base, rec["token"])
+        return rec
+
+    @api.get("/shares")
+    def list_shares(all: bool = False, ref: str = "") -> dict:
+        """Live shares, newest first (``all``: revoked and expired too; ``ref``: of one id)."""
+        recs = [
+            r for r in shares.list(all=all) if not ref or r["root"].get("id") == ref
+        ]
+        return {"shares": [_with_link(r) for r in recs], "linkable": bool(share_base)}
+
+    @api.post("/shares", dependencies=[Depends(_require_same_origin)])
+    def create_share(body: dict = Body(...)) -> dict:
+        """Share ``{"ref": id, "include"?, "exclude"?, "password"?, "expires"?, "title"?}``."""
+        known = {"ref", "include", "exclude", "password", "expires", "title"}
+        if set(body) - known or not isinstance(body.get("ref"), str):
+            raise HTTPException(
+                422,
+                f"send {{'ref': <doc or group id>}} plus any of {sorted(known - {'ref'})}",
+            )
+        for k in ("include", "exclude"):
+            if body.get(k) is not None and not (
+                isinstance(body[k], list) and all(isinstance(x, str) for x in body[k])
+            ):
+                raise HTTPException(422, f"{k} must be a list of strings")
+        for k in ("password", "expires", "title"):
+            if body.get(k) is not None and not isinstance(body[k], str):
+                raise HTTPException(422, f"{k} must be a string")
+        try:
+            rec = shares.create(
+                body["ref"],
+                include=body.get("include"),
+                exclude=body.get("exclude") or (),
+                password=body.get("password") or None,
+                expires=body.get("expires") or None,
+                title=body.get("title") or None,
+            )
+        except KeyError:
+            raise HTTPException(404, "no such document or group")
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        return _with_link(rec)
+
+    @api.delete("/shares/{token}", dependencies=[Depends(_require_same_origin)])
+    def revoke_share(token: str) -> dict:
+        """Turn a link off now; its record stays, revoked, in ``/shares?all=1``."""
+        try:
+            return _with_link(shares.revoke(token))
+        except KeyError:
+            raise HTTPException(404, "no such share")
+
+    @api.get("/docs/{doc_id}/shareable")
+    def shareable(doc_id: str) -> dict:
+        """What the Share dialog offers: the document's files, and the pages it links."""
+        _meta_or_404(store, doc_id)
+        try:
+            return shares.resources(doc_id)
+        except (KeyError, ValueError):
+            raise HTTPException(404, "no such document")
 
     # -- every source's items: one list, full-text search, the owner's tags ---------
     # The page reaches these through @zodal/store-http's provider: GET /items?q= answers
@@ -397,34 +475,6 @@ def mk_api(
         # these files change in place (a ledger grows), so revalidate every time
         return _raw_response(path, rel, cache="private, no-cache")
 
-    def _local_root() -> Path | None:
-        return store.target.local_path(".")
-
-    def _file_path(doc_id: str, rel: str) -> Path:
-        """The file on disk, or a 404: it must be listed in the meta AND stay inside the
-        document's directory (meta.json is written by the publisher, so it is not trusted
-        to keep paths in bounds)."""
-        meta = _meta_or_404(
-            store, doc_id, settle=False
-        )  # hot path: the page settled it
-        if rel not in meta["files"]:
-            raise HTTPException(404, "no such file in document")
-        try:
-            check_rel(rel)
-        except ValueError:
-            raise HTTPException(404, "no such file in document")
-        try:
-            doc_rel = store.doc_rel(doc_id)
-        except (KeyError, ValueError):
-            raise HTTPException(404, "no such document")
-        doc_dir = store.target.local_path(doc_rel)
-        path = store.target.local_path(f"{doc_rel}/{rel}")
-        if doc_dir is None:
-            raise HTTPException(501, "raw files are served from a local data dir only")
-        if path is None or not path.is_relative_to(doc_dir) or not path.is_file():
-            raise HTTPException(404, "file missing on disk")
-        return path
-
     @api.get("/raw/{doc_id}/{rel:path}")
     def raw_file(
         doc_id: str, rel: str, if_none_match: str | None = Header(None)
@@ -435,37 +485,95 @@ def mk_api(
         file into memory, which is what a ``<video>`` element needs (Safari will not play
         without ranges).
         """
-        path = _file_path(doc_id, rel)
+        path = doc_file_path(store, doc_id, rel)
         cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
         if kind_of(rel) == "html":
             return _html_response(path, rel, cache=cache, request_etag=if_none_match)
         return _raw_response(path, rel, cache=cache)
 
-    # Waiting for a thumbnail slot must not hold one of the threads every app shares, so
-    # the endpoint is async and only the work itself goes to a thread, two at a time.
-    thumb_limiter = anyio.CapacityLimiter(THUMB_CONCURRENCY)
+    thumbs = ThumbServer(store, thumbnailer)
 
     @api.get("/thumb/{doc_id}/{rel:path}")
     async def thumb_file(doc_id: str, rel: str, w: int = 320) -> Response:
-        """A small webp of an image, made once and cached.
+        """A small webp of an image, made once and cached (see :class:`ThumbServer`)."""
+        path = await anyio.to_thread.run_sync(doc_file_path, store, doc_id, rel)
+        return await thumbs.respond(
+            path, doc_id, rel, w, fallback=lambda: raw_file(doc_id, rel, None)
+        )
 
-        When none can be made, the original is sent if it is small, else a placeholder:
-        a phone never downloads a 60 MB photo for a 160 px tile.
-        """
-        path = await anyio.to_thread.run_sync(_file_path, doc_id, rel)
+    if UI_DIR.is_dir():  # never fail a host's import over a missing asset dir
+        api.mount("/ui", _RevalidatingStatic(directory=str(UI_DIR)), name="ui")
+    api.state.store = store
+    api.state.catalog = catalog
+    api.state.shares = shares
+    return api
+
+
+def doc_file_path(store: DocStore, doc_id: str, rel: str) -> Path:
+    """A document's file on disk, or a 404.
+
+    It must be listed in the meta AND stay inside the document's directory (meta.json is
+    written by the publisher, so it is not trusted to keep paths in bounds).
+    """
+    meta = _meta_or_404(store, doc_id, settle=False)  # hot path: the page settled it
+    if rel not in meta["files"]:
+        raise HTTPException(404, "no such file in document")
+    try:
+        check_rel(rel)
+    except ValueError:
+        raise HTTPException(404, "no such file in document")
+    try:
+        doc_rel = store.doc_rel(doc_id)
+    except (KeyError, ValueError):
+        raise HTTPException(404, "no such document")
+    doc_dir = store.target.local_path(doc_rel)
+    path = store.target.local_path(f"{doc_rel}/{rel}")
+    if doc_dir is None:
+        raise HTTPException(501, "raw files are served from a local data dir only")
+    if path is None or not path.is_relative_to(doc_dir) or not path.is_file():
+        raise HTTPException(404, "file missing on disk")
+    return path
+
+
+class ThumbServer:
+    """Small webp thumbnails of a store's images, made once and cached under the data root.
+
+    When none can be made, the original is sent if it is small (``fallback``), else a
+    placeholder: a phone never downloads a 60 MB photo for a 160 px tile. Waiting for a
+    slot must not hold one of the threads every app shares, so :meth:`respond` is async and
+    only the work goes to a thread, ``THUMB_CONCURRENCY`` at a time.
+    """
+
+    def __init__(self, store: DocStore, thumbnailer: Thumbnailer | None):
+        self.store = store
+        self.thumbnailer = thumbnailer
+        self.limiter = anyio.CapacityLimiter(THUMB_CONCURRENCY)
+
+    async def respond(
+        self,
+        path: Path,
+        doc_id: str,
+        rel: str,
+        w: int,
+        *,
+        fallback: Callable[[], Response],
+        cache: str | None = None,
+    ) -> Response:
+        """The thumbnail of ``path`` (``rel`` of ``doc_id``) at the width snapped from ``w``."""
         width = next((x for x in THUMB_WIDTHS if x >= w), THUMB_WIDTHS[-1])
-        if thumbnailer and Path(rel).suffix.lower() in THUMBNAILABLE:
+        root = self.store.target.local_path(".")
+        if self.thumbnailer and root and Path(rel).suffix.lower() in THUMBNAILABLE:
             # a replace reuses file names, so the thumbnail is the file's at this version
             meta = await anyio.to_thread.run_sync(
-                functools.partial(store.meta, doc_id, settle=False)
+                functools.partial(self.store.meta, doc_id, settle=False)
             )
             stamp = meta.get("updated", "")
             key = hashlib.sha1(f"{rel}|{stamp}".encode("utf-8")).hexdigest()[:20]
-            cached = _local_root() / THUMB_CACHE / doc_id / f"{key}.w{width}.webp"
+            cached = root / THUMB_CACHE / doc_id / f"{key}.w{width}.webp"
             made = cached.is_file() or await anyio.to_thread.run_sync(
-                thumbnailer, path, cached, width, limiter=thumb_limiter
+                self.thumbnailer, path, cached, width, limiter=self.limiter
             )
-            cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
+            cache = cache or (RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE)
             if made:
                 return FileResponse(
                     cached,
@@ -478,13 +586,7 @@ def mk_api(
                     media_type="image/svg+xml",
                     headers={"Cache-Control": cache},
                 )
-        return raw_file(doc_id, rel, None)
-
-    if UI_DIR.is_dir():  # never fail a host's import over a missing asset dir
-        api.mount("/ui", _RevalidatingStatic(directory=str(UI_DIR)), name="ui")
-    api.state.store = store
-    api.state.catalog = catalog
-    return api
+        return fallback()
 
 
 def _item_or_404(catalog: Catalog, key: str) -> dict:
@@ -577,14 +679,19 @@ def _wants_html(request: Request) -> bool:
 
 
 class _AuthGate:
-    """Pure ASGI middleware: ask the authorizer, deny like enlace_auth does."""
+    """Pure ASGI middleware: ask the authorizer, deny like enlace_auth does.
 
-    def __init__(self, app, authorizer: Authorizer):
+    Paths under a ``public`` prefix (the share server) pass ungated: their own token is
+    their gate.
+    """
+
+    def __init__(self, app, authorizer: Authorizer, public: tuple[str, ...] = ()):
         self.app = app
         self.authorizer = authorizer
+        self.public = tuple(p.rstrip("/") + "/" for p in public)
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] != "http":
+        if scope["type"] != "http" or scope["path"].startswith(self.public):
             await self.app(scope, receive, send)
             return
         request = Request(scope)
@@ -632,8 +739,11 @@ def mk_app(
 
     Every argument has a working default (the local data dir; auth from the environment,
     which is none on a bare machine, so bind to localhost). ``sources`` and ``tags`` are
-    :func:`mk_api`'s.
+    :func:`mk_api`'s. Share links are served, ungated, at ``{base_path}/shared/<token>/``
+    (:func:`annals.share_api.mk_share_api`).
     """
+    from annals.share_api import mk_share_api
+
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     authorizer = authorizer or authorizer_from_env()
     base = "/" + base_path.strip("/")
@@ -644,6 +754,7 @@ def mk_app(
     @app.get(base + "/d/{doc_id}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/g/{gid}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/trash", response_class=HTMLResponse, include_in_schema=False)
+    @app.get(base + "/shares", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/all", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/s/{source}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(
@@ -659,13 +770,16 @@ def mk_app(
     def root_redirect() -> RedirectResponse:
         return RedirectResponse(base + "/", status_code=307)
 
-    app.mount(
-        base + "/api", mk_api(store=store, sources=sources, tags=tags, title=title)
+    shared = base + "/shared"
+    owner_api = mk_api(
+        store=store, sources=sources, tags=tags, share_base_url=shared, title=title
     )
+    app.mount(base + "/api", owner_api)
+    app.mount(shared, mk_share_api(shares=owner_api.state.shares, title=title))
     app.state.store = store
     app.state.base_path = base
     app.add_middleware(
-        _AuthGate, authorizer=authorizer
+        _AuthGate, authorizer=authorizer, public=(shared,)
     )  # pure ASGI, never BaseHTTPMiddleware
     return app
 

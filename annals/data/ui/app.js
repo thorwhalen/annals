@@ -8,6 +8,11 @@
    BASE/d/<id>?f=<p>   one file of a document, shown by its kind, with prev/next
    BASE/g/<gid>        a group: one URL for a set of documents
    BASE/trash          the recycle bin: restore, or delete forever
+   BASE/shares         the owner's share links: copy, or revoke
+   A document or a group has a Share button: a public link to it and the files chosen,
+   with an optional password and expiry (annals.share). The same file is the recipient's
+   page: the share server sets window.ANNALS.share, BASE and API to the link, and the page
+   then shows only what the share includes, without the owner's controls.
    The API lives at window.ANNALS.api (standalone: BASE/api; on enlace: /api/<app>). Items
    (every source's rows, and their tags) are read and patched through @zodal/store-http's
    provider, vendored at API/ui/vendor/, so the storage behind them can change without
@@ -18,6 +23,8 @@
   var BASE = (CFG.base || "/" + (location.pathname.split("/")[1] || "annals")).replace(/\/$/, "");
   var API = (CFG.api || BASE + "/api").replace(/\/$/, "");
   var NAME = CFG.title || "annals";
+  var SHARE = CFG.share || null;   /* set when this page is a share link's, for a recipient */
+  var UI = (CFG.ui || API + "/ui").replace(/\/$/, "");
   var app = document.getElementById("app");
   var toastEl;
   var MEDIA_SLOW_MS = 3000;
@@ -45,7 +52,7 @@
   }
   function api(path, opts) {
     return fetch(API + path, Object.assign({ credentials: "same-origin" }, opts || {})).then(function (r) {
-      if (r.status === 401) { toLogin(); throw new Error("login"); }
+      if (r.status === 401) { if (SHARE) location.reload(); else toLogin(); throw new Error("login"); }
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.detail || r.statusText); });
       return r.json();
     });
@@ -114,7 +121,7 @@
   var markedReady;
   function loadScript(name) {
     return new Promise(function (ok, ko) {
-      var s = h("script", { src: API + "/ui/" + name });
+      var s = h("script", { src: UI + "/" + name });
       s.onload = ok; s.onerror = function () { ko(new Error("could not load " + name)); };
       document.head.appendChild(s);
     });
@@ -213,8 +220,10 @@
   }
   /* One link per source, then everything at once, then the bin; the current one marked. */
   function mainNav(current) {
+    if (SHARE) return [];
     var items = knownSources.map(function (s) { return [scopeHref(s.name), s.title, s.name]; });
     if (knownSources.length > 1) items.push([BASE + "/all", "All", "all"]);
+    items.push([BASE + "/shares", "Shares", "shares"]);
     items.push([BASE + "/trash", "Bin", "trash"]);
     return items.map(function (x) { var a = link(x[0], x[1]); if (x[2] === current) a.setAttribute("aria-current", "page"); return a; });
   }
@@ -720,9 +729,11 @@
           h("button", { class: "btn", disabled: next ? null : "", onclick: function () { go(fileUrl(m.id, next), true); } }, ["Next"])
         ]);
       }
-      var docTools = h("div", { class: "toolbar" }, [artifactLink(m)].concat(tools, [
+      var sharePanel = h("div");
+      var docTools = h("div", { class: "toolbar" }, [SHARE ? null : artifactLink(m)].concat(tools, [
         h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"]),
-        rel ? null : (m.in_trash
+        rel || SHARE || m.in_trash ? null : h("button", { class: "btn", "aria-expanded": "false", onclick: function (e) { toggleShare(e.currentTarget, sharePanel, { kind: "doc", id: m.id, title: m.title }); } }, ["Share"]),
+        rel || SHARE ? null : (m.in_trash
           ? h("button", { class: "btn", onclick: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }, ["Restore"])
           : h("button", { class: "btn danger", onclick: function () { api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); } }, ["Move to bin"]))
       ]));
@@ -739,9 +750,10 @@
       page(rel ? basename(rel) : m.title, mainNav(m.in_trash ? "trash" : "published"), [
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
-        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
-        fileNav, isVersion ? h("div", { class: "toolbar" }, tools.concat([h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"])])) : docTools, body,
-        rel ? null : versionsPanel(m),
+        SHARE && !rel ? shareNotice() : null,
+        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        fileNav, isVersion ? h("div", { class: "toolbar" }, tools.concat([h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"])])) : docTools, sharePanel, body,
+        rel || SHARE ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
       ]);
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
@@ -752,12 +764,200 @@
     page("Group", mainNav("published"), [h("p", { class: "muted" }, ["Loading…"])]);
     api("/groups/" + gid).then(function (g) {
       var items = (g.items || []).filter(function (m) { return !m.in_trash; });
+      var groupPanel = h("div");
       page(g.title, mainNav("published"), [
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
-        h("div", { class: "toolbar" }, [h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"])]),
+        h("div", { class: "toolbar" }, [h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"]),
+          h("button", { class: "btn", "aria-expanded": "false", onclick: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } }, ["Share"])]),
+        groupPanel,
         h("div", { class: "list" }, items.length ? items.map(function (m) { return card(m); }) : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])])
       ]);
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
+  }
+
+  /* -------- share links: the owner's dialog, the owner's list, the recipient's root -- */
+  /* A share is made by the owner's API (POST /shares) and served by annals.share_api;
+     the dialog only chooses what goes in it. Defaults are the safe ones: every file the
+     page shows, a link that ends in 7 days, no password unless one is typed. */
+  var EXPIRY_CHOICES = [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"], ["", "Never"], ["date", "On a date…"]];
+  var FILES_UNFOLDED = 12;
+  var PW_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+  function newPassword(n) {
+    var a = new Uint32Array(n || 12), out = "";
+    window.crypto.getRandomValues(a);
+    a.forEach(function (x, i) { out += (i && i % 4 === 0 ? "-" : "") + PW_ALPHABET[x % PW_ALPHABET.length]; });
+    return out;
+  }
+  /* A moment to come, as a date: "Oct 30, 14:00" (when() reads the past). */
+  function until(iso) {
+    var d = new Date(iso), now = new Date();
+    return d.toLocaleDateString([], { month: "short", day: "numeric", year: d.getFullYear() !== now.getFullYear() ? "numeric" : undefined }) +
+      ", " + d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+  function absUrl(u) { return u ? new URL(u, location.href).href : null; }
+  function shareSummary(s) {
+    var bits = [s.expires ? "expires " + until(s.expires) : "never expires"];
+    if (s.protected) bits.push("password");
+    var n = 0; Object.keys(s.docs || {}).forEach(function (d) { n += (s.docs[d] || []).length; });
+    if (n) bits.push(n + (n === 1 ? " file" : " files"));
+    if (s.revoked) bits = ["revoked " + when(s.revoked)];
+    else if (s.active === false) bits = ["expired " + until(s.expires)];
+    return bits.join(" · ");
+  }
+  function shareRow(s, onChange) {
+    var live = !s.revoked && s.active !== false;
+    return h("li", { class: "share-row" + (live ? "" : " dead") }, [
+      h("div", { class: "grow" }, [h("div", null, [s.title || s.token]), h("div", { class: "meta" }, [ageEl(s.created), h("span", null, [shareSummary(s)])])]),
+      live && s.url ? h("button", { class: "btn", onclick: function () { copyText(absUrl(s.url)); } }, ["Copy link"]) : null,
+      live ? h("button", { class: "btn danger", onclick: function () {
+        if (!window.confirm("Turn off this link? Whoever has it loses access at once.")) return;
+        api("/shares/" + encodeURIComponent(s.token), { method: "DELETE" }).then(function () { toast("Link turned off"); onChange(); })
+          .catch(function (e) { toast(String(e.message || e)); });
+      } }, ["Revoke"]) : null
+    ]);
+  }
+  function existingShares(ref, box) {
+    function draw() {
+      api("/shares?ref=" + encodeURIComponent(ref)).then(function (b) {
+        box.innerHTML = "";
+        if (!b.shares.length) return;
+        box.appendChild(h("h4", null, ["Links already made"]));
+        box.appendChild(h("ul", { class: "share-list" }, b.shares.map(function (s) { return shareRow(s, draw); })));
+      }).catch(function () { box.innerHTML = ""; });
+    }
+    draw();
+    return draw;
+  }
+  function toggleShare(btn, panel, target) {
+    var open = btn.getAttribute("aria-expanded") === "true";
+    btn.setAttribute("aria-expanded", String(!open));
+    panel.innerHTML = "";
+    if (!open) panel.appendChild(shareDialog(target));
+  }
+  function checkRow(label, checked, opts) {
+    opts = opts || {};
+    var box = h("input", { type: "checkbox", checked: checked ? "" : null, disabled: opts.disabled ? "" : null, value: opts.value });
+    return { input: box, el: h("label", { class: "check" }, [box, " "].concat(label)) };
+  }
+  function shareDialog(target) {
+    var wrap = h("section", { class: "share-panel", "aria-label": "Share" }, [h("h3", null, ["Share “" + (target.title || target.id) + "”"]),
+      h("p", { class: "muted" }, ["Anyone with the link can open it without an account, and nothing else of your annals."])]);
+    var picks = [];      /* {input, value, referenced} */
+    var pickBox = h("div", { class: "share-picks" }, [h("p", { class: "muted" }, ["Loading…"])]);
+    wrap.appendChild(pickBox);
+    function selectBy(test) { picks.forEach(function (p) { if (!p.input.disabled) p.input.checked = test(p); }); }
+    if (target.kind === "doc") {
+      api("/docs/" + target.id + "/shareable").then(function (r) {
+        pickBox.innerHTML = "";
+        var files = r.files || [];
+        if (files.length > 1) {
+          pickBox.appendChild(h("h4", null, ["Files"]));
+          pickBox.appendChild(h("div", { class: "toolbar" }, [h("span", { class: "muted" }, ["Select:"]),
+            h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function (p) { return p.file; }); } }, ["All files"]),
+            h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function (p) { return p.referenced; }); } }, ["What the page shows"]),
+            h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function () { return false; }); } }, ["None"])]));
+          /* a folder of renders can hold hundreds: past a screenful, the list folds */
+          var fileBox = files.length > FILES_UNFOLDED ? h("details", null, [h("summary", null, ["Choose among " + files.length + " files"])]) : pickBox;
+          if (fileBox !== pickBox) pickBox.appendChild(fileBox);
+          files.forEach(function (f) {
+            var row = checkRow([kindBadge(f.kind), " " + f.rel, f.main ? h("span", { class: "muted" }, [" (the page)"]) : f.referenced ? h("span", { class: "tag" }, ["on the page"]) : null,
+              f.size ? h("span", { class: "muted" }, [" " + size(f.size)]) : null], true, { disabled: f.main, value: f.rel });
+            picks.push({ input: row.input, value: f.rel, referenced: f.referenced || f.main, file: true });
+            fileBox.appendChild(row.el);
+          });
+        }
+        if ((r.pages || []).length) {
+          pickBox.appendChild(h("h4", null, ["Pages it links to"]));
+          pickBox.appendChild(h("p", { class: "muted" }, ["Unchecked, a link to one of these shows as “link not shared”."]));
+          r.pages.forEach(function (pg) {
+            var row = checkRow([kindBadge(pg.kind), " " + (pg.title || pg.id)], false, { value: pg.id });
+            picks.push({ input: row.input, value: pg.id, referenced: false, file: false });
+            pickBox.appendChild(row.el);
+          });
+        }
+      }).catch(function (e) { pickBox.innerHTML = ""; pickBox.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
+    } else {
+      pickBox.innerHTML = "";
+      pickBox.appendChild(h("h4", null, ["Documents"]));
+      (target.items || []).forEach(function (m) {
+        var row = checkRow([kindBadge(m.kind), " " + (m.title || m.id)], true, { value: m.id });
+        picks.push({ input: row.input, value: m.id, referenced: true, file: true });
+        pickBox.appendChild(row.el);
+      });
+    }
+    var expSel = h("select", { "aria-label": "Link expires" }, EXPIRY_CHOICES.map(function (c) { var o = h("option", { value: c[0] }, [c[1]]); if (c[0] === "7d") o.selected = true; return o; }));
+    var expDate = h("input", { type: "date", "aria-label": "Expiry date", hidden: "" });
+    expSel.addEventListener("change", function () { expDate.hidden = expSel.value !== "date"; });
+    /* a password the owner hands on, not one of theirs: plain text, kept out of managers */
+    var pw = h("input", { type: "text", placeholder: "No password", autocomplete: "off", spellcheck: "false", "data-1p-ignore": "", "data-lpignore": "true", "aria-label": "Password (optional)" });
+    wrap.appendChild(h("div", { class: "share-opts" }, [
+      h("label", null, ["Expires ", expSel, " ", expDate]),
+      h("label", null, ["Password ", pw, " ", h("button", { class: "btn link", type: "button", onclick: function () { pw.value = newPassword(); } }, ["Generate"])])
+    ]));
+    var result = h("div", { class: "share-result", "aria-live": "polite" });
+    var existing = h("div");
+    var make = h("button", { class: "btn primary", type: "button", onclick: function () {
+      var body = { ref: target.id };
+      if (picks.length) body.include = picks.filter(function (p) { return p.input.checked; }).map(function (p) { return p.value; });
+      if (target.kind === "group" && !(body.include || []).length) { toast("Choose at least one document"); return; }
+      var exp = expSel.value === "date" ? expDate.value : expSel.value;
+      if (expSel.value === "date" && !exp) { toast("Pick a date"); return; }
+      if (exp) body.expires = exp;
+      if (pw.value) body.password = pw.value;
+      make.disabled = true;
+      api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function (s) {
+        make.disabled = false;
+        result.innerHTML = "";
+        var url = absUrl(s.url);
+        if (!url) {
+          result.appendChild(h("p", { class: "err" }, ["The link is made, but this server has no public share address (ANNALS_SHARE_BASE_URL), so nobody can open it yet."]));
+        } else {
+          var field = h("input", { type: "text", readonly: "", value: url, "aria-label": "Share link", onfocus: function (e) { e.target.select(); } });
+          result.appendChild(h("div", { class: "share-link" }, [field, h("button", { class: "btn primary", type: "button", onclick: function () { copyText(url); } }, ["Copy"])]));
+          copyText(url);
+        }
+        result.appendChild(h("p", { class: "muted" }, [shareSummary(s) + (pw.value ? " — send the password separately: " + pw.value : "")]));
+        redraw();
+      }).catch(function (e) { make.disabled = false; toast(String(e.message || e)); });
+    } }, ["Create link"]);
+    wrap.appendChild(h("div", { class: "toolbar" }, [make]));
+    wrap.appendChild(result);
+    wrap.appendChild(existing);
+    var redraw = existingShares(target.id, existing);
+    return wrap;
+  }
+
+  function sharesView() {
+    var all = new URLSearchParams(location.search).get("all") === "1";
+    page("Shares", mainNav("shares"), [h("p", { class: "muted" }, ["Loading…"])]);
+    api("/shares" + (all ? "?all=1" : "")).then(function (b) {
+      var list = b.shares || [];
+      page("Shares", mainNav("shares"), [
+        h("div", { class: "doc-head" }, [h("h2", null, ["Share links"]), h("p", { class: "muted" }, ["Public links you made to one document or group. Open one to make another."])]),
+        b.linkable ? null : h("div", { class: "notice" }, ["This server has no public share address (ANNALS_SHARE_BASE_URL): these links cannot be opened yet."]),
+        h("div", { class: "toolbar" }, [link(BASE + "/shares" + (all ? "" : "?all=1"), all ? "Only live links" : "Show revoked and expired too", "btn")]),
+        list.length ? h("ul", { class: "share-list" }, list.map(function (s) {
+          var row = shareRow(s, sharesView);
+          var href = BASE + (s.root.kind === "group" ? "/g/" : "/d/") + s.root.id;
+          row.firstChild.firstChild.replaceWith(h("div", null, [link(href, s.title || s.root.id)]));
+          return row;
+        })) : h("div", { class: "empty" }, [all ? "No share links yet." : "No live share links. Use Share on a document to make one."])
+      ]);
+    }).catch(function (e) { page("Shares", mainNav("shares"), [h("div", { class: "empty" }, [String(e.message || e)])]); });
+  }
+
+  /* The recipient: one line saying what this is, and the share's documents. */
+  function shareNotice() {
+    return h("div", { class: "notice share-notice" }, ["Shared with you" + (SHARE.expires ? " · this link works until " + until(SHARE.expires) : "")]);
+  }
+  function shareRootView() {
+    page(NAME, [], [h("p", { class: "muted" }, ["Loading…"])]);
+    api("/share").then(function (s) {
+      page(s.title, [], [shareNotice(),
+        h("div", { class: "doc-head" }, [h("h2", null, [s.title]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["shared"]), h("span", null, [s.docs.length + (s.docs.length === 1 ? " document" : " documents")])])]),
+        h("div", { class: "list" }, s.docs.length ? s.docs.map(function (m) { return card(m); }) : [h("div", { class: "empty" }, ["Nothing here any more."])])
+      ]);
+    }).catch(function (e) { page(NAME, [], [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
 
   /* -------- one file of a folder source (a ledger) ----------------------------------- */
@@ -787,6 +987,11 @@
     var path = location.pathname.indexOf(BASE) === 0 ? location.pathname.slice(BASE.length) : location.pathname;
     var parts = path.split("/").filter(Boolean).map(decode); // ["d", id]
     var kind = parts[0], arg = parts[1];
+    if (SHARE) {
+      if (kind === "d" && arg) return docView(arg, new URLSearchParams(location.search).get("f"));
+      if (SHARE.root.kind === "doc") return docView(SHARE.root.id, new URLSearchParams(location.search).get("f"));
+      return shareRootView();
+    }
     return sources().then(function (list) {
       knownSources = list;
       if (kind === "d" && arg) return docView(arg, new URLSearchParams(location.search).get("f"));
@@ -795,6 +1000,7 @@
       if (kind === "s" && arg) return listView(arg);
       if (kind === "all") return listView("all");
       if (kind === "trash") return listView("trash");
+      if (kind === "shares") return sharesView();
       return listView("published");
     });
   }

@@ -115,3 +115,69 @@ def test_add_to_appends_to_an_existing_group(tmp_path, monkeypatch, capsys):
     assert len(DocStore(tmp_path / "data").group(gid)["docs"]) == 3
     assert len(DocStore(tmp_path / "data").list_groups()) == 1
     assert run(["publish", str(tmp_path / "c.md"), "--add-to", gid, "--group", "X"]) == 1
+
+
+def test_share_shares_unshare(tmp_path, monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from annals.api import mk_app
+    from annals.auth import no_auth
+    from annals.store import DocStore
+
+    monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://example.com/annals/")
+    monkeypatch.delenv("ANNALS_SHARE_BASE_URL", raising=False)
+    monkeypatch.delenv("ANNALS_CONFIG", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+    src = tmp_path / "rep"
+    src.mkdir()
+    (src / "report.md").write_text("# R\n\n![x](x.png) ![y](y.png)")
+    (src / "x.png").write_bytes(b"x")
+    (src / "y.png").write_bytes(b"y")
+    out = io.StringIO()
+    _run(["publish", str(src)], out)
+    doc_url = out.getvalue().strip()
+
+    out, err = io.StringIO(), io.StringIO()
+    monkeypatch.setattr("sys.stdin", io.StringIO("s3cret-pw\n"))
+    code = run(
+        ["share", doc_url, "--password", "-", "--expires", "7d", "--include", "x.png"],
+        out=out,
+        err=err,
+    )
+    assert code == 0, err.getvalue()
+    link = out.getvalue().strip()
+    assert re.match(r"^https://example\.com/annals/shared/[A-Za-z0-9_-]{22}/$", link)
+    assert "password-protected" in err.getvalue() and "2 files" in err.getvalue()
+    token = link.rstrip("/").rsplit("/", 1)[1]
+
+    # what the CLI wrote is what the server serves
+    client = TestClient(mk_app(store=DocStore(tmp_path / "data"), authorizer=no_auth))
+    hdr = {"content-type": "application/x-www-form-urlencoded"}
+    client.post(f"/annals/shared/{token}/unlock", content=b"password=s3cret-pw", headers=hdr)
+    doc_id = doc_url.rsplit("/", 1)[1]
+    assert client.get(f"/annals/shared/{token}/raw/{doc_id}/x.png").status_code == 200
+    assert client.get(f"/annals/shared/{token}/raw/{doc_id}/y.png").status_code == 404
+
+    out = io.StringIO()
+    _run(["shares"], out)
+    listed = json.loads(out.getvalue())["shares"]
+    assert [s["id"] for s in listed] == [token] and listed[0]["protected"]
+
+    out = io.StringIO()
+    _run(["unshare", link], out)
+    assert json.loads(out.getvalue()) == {"revoked": [token]}
+    assert client.get(f"/annals/shared/{token}/share").status_code == 404
+
+
+def test_share_base_url_resolution(tmp_path, monkeypatch):
+    monkeypatch.delenv("ANNALS_SHARE_BASE_URL", raising=False)
+    cfg = tmp_path / "c.toml"
+    s = load_settings(target="/x", base_url="https://h/annals", config_path=cfg)
+    assert s.share_base_url == "https://h/annals/shared"
+    monkeypatch.setenv("ANNALS_SHARE_BASE_URL", "https://h/api/annals_share/")
+    s = load_settings(target="/x", base_url="https://h/annals", config_path=cfg)
+    assert s.share_base_url == "https://h/api/annals_share"
+    write_config(s, config_path=cfg)
+    monkeypatch.delenv("ANNALS_SHARE_BASE_URL")
+    assert load_settings(config_path=cfg).share_base_url == "https://h/api/annals_share"

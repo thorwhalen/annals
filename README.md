@@ -100,6 +100,32 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | No platform login | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD` | HTTP Basic |
 | Localhost only | nothing | open |
 
+## Sharing one page
+
+The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, the Share button on a document lists its files and the annals pages it links to, so you choose what goes; from a shell:
+
+```bash
+annals share <id-or-link> --expires 7d --password -          # reads the password from stdin
+annals share <id> --include img/chart.png,img/map.png        # only these files (the page always goes)
+annals shares                                                # live links (--all: revoked and expired too)
+annals unshare <link-or-token>                               # off at once
+```
+
+The link is `<share_base_url>/<token>/`: 128 random bits, `noindex`, `no-referrer`. Every request is checked against the share's record (`shares/<token>.json` under the data root), so a file you did not choose is a 404 even beside the shared page, a revoke or an expiry takes effect on the next request, and references to anything outside the share (an image you left out, a link to another annals page, an annals id in the text) are removed from the page before it is sent. The password is a gate on the link, not an account: stored hashed (stdlib scrypt), with a limited number of attempts per link, and a correct one earns a cookie scoped to that link. Links are read-only.
+
+Where the links are served:
+
+- **Standalone** (`annals serve`): at `/annals/shared/<token>/`, outside the login, with nothing to configure.
+- **Inside an app platform**: the share server must be reachable without the platform's login, so run it as its own public app and tell annals where it is:
+
+```python
+# server.py of a second, PUBLIC app (the owner's app keeps its login)
+from annals.share_api import mk_share_api
+app = mk_share_api(data_dir="/root/.local/share/annals")
+```
+
+then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or `mk_api(share_base_url=...)` for the owner's page) to that app's public URL. Until it is set, shares are made but carry no link. `mk_share_api` takes `rate_limiter=` (anything with `allow(key) -> bool`, such as heed's Redis limiter; the default counts per process) and `hasher` lives on `annals.share.Shares` (argon2 or anything with `hash`/`verify`).
+
 ## Other folders, search, filters and tags
 
 Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (`/annals/s/<name>`) and in `/annals/all`:

@@ -16,6 +16,9 @@ _REFS = [
         "restore",
         "group",
         "groups",
+        "share",
+        "shares",
+        "unshare",
         "configure",
     )
 ]

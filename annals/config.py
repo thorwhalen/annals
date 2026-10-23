@@ -7,6 +7,10 @@ Two values matter to a publisher:
   reads, locally or on another machine.
 * ``base_url``: the public root of the annals app, so a publish can print the link the owner
   opens (``https://apps.example.com/annals``).
+* ``share_base_url``: where the public share server answers, so ``annals share`` prints the
+  link a recipient opens (``<share_base_url>/<token>/``). It defaults to
+  ``<base_url>/shared``, which is where ``annals serve`` mounts it; a platform that runs the
+  share server as its own public app sets it (``ANNALS_SHARE_BASE_URL`` or the config file).
 
 Resolution order, highest first: explicit keyword arguments, environment variables
 (``ANNALS_TARGET``, ``ANNALS_BASE_URL``), the config file (``$ANNALS_CONFIG`` or
@@ -43,6 +47,8 @@ APP_NAME = "annals"
 ENV_TARGET = "ANNALS_TARGET"
 ENV_BASE_URL = "ANNALS_BASE_URL"
 ENV_DATA_DIR = "ANNALS_DATA_DIR"
+#: where the public share server answers (a share link is ``<this>/<token>/``)
+ENV_SHARE_BASE_URL = "ANNALS_SHARE_BASE_URL"
 #: extra folders the page lists beside the published documents: "name=path, name2=path2"
 ENV_SOURCES = "ANNALS_SOURCES"
 ENV_CONFIG = "ANNALS_CONFIG"
@@ -87,6 +93,12 @@ class Settings:
     configured: bool = True
     #: the target is pulled and emptied by another machine; replacements apply there
     outbox: bool = False
+    #: where share links point (``<this>/<token>/``); ``<base_url>/shared`` by default
+    share_base_url: str = ""
+
+    def __post_init__(self):
+        if not self.share_base_url:
+            object.__setattr__(self, "share_base_url", f"{self.base_url}/shared")
 
     def as_dict(self) -> dict:
         """Plain dict, for the CLI and MCP surfaces."""
@@ -122,6 +134,7 @@ def load_settings(
     base_url: str | None = None,
     to: str | None = None,
     outbox: bool | None = None,
+    share_base_url: str | None = None,
     config_path: Path | None = None,
 ) -> Settings:
     """Resolve settings: arguments, then ``to``, env, the config file, then local defaults.
@@ -141,6 +154,7 @@ def load_settings(
         named = known[to]
         target = target or named["target"]
         outbox = outbox if outbox is not None else bool(named.get("outbox", False))
+        share_base_url = share_base_url or named.get("share_base_url")
         # Never fall through to the default's base url: links would name the wrong place.
         base_url = base_url or named.get("base_url")
         if not base_url:
@@ -169,11 +183,18 @@ def load_settings(
             else bool(file_values.get("outbox", False))
             and not (target or os.environ.get(ENV_TARGET))
         )
+    resolved_share = (
+        share_base_url
+        or (None if to else os.environ.get(ENV_SHARE_BASE_URL))
+        or (None if to else file_values.get("share_base_url"))
+        or ""
+    )
     return Settings(
         target=resolved_target,
         base_url=resolved_base_url.rstrip("/"),
         configured=configured,
         outbox=outbox,
+        share_base_url=str(resolved_share).rstrip("/"),
     )
 
 
@@ -198,6 +219,8 @@ def write_config(
     values: dict = {"target": settings.target, "base_url": settings.base_url}
     if settings.outbox:
         values["outbox"] = True
+    if settings.share_base_url != f"{settings.base_url}/shared":
+        values["share_base_url"] = settings.share_base_url  # only when not the default
     if to:
         targets[to] = values
     else:
