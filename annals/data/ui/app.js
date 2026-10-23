@@ -57,6 +57,10 @@
   function itemHref(r) { return r.source === "published" ? BASE + "/d/" + r.id : BASE + "/i/" + encodeURIComponent(r.source) + "/" + encPath(r.id); }
   function scopeHref(scope) { return scope === "published" ? BASE + "/" : scope === "all" ? BASE + "/all" : BASE + "/s/" + encodeURIComponent(scope); }
   function thumbUrl(id, rel, w) { return API + "/thumb/" + id + "/" + encPath(rel) + "?w=" + w; }
+  /* The same file as a download: the server answers with Content-Disposition: attachment,
+     so it saves even where a viewer (a phone's PDF frame, a video tag) would show it. */
+  function downloadUrl(url) { return url + (url.indexOf("?") < 0 ? "?" : "&") + "download=1"; }
+  function downloadLink(url, name, cls) { return h("a", { class: cls || "btn", href: downloadUrl(url), download: basename(name) }, ["Download"]); }
   function fileUrl(id, rel) { return BASE + "/d/" + id + "?f=" + encodeURIComponent(rel); }
   /* Going somewhere is a new history entry; refining the current view replaces it. */
   function go(path, replace) {
@@ -572,6 +576,7 @@
         ctx.sizes[rel] ? h("p", { class: "muted" }, [size(ctx.sizes[rel])]) : null]));
     }
     tools.push(h("a", { class: "btn", href: ctx.raw(rel), target: "_blank", rel: "noopener" }, [kind === "html" ? "Open full page" : "Open raw"]));
+    if (kind !== "file") tools.push(downloadLink(ctx.raw(rel), rel));
     return tools;
   }
 
@@ -656,15 +661,16 @@
       out.appendChild(h("section", null, [h("h3", null, [images.length + (images.length === 1 ? " image" : " images")]), grid, more]));
     }
     if (videos.length) out.appendChild(h("section", null, [h("h3", null, [videos.length + (videos.length === 1 ? " video" : " videos")])].concat(videos.map(function (f) {
-      return h("figure", { class: "player" }, [mediaBox("video", rawUrl(m.id, f), { name: f }), h("figcaption", null, [link(fileUrl(m.id, f), f), sizes[f] ? " · " + size(sizes[f]) : ""])]);
+      return h("figure", { class: "player" }, [mediaBox("video", rawUrl(m.id, f), { name: f }), h("figcaption", null, [link(fileUrl(m.id, f), f), sizes[f] ? " · " + size(sizes[f]) : "", " · ", downloadLink(rawUrl(m.id, f), f, "dl")])]);
     }))));
     if (audios.length) out.appendChild(h("section", null, [h("h3", null, [audios.length + " audio"])].concat(audios.map(function (f) {
-      return h("figure", { class: "player audio-row" }, [h("figcaption", null, [link(fileUrl(m.id, f), basename(f)), sizes[f] ? " · " + size(sizes[f]) : ""]), mediaBox("audio", rawUrl(m.id, f), { name: f })]);
+      return h("figure", { class: "player audio-row" }, [h("figcaption", null, [link(fileUrl(m.id, f), basename(f)), sizes[f] ? " · " + size(sizes[f]) : "", " · ", downloadLink(rawUrl(m.id, f), f, "dl")]), mediaBox("audio", rawUrl(m.id, f), { name: f })]);
     }))));
     if (others.length) out.appendChild(h("section", null, [h("h3", null, [others.length + (others.length === 1 ? " other file" : " other files")]),
       h("ul", { class: "filelist" }, others.map(function (f) {
         return h("li", null, [kindBadge(kinds[f] || "file"), " ", kinds[f] === "file" ? h("a", { href: rawUrl(m.id, f), download: basename(f) }, [f]) : link(fileUrl(m.id, f), f),
-          sizes[f] ? h("span", { class: "muted" }, [" " + size(sizes[f])]) : null]);
+          sizes[f] ? h("span", { class: "muted" }, [" " + size(sizes[f])]) : null,
+          kinds[f] === "file" ? null : h("span", null, [" · ", downloadLink(rawUrl(m.id, f), f, "dl")])]);
       }))]));
     return out;
   }

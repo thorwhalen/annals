@@ -346,3 +346,21 @@ def test_origin_matching_rules(client, store):
     assert client.post(f"/annals/api/docs/{doc_id}/restore", headers=evil).status_code == 403
     assert client.delete(f"/annals/api/docs/{doc_id}", headers=evil).status_code == 403
     assert client.patch(f"/annals/api/items/x", json={}, headers=evil).status_code == 403
+
+
+def test_any_media_can_be_downloaded_from_its_viewer(store, tmp_path):
+    d = tmp_path / "media"
+    d.mkdir()
+    for name in ("doc.pdf", "clip.mp4", "song.mp3", "pic.png", "page.html"):
+        (d / name).write_bytes(b"%PDF-1.4 x" if name.endswith(".pdf") else b"<p>x</p>" if name.endswith("html") else b"x" * 64)
+    m = store.publish(d)
+    c = TestClient(mk_api(store=store))
+    for name in ("doc.pdf", "clip.mp4", "song.mp3", "pic.png", "page.html"):
+        shown = c.get(f"/raw/{m['id']}/{name}")
+        assert "content-disposition" not in shown.headers, name  # the viewer still shows it
+        saved = c.get(f"/raw/{m['id']}/{name}?download=1")
+        assert saved.status_code == 200
+        assert saved.headers["content-disposition"].startswith("attachment"), name
+        assert name in saved.headers["content-disposition"]
+    assert c.get(f"/raw/{m['id']}/doc.pdf?download=1").content == b"%PDF-1.4 x"
+    assert c.get(f"/raw/{m['id']}/nope.pdf?download=1").status_code == 404
