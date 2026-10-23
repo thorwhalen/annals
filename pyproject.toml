@@ -16,6 +16,7 @@ authors = [
     { name = "Thor Whalen" },
 ]
 dependencies = [
+    "caplinks>=0.0.2",
     "cw>=0.1,<0.2",
 ]
 

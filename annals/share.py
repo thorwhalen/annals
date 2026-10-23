@@ -22,34 +22,36 @@ the shared page, and a page or a link of the shared text that points outside the
 removed before the text leaves the server (:func:`filter_refs`), so the recipient sees
 neither private ids nor private paths.
 
-The password is a gate on the link, not an account: anyone who knows both may read. It
-is hashed with stdlib ``scrypt`` (the ``hasher`` seam takes argon2 or anything with
-``hash``/``verify``), and a correct one earns an HMAC cookie keyed by that hash, so
-changing the password or revoking the link ends every open session.
-
-Tokens come from :func:`secrets.token_urlsafe` with 128 bits, as heed's review pages do.
+The link itself (the token, the password gate, expiry, revocation) is a
+:class:`caplinks.CapabilityLinks` over these records; what is annals' own is the scope
+and the filtering. The password is a gate on the link, not an account: anyone who knows
+both may read. It is hashed (stdlib ``scrypt`` by default, the ``hasher`` seam takes
+argon2), and a correct one earns an HMAC cookie keyed by that hash, so changing the
+password or revoking the link ends every open session.
 """
 
 from __future__ import annotations
 
-import base64
-import hashlib
-import hmac
 import json
 import re
-import secrets
-from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Callable, Iterable, Protocol
+from collections.abc import Iterator, MutableMapping
+from datetime import datetime
+from typing import Callable, Iterable
+
+from caplinks import (  # noqa: F401  (ScryptHasher, is_expired, parse_expires: re-exported)
+    DFLT_EXPIRES,
+    CapabilityLinks,
+    PasswordHasher,
+    ScryptHasher,
+    check_token,
+    is_expired,
+    now_utc,
+    parse_expires,
+)
 
 from annals.store import DocStore, check_id, kind_of
 
 SHARES = "shares"
-TOKEN_BYTES = 16  # 128 bits, the same as heed's review page ids
-TOKEN_RE = re.compile(r"^[A-Za-z0-9_-]{20,64}$")
-#: duration suffixes accepted by :func:`parse_expires` (``7d``, ``12h``, ``2w``, ``30m``)
-_DURATION_UNITS = {"m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
-_DURATION_RE = re.compile(r"^(\d+)\s*([mhdw])$", re.I)
 #: an annals id (doc or group) as :func:`annals.store.mk_id` makes them
 ANNALS_ID = r"\d{8}-\d{6}-[a-z0-9]+(?:-[a-z0-9]+)*"
 # no lookahead: the pattern is greedy, and an id glued to more text is not shared (removed)
@@ -58,146 +60,8 @@ _ANNALS_ID_RE = re.compile(rf"(?<!\d)(?P<id>{ANNALS_ID})")
 _ID_IN_URL_RE = re.compile(
     rf"/(?P<seg>d|g|raw|thumb|docs|groups)/(?P<id>{ANNALS_ID})(?![\w-])"
 )
-#: a share lasts this long unless told otherwise (``"never"`` for no expiry)
-DFLT_EXPIRES = "7d"
-NEVER = frozenset({"never", "none", "no"})
-#: the shortest link password accepted (a gate tried from anywhere must not be guessable)
-MIN_PASSWORD_LEN = 8
 REMOVED_LINK = "(link not shared)"
 REMOVED_ID = "(not shared)"
-
-
-def now_utc() -> datetime:
-    """The current time, UTC, second precision (the clock every default reads)."""
-    return datetime.now(timezone.utc).replace(microsecond=0)
-
-
-def new_token() -> str:
-    """A fresh link token: 128 random bits, url-safe."""
-    return secrets.token_urlsafe(TOKEN_BYTES)
-
-
-def check_token(token: str) -> str:
-    """Raise ``ValueError`` on anything that could not be a token (a path, a dot, ...)."""
-    if not isinstance(token, str) or not TOKEN_RE.match(token):
-        raise ValueError("not a share token")
-    return token
-
-
-# -- passwords ----------------------------------------------------------------------
-
-
-class PasswordHasher(Protocol):
-    """What a share needs to gate a link on a password."""
-
-    def hash(self, password: str) -> str: ...
-
-    def verify(self, hashed: str, password: str) -> bool: ...
-
-
-@dataclass(frozen=True)
-class ScryptHasher:
-    """Stdlib ``hashlib.scrypt``, stored as ``scrypt$n$r$p$salt$hash`` (base64).
-
-    The default needs no dependency; ``n=2**14, r=8`` costs ~16 MB and tens of ms per
-    check, which the attempt limit of the share server bounds.
-    """
-
-    n: int = 2**14
-    r: int = 8
-    p: int = 1
-    salt_bytes: int = 16
-    dklen: int = 32
-
-    def _derive(self, password: str, salt: bytes, n: int, r: int, p: int) -> bytes:
-        return hashlib.scrypt(
-            password.encode("utf-8"),
-            salt=salt,
-            n=n,
-            r=r,
-            p=p,
-            dklen=self.dklen,
-            maxmem=2 * 128 * r * n + 2**20,
-        )
-
-    def hash(self, password: str) -> str:
-        salt = secrets.token_bytes(self.salt_bytes)
-        dk = self._derive(password, salt, self.n, self.r, self.p)
-        b64 = lambda b: base64.b64encode(b).decode("ascii")  # noqa: E731
-        return f"scrypt${self.n}${self.r}${self.p}${b64(salt)}${b64(dk)}"
-
-    def verify(self, hashed: str, password: str) -> bool:
-        try:
-            scheme, n, r, p, salt, dk = hashed.split("$")
-            if scheme != "scrypt":
-                return False
-            expected = base64.b64decode(dk)
-            got = self._derive(password, base64.b64decode(salt), int(n), int(r), int(p))
-        except (ValueError, TypeError):
-            return False
-        return hmac.compare_digest(got, expected)
-
-
-# -- expiry -------------------------------------------------------------------------
-
-
-def parse_expires(value, *, now: datetime | None = None) -> str | None:
-    """An expiry as an ISO UTC timestamp, or ``None`` for never.
-
-    ``None``, ``""`` and ``"never"`` mean never. Accepts a duration (``30m``, ``12h``, ``7d``, ``2w``), a date (``2026-11-01``: the
-    END of that day, UTC, so the link works through the day named), an ISO timestamp (a
-    naive one is UTC), or a ``datetime``. A moment already past is refused.
-
-    >>> parse_expires("2d", now=datetime(2026, 1, 1, tzinfo=timezone.utc))
-    '2026-01-03T00:00:00+00:00'
-    >>> parse_expires("2026-01-05", now=datetime(2026, 1, 1, tzinfo=timezone.utc))
-    '2026-01-05T23:59:59+00:00'
-    """
-    now = now or now_utc()
-    if value is None or (
-        isinstance(value, str) and value.strip().lower() in NEVER | {""}
-    ):
-        return None
-    if isinstance(value, datetime):
-        when = value
-    else:
-        s = str(value).strip()
-        m = _DURATION_RE.match(s)
-        if m:
-            n, unit = int(m.group(1)), _DURATION_UNITS[m.group(2).lower()]
-            when = now + timedelta(**{unit: n})
-        elif re.fullmatch(r"\d{4}-\d{2}-\d{2}", s):
-            when = datetime.fromisoformat(s).replace(
-                hour=23, minute=59, second=59, tzinfo=timezone.utc
-            )
-        else:
-            try:
-                when = datetime.fromisoformat(s.replace("Z", "+00:00"))
-            except ValueError:
-                raise ValueError(
-                    f"not an expiry: {value!r}; give a duration (7d, 12h), a date "
-                    "(2026-11-01) or an ISO timestamp"
-                ) from None
-    if when.tzinfo is None:
-        when = when.replace(tzinfo=timezone.utc)
-    when = when.astimezone(timezone.utc).replace(microsecond=0)
-    if when <= now:
-        raise ValueError(f"expiry {when.isoformat()} is already past")
-    return when.isoformat()
-
-
-def is_expired(record: dict, *, now: datetime | None = None) -> bool:
-    """True when the record has an expiry and it is reached (a bad one counts as reached)."""
-    exp = record.get("expires")
-    if exp is None:
-        return False
-    try:
-        when = datetime.fromisoformat(exp)
-    except (TypeError, ValueError):
-        return True  # fail closed
-    if when.tzinfo is None:
-        when = when.replace(tzinfo=timezone.utc)
-    return (now or now_utc()) >= when
 
 
 # -- references in a shared text ----------------------------------------------------
@@ -413,19 +277,55 @@ def share_url(base: str | None, token: str) -> str | None:
     return f"{base.rstrip('/')}/{token}/" if base else None
 
 
-#: what the owner sees of a record: everything but the hash
-def public_record(record: dict) -> dict:
-    """A record without its password hash (``protected`` says whether it has one)."""
-    out = {k: v for k, v in record.items() if k != "password"}
-    out["protected"] = bool(record.get("password"))
-    return out
+class _ShareRecords(MutableMapping):
+    """The share records, ``shares/<token>.json`` under the data root, as a mapping.
+
+    Read and written through the store's :class:`~annals.target.Target`, so it works
+    over ssh. A record that cannot be read, or has no scope, raises ``KeyError``, and
+    the link is then missing. Records are never deleted: a revoke leaves a tombstone.
+    """
+
+    def __init__(self, target):
+        self.target = target
+
+    def _path(self, token: str) -> str:
+        return f"{SHARES}/{check_token(token)}.json"
+
+    def __getitem__(self, token: str) -> dict:
+        try:
+            rec = json.loads(self.target.read_text(self._path(token)))
+        except (ValueError, KeyError, OSError, RuntimeError):
+            raise KeyError(token) from None
+        if not (
+            isinstance(rec, dict)
+            and isinstance(rec.get("docs"), dict)
+            and isinstance(rec.get("root"), dict)
+        ):
+            raise KeyError(token)
+        return rec
+
+    def __setitem__(self, token: str, record: dict) -> None:
+        self.target.write_text(self._path(token), json.dumps(record, indent=1))
+
+    def __delitem__(self, token: str) -> None:
+        raise TypeError("share records are never deleted; revoke the link instead")
+
+    def __iter__(self) -> Iterator[str]:
+        for name in self.target.list_files(SHARES):
+            if name.endswith(".json"):
+                yield name[: -len(".json")]
+
+    def __len__(self) -> int:
+        return sum(1 for _ in self)
 
 
 class Shares:
     """Create, read, list and revoke shares of a :class:`DocStore`'s documents.
 
-    ``hasher`` hashes link passwords (stdlib scrypt by default); ``clock`` returns the
-    current UTC ``datetime`` (tests pin it).
+    What a share reaches (its scope) is decided here; the link itself is ``links``, a
+    :class:`caplinks.CapabilityLinks` over the records under ``shares/``. ``hasher``
+    hashes link passwords (stdlib scrypt by default); ``clock`` returns the current UTC
+    ``datetime`` (tests pin it).
     """
 
     def __init__(
@@ -436,8 +336,10 @@ class Shares:
         clock: Callable[[], datetime] = now_utc,
     ):
         self.store = store
-        self.hasher = hasher or ScryptHasher()
         self.clock = clock
+        self.links = CapabilityLinks(
+            _ShareRecords(store.target), hasher=hasher, clock=clock
+        )
 
     # -- what can be shared --
 
@@ -582,7 +484,7 @@ class Shares:
         unless ``include`` names some. ``exclude`` removes files (or a group's documents).
         A linked page goes with the files it shows. ``expires`` is anything
         :func:`parse_expires` reads, 7 days by default (``"never"`` for none); ``password``
-        gates the link (at least ``MIN_PASSWORD_LEN`` characters).
+        gates the link (at least ``caplinks.MIN_PASSWORD_LEN`` characters).
         """
         check_id(ref)
         include = None if include is None else [x for x in include if x]
@@ -598,117 +500,45 @@ class Shares:
         else:
             docs = self._group_scope(ref, include, exclude)
             default_title = self.store.group(ref).get("title")
-        if password is not None and len(password) < MIN_PASSWORD_LEN:
-            raise ValueError(
-                f"a link password needs at least {MIN_PASSWORD_LEN} characters "
-                "(anyone can try it); omit it for no password"
-            )
-        now = self.clock()
-        token = new_token()
-        record = {
-            "token": token,
-            "title": title or default_title or ref,
-            "created": now.isoformat(),
-            "root": {"kind": kind, "id": ref},
-            "docs": docs,
-            "expires": parse_expires(expires, now=now),
-            "password": self.hasher.hash(password) if password else None,
-            "revoked": None,
-        }
-        self._write(record)
-        return public_record(record)
-
-    def _write(self, record: dict) -> None:
-        self.store.target.write_text(
-            f"{SHARES}/{record['token']}.json", json.dumps(record, indent=1)
+        return self.links.create(
+            {
+                "title": title or default_title or ref,
+                "root": {"kind": kind, "id": ref},
+                "docs": docs,
+            },
+            password=password,
+            expires=expires,
         )
+
+    # -- the link itself, delegated to caplinks --
 
     def record(self, token: str) -> dict | None:
         """The stored record (hash included), revoked or not; ``None`` if there is none."""
-        try:
-            check_token(token)
-            rec = json.loads(self.store.target.read_text(f"{SHARES}/{token}.json"))
-        except (ValueError, KeyError, OSError, RuntimeError):
-            return None
-        if not isinstance(rec, dict) or rec.get("token") != token:
-            return None  # damaged, or filed under another name: grants nothing
-        if not isinstance(rec.get("docs"), dict) or not isinstance(
-            rec.get("root"), dict
-        ):
-            return None
-        return rec
+        return self.links.record(token)
 
     def status(self, token: str) -> tuple[str, dict | None]:
         """``("ok" | "expired" | "missing", record)``; a revoked link is ``missing``."""
-        rec = self.record(token)
-        if rec is None or rec.get("revoked"):
-            return "missing", None
-        if is_expired(rec, now=self.clock()):
-            return "expired", rec
-        return "ok", rec
+        return self.links.status(token)
 
     def list(self, *, all: bool = False) -> list[dict]:
         """Every share, newest first, without hashes; ``all`` adds revoked and expired."""
-        now = self.clock()
-        out = []
-        for name in self.store.target.list_files(SHARES):
-            if not name.endswith(".json"):
-                continue
-            rec = self.record(name[: -len(".json")])
-            if rec is None:
-                continue
-            rec = public_record(rec)
-            rec["active"] = not rec.get("revoked") and not is_expired(rec, now=now)
-            if all or rec["active"]:
-                out.append(rec)
-        return sorted(out, key=lambda r: r.get("created", ""), reverse=True)
+        return self.links.list(include_inactive=all)
 
     def revoke(self, token: str) -> dict:
         """End a link now (idempotent). The record stays, as a tombstone, for the list."""
-        rec = self.record(token)
-        if rec is None:
-            raise KeyError(token)
-        if not rec.get("revoked"):
-            rec["revoked"] = self.clock().isoformat()
-            rec["password"] = None  # nothing left to guess
-            self._write(rec)
-        return public_record(rec)
-
-    # -- the password gate --
+        return self.links.revoke(token)
 
     def check_password(self, record: dict, password: str) -> bool:
-        """Whether ``password`` opens ``record`` (constant time inside the hasher)."""
-        hashed = record.get("password")
-        return bool(hashed) and self.hasher.verify(hashed, password)
+        """Whether ``password`` opens ``record``."""
+        return self.links.check_password(record, password)
 
     def unlock_value(self, record: dict) -> str:
-        """The cookie value a correct password earns: ``<issued epoch>.<hmac>``."""
-        issued = int(self.clock().timestamp())
-        return f"{issued}.{_unlock_mac(record, issued)}"
+        """The cookie value a correct password earns."""
+        return self.links.unlock_value(record)
 
     def unlocked(self, record: dict, value: str | None, *, max_age_s: int) -> bool:
         """Whether a cookie value is a live unlock of this record (no password: always)."""
-        if not record.get("password"):
-            return True
-        if not value or "." not in value:
-            return False
-        issued_s, _, mac = value.partition(".")
-        try:
-            issued = int(issued_s)
-        except ValueError:
-            return False
-        now = int(self.clock().timestamp())
-        if not (now - max_age_s <= issued <= now + 60):
-            return False
-        return hmac.compare_digest(mac, _unlock_mac(record, issued))
-
-
-def _unlock_mac(record: dict, issued: int) -> str:
-    # Keyed by the password hash: it holds a random salt and never leaves the server, and
-    # a new password (or a revoke, which clears it) invalidates every cookie at once.
-    key = (record.get("password") or "").encode("utf-8")
-    msg = f"{record['token']}:{issued}".encode("ascii")
-    return hmac.new(key, msg, hashlib.sha256).hexdigest()
+        return self.links.unlocked(record, value, max_age_s=max_age_s)
 
 
 def dir_of(rel: str) -> str:
