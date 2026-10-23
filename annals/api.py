@@ -467,8 +467,11 @@ def mk_api(
         return {"tags": catalog.tag_counts()}
 
     @api.get("/files/{source}/{rel:path}")
-    def source_file(source: str, rel: str) -> Response:
-        """A file of a folder source as itself (sandboxed like every raw file)."""
+    def source_file(source: str, rel: str, download: bool = False) -> Response:
+        """A file of a folder source as itself (sandboxed like every raw file).
+
+        ``?download=1`` makes the browser save it instead of showing it.
+        """
         src = catalog.sources.get(source)
         file_path = getattr(src, "file_path", None)
         if file_path is None:
@@ -478,20 +481,26 @@ def mk_api(
         except KeyError:
             raise HTTPException(404, "no such file")
         # these files change in place (a ledger grows), so revalidate every time
-        return raw_response(path, rel, cache="private, no-cache")
+        return raw_response(path, rel, cache="private, no-cache", download=download)
 
     @api.get("/raw/{doc_id}/{rel:path}")
     def raw_file(
-        doc_id: str, rel: str, if_none_match: str | None = Header(None)
+        doc_id: str,
+        rel: str,
+        if_none_match: str | None = Header(None),
+        download: bool = False,
     ) -> Response:
         """A document's file as itself, streamed, with byte ranges (video and audio seek).
 
         ``FileResponse`` answers ``Range`` with ``206 Partial Content`` and never loads the
         file into memory, which is what a ``<video>`` element needs (Safari will not play
-        without ranges).
+        without ranges). ``?download=1`` answers with ``Content-Disposition: attachment``,
+        so every kind of media, a PDF included, can be saved from its viewer.
         """
         path = doc_file_path(store, doc_id, rel)
         cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
+        if download:
+            return raw_response(path, rel, cache=cache, download=True)
         if kind_of(rel) == "html":
             return _html_response(path, rel, cache=cache, request_etag=if_none_match)
         return raw_response(path, rel, cache=cache)
@@ -650,12 +659,25 @@ def _html_response(
     )
 
 
-def raw_response(path: Path, rel: str, *, cache: str = RAW_CACHE) -> Response:
-    """A file as itself, streamed, with byte ranges, under the sandbox policy (not PDF)."""
+def raw_response(
+    path: Path, rel: str, *, cache: str = RAW_CACHE, download: bool = False
+) -> Response:
+    """A file as itself, streamed, with byte ranges, under the sandbox policy (not PDF).
+
+    With ``download`` it carries ``Content-Disposition: attachment`` (named after the file).
+    """
     media_type = media_type_of(rel)
     headers = {"Cache-Control": cache, "X-Content-Type-Options": "nosniff"}
     if media_type.split(";")[0] not in NO_SANDBOX_TYPES:
         headers["Content-Security-Policy"] = RAW_SANDBOX_CSP
+    if download:
+        return FileResponse(
+            path,
+            media_type=media_type,
+            headers=headers,
+            filename=Path(rel).name,
+            content_disposition_type="attachment",
+        )
     return FileResponse(path, media_type=media_type, headers=headers)
 
 
