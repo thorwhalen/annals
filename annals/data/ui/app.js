@@ -779,7 +779,7 @@
   /* A share is made by the owner's API (POST /shares) and served by annals.share_api;
      the dialog only chooses what goes in it. Defaults are the safe ones: every file the
      page shows, a link that ends in 7 days, no password unless one is typed. */
-  var EXPIRY_CHOICES = [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"], ["", "Never"], ["date", "On a date…"]];
+  var EXPIRY_CHOICES = [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"], ["never", "Never"], ["date", "On a date…"]];
   var FILES_UNFOLDED = 12;
   var PW_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
   function newPassword(n) {
@@ -867,7 +867,7 @@
           });
         }
         if ((r.pages || []).length) {
-          pickBox.appendChild(h("h4", null, ["Pages it links to"]));
+          pickBox.appendChild(h("h4", null, ["Pages it links to (each with what it shows)"]));
           pickBox.appendChild(h("p", { class: "muted" }, ["Unchecked, a link to one of these shows as “link not shared”."]));
           r.pages.forEach(function (pg) {
             var row = checkRow([kindBadge(pg.kind), " " + (pg.title || pg.id)], false, { value: pg.id });
@@ -902,7 +902,7 @@
       if (target.kind === "group" && !(body.include || []).length) { toast("Choose at least one document"); return; }
       var exp = expSel.value === "date" ? expDate.value : expSel.value;
       if (expSel.value === "date" && !exp) { toast("Pick a date"); return; }
-      if (exp) body.expires = exp;
+      body.expires = exp;
       if (pw.value) body.password = pw.value;
       make.disabled = true;
       api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function (s) {

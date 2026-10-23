@@ -322,3 +322,101 @@ def test_owner_api_and_gate(store, report):
     assert anon.get(rec["url"] + "share").status_code == 404
     assert owner.post("/annals/api/shares", json={"ref": meta["id"], "expires": "1999-01-01"}).status_code == 422
     assert owner.post("/annals/api/shares", json={"ref": "nope"}).status_code == 404
+
+
+# -- what the adversarial review found ------------------------------------------------
+
+
+def test_defaults_expire_and_passwords_have_a_floor(shares, report):
+    meta, _ = report
+    rec = shares.create(meta["id"])
+    assert rec["expires"] == (T0 + timedelta(days=7)).isoformat()
+    assert shares.create(meta["id"], expires="never")["expires"] is None
+    with pytest.raises(ValueError):
+        shares.create(meta["id"], password="short")
+
+
+def test_plain_text_and_svg_are_filtered_too(client, shares, store, tmp_path):
+    private = store.publish(text="# P", title="Private thing")
+    src = tmp_path / "t"
+    src.mkdir()
+    (src / "notes.txt").write_text(f"see https://h/annals/d/{private['id']} and secret.png")
+    (src / "pic.svg").write_text(f'<svg><image href="/annals/raw/{private["id"]}/x.png"/></svg>')
+    meta = store.publish(src, title="Notes")
+    rec = shares.create(meta["id"])
+    link = _link(rec)
+    for rel in ("notes.txt", "pic.svg"):
+        body = client.get(f"{link}/raw/{meta['id']}/{rel}").text
+        assert private["id"] not in body and "private-thing" not in body
+
+
+def test_owner_host_links_are_removed(client, shares, store):
+    meta = store.publish(
+        text="[ledger](http://testserver/annals/s/ledgers/taxes.md) [web](https://example.org)",
+        title="Links",
+    )
+    rec = shares.create(meta["id"])
+    text = client.get(f"{_link(rec)}/docs/{meta['id']}").json()["text"]
+    assert "taxes" not in text and "https://example.org" in text
+
+
+def test_a_big_page_is_refused_not_sent_unfiltered(client, shares, report, monkeypatch):
+    import annals.share_api as sa
+
+    meta, other = report
+    rec = shares.create(meta["id"])
+    monkeypatch.setattr(sa, "MAX_SHARED_PAGE_BYTES", 10)
+    r = client.get(f"{_link(rec)}/raw/{meta['id']}/report.md")
+    assert r.status_code == 413 and other["id"] not in r.text
+
+
+def test_a_linked_page_brings_only_what_it_shows(shares, store, tmp_path):
+    src = tmp_path / "linked"
+    src.mkdir()
+    (src / "page.md").write_text("# L\n\n![](shown.png)")
+    (src / "shown.png").write_bytes(b"s")
+    (src / "unshown.png").write_bytes(b"u")
+    linked = store.publish(src, title="Linked")
+    root = store.publish(text=f"[l](/annals/d/{linked['id']})", title="Root")
+    rec = shares.create(root["id"], include=[linked["id"]])
+    assert sorted(rec["docs"][linked["id"]]) == ["page.md", "shown.png"]
+
+
+def test_one_guesser_does_not_lock_out_the_recipient(shares, report):
+    meta, _ = report
+    app = mk_share_api(
+        shares=shares,
+        thumbnailer=None,
+        rate_limiter=SlidingWindowLimiter(max_per_window=3),
+        trusted_proxies=("testclient",),  # the test client plays the reverse proxy
+    )
+    rec = shares.create(meta["id"], password="right-one")
+    client = TestClient(app, follow_redirects=False)
+
+    def attempt(pw, ip):
+        headers = {
+            "content-type": "application/x-www-form-urlencoded",
+            "x-forwarded-for": ip,
+        }
+        body = f"password={pw}".encode()
+        return client.post(f"/{rec['token']}/unlock", content=body, headers=headers)
+
+    assert [attempt("x", "6.6.6.6").status_code for _ in range(4)] == [401, 401, 401, 429]
+    assert attempt("right-one", "1.2.3.4").status_code == 303
+
+
+def test_wrong_passwords_from_everywhere_lock_the_link_for_a_while(shares, report):
+    meta, _ = report
+    app = mk_share_api(
+        shares=shares,
+        thumbnailer=None,
+        link_failure_limiter=SlidingWindowLimiter(max_per_window=2),
+        trusted_proxies=("testclient",),
+    )
+    rec = shares.create(meta["id"], password="right-one")
+    hdr = {"content-type": "application/x-www-form-urlencoded"}
+    c = TestClient(app, follow_redirects=False)
+    for i in range(3):
+        c.post(f"/{rec['token']}/unlock", content=b"password=x", headers={**hdr, "x-forwarded-for": f"9.9.9.{i}"})
+    r = c.post(f"/{rec['token']}/unlock", content=b"password=right-one", headers={**hdr, "x-forwarded-for": "1.1.1.1"})
+    assert r.status_code == 429

@@ -70,7 +70,7 @@ from annals.sources import (
     parse_sources_spec,
     with_thumb,
 )
-from annals.share import Shares, share_url
+from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
     DocStore,
     TEXT_KINDS,
@@ -185,7 +185,8 @@ def pillow_thumbnailer(src: Path, dst: Path, width: int) -> bool:
         return False
 
 
-def _default_thumbnailer() -> Thumbnailer | None:
+def default_thumbnailer() -> Thumbnailer | None:
+    """Pillow's thumbnailer when Pillow is installed, else ``None`` (originals are served)."""
     try:
         import PIL  # noqa: F401
     except ImportError:
@@ -218,7 +219,8 @@ def _require_same_origin(request: Request) -> None:
         raise HTTPException(403, "cross-origin request refused")
 
 
-def _media_type(rel: str) -> str:
+def media_type_of(rel: str) -> str:
+    """The media type a file is served as (markdown as text, unknown as octet-stream)."""
     override = TEXT_TYPE_OVERRIDES.get(Path(rel).suffix.lower())
     return override or mimetypes.guess_type(rel)[0] or "application/octet-stream"
 
@@ -256,7 +258,7 @@ def mk_api(
         else os.environ.get(ENV_SHARE_BASE_URL)
     )
     if thumbnailer is True:
-        thumbnailer = _default_thumbnailer()
+        thumbnailer = default_thumbnailer()
     catalog = mk_catalog(store, sources=sources, tags=tags)
     api = FastAPI(title=f"{title} api", docs_url=None, redoc_url=None, openapi_url=None)
     # No swagger: its /docs route would shadow ours.
@@ -372,7 +374,10 @@ def mk_api(
 
     @api.post("/shares", dependencies=[Depends(_require_same_origin)])
     def create_share(body: dict = Body(...)) -> dict:
-        """Share ``{"ref": id, "include"?, "exclude"?, "password"?, "expires"?, "title"?}``."""
+        """Share ``{"ref": id, "include"?, "exclude"?, "password"?, "expires"?, "title"?}``.
+
+        ``expires`` defaults to 7 days; ``"never"`` (or ``null``) makes a lasting link.
+        """
         known = {"ref", "include", "exclude", "password", "expires", "title"}
         if set(body) - known or not isinstance(body.get("ref"), str):
             raise HTTPException(
@@ -393,7 +398,7 @@ def mk_api(
                 include=body.get("include"),
                 exclude=body.get("exclude") or (),
                 password=body.get("password") or None,
-                expires=body.get("expires") or None,
+                expires=body["expires"] if "expires" in body else DFLT_EXPIRES,
                 title=body.get("title") or None,
             )
         except KeyError:
@@ -473,7 +478,7 @@ def mk_api(
         except KeyError:
             raise HTTPException(404, "no such file")
         # these files change in place (a ledger grows), so revalidate every time
-        return _raw_response(path, rel, cache="private, no-cache")
+        return raw_response(path, rel, cache="private, no-cache")
 
     @api.get("/raw/{doc_id}/{rel:path}")
     def raw_file(
@@ -489,7 +494,7 @@ def mk_api(
         cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
         if kind_of(rel) == "html":
             return _html_response(path, rel, cache=cache, request_etag=if_none_match)
-        return _raw_response(path, rel, cache=cache)
+        return raw_response(path, rel, cache=cache)
 
     thumbs = ThumbServer(store, thumbnailer)
 
@@ -641,13 +646,13 @@ def _html_response(
     if request_etag and etag in {t.strip() for t in request_etag.split(",")}:
         return Response(status_code=304, headers=headers)
     return Response(
-        doctype_guard(path.read_bytes()), media_type=_media_type(rel), headers=headers
+        doctype_guard(path.read_bytes()), media_type=media_type_of(rel), headers=headers
     )
 
 
-def _raw_response(path: Path, rel: str, *, cache: str = RAW_CACHE) -> Response:
+def raw_response(path: Path, rel: str, *, cache: str = RAW_CACHE) -> Response:
     """A file as itself, streamed, with byte ranges, under the sandbox policy (not PDF)."""
-    media_type = _media_type(rel)
+    media_type = media_type_of(rel)
     headers = {"Cache-Control": cache, "X-Content-Type-Options": "nosniff"}
     if media_type.split(";")[0] not in NO_SANDBOX_TYPES:
         headers["Content-Security-Policy"] = RAW_SANDBOX_CSP

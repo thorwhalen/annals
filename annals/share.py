@@ -52,11 +52,17 @@ _DURATION_UNITS = {"m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
 _DURATION_RE = re.compile(r"^(\d+)\s*([mhdw])$", re.I)
 #: an annals id (doc or group) as :func:`annals.store.mk_id` makes them
 ANNALS_ID = r"\d{8}-\d{6}-[a-z0-9]+(?:-[a-z0-9]+)*"
-_ANNALS_ID_RE = re.compile(rf"(?<![\w-])(?P<id>{ANNALS_ID})(?![\w-])")
+# no lookahead: the pattern is greedy, and an id glued to more text is not shared (removed)
+_ANNALS_ID_RE = re.compile(rf"(?<!\d)(?P<id>{ANNALS_ID})")
 #: path segments that name a document (or group) in any annals url
 _ID_IN_URL_RE = re.compile(
     rf"/(?P<seg>d|g|raw|thumb|docs|groups)/(?P<id>{ANNALS_ID})(?![\w-])"
 )
+#: a share lasts this long unless told otherwise (``"never"`` for no expiry)
+DFLT_EXPIRES = "7d"
+NEVER = frozenset({"never", "none", "no"})
+#: the shortest link password accepted (a gate tried from anywhere must not be guessable)
+MIN_PASSWORD_LEN = 8
 REMOVED_LINK = "(link not shared)"
 REMOVED_ID = "(not shared)"
 
@@ -138,7 +144,7 @@ class ScryptHasher:
 def parse_expires(value, *, now: datetime | None = None) -> str | None:
     """An expiry as an ISO UTC timestamp, or ``None`` for never.
 
-    Accepts a duration (``30m``, ``12h``, ``7d``, ``2w``), a date (``2026-11-01``: the
+    ``None``, ``""`` and ``"never"`` mean never. Accepts a duration (``30m``, ``12h``, ``7d``, ``2w``), a date (``2026-11-01``: the
     END of that day, UTC, so the link works through the day named), an ISO timestamp (a
     naive one is UTC), or a ``datetime``. A moment already past is refused.
 
@@ -148,7 +154,9 @@ def parse_expires(value, *, now: datetime | None = None) -> str | None:
     '2026-01-05T23:59:59+00:00'
     """
     now = now or now_utc()
-    if value is None or (isinstance(value, str) and not value.strip()):
+    if value is None or (
+        isinstance(value, str) and value.strip().lower() in NEVER | {""}
+    ):
         return None
     if isinstance(value, datetime):
         when = value
@@ -196,14 +204,18 @@ def is_expired(record: dict, *, now: datetime | None = None) -> bool:
 
 _MD_LINK_RE = re.compile(
     r"(?P<bang>!?)\[(?P<text>(?:[^\[\]\n]|\[[^\]\n]*\])*)\]"
-    r"\((?P<url><[^>\n]*>|[^)\s]+)(?P<title>\s+(?:\"[^\"\n]*\"|'[^'\n]*'))?\s*\)"
+    r"\([ \t]*(?P<url><[^>\n]*>|[^)\s]+)(?P<title>\s+(?:\"[^\"\n]*\"|'[^'\n]*'|\([^)\n]*\)))?\s*\)"
 )
 _MD_REFDEF_RE = re.compile(
-    r"^(?P<lead> {0,3}\[[^\]\n]+\]:[ \t]*)(?P<url><[^>\n]*>|\S+)(?P<rest>.*)$", re.M
+    # also inside a quote or a list item: "> [x]: url", "- [x]: url"
+    r"^(?P<lead>[ \t]*(?:>[ \t]*)*(?:(?:[*+-]|\d+[.)])[ \t]+)?\[[^\]\n]+\]:[ \t]*)"
+    r"(?P<url><[^>\n]*>|\S+)(?P<rest>.*)$",
+    re.M,
 )
 _MD_AUTOLINK_RE = re.compile(r"<(?P<url>(?:https?:)?/[^>\s]*)>")
 _HTML_ATTR_RE = re.compile(
-    r"(?P<attr>\b(?:src|href|poster|data|action|srcset|xlink:href)\s*=\s*)"
+    r"(?P<attr>\b(?:src|href|poster|data|action|formaction|srcset|xlink:href|ping|background"
+    r"|cite|longdesc|usemap|manifest|codebase|archive|content)\s*=\s*)"
     r"(?:\"(?P<u1>[^\"]*)\"|'(?P<u2>[^']*)'|(?P<u3>[^\s>\"']+))",
     re.I,
 )
@@ -211,6 +223,9 @@ _BARE_URL_RE = re.compile(
     rf"(?:https?://|/)[^\s<>()\"'\]]*?/(?:d|g|raw|thumb|docs|groups)/{ANNALS_ID}[^\s<>()\"'\]]*"
 )
 _SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
+_CSS_URL_RE = re.compile(r"url\(\s*(?P<q>['\"]?)(?P<url>[^'\")]*)(?P=q)\s*\)", re.I)
+#: ``<meta http-equiv=refresh content="0;url=...">``: the one ``content`` that is a url
+_REFRESH_RE = re.compile(r"^(?P<lead>\s*\d*\s*;?\s*url\s*=\s*)(?P<url>.*)$", re.I)
 
 
 def resolve_rel(url: str, from_dir: str = "") -> str | None:
@@ -242,11 +257,16 @@ def _decider(
     from_dir: str,
     files: set[str],
     shared: Callable[[str], str | None],
+    private_hosts: Iterable[str] = (),
 ) -> Callable[[str], str | None]:
     """``url -> new url`` (often the same) or ``None`` (remove it)."""
+    from html import unescape
+    from urllib.parse import urlsplit
+
+    hosts = {h.lower() for h in private_hosts if h}
 
     def decide(url: str) -> str | None:
-        url = url.strip()
+        url = unescape(url).strip()
         if url.startswith("<") and url.endswith(">"):
             url = url[1:-1]
         if not url or url.startswith("#"):
@@ -257,6 +277,12 @@ def _decider(
         if url.lower().startswith(("javascript:", "vbscript:")):
             return None
         if _SCHEME_RE.match(url) or url.startswith("//"):
+            try:
+                host = urlsplit(url).netloc.rsplit("@", 1)[-1].lower()
+            except ValueError:
+                return None
+            if host in hosts:
+                return None  # the owner's own host: some other private page
             return url  # elsewhere on the web: not ours to hide
         if url.startswith(("/", "\\")):
             return None  # a path on the owner's host: never meaningful to a recipient
@@ -318,6 +344,7 @@ def filter_refs(
     files: Iterable[str],
     shared: Callable[[str], str | None],
     from_dir: str = "",
+    private_hosts: Iterable[str] = (),
 ) -> str:
     """``text`` with every reference outside the share removed (or rewritten).
 
@@ -325,9 +352,15 @@ def filter_refs(
     id to where the recipient opens it (in scope) or ``None`` (not shared). A markdown
     image out of scope disappears, a link keeps its words; an html attribute goes; a bare
     annals url becomes "(link not shared)" and a bare annals id "(not shared)". The text
-    of the page itself is the owner's: only references are touched.
+    of the page itself is the owner's: only references are touched. An absolute url on
+    one of ``private_hosts`` (the owner's own) goes too, whatever its path. Every kind of
+    text is filtered (markdown, html, plain text, svg): only markdown syntax is markdown's.
+    Best effort by design, and the second line of defence: the share server answers 404
+    for anything outside the share however the text names it.
     """
-    decide = _decider(from_dir=from_dir, files=set(files), shared=shared)
+    decide = _decider(
+        from_dir=from_dir, files=set(files), shared=shared, private_hosts=private_hosts
+    )
 
     def md_link(m: re.Match) -> str:
         new = decide(m.group("url"))
@@ -337,13 +370,19 @@ def filter_refs(
 
     def md_refdef(m: re.Match) -> str:
         new = decide(m.group("url"))
-        return f"{m.group('lead')}{new if new is not None else '#'}"
+        return f"{m.group('lead')}{new if new is not None else '#'}{m.group('rest')}"
 
     def md_autolink(m: re.Match) -> str:
         new = decide(m.group("url"))
         return f"<{new}>" if new else REMOVED_LINK
 
     def html_attr(m: re.Match) -> str:
+        if m.group("attr").strip().lower().startswith("content"):
+            r = _REFRESH_RE.match(_attr_url(m))
+            if not r or not re.search(r"url\s*=", r.group("lead"), re.I):
+                return m.group(0)  # an ordinary content="...", not a redirect
+            new = decide(r.group("url").strip("'\" "))
+            return m.group(0) if new is not None else "data-annals-removed"
         urls = _srcset_urls(m)
         news = [decide(u) for u in urls]
         if any(n is None for n in news):
@@ -357,6 +396,9 @@ def filter_refs(
         text = _MD_REFDEF_RE.sub(md_refdef, text)
         text = _MD_AUTOLINK_RE.sub(md_autolink, text)
     text = _HTML_ATTR_RE.sub(html_attr, text)
+    text = _CSS_URL_RE.sub(
+        lambda m: m.group(0) if decide(m.group("url")) is not None else "url()", text
+    )
     text = _BARE_URL_RE.sub(lambda m: decide(m.group(0)) or REMOVED_LINK, text)
     return _ANNALS_ID_RE.sub(
         lambda m: m.group(0) if shared(m.group("id")) else REMOVED_ID, text
@@ -479,8 +521,23 @@ class Shares:
             m = self.store.meta(i)
             if m.get("in_trash"):
                 raise ValueError(f"linked page {i} is in the bin")
-            docs[i] = list(m.get("files", []))
+            docs[i] = self._page_files(i, m)
         return docs
+
+    def _page_files(self, doc_id: str, meta: dict) -> list[str]:
+        """A linked page goes with what it shows, not with every file beside it."""
+        shown = {meta["main"]}
+        if meta["kind"] in ("md", "html"):
+            try:
+                text = self.store.read_text(doc_id)
+                shown |= set(
+                    references(text, meta["kind"], from_dir=dir_of(meta["main"]))[
+                        "files"
+                    ]
+                )
+            except (KeyError, OSError, ValueError, UnicodeDecodeError):
+                pass
+        return [f for f in meta.get("files", []) if f in shown]
 
     def _group_scope(
         self, gid: str, include: list[str] | None, exclude: list[str]
@@ -514,7 +571,7 @@ class Shares:
         include: Iterable[str] | None = None,
         exclude: Iterable[str] = (),
         password: str | None = None,
-        expires=None,
+        expires=DFLT_EXPIRES,
         title: str | None = None,
     ) -> dict:
         """Share a document or a group (``ref`` is its id); return the record (no hash).
@@ -523,7 +580,9 @@ class Shares:
         itself always goes); ``include`` may also name annals pages the document links
         to, which then open inside the share. A group is shared with all its documents
         unless ``include`` names some. ``exclude`` removes files (or a group's documents).
-        ``expires`` is anything :func:`parse_expires` reads; ``password`` gates the link.
+        A linked page goes with the files it shows. ``expires`` is anything
+        :func:`parse_expires` reads, 7 days by default (``"never"`` for none); ``password``
+        gates the link (at least ``MIN_PASSWORD_LEN`` characters).
         """
         check_id(ref)
         include = None if include is None else [x for x in include if x]
@@ -539,8 +598,11 @@ class Shares:
         else:
             docs = self._group_scope(ref, include, exclude)
             default_title = self.store.group(ref).get("title")
-        if password is not None and not password:
-            raise ValueError("an empty password gates nothing; omit it instead")
+        if password is not None and len(password) < MIN_PASSWORD_LEN:
+            raise ValueError(
+                f"a link password needs at least {MIN_PASSWORD_LEN} characters "
+                "(anyone can try it); omit it for no password"
+            )
         now = self.clock()
         token = new_token()
         record = {

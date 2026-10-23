@@ -105,13 +105,14 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, the Share button on a document lists its files and the annals pages it links to, so you choose what goes; from a shell:
 
 ```bash
-annals share <id-or-link> --expires 7d --password -          # reads the password from stdin
+annals share <id-or-link> --password -                       # 7 days by default; password from stdin
+annals share <id> --expires 2026-11-30                       # or 12h, 30d, an ISO time, `never`
 annals share <id> --include img/chart.png,img/map.png        # only these files (the page always goes)
 annals shares                                                # live links (--all: revoked and expired too)
 annals unshare <link-or-token>                               # off at once
 ```
 
-The link is `<share_base_url>/<token>/`: 128 random bits, `noindex`, `no-referrer`. Every request is checked against the share's record (`shares/<token>.json` under the data root), so a file you did not choose is a 404 even beside the shared page, a revoke or an expiry takes effect on the next request, and references to anything outside the share (an image you left out, a link to another annals page, an annals id in the text) are removed from the page before it is sent. The password is a gate on the link, not an account: stored hashed (stdlib scrypt), with a limited number of attempts per link, and a correct one earns a cookie scoped to that link. Links are read-only.
+The link is `<share_base_url>/<token>/`: 128 random bits, `noindex`, `no-referrer`. Every request is checked against the share's record (`shares/<token>.json` under the data root), so a file you did not choose is a 404 even beside the shared page, a revoke or an expiry takes effect on the next request, and references to anything outside the share (an image you left out, a link to another annals page or to anything else on your annals' host, an annals id in the text) are removed from every text file before it is sent (markdown, html, plain text, svg). A linked page you tick goes with the files it shows, not every file beside it. The password is a gate on the link, not an account: at least 8 characters, stored hashed (stdlib scrypt), with attempts limited per client and per link, and a correct one earns a cookie scoped to that link. Links are read-only and last 7 days unless you say otherwise.
 
 Where the links are served:
 
@@ -124,7 +125,7 @@ from annals.share_api import mk_share_api
 app = mk_share_api(data_dir="/root/.local/share/annals")
 ```
 
-then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or `mk_api(share_base_url=...)` for the owner's page) to that app's public URL. Until it is set, shares are made but carry no link. `mk_share_api` takes `rate_limiter=` (anything with `allow(key) -> bool`, such as heed's Redis limiter; the default counts per process) and `hasher` lives on `annals.share.Shares` (argon2 or anything with `hash`/`verify`).
+then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or `mk_api(share_base_url=...)` for the owner's page) to that app's public URL. Until it is set, shares are made but carry no link. `mk_share_api` takes `rate_limiter=` and `link_failure_limiter=` (anything with `allow(key) -> bool`, such as heed's Redis limiter; the defaults count per process), `trusted_proxies=` (whose `X-Forwarded-For` names the client; loopback by default) and `private_hosts=`; the password `hasher` is a keyword of `annals.share.Shares` (argon2, or anything with `hash`/`verify`).
 
 ## Other folders, search, filters and tags
 

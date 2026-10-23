@@ -28,6 +28,7 @@ import json
 import secrets
 import threading
 import time
+from datetime import datetime, timezone
 from collections import OrderedDict, deque
 from pathlib import Path
 from typing import Callable, Protocol
@@ -41,9 +42,9 @@ from annals.api import (
     UI_DIR,
     ThumbServer,
     Thumbnailer,
-    _default_thumbnailer,
-    _media_type,
-    _raw_response,
+    default_thumbnailer,
+    media_type_of,
+    raw_response,
     doc_file_path,
     doctype_guard,
 )
@@ -65,9 +66,14 @@ SHARED_FILE_CACHE = "private, no-cache"
 SHARE_UI_FILES = frozenset({"app.js", "style.css", "marked.min.js", "purify.min.js"})
 COOKIE_NAME = "annals_share"
 DFLT_UNLOCK_MAX_AGE_S = 7 * 24 * 3600
-#: password attempts allowed per link, and per client address, in each window
+#: password attempts one client may make on one link in each window
 DFLT_MAX_ATTEMPTS = 10
+#: wrong passwords one link takes, from everyone together, in each window; past it the
+#: link refuses every try until the window moves (it bounds a distributed guess)
+DFLT_MAX_LINK_FAILURES = 100
 DFLT_ATTEMPT_WINDOW_S = 300.0
+#: peers whose X-Forwarded-For is believed (a reverse proxy on the same machine)
+DFLT_TRUSTED_PROXIES = ("127.0.0.1", "::1")
 MAX_FORM_BYTES = 4096
 #: a shared page is filtered whole in memory before it is sent; larger ones are refused
 MAX_SHARED_PAGE_BYTES = 20_000_000
@@ -174,6 +180,9 @@ def mk_share_api(
     shares: Shares | None = None,
     thumbnailer: Thumbnailer | None | bool = True,
     rate_limiter: RateLimiter | None = None,
+    link_failure_limiter: RateLimiter | None = None,
+    trusted_proxies: tuple[str, ...] = DFLT_TRUSTED_PROXIES,
+    private_hosts: tuple[str, ...] = (),
     unlock_max_age_s: int = DFLT_UNLOCK_MAX_AGE_S,
     cookie_secure: bool | None = None,
     title: str = APP_NAME,
@@ -181,17 +190,29 @@ def mk_share_api(
     """The public share server over a data root; see the module docstring.
 
     Every argument has a working default: the local data dir, Pillow thumbnails when
-    installed, an in-memory attempt limit (:class:`SlidingWindowLimiter`, any
-    ``allow(key)`` object fits), a week-long unlock cookie (never past the link's
-    expiry), and ``Secure`` cookies whenever the request came over https
-    (``cookie_secure`` forces it either way).
+    installed, a week-long unlock cookie (never past the link's expiry), and ``Secure``
+    cookies whenever the request came over https (``cookie_secure`` forces it).
+
+    Password attempts are limited twice, in memory per process unless given shared
+    limiters (any ``allow(key)`` object, such as heed's Redis one): ``rate_limiter``
+    counts every try of one client on one link, so a guesser locks out only itself;
+    ``link_failure_limiter`` counts the wrong passwords a link takes from everyone, to
+    bound a guess spread over many addresses. The client is the peer, or the address a
+    ``trusted_proxies`` peer forwards. ``private_hosts`` are the owner's hosts: an
+    absolute link to one of them is removed from shared text (the host a request
+    arrives on always counts).
     """
     store = store or (shares.store if shares else None)
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     shares = shares or Shares(store)
     limiter = rate_limiter or SlidingWindowLimiter()
+    link_failures = link_failure_limiter or SlidingWindowLimiter(
+        max_per_window=DFLT_MAX_LINK_FAILURES
+    )
+    locked: dict[str, float] = {}  # token -> monotonic time its lock ends
+    trusted = set(trusted_proxies)
     if thumbnailer is True:
-        thumbnailer = _default_thumbnailer()
+        thumbnailer = default_thumbnailer()
     thumbs = ThumbServer(store, thumbnailer)
     app = FastAPI(
         title=f"{title} share", docs_url=None, redoc_url=None, openapi_url=None
@@ -250,15 +271,29 @@ def mk_share_api(
 
         return shared
 
+    def _client(request: Request) -> str:
+        peer = request.client.host if request.client else "?"
+        if peer not in trusted:
+            return peer
+        hops = [
+            h.strip() for h in request.headers.get("x-forwarded-for", "").split(",")
+        ]
+        return next((h for h in reversed(hops) if h and h not in trusted), peer)
+
     def _filtered(
         rec: dict, request: Request, doc_id: str, rel: str, files: list[str], text: str
     ) -> str:
+        hosts = {request.headers.get("host", "")}
+        hosts |= {
+            h.strip() for h in request.headers.get("x-forwarded-host", "").split(",")
+        }
         return filter_refs(
             text,
             kind_of(rel),
             files=files,
             shared=_shared_to(rec, request),
             from_dir=dir_of(rel),
+            private_hosts=(hosts | set(private_hosts)) - {""},
         )
 
     # -- the page --------------------------------------------------------------------
@@ -332,8 +367,9 @@ def mk_share_api(
         name = rec.get("title") or title
         if not rec.get("password"):
             return RedirectResponse(nxt, status_code=303)
-        client = request.client.host if request.client else "?"
-        if not (limiter.allow(f"link:{token}") and limiter.allow(f"ip:{client}")):
+        if locked.get(token, 0) > time.monotonic() or not limiter.allow(
+            f"{token}:{_client(request)}"
+        ):
             return _password_page(
                 name,
                 f"{link}/unlock",
@@ -343,14 +379,16 @@ def mk_share_api(
                 status=429,
             )
         if not shares.check_password(rec, password):
+            if not link_failures.allow(token):
+                locked[token] = time.monotonic() + DFLT_ATTEMPT_WINDOW_S
             return _password_page(
                 name, f"{link}/unlock", nxt, ui, error="That password is not right."
             )
         max_age = unlock_max_age_s
         if rec.get("expires"):
-            from datetime import datetime
-
-            left = datetime.fromisoformat(rec["expires"]) - shares.clock()
+            ends = datetime.fromisoformat(rec["expires"])
+            ends = ends if ends.tzinfo else ends.replace(tzinfo=timezone.utc)
+            left = ends - shares.clock()
             max_age = max(1, min(max_age, int(left.total_seconds())))
         secure = cookie_secure
         if secure is None:
@@ -396,20 +434,17 @@ def mk_share_api(
         rec = _open(token, request)
         meta, files = _shared_files(rec, doc_id)
         out = _public_meta(meta, files)
+        main_size = (meta.get("sizes") or {}).get(meta["main"], 0)
         if (
             out["kind"] in TEXT_KINDS
             and meta["main"] in files
-            and out.get("size", 0) <= MAX_INLINE_TEXT_BYTES
+            and main_size <= MAX_INLINE_TEXT_BYTES
         ):
             try:
                 text = store.read_text(doc_id)
             except (KeyError, OSError, ValueError):
                 raise HTTPException(404, "no readable text for this document")
-            out["text"] = (
-                _filtered(rec, request, doc_id, meta["main"], files, text)
-                if out["kind"] == "md"
-                else text
-            )
+            out["text"] = _filtered(rec, request, doc_id, meta["main"], files, text)
         return JSONResponse(out, headers=NO_STORE)
 
     def _shared_path(token: str, doc_id: str, rel: str, request: Request):
@@ -423,16 +458,16 @@ def mk_share_api(
     def shared_raw(token: str, doc_id: str, rel: str, request: Request) -> Response:
         """An included file as itself (byte ranges); a page's references filtered."""
         rec, files, path = _shared_path(token, doc_id, rel, request)
-        if kind_of(rel) in PAGE_KINDS:
-            # a page is always sent filtered, never as the bytes on disk: too big to
-            # filter is too big to share
+        if _is_text(rel):
+            # text is always sent filtered, never as the bytes on disk (a link or an id
+            # in it may name what is not shared): too big to filter is too big to share
             if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
                 raise HTTPException(413, "this page is too large to share")
             text = path.read_text(encoding="utf-8", errors="replace")
             body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
             if kind_of(rel) == "html":
                 body = doctype_guard(body)
-            media_type = _media_type(rel)
+            media_type = media_type_of(rel)
             if "charset" not in media_type:
                 media_type += "; charset=utf-8"
             headers = {
@@ -441,7 +476,7 @@ def mk_share_api(
                 "Content-Security-Policy": RAW_SANDBOX_CSP,
             }
             return Response(body, media_type=media_type, headers=headers)
-        return _raw_response(path, rel, cache=SHARED_FILE_CACHE)
+        return raw_response(path, rel, cache=SHARED_FILE_CACHE)
 
     @app.get("/{token}/thumb/{doc_id}/{rel:path}")
     async def shared_thumb(
@@ -476,6 +511,11 @@ def mk_share_api(
 
     app.state.shares = shares
     return app
+
+
+def _is_text(rel: str) -> bool:
+    """Whether a file is text a reference could hide in (markdown, html, text, svg)."""
+    return kind_of(rel) in PAGE_KINDS | TEXT_KINDS or rel.lower().endswith(".svg")
 
 
 #: the fields of a document's meta a recipient may see (no source host or cwd, no tags)

@@ -473,7 +473,7 @@ def share(
     ref: str,
     *,
     password: str | None = None,
-    expires: str | None = None,
+    expires: str = "7d",
     include: str | None = None,
     exclude: str | None = None,
     title: str | None = None,
@@ -488,8 +488,8 @@ def share(
     ``include``: comma separated files of the document to share (the page itself always
     is), or ids of other annals pages it links to; by default every file of the document
     (for a group: every document; ``include`` then picks documents). ``exclude`` drops
-    files. ``expires``: ``7d``, ``12h``, ``2w``, a date (``2026-11-01``, through that day,
-    UTC) or an ISO time. ``password`` gates the link (stored hashed; ``-`` reads it from
+    files. ``expires`` (7 days unless told): ``12h``, ``30d``, ``2w``, a date (``2026-11-01``,
+    through that day, UTC), an ISO time, or ``never``. ``password`` gates the link (stored hashed; ``-`` reads it from
     stdin, so it stays out of the shell history).
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
@@ -511,12 +511,22 @@ def share(
         notes.append("password-protected")
     n = sum(out["files"].values())
     notes.append(f"{n} file{'s' if n != 1 else ''} shared")
-    return {
+    result = {
         "url": out["url"],
         "id": out["id"],
         "title": out["title"],
         "note": ", ".join(notes),
     }
+    from urllib.parse import urlsplit
+
+    local = urlsplit(settings.base_url).hostname in ("127.0.0.1", "localhost", "::1")
+    if settings.share_base_url == f"{settings.base_url}/shared" and not local:
+        result["warning"] = (
+            "this link assumes the annals server serves shares at <base_url>/shared, "
+            "as `annals serve` does; inside an app platform the share server runs as its "
+            "own public app: set its address with `annals configure --share-base-url ...`"
+        )
+    return result
 
 
 def shares(
