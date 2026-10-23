@@ -9,6 +9,10 @@ Two values matter to a publisher:
   reads, locally or on another machine.
 * `base_url`: the public root of the annals app, so a publish can print the link the owner
   opens (`https://apps.example.com/annals`).
+* `share_base_url`: where the public share server answers, so `annals share` prints the
+  link a recipient opens (`<share_base_url>/<token>/`). It defaults to
+  `<base_url>/shared`, which is where `annals serve` mounts it; a platform that runs the
+  share server as its own public app sets it (`ANNALS_SHARE_BASE_URL` or the config file).
 
 Resolution order, highest first: explicit keyword arguments, environment variables
 (`ANNALS_TARGET`, `ANNALS_BASE_URL`), the config file (`$ANNALS_CONFIG` or
@@ -33,8 +37,9 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Module Attributes
 
-| [`ENV_SOURCES`](#annals.config.ENV_SOURCES)   | "name=path, name2=path2"   |
-|----------------------------------------------------------------|----------------------------|
+| [`ENV_SHARE_BASE_URL`](#annals.config.ENV_SHARE_BASE_URL)   | where the public share server answers (a share link is `<this>/<token>/`)   |
+|-----------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`ENV_SOURCES`](#annals.config.ENV_SOURCES)          | "name=path, name2=path2"                                                    |
 
 ### Functions
 
@@ -47,8 +52,12 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Classes
 
-| [`Settings`](#annals.config.Settings)(target, base_url[, configured, outbox])   | Where to publish and what link to print.   |
-|-----------------------------------------------------------------------------------------------------|--------------------------------------------|
+| [`Settings`](#annals.config.Settings)(target, base_url[, configured, ...])   | Where to publish and what link to print.   |
+|--------------------------------------------------------------------------------------------------|--------------------------------------------|
+
+### annals.config.ENV_SHARE_BASE_URL *= 'ANNALS_SHARE_BASE_URL'*
+
+where the public share server answers (a share link is `<this>/<token>/`)
 
 ### annals.config.ENV_SOURCES *= 'ANNALS_SOURCES'*
 
@@ -57,7 +66,7 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 * **Type:**
   extra folders the page lists beside the published documents
 
-### *class* annals.config.Settings(target, base_url, configured=True, outbox=False)
+### *class* annals.config.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -82,6 +91,10 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
+
+where share links point (`<this>/<token>/`); `<base_url>/shared` by default
+
 ### annals.config.default_config_path()
 
 `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.
@@ -96,7 +109,7 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, config_path=None)
+### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 

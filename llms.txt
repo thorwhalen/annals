@@ -12,13 +12,14 @@
 - [annals.catalog](_autosummary/annals.catalog.html.md): The catalog: every source’s items as one list, with search and the owner’s tags.
 - [annals.config](_autosummary/annals.config.html.md): Settings: where documents are published and what link to print.
 - [annals.mcp](_autosummary/annals.mcp.html.md): MCP surface: the same operations as the CLI, from &#96;annals.tools&#96;, via &#96;py2mcp&#96;.
+- [annals.share](_autosummary/annals.share.html.md): Share links: one document (or a group) behind a public, unguessable, revocable link.
 - [annals.sources](_autosummary/annals.sources.html.md): Item sources: everything the page lists, wherever it lives, as rows of one shape.
 - [annals.store](_autosummary/annals.store.html.md): The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
 - [annals.tags](_autosummary/annals.tags.html.md): The owner’s tags: a &#96;MutableMapping&#96; from item key to tag list, kept apart from the items.
 - [annals.target](_autosummary/annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
 - [annals.tools](_autosummary/annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 - [For AI agents](ai-agents.html.md): &#96;annals&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-20 14:27 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-23 00:23 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

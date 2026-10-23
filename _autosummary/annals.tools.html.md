@@ -9,20 +9,23 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox])     | Write the publisher config (where to publish, what link to print) and show it.     |
-|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])    | Copy documents or groups to a named target, keeping their ids; print the new link. |
-| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.          |
-| [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                         |
-| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.    |
-| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                | The page's html shell, for a host that serves the API under its own prefix.        |
-| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.   |
-| [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                         |
-| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...]) | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
-| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                          |
-| [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                    |
+| [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.         |
+|-------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])       | Copy documents or groups to a named target, keeping their ids; print the new link.     |
+| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.              |
+| [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                             |
+| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to])          | List documents (newest first), optionally filtered by words or showing the bin.        |
+| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                   | The page's html shell, for a host that serves the API under its own prefix.            |
+| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.       |
+| [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                             |
+| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])    | Serve the annals page and API (needs `pip install 'annals[server]'`).                  |
+| [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])    | Make a public link to ONE document (or group) and print it; nothing else is reachable. |
+| [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])              | List share links, newest first (`all`: revoked and expired ones too).                  |
+| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                              |
+| [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                        |
+| [`unshare`](#annals.tools.unshare)(links, \*[, target, to])                     | Revoke share links (their token or full link): they stop working at once.              |
 
-### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False)
+### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -33,7 +36,9 @@ Write the publisher config (where to publish, what link to print) and show it.
 and leaves the default alone. `--outbox` marks the target as an outbox: a directory
 the server pulls and empties (it cannot be written to from here), so replacements are
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
-edit of the file turns it off). With no arguments, shows the resolved settings without writing.
+edit of the file turns it off). `--share-base-url` is where share links point when
+the share server is not at `<base-url>/shared` (a platform running it as its own
+public app). With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -128,6 +133,29 @@ configured is refused unless `allow_open` (`--allow-open`) says something else g
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+### annals.tools.share(ref, , password=None, expires='7d', include=None, exclude=None, title=None, target=None, base_url=None, to=None)
+
+Make a public link to ONE document (or group) and print it; nothing else is reachable.
+
+`ref` is a document or group id, or its link. The link opens without a login, shows
+only that page and the files chosen, and can be revoked (`annals unshare`).
+`include`: comma separated files of the document to share (the page itself always
+is), or ids of other annals pages it links to; by default every file of the document
+(for a group: every document; `include` then picks documents). `exclude` drops
+files. `expires` (7 days unless told): `12h`, `30d`, `2w`, a date (`2026-11-01`,
+through that day, UTC), an ISO time, or `never`. `password` gates the link (stored hashed; `-` reads it from
+stdin, so it stays out of the shell history).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.shares(, all=False, target=None, base_url=None, to=None)
+
+List share links, newest first (`all`: revoked and expired ones too).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.tools.show(doc_id, , target=None, base_url=None, to=None)
 
 A document’s metadata and link (`to`: on a named target).
@@ -138,6 +166,13 @@ A document’s metadata and link (`to`: on a named target).
 ### annals.tools.trash(doc_ids, , target=None, to=None)
 
 Move documents to the recycle bin (restorable).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.unshare(links, , target=None, to=None)
+
+Revoke share links (their token or full link): they stop working at once.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

@@ -1,4 +1,4 @@
-> built 2026-10-20 14:27 UTC from ff1d90f (main) · annals 0.0.13. Details: build_info.json
+> built 2026-10-23 00:23 UTC from 0d6e9c6 (main) · annals 0.0.14. Details: build_info.json
 
 # index.html.md
 
@@ -105,6 +105,33 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | Behind an existing login that exposes a who-am-I endpoint | `ANNALS_WHOAMI_URL`, `ANNALS_ALLOWED_USERS=me@example.com`, optionally `ANNALS_LOGIN_URL=/auth/login` | the browser’s cookies are forwarded to that endpoint and the listed emails are allowed; anyone else is sent to the login page |
 | No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
 | Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
+
+## Sharing one page
+
+The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, the Share button on a document lists its files and the annals pages it links to, so you choose what goes; from a shell:
+
+```bash
+annals share <id-or-link> --password -                       # 7 days by default; password from stdin
+annals share <id> --expires 2026-11-30                       # or 12h, 30d, an ISO time, `never`
+annals share <id> --include img/chart.png,img/map.png        # only these files (the page always goes)
+annals shares                                                # live links (--all: revoked and expired too)
+annals unshare <link-or-token>                               # off at once
+```
+
+The link is `<share_base_url>/<token>/`: 128 random bits, `noindex`, `no-referrer`. Every request is checked against the share’s record (`shares/<token>.json` under the data root), so a file you did not choose is a 404 even beside the shared page, a revoke or an expiry takes effect on the next request, and references to anything outside the share (an image you left out, a link to another annals page or to anything else on your annals’ host, an annals id in the text) are removed from every text file before it is sent (markdown, html, plain text, svg). A linked page you tick goes with the files it shows, not every file beside it. The password is a gate on the link, not an account: at least 8 characters, stored hashed (stdlib scrypt), with attempts limited per client and per link, and a correct one earns a cookie scoped to that link. Links are read-only and last 7 days unless you say otherwise.
+
+Where the links are served:
+
+- **Standalone** (`annals serve`): at `/annals/shared/<token>/`, outside the login, with nothing to configure.
+- **Inside an app platform**: the share server must be reachable without the platform’s login, so run it as its own public app and tell annals where it is:
+
+```python
+# server.py of a second, PUBLIC app (the owner's app keeps its login)
+from annals.share_api import mk_share_api
+app = mk_share_api(data_dir="/root/.local/share/annals")
+```
+
+then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or `mk_api(share_base_url=...)` for the owner’s page) to that app’s public URL. Until it is set, shares are made but carry no link. `mk_share_api` takes `rate_limiter=` and `link_failure_limiter=` (anything with `allow(key) -> bool`, such as heed’s Redis limiter; the defaults count per process), `trusted_proxies=` (whose `X-Forwarded-For` names the client; loopback by default) and `private_hosts=`; the password `hasher` is a keyword of `annals.share.Shares` (argon2, or anything with `hash`/`verify`).
 
 ## Other folders, search, filters and tags
 
@@ -323,6 +350,10 @@ Two values matter to a publisher:
   reads, locally or on another machine.
 * `base_url`: the public root of the annals app, so a publish can print the link the owner
   opens (`https://apps.example.com/annals`).
+* `share_base_url`: where the public share server answers, so `annals share` prints the
+  link a recipient opens (`<share_base_url>/<token>/`). It defaults to
+  `<base_url>/shared`, which is where `annals serve` mounts it; a platform that runs the
+  share server as its own public app sets it (`ANNALS_SHARE_BASE_URL` or the config file).
 
 Resolution order, highest first: explicit keyword arguments, environment variables
 (`ANNALS_TARGET`, `ANNALS_BASE_URL`), the config file (`$ANNALS_CONFIG` or
@@ -347,8 +378,9 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Module Attributes
 
-| [`ENV_SOURCES`](_autosummary/annals.config.html.md#annals.config.ENV_SOURCES)   | "name=path, name2=path2"   |
-|----------------------------------------------------------------|----------------------------|
+| [`ENV_SHARE_BASE_URL`](_autosummary/annals.config.html.md#annals.config.ENV_SHARE_BASE_URL)   | where the public share server answers (a share link is `<this>/<token>/`)   |
+|-----------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`ENV_SOURCES`](_autosummary/annals.config.html.md#annals.config.ENV_SOURCES)          | "name=path, name2=path2"                                                    |
 
 ### Functions
 
@@ -361,8 +393,12 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Classes
 
-| [`Settings`](_autosummary/annals.config.html.md#annals.config.Settings)(target, base_url[, configured, outbox])   | Where to publish and what link to print.   |
-|-----------------------------------------------------------------------------------------------------|--------------------------------------------|
+| [`Settings`](_autosummary/annals.config.html.md#annals.config.Settings)(target, base_url[, configured, ...])   | Where to publish and what link to print.   |
+|--------------------------------------------------------------------------------------------------|--------------------------------------------|
+
+### annals.config.ENV_SHARE_BASE_URL *= 'ANNALS_SHARE_BASE_URL'*
+
+where the public share server answers (a share link is `<this>/<token>/`)
 
 ### annals.config.ENV_SOURCES *= 'ANNALS_SOURCES'*
 
@@ -371,7 +407,7 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 * **Type:**
   extra folders the page lists beside the published documents
 
-### *class* annals.config.Settings(target, base_url, configured=True, outbox=False)
+### *class* annals.config.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -396,6 +432,10 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
+
+where share links point (`<this>/<token>/`); `<base_url>/shared` by default
+
 ### annals.config.default_config_path()
 
 `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.
@@ -410,7 +450,7 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, config_path=None)
+### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 
@@ -452,25 +492,25 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 ### Functions
 
-| [`configure`](_autosummary/annals.html.md#annals.configure)(\*[, target, base_url, to, outbox])     | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
-|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`group`](_autosummary/annals.html.md#annals.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
-| [`groups`](_autosummary/annals.html.md#annals.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                                                                                                        |
-| [`load_settings`](_autosummary/annals.html.md#annals.load_settings)(\*[, target, base_url, to, ...])    | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
-| [`ls`](_autosummary/annals.html.md#annals.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
-| [`parse_target`](_autosummary/annals.html.md#annals.parse_target)(spec)                                | `host:/path` becomes an [`SshTarget`](_autosummary/annals.html.md#annals.SshTarget); anything else a [`LocalTarget`](_autosummary/annals.html.md#annals.LocalTarget). |
-| [`publish`](_autosummary/annals.html.md#annals.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.                                                                                  |
-| [`restore`](_autosummary/annals.html.md#annals.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](_autosummary/annals.html.md#annals.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                                                                                                         |
-| [`trash`](_autosummary/annals.html.md#annals.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                                                                                                   |
+| [`configure`](_autosummary/annals.html.md#annals.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
+|-------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`group`](_autosummary/annals.html.md#annals.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
+| [`groups`](_autosummary/annals.html.md#annals.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                                                                                                        |
+| [`load_settings`](_autosummary/annals.html.md#annals.load_settings)(\*[, target, base_url, to, ...])       | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
+| [`ls`](_autosummary/annals.html.md#annals.ls)([q, trash, limit, target, base_url, to])          | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
+| [`parse_target`](_autosummary/annals.html.md#annals.parse_target)(spec)                                   | `host:/path` becomes an [`SshTarget`](_autosummary/annals.html.md#annals.SshTarget); anything else a [`LocalTarget`](_autosummary/annals.html.md#annals.LocalTarget). |
+| [`publish`](_autosummary/annals.html.md#annals.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.                                                                                  |
+| [`restore`](_autosummary/annals.html.md#annals.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                                                                                                        |
+| [`show`](_autosummary/annals.html.md#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                                                                                                         |
+| [`trash`](_autosummary/annals.html.md#annals.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
 
-| [`DocStore`](_autosummary/annals.html.md#annals.DocStore)(target, \*[, settle])                   | Publish, list, read, trash, restore and group documents on a `Target`.      |
-|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| [`LocalTarget`](_autosummary/annals.html.md#annals.LocalTarget)(root)                                | A directory on this machine.                                                |
-| [`Settings`](_autosummary/annals.html.md#annals.Settings)(target, base_url[, configured, outbox]) | Where to publish and what link to print.                                    |
-| [`SshTarget`](_autosummary/annals.html.md#annals.SshTarget)(host, root)                            | `host:path` on another machine, via the system ssh and rsync in batch mode. |
+| [`DocStore`](_autosummary/annals.html.md#annals.DocStore)(target, \*[, settle])                | Publish, list, read, trash, restore and group documents on a `Target`.      |
+|------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`LocalTarget`](_autosummary/annals.html.md#annals.LocalTarget)(root)                             | A directory on this machine.                                                |
+| [`Settings`](_autosummary/annals.html.md#annals.Settings)(target, base_url[, configured, ...]) | Where to publish and what link to print.                                    |
+| [`SshTarget`](_autosummary/annals.html.md#annals.SshTarget)(host, root)                         | `host:path` on another machine, via the system ssh and rsync in batch mode. |
 
 ### *class* annals.DocStore(target, , settle=True)
 
@@ -629,7 +669,7 @@ A directory on this machine.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### *class* annals.Settings(target, base_url, configured=True, outbox=False)
+### *class* annals.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -654,13 +694,17 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
+
+where share links point (`<this>/<token>/`); `<base_url>/shared` by default
+
 ### *class* annals.SshTarget(host, root)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### annals.configure(, target=None, base_url=None, to=None, outbox=False)
+### annals.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -671,7 +715,9 @@ Write the publisher config (where to publish, what link to print) and show it.
 and leaves the default alone. `--outbox` marks the target as an outbox: a directory
 the server pulls and empties (it cannot be written to from here), so replacements are
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
-edit of the file turns it off). With no arguments, shows the resolved settings without writing.
+edit of the file turns it off). `--share-base-url` is where share links point when
+the share server is not at `<base-url>/shared` (a platform running it as its own
+public app). With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -690,7 +736,7 @@ List groups, newest first.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, config_path=None)
+### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 
@@ -766,6 +812,7 @@ Move documents to the recycle bin (restorable).
 | [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog) | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
 | [`config`](_autosummary/annals.config.html.md#module-annals.config)   | Settings: where documents are published and what link to print.                                                                                    |
 | [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)         | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`share`](_autosummary/annals.share.html.md#module-annals.share)     | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](_autosummary/annals.sources.html.md#module-annals.sources) | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
 | [`store`](_autosummary/annals.store.html.md#module-annals.store)     | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
 | [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)       | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
@@ -790,6 +837,292 @@ core free of any MCP import; the function list is the one the CLI dispatches.
 ### annals.mcp.mk_server()
 
 Build the MCP server over [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools).
+
+
+# _autosummary/annals.share.html.md
+
+# annals.share
+
+Share links: one document (or a group) behind a public, unguessable, revocable link.
+
+A share is a record under the data root, `shares/<token>.json`, written through the
+same [`annals.target.Target`](_autosummary/annals.target.html.md#annals.target.Target) as the documents, so `annals share` works over ssh
+exactly like `annals publish`. The record is the whole contract; the owner’s API, the
+page’s Share button, the CLI and the public share server (`annals.share_api`) are
+surfaces over it:
+
+```default
+{
+ "token": "<22 url-safe chars, 128 random bits>",
+ "title": "...", "created": "<iso>",
+ "root": {"kind": "doc" | "group", "id": "<id>"},
+ "docs": {"<doc id>": ["<file>", ...], ...},   # what the link may reach, and only that
+ "expires": "<iso>" | null,
+ "password": "scrypt$..." | null,               # a hash; the password is never stored
+ "revoked": "<iso>" | null                       # a tombstone: a revoked link is a 404
+}
+```
+
+`docs` is the scope. Every request of the public server is checked against it, never
+against what the link was made from: a file not listed is a 404 even when it sits beside
+the shared page, and a page or a link of the shared text that points outside the scope is
+removed before the text leaves the server ([`filter_refs()`](_autosummary/annals.share.html.md#annals.share.filter_refs)), so the recipient sees
+neither private ids nor private paths.
+
+The password is a gate on the link, not an account: anyone who knows both may read. It
+is hashed with stdlib `scrypt` (the `hasher` seam takes argon2 or anything with
+`hash`/`verify`), and a correct one earns an HMAC cookie keyed by that hash, so
+changing the password or revoking the link ends every open session.
+
+Tokens come from [`secrets.token_urlsafe()`](https://docs.python.org/3/library/secrets.html#secrets.token_urlsafe) with 128 bits, as heed’s review pages do.
+
+### Module Attributes
+
+| [`ANNALS_ID`](_autosummary/annals.share.html.md#annals.share.ANNALS_ID)        | an annals id (doc or group) as [`annals.store.mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id) makes them   |
+|-------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_EXPIRES`](_autosummary/annals.share.html.md#annals.share.DFLT_EXPIRES)     | a share lasts this long unless told otherwise (`"never"` for no expiry)                                                              |
+| [`MIN_PASSWORD_LEN`](_autosummary/annals.share.html.md#annals.share.MIN_PASSWORD_LEN) | the shortest link password accepted (a gate tried from anywhere must not be guessable)                                               |
+
+### Functions
+
+| [`check_token`](_autosummary/annals.share.html.md#annals.share.check_token)(token)                                | Raise `ValueError` on anything that could not be a token (a path, a dot, ...).      |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`dir_of`](_autosummary/annals.share.html.md#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).   |
+| [`filter_refs`](_autosummary/annals.share.html.md#annals.share.filter_refs)(text, kind, \*, files, shared[, ...]) | `text` with every reference outside the share removed (or rewritten).               |
+| [`is_expired`](_autosummary/annals.share.html.md#annals.share.is_expired)(record, \*[, now])                     | True when the record has an expiry and it is reached (a bad one counts as reached). |
+| [`new_token`](_autosummary/annals.share.html.md#annals.share.new_token)()                                       | A fresh link token: 128 random bits, url-safe.                                      |
+| [`now_utc`](_autosummary/annals.share.html.md#annals.share.now_utc)()                                         | The current time, UTC, second precision (the clock every default reads).            |
+| [`parse_expires`](_autosummary/annals.share.html.md#annals.share.parse_expires)(value, \*[, now])                   | An expiry as an ISO UTC timestamp, or `None` for never.                             |
+| [`public_record`](_autosummary/annals.share.html.md#annals.share.public_record)(record)                             | A record without its password hash (`protected` says whether it has one).           |
+| [`references`](_autosummary/annals.share.html.md#annals.share.references)(text, kind, \*[, from_dir])            | What a page points at: files of its document, and annals pages (by id).             |
+| [`resolve_rel`](_autosummary/annals.share.html.md#annals.share.resolve_rel)(url[, from_dir])                      | A relative url as a file path inside the document, or `None` if it is not one.      |
+| [`share_url`](_autosummary/annals.share.html.md#annals.share.share_url)(base, token)                            | The link a recipient opens, or `None` when no share server is configured.           |
+
+### Classes
+
+| [`PasswordHasher`](_autosummary/annals.share.html.md#annals.share.PasswordHasher)(\*args, \*\*kwargs)         | What a share needs to gate a link on a password.                      |
+|---------------------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| [`ScryptHasher`](_autosummary/annals.share.html.md#annals.share.ScryptHasher)([n, r, p, salt_bytes, dklen]) | Stdlib `hashlib.scrypt`, stored as `scrypt$n$r$p$salt$hash` (base64). |
+| [`Shares`](_autosummary/annals.share.html.md#annals.share.Shares)(store, \*[, hasher, clock])         | Create, read, list and revoke shares of a `DocStore`'s documents.     |
+
+### annals.share.ANNALS_ID *= '\\\\d{8}-\\\\d{6}-[a-z0-9]+(?:-[a-z0-9]+)\*'*
+
+an annals id (doc or group) as [`annals.store.mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id) makes them
+
+### annals.share.DFLT_EXPIRES *= '7d'*
+
+a share lasts this long unless told otherwise (`"never"` for no expiry)
+
+### annals.share.MIN_PASSWORD_LEN *= 8*
+
+the shortest link password accepted (a gate tried from anywhere must not be guessable)
+
+### *class* annals.share.PasswordHasher(\*args, \*\*kwargs)
+
+Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
+
+What a share needs to gate a link on a password.
+
+### *class* annals.share.ScryptHasher(n=16384, r=8, p=1, salt_bytes=16, dklen=32)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Stdlib `hashlib.scrypt`, stored as `scrypt$n$r$p$salt$hash` (base64).
+
+The default needs no dependency; `n=2**14, r=8` costs ~16 MB and tens of ms per
+check, which the attempt limit of the share server bounds.
+
+### *class* annals.share.Shares(store, \*, hasher=None, clock=<function now_utc>)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+Create, read, list and revoke shares of a `DocStore`’s documents.
+
+`hasher` hashes link passwords (stdlib scrypt by default); `clock` returns the
+current UTC `datetime` (tests pin it).
+
+#### check_password(record, password)
+
+Whether `password` opens `record` (constant time inside the hasher).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+#### create(ref, , include=None, exclude=(), password=None, expires='7d', title=None)
+
+Share a document or a group (`ref` is its id); return the record (no hash).
+
+A document is shared with all its files unless `include` names some (the page
+itself always goes); `include` may also name annals pages the document links
+to, which then open inside the share. A group is shared with all its documents
+unless `include` names some. `exclude` removes files (or a group’s documents).
+A linked page goes with the files it shows. `expires` is anything
+[`parse_expires()`](_autosummary/annals.share.html.md#annals.share.parse_expires) reads, 7 days by default (`"never"` for none); `password`
+gates the link (at least `MIN_PASSWORD_LEN` characters).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### list(, all=False)
+
+Every share, newest first, without hashes; `all` adds revoked and expired.
+
+* **Return type:**
+  [`list`](_autosummary/annals.share.html.md#annals.share.Shares.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### record(token)
+
+The stored record (hash included), revoked or not; `None` if there is none.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### resources(doc_id)
+
+What the Share dialog offers for a document: its files, and the pages it links.
+
+`{"main", "files": [{"rel", "kind", "size", "referenced"}], "pages": [{"id",
+"title", "kind"}]}`. `referenced` marks the files the page itself shows or
+links; `pages` are the other annals documents its text links to.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### revoke(token)
+
+End a link now (idempotent). The record stays, as a tombstone, for the list.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### status(token)
+
+`("ok" | "expired" | "missing", record)`; a revoked link is `missing`.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
+
+#### unlock_value(record)
+
+The cookie value a correct password earns: `<issued epoch>.<hmac>`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+#### unlocked(record, value, , max_age_s)
+
+Whether a cookie value is a live unlock of this record (no password: always).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.share.check_token(token)
+
+Raise `ValueError` on anything that could not be a token (a path, a dot, …).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.share.dir_of(rel)
+
+The directory part of a relative path, with its trailing slash (`""` at the top).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.share.filter_refs(text, kind, , files, shared, from_dir='', private_hosts=())
+
+`text` with every reference outside the share removed (or rewritten).
+
+`files` are the document’s files the share includes; `shared(id)` maps an annals
+id to where the recipient opens it (in scope) or `None` (not shared). A markdown
+image out of scope disappears, a link keeps its words; an html attribute goes; a bare
+annals url becomes “(link not shared)” and a bare annals id “(not shared)”. The text
+of the page itself is the owner’s: only references are touched. An absolute url on
+one of `private_hosts` (the owner’s own) goes too, whatever its path. Every kind of
+text is filtered (markdown, html, plain text, svg): only markdown syntax is markdown’s.
+Best effort by design, and the second line of defence: the share server answers 404
+for anything outside the share however the text names it.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.share.is_expired(record, , now=None)
+
+True when the record has an expiry and it is reached (a bad one counts as reached).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.share.new_token()
+
+A fresh link token: 128 random bits, url-safe.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.share.now_utc()
+
+The current time, UTC, second precision (the clock every default reads).
+
+* **Return type:**
+  [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+
+### annals.share.parse_expires(value, , now=None)
+
+An expiry as an ISO UTC timestamp, or `None` for never.
+
+`None`, `""` and `"never"` mean never. Accepts a duration (`30m`, `12h`, `7d`, `2w`), a date (`2026-11-01`: the
+END of that day, UTC, so the link works through the day named), an ISO timestamp (a
+naive one is UTC), or a `datetime`. A moment already past is refused.
+
+```pycon
+>>> parse_expires("2d", now=datetime(2026, 1, 1, tzinfo=timezone.utc))
+'2026-01-03T00:00:00+00:00'
+>>> parse_expires("2026-01-05", now=datetime(2026, 1, 1, tzinfo=timezone.utc))
+'2026-01-05T23:59:59+00:00'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.share.public_record(record)
+
+A record without its password hash (`protected` says whether it has one).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.share.references(text, kind, , from_dir='')
+
+What a page points at: files of its document, and annals pages (by id).
+
+`{"files": [rel, ...], "ids": [annals id, ...]}`, each in first-seen order; it
+feeds the Share dialog, which offers them to the owner.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.share.resolve_rel(url, from_dir='')
+
+A relative url as a file path inside the document, or `None` if it is not one.
+
+```pycon
+>>> resolve_rel("img/a.png?x=1#y", "notes/")
+'notes/img/a.png'
+>>> resolve_rel("../../etc/passwd") is None, resolve_rel("https://x.org/a") is None
+(True, True)
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.share.share_url(base, token)
+
+The link a recipient opens, or `None` when no share server is configured.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 
 # _autosummary/annals.sources.html.md
@@ -1506,20 +1839,23 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox])     | Write the publisher config (where to publish, what link to print) and show it.     |
-|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])    | Copy documents or groups to a named target, keeping their ids; print the new link. |
-| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.          |
-| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                         |
-| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.    |
-| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                | The page's html shell, for a host that serves the API under its own prefix.        |
-| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.   |
-| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                         |
-| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...]) | Serve the annals page and API (needs `pip install 'annals[server]'`).              |
-| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                          |
-| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                    |
+| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.         |
+|-------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])       | Copy documents or groups to a named target, keeping their ids; print the new link.     |
+| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.              |
+| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                             |
+| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])          | List documents (newest first), optionally filtered by words or showing the bin.        |
+| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                   | The page's html shell, for a host that serves the API under its own prefix.            |
+| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.       |
+| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                             |
+| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])    | Serve the annals page and API (needs `pip install 'annals[server]'`).                  |
+| [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])    | Make a public link to ONE document (or group) and print it; nothing else is reachable. |
+| [`shares`](_autosummary/annals.tools.html.md#annals.tools.shares)(\*[, all, target, base_url, to])              | List share links, newest first (`all`: revoked and expired ones too).                  |
+| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                              |
+| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                        |
+| [`unshare`](_autosummary/annals.tools.html.md#annals.tools.unshare)(links, \*[, target, to])                     | Revoke share links (their token or full link): they stop working at once.              |
 
-### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False)
+### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -1530,7 +1866,9 @@ Write the publisher config (where to publish, what link to print) and show it.
 and leaves the default alone. `--outbox` marks the target as an outbox: a directory
 the server pulls and empties (it cannot be written to from here), so replacements are
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
-edit of the file turns it off). With no arguments, shows the resolved settings without writing.
+edit of the file turns it off). `--share-base-url` is where share links point when
+the share server is not at `<base-url>/shared` (a platform running it as its own
+public app). With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1625,6 +1963,29 @@ configured is refused unless `allow_open` (`--allow-open`) says something else g
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+### annals.tools.share(ref, , password=None, expires='7d', include=None, exclude=None, title=None, target=None, base_url=None, to=None)
+
+Make a public link to ONE document (or group) and print it; nothing else is reachable.
+
+`ref` is a document or group id, or its link. The link opens without a login, shows
+only that page and the files chosen, and can be revoked (`annals unshare`).
+`include`: comma separated files of the document to share (the page itself always
+is), or ids of other annals pages it links to; by default every file of the document
+(for a group: every document; `include` then picks documents). `exclude` drops
+files. `expires` (7 days unless told): `12h`, `30d`, `2w`, a date (`2026-11-01`,
+through that day, UTC), an ISO time, or `never`. `password` gates the link (stored hashed; `-` reads it from
+stdin, so it stays out of the shell history).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.shares(, all=False, target=None, base_url=None, to=None)
+
+List share links, newest first (`all`: revoked and expired ones too).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.tools.show(doc_id, , target=None, base_url=None, to=None)
 
 A document’s metadata and link (`to`: on a named target).
@@ -1639,6 +2000,13 @@ Move documents to the recycle bin (restorable).
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.tools.unshare(links, , target=None, to=None)
+
+Revoke share links (their token or full link): they stop working at once.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 
 # about-this-build.html.md
 
@@ -1646,18 +2014,16 @@ Move documents to the recycle bin (restorable).
 
 # About this build
 
-This documentation was built on **2026-10-20 14:27 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2"><code>ff1d90f</code></a> on branch <code>main</code>, for **annals 0.0.13** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-23 00:23 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3"><code>0d6e9c6</code></a> on branch <code>main</code>, for **annals 0.0.14** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.13) is behind the latest release on PyPI (0.0.14): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2"><code>ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3"><code>0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1668,15 +2034,15 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39439083445">39439083445</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39877662716">39877662716</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2</code> (in the history of the built commit) |
+| Event commit | <code>0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.21  |
+| epythet  | 0.2.22  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.15 |
@@ -1695,14 +2061,14 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.14/">0.0.14</a>, newer than the documented version (0.0.13).
+Latest release: <a href="https://pypi.org/project/annals/0.0.14/">0.0.14</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout ff1d90f094bc9a3bbab56bd3795fefa61eabb1f2
-pip install "epythet==0.2.21"
+git checkout 0d6e9c6b8136cc82a900c0e0fdc198e31fec43b3
+pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

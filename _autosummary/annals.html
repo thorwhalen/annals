@@ -70,6 +70,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
@@ -119,6 +120,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.Settings.as_dict"><code class="docutils literal notranslate"><span class="pre">Settings.as_dict()</span></code></a></li>
 <li><a class="reference internal" href="#annals.Settings.configured"><code class="docutils literal notranslate"><span class="pre">Settings.configured</span></code></a></li>
 <li><a class="reference internal" href="#annals.Settings.outbox"><code class="docutils literal notranslate"><span class="pre">Settings.outbox</span></code></a></li>
+<li><a class="reference internal" href="#annals.Settings.share_base_url"><code class="docutils literal notranslate"><span class="pre">Settings.share_base_url</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#annals.SshTarget"><code class="docutils literal notranslate"><span class="pre">SshTarget</span></code></a></li>
@@ -169,7 +171,7 @@ directory as a private page with search, sort, groups and a recycle bin.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.configure" title="annals.configure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">configure</span></code></a>(*[, target, base_url, to, outbox])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.configure" title="annals.configure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">configure</span></code></a>(*[, target, base_url, to, outbox, ...])</p></td>
 <td><p>Write the publisher config (where to publish, what link to print) and show it.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.group" title="annals.group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group</span></code></a>(title, doc_ids, *[, target, base_url, to])</p></td>
@@ -212,7 +214,7 @@ directory as a private page with search, sort, groups and a recycle bin.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.LocalTarget" title="annals.LocalTarget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LocalTarget</span></code></a>(root)</p></td>
 <td><p>A directory on this machine.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.Settings" title="annals.Settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Settings</span></code></a>(target, base_url[, configured, outbox])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.Settings" title="annals.Settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Settings</span></code></a>(target, base_url[, configured, ...])</p></td>
 <td><p>Where to publish and what link to print.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.SshTarget" title="annals.SshTarget"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SshTarget</span></code></a>(host, root)</p></td>
@@ -447,7 +449,7 @@ document was purged) stays pending and is listed under its own id.</p>
 
 <dl class="py class">
 <dt class="sig sig-object py" id="annals.Settings">
-<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">Settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configured</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#Settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.Settings" title="Link to this definition">#</a></dt>
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">Settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">configured</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#Settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.Settings" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>Where to publish and what link to print. See the module docstring for precedence.</p>
 <dl class="field-list simple">
@@ -481,6 +483,12 @@ in the local data dir and the link points at a local server, which is rarely mea
 <dd><p>the target is pulled and emptied by another machine; replacements apply there</p>
 </dd></dl>
 
+<dl class="py attribute">
+<dt class="sig sig-object py" id="annals.Settings.share_base_url">
+<span class="sig-name descname"><span class="pre">share_base_url</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">''</span></span><a class="headerlink" href="#annals.Settings.share_base_url" title="Link to this definition">#</a></dt>
+<dd><p>where share links point (<code class="docutils literal notranslate"><span class="pre">&lt;this&gt;/&lt;token&gt;/</span></code>); <code class="docutils literal notranslate"><span class="pre">&lt;base_url&gt;/shared</span></code> by default</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py class">
@@ -494,7 +502,7 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.configure">
-<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.configure" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">configure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#configure"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.configure" title="Link to this definition">#</a></dt>
 <dd><p>Write the publisher config (where to publish, what link to print) and show it.</p>
 <p class="rubric">Example</p>
 <p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--target</span> <span class="pre">tw:/root/.local/share/annals</span> <span class="pre">--base-url</span> <span class="pre">https://apps.example.com/annals</span></code>.
@@ -502,7 +510,9 @@ in the local data dir and the link points at a local server, which is rarely mea
 and leaves the default alone. <code class="docutils literal notranslate"><span class="pre">--outbox</span></code> marks the target as an outbox: a directory
 the server pulls and empties (it cannot be written to from here), so replacements are
 left for the server to apply; it is kept by later changes (<code class="docutils literal notranslate"><span class="pre">ANNALS_OUTBOX=0</span></code> or an
-edit of the file turns it off). With no arguments, shows the resolved settings without writing.</p>
+edit of the file turns it off). <code class="docutils literal notranslate"><span class="pre">--share-base-url</span></code> is where share links point when
+the share server is not at <code class="docutils literal notranslate"><span class="pre">&lt;base-url&gt;/shared</span></code> (a platform running it as its own
+public app). With no arguments, shows the resolved settings without writing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -534,7 +544,7 @@ edit of the file turns it off). With no arguments, shows the resolved settings w
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.load_settings">
-<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">load_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#load_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.load_settings" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">load_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outbox</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">share_base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">config_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/config.html#load_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.load_settings" title="Link to this definition">#</a></dt>
 <dd><p>Resolve settings: arguments, then <code class="docutils literal notranslate"><span class="pre">to</span></code>, env, the config file, then local defaults.</p>
 <p><code class="docutils literal notranslate"><span class="pre">to</span></code> names a <code class="docutils literal notranslate"><span class="pre">[targets.NAME]</span></code> table of the config file; it replaces the environment
 and the file’s default target for this call (explicit arguments still win).</p>
@@ -642,19 +652,22 @@ version” button. Publish the Artifact first, then the same page here with its 
 <tr class="row-even"><td><p><a class="reference internal" href="annals.mcp.html#module-annals.mcp" title="annals.mcp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mcp</span></code></a></p></td>
 <td><p>MCP surface: the same operations as the CLI, from <a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.tools</span></code></a>, via <code class="docutils literal notranslate"><span class="pre">py2mcp</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.sources.html#module-annals.sources" title="annals.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.share.html#module-annals.share" title="annals.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a></p></td>
+<td><p>Share links: one document (or a group) behind a public, unguessable, revocable link.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.sources.html#module-annals.sources" title="annals.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
 <td><p>Item sources: everything the page lists, wherever it lives, as rows of one shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.store.html#module-annals.store" title="annals.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.store.html#module-annals.store" title="annals.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
 <td><p>The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.tags.html#module-annals.tags" title="annals.tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.tags.html#module-annals.tags" title="annals.tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></a></p></td>
 <td><p>The owner's tags: a <code class="docutils literal notranslate"><span class="pre">MutableMapping</span></code> from item key to tag list, kept apart from the items.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.target.html#module-annals.target" title="annals.target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.target.html#module-annals.target" title="annals.target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target</span></code></a></p></td>
 <td><p>The transport seam: a document tree lands in a directory, here or on another machine.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
 <td><p>The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.</p></td>
 </tr>
 </tbody>
@@ -702,7 +715,7 @@ version” button. Publish the Artifact first, then the same page here with its 
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=9fc46840"></script>
+      <script src="../_static/documentation_options.js?v=544df88d"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

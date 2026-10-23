@@ -39,6 +39,8 @@
    catalog
    config
    mcp
+   share
+   share_api
    sources
    store
    tags

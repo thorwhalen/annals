@@ -67,6 +67,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.store.html">annals.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tags.html">annals.tags</a></li>
@@ -140,23 +141,26 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="16">        <span class="s2">"restore"</span><span class="p">,</span>
 </span><span data-line="17">        <span class="s2">"group"</span><span class="p">,</span>
 </span><span data-line="18">        <span class="s2">"groups"</span><span class="p">,</span>
-</span><span data-line="19">        <span class="s2">"configure"</span><span class="p">,</span>
-</span><span data-line="20">    <span class="p">)</span>
-</span><span data-line="21"><span class="p">]</span>
-</span><span data-line="22">
-</span><span data-line="23">
+</span><span data-line="19">        <span class="s2">"share"</span><span class="p">,</span>
+</span><span data-line="20">        <span class="s2">"shares"</span><span class="p">,</span>
+</span><span data-line="21">        <span class="s2">"unshare"</span><span class="p">,</span>
+</span><span data-line="22">        <span class="s2">"configure"</span><span class="p">,</span>
+</span><span data-line="23">    <span class="p">)</span>
+</span><span data-line="24"><span class="p">]</span>
+</span><span data-line="25">
+</span><span data-line="26">
 <div class="viewcode-block" id="mk_server">
 <a class="viewcode-back" href="../../_autosummary/annals.mcp.html#annals.mcp.mk_server">[docs]</a>
-</span><span data-line="24"><span class="k">def</span><span class="w"> </span><span class="nf">mk_server</span><span class="p">():</span>
-</span><span data-line="25"><span class="w">    </span><span class="sd">"""Build the MCP server over :mod:`annals.tools`."""</span>
-</span><span data-line="26">    <span class="kn">from</span><span class="w"> </span><span class="nn">py2mcp</span><span class="w"> </span><span class="kn">import</span> <span class="n">mk_mcp_from_refs</span>
-</span><span data-line="27">
-</span><span data-line="28">    <span class="k">return</span> <span class="n">mk_mcp_from_refs</span><span class="p">(</span><span class="n">_REFS</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"annals"</span><span class="p">)</span></div>
-
-</span><span data-line="29">
+</span><span data-line="27"><span class="k">def</span><span class="w"> </span><span class="nf">mk_server</span><span class="p">():</span>
+</span><span data-line="28"><span class="w">    </span><span class="sd">"""Build the MCP server over :mod:`annals.tools`."""</span>
+</span><span data-line="29">    <span class="kn">from</span><span class="w"> </span><span class="nn">py2mcp</span><span class="w"> </span><span class="kn">import</span> <span class="n">mk_mcp_from_refs</span>
 </span><span data-line="30">
-</span><span data-line="31"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
-</span><span data-line="32">    <span class="n">mk_server</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+</span><span data-line="31">    <span class="k">return</span> <span class="n">mk_mcp_from_refs</span><span class="p">(</span><span class="n">_REFS</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"annals"</span><span class="p">)</span></div>
+
+</span><span data-line="32">
+</span><span data-line="33">
+</span><span data-line="34"><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
+</span><span data-line="35">    <span class="n">mk_server</span><span class="p">()</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -184,7 +188,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=9fc46840"></script>
+      <script src="../../_static/documentation_options.js?v=544df88d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

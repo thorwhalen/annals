@@ -8,6 +8,7 @@ annals.config
 
    .. autosummary::
    
+      ENV_SHARE_BASE_URL
       ENV_SOURCES
    
    .. rubric:: Functions

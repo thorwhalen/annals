@@ -9,25 +9,25 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 ### Functions
 
-| [`configure`](#annals.configure)(\*[, target, base_url, to, outbox])     | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
-|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`group`](#annals.group)(title, doc_ids, \*[, target, base_url, to]) | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
-| [`groups`](#annals.groups)(\*[, target, base_url, to])                | List groups, newest first.                                                                                                                                        |
-| [`load_settings`](#annals.load_settings)(\*[, target, base_url, to, ...])    | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
-| [`ls`](#annals.ls)([q, trash, limit, target, base_url, to])       | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
-| [`parse_target`](#annals.parse_target)(spec)                                | `host:/path` becomes an [`SshTarget`](#annals.SshTarget); anything else a [`LocalTarget`](#annals.LocalTarget). |
-| [`publish`](#annals.publish)(paths, \*[, title, tags, group, ...])     | Publish one document and print its link; several paths become several documents.                                                                                  |
-| [`restore`](#annals.restore)(doc_ids, \*[, target, to])                | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](#annals.show)(doc_id, \*[, target, base_url, to])          | A document's metadata and link (`to`: on a named target).                                                                                                         |
-| [`trash`](#annals.trash)(doc_ids, \*[, target, to])                  | Move documents to the recycle bin (restorable).                                                                                                                   |
+| [`configure`](#annals.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
+|-------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`group`](#annals.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
+| [`groups`](#annals.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                                                                                                        |
+| [`load_settings`](#annals.load_settings)(\*[, target, base_url, to, ...])       | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
+| [`ls`](#annals.ls)([q, trash, limit, target, base_url, to])          | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
+| [`parse_target`](#annals.parse_target)(spec)                                   | `host:/path` becomes an [`SshTarget`](#annals.SshTarget); anything else a [`LocalTarget`](#annals.LocalTarget). |
+| [`publish`](#annals.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.                                                                                  |
+| [`restore`](#annals.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                                                                                                        |
+| [`show`](#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                                                                                                         |
+| [`trash`](#annals.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
 
-| [`DocStore`](#annals.DocStore)(target, \*[, settle])                   | Publish, list, read, trash, restore and group documents on a `Target`.      |
-|---------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
-| [`LocalTarget`](#annals.LocalTarget)(root)                                | A directory on this machine.                                                |
-| [`Settings`](#annals.Settings)(target, base_url[, configured, outbox]) | Where to publish and what link to print.                                    |
-| [`SshTarget`](#annals.SshTarget)(host, root)                            | `host:path` on another machine, via the system ssh and rsync in batch mode. |
+| [`DocStore`](#annals.DocStore)(target, \*[, settle])                | Publish, list, read, trash, restore and group documents on a `Target`.      |
+|------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [`LocalTarget`](#annals.LocalTarget)(root)                             | A directory on this machine.                                                |
+| [`Settings`](#annals.Settings)(target, base_url[, configured, ...]) | Where to publish and what link to print.                                    |
+| [`SshTarget`](#annals.SshTarget)(host, root)                         | `host:path` on another machine, via the system ssh and rsync in batch mode. |
 
 ### *class* annals.DocStore(target, , settle=True)
 
@@ -186,7 +186,7 @@ A directory on this machine.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### *class* annals.Settings(target, base_url, configured=True, outbox=False)
+### *class* annals.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -211,13 +211,17 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
+
+where share links point (`<this>/<token>/`); `<base_url>/shared` by default
+
 ### *class* annals.SshTarget(host, root)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### annals.configure(, target=None, base_url=None, to=None, outbox=False)
+### annals.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -228,7 +232,9 @@ Write the publisher config (where to publish, what link to print) and show it.
 and leaves the default alone. `--outbox` marks the target as an outbox: a directory
 the server pulls and empties (it cannot be written to from here), so replacements are
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
-edit of the file turns it off). With no arguments, shows the resolved settings without writing.
+edit of the file turns it off). `--share-base-url` is where share links point when
+the share server is not at `<base-url>/shared` (a platform running it as its own
+public app). With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -247,7 +253,7 @@ List groups, newest first.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, config_path=None)
+### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 
@@ -323,6 +329,7 @@ Move documents to the recycle bin (restorable).
 | [`catalog`](annals.catalog.html.md#module-annals.catalog) | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
 | [`config`](annals.config.html.md#module-annals.config)   | Settings: where documents are published and what link to print.                                                                                    |
 | [`mcp`](annals.mcp.html.md#module-annals.mcp)         | MCP surface: the same operations as the CLI, from [`annals.tools`](annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`share`](annals.share.html.md#module-annals.share)     | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](annals.sources.html.md#module-annals.sources) | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
 | [`store`](annals.store.html.md#module-annals.store)     | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
 | [`tags`](annals.tags.html.md#module-annals.tags)       | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |

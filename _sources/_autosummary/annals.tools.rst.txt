@@ -17,6 +17,9 @@ annals.tools
       publish
       restore
       serve
+      share
+      shares
       show
       trash
+      unshare
    
