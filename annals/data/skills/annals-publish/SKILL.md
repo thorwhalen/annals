@@ -107,7 +107,7 @@ annals shares                                          # the live links
 annals unshare <link>                                  # turn one off
 ```
 
-Give the owner the link and, if you set one, the password, and say when it expires. Default to an expiry (`7d`) unless told otherwise.
+Give the owner the link and, if you set one, the password, and say when it expires. Default to an expiry (`7d`) unless told otherwise. On a machine whose target is an outbox (another machine pulls it), `annals share` refuses: point the owner at the Share button on the document's page instead.
 
 ## Where it goes
 

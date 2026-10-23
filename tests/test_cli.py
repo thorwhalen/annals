@@ -181,3 +181,17 @@ def test_share_base_url_resolution(tmp_path, monkeypatch):
     write_config(s, config_path=cfg)
     monkeypatch.delenv("ANNALS_SHARE_BASE_URL")
     assert load_settings(config_path=cfg).share_base_url == "https://h/api/annals_share"
+
+
+def test_share_refuses_an_outbox(tmp_path, monkeypatch):
+    cfg = tmp_path / "c.toml"
+    write_config(
+        Settings(target=str(tmp_path / "out"), base_url="https://h/annals", outbox=True),
+        config_path=cfg,
+    )
+    monkeypatch.setenv("ANNALS_CONFIG", str(cfg))
+    for var in ("ANNALS_TARGET", "ANNALS_BASE_URL", "ANNALS_SHARE_BASE_URL"):
+        monkeypatch.delenv(var, raising=False)
+    out, err = io.StringIO(), io.StringIO()
+    assert run(["share", "20260101-000000-x"], out=out, err=err) != 0
+    assert "outbox" in err.getvalue() and "Share button" in err.getvalue()

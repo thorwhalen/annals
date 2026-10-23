@@ -441,8 +441,16 @@ def copy(
 
 
 def _shares(settings: Settings):
+    """The share records where the documents live. An outbox is emptied by another
+    machine, so a link made there would point at documents it no longer holds."""
     from annals.share import Shares
 
+    if settings.outbox:
+        raise ValueError(
+            f"{settings.target} is an outbox (another machine pulls it), so it cannot "
+            f"share: make the link with the Share button at {settings.base_url}, or run "
+            "`annals share` where the documents live (or pass --to <target>)."
+        )
     return Shares(_store(settings))
 
 
