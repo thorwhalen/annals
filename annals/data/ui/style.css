@@ -177,3 +177,21 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .chip-link { color: var(--fg); font-size: .88rem; }
 .tag-add { display: inline-flex; gap: 6px; flex: 1 1 180px; min-width: 0; }
 .tag-add input { flex: 1 1 auto; min-width: 0; padding: 6px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--card); color: var(--fg); font-size: 16px; }
+
+/* share links: the owner's dialog and list, the recipient's gate */
+.share-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 14px; }
+.share-panel h3 { margin: 0 0 4px; font-size: 1.05rem; }
+.share-panel h4 { margin: 14px 0 6px; font-size: .9rem; }
+.share-picks summary { padding: 4px 0; color: var(--accent); }
+.check { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 4px 0; word-break: break-all; }
+.check input { flex: 0 0 auto; width: 20px; height: 20px; }
+.share-opts { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.share-opts input, .share-opts select, .share-link input, .share-gate input[type=password] { font-size: 16px; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--bg); color: var(--fg); max-width: 100%; }
+.share-link { display: flex; gap: 8px; margin: 10px 0 4px; }
+.share-link input { flex: 1 1 auto; min-width: 0; }
+.share-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.share-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); }
+.share-row.dead { opacity: .6; }
+.share-gate { max-width: 420px; margin: 10vh auto 0; display: flex; flex-direction: column; gap: 12px; text-align: left; }
+.share-gate label { display: flex; flex-direction: column; gap: 6px; }

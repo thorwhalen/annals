@@ -256,6 +256,7 @@ def configure(
     base_url: str | None = None,
     to: str | None = None,
     outbox: bool = False,
+    share_base_url: str | None = None,
 ) -> dict:
     """Write the publisher config (where to publish, what link to print) and show it.
 
@@ -264,21 +265,32 @@ def configure(
     and leaves the default alone. ``--outbox`` marks the target as an outbox: a directory
     the server pulls and empties (it cannot be written to from here), so replacements are
     left for the server to apply; it is kept by later changes (``ANNALS_OUTBOX=0`` or an
-    edit of the file turns it off). With no arguments, shows the resolved settings without writing.
+    edit of the file turns it off). ``--share-base-url`` is where share links point when
+    the share server is not at ``<base-url>/shared`` (a platform running it as its own
+    public app). With no arguments, shows the resolved settings without writing.
     """
-    writing = bool(target or base_url or outbox)
+    writing = bool(target or base_url or outbox or share_base_url)
     if to and writing:
         # Resolve a partly-given named target against what is already saved under it.
         try:
             settings = load_settings(
-                target=target, base_url=base_url, to=to, outbox=outbox or None
+                target=target,
+                base_url=base_url,
+                to=to,
+                outbox=outbox or None,
+                share_base_url=share_base_url,
             )
         except ValueError:
             if not (target and base_url):
                 raise ValueError(
                     f"a new named target needs both --target and --base-url ({to!r} is not saved yet)"
                 ) from None
-            settings = load_settings(target=target, base_url=base_url, outbox=outbox)
+            settings = load_settings(
+                target=target,
+                base_url=base_url,
+                outbox=outbox,
+                share_base_url=share_base_url,
+            )
     else:
         current = load_settings(to=to)  # what a partial change applies to
         settings = load_settings(
@@ -286,6 +298,7 @@ def configure(
             base_url=base_url,
             to=to,
             outbox=(outbox or current.outbox) if writing else None,
+            share_base_url=share_base_url,
         )
     out = settings.as_dict()
     if writing:
@@ -427,6 +440,121 @@ def copy(
     return copied[0] if len(copied) == 1 else {"docs": copied}
 
 
+def _shares(settings: Settings):
+    from annals.share import Shares
+
+    return Shares(_store(settings))
+
+
+def _split(x) -> list[str]:
+    if x is None:
+        return []
+    items = x.split(",") if isinstance(x, str) else list(x)
+    return [i.strip() for i in items if i and i.strip()]
+
+
+def _share_out(settings: Settings, rec: dict) -> dict:
+    from annals.share import share_url
+
+    return {
+        "id": rec["token"],
+        "title": rec.get("title"),
+        "url": share_url(settings.share_base_url, rec["token"]),
+        "root": rec["root"],
+        "files": {d: len(fs) for d, fs in rec.get("docs", {}).items()},
+        "expires": rec.get("expires"),
+        "protected": rec.get("protected", False),
+        "revoked": rec.get("revoked"),
+        "created": rec.get("created"),
+    }
+
+
+def share(
+    ref: str,
+    *,
+    password: str | None = None,
+    expires: str = "7d",
+    include: str | None = None,
+    exclude: str | None = None,
+    title: str | None = None,
+    target: str | None = None,
+    base_url: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Make a public link to ONE document (or group) and print it; nothing else is reachable.
+
+    ``ref`` is a document or group id, or its link. The link opens without a login, shows
+    only that page and the files chosen, and can be revoked (``annals unshare``).
+    ``include``: comma separated files of the document to share (the page itself always
+    is), or ids of other annals pages it links to; by default every file of the document
+    (for a group: every document; ``include`` then picks documents). ``exclude`` drops
+    files. ``expires`` (7 days unless told): ``12h``, ``30d``, ``2w``, a date (``2026-11-01``,
+    through that day, UTC), an ISO time, or ``never``. ``password`` gates the link (stored hashed; ``-`` reads it from
+    stdin, so it stays out of the shell history).
+    """
+    settings = load_settings(target=target, base_url=base_url, to=to)
+    if password == "-":
+        import sys
+
+        password = sys.stdin.readline().rstrip("\n")
+    rec = _shares(settings).create(
+        _parse_ref(ref)[1],
+        include=_split(include) or None,
+        exclude=_split(exclude),
+        password=password,
+        expires=expires,
+        title=title,
+    )
+    out = _share_out(settings, rec)
+    notes = [f"expires {out['expires']}" if out["expires"] else "never expires"]
+    if out["protected"]:
+        notes.append("password-protected")
+    n = sum(out["files"].values())
+    notes.append(f"{n} file{'s' if n != 1 else ''} shared")
+    result = {
+        "url": out["url"],
+        "id": out["id"],
+        "title": out["title"],
+        "note": ", ".join(notes),
+    }
+    from urllib.parse import urlsplit
+
+    local = urlsplit(settings.base_url).hostname in ("127.0.0.1", "localhost", "::1")
+    if settings.share_base_url == f"{settings.base_url}/shared" and not local:
+        result["warning"] = (
+            "this link assumes the annals server serves shares at <base_url>/shared, "
+            "as `annals serve` does; inside an app platform the share server runs as its "
+            "own public app: set its address with `annals configure --share-base-url ...`"
+        )
+    return result
+
+
+def shares(
+    *,
+    all: bool = False,
+    target: str | None = None,
+    base_url: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """List share links, newest first (``all``: revoked and expired ones too)."""
+    settings = load_settings(target=target, base_url=base_url, to=to)
+    recs = _shares(settings).list(all=all)
+    return {"shares": [_share_out(settings, r) for r in recs]}
+
+
+def unshare(
+    links: list[str],
+    *,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Revoke share links (their token or full link): they stop working at once."""
+    settings = load_settings(target=target, to=to)
+    s = _shares(settings)
+    tokens = [x.strip().rstrip("/").split("/")[-1] for x in _as_list(links)]
+    return {"revoked": [s.revoke(t)["token"] for t in tokens]}
+
+
 def serve(
     *,
     host: str = "127.0.0.1",
@@ -477,6 +605,9 @@ _dispatch_funcs[:] = [
     group,
     groups,
     copy,
+    share,
+    shares,
+    unshare,
     configure,
     serve,
     page_shell,

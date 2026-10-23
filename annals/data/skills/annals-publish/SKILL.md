@@ -96,6 +96,19 @@ annals copy <link-or-id> --to inoocq --source other     # read from a named targ
 
 Without `--to` documents go to the default target, as always. Use `--to <name>` only when you were told to (for example: material meant for the whole inoocq team goes `--to inoocq`, private notes do not). `copy` reads the documents from a place this machine can read (a directory or `ssh`), so it works where the documents live, not from a machine that only has the link. An unknown name is an error that lists the known ones.
 
+## Sharing one page with someone else
+
+The annals is the owner's alone. Only when the owner asks to share a document with someone (a client, a colleague), make a share link; never on your own initiative, since it makes the document readable by whoever holds the link:
+
+```bash
+annals share <id-or-link> --expires 7d                 # every file of the document; prints the public link
+annals share <id> --include img/a.png --expires 2026-11-01 --password -   # password from stdin
+annals shares                                          # the live links
+annals unshare <link>                                  # turn one off
+```
+
+Give the owner the link and, if you set one, the password, and say when it expires. Default to an expiry (`7d`) unless told otherwise.
+
 ## Where it goes
 
 `annals configure` shows the target (a local directory, or `host:/path` over ssh) and the base URL. If the target is remote, publishing needs a working `ssh <host>` with keys (no prompt). If `annals publish` fails with an ssh error, say so and give the user the file path instead; do not retry in a loop.
