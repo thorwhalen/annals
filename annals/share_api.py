@@ -49,7 +49,7 @@ from annals.api import (
     doc_file_path,
     doctype_guard,
 )
-from annals.export import export_response, file_url_builder, trusted_base
+from annals.export import run_export, file_url_builder, trusted_base
 from annals.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
 from annals.share import Shares, dir_of, filter_refs
 from annals.sources import with_thumb
@@ -460,18 +460,15 @@ def mk_share_api(
             ),
         )
         link = trusted_base(request, base)
-        return await anyio.to_thread.run_sync(
-            functools.partial(
-                export_response,
-                format,
-                title=meta.get("title") or doc_id,
-                text=text,
-                rel=rel,
-                files=files,
-                open_file=functools.partial(doc_file_path, store, doc_id),
-                file_url=file_url_builder(link, doc_id),
-                created=meta.get("created", ""),
-            )
+        return await run_export(
+            format,
+            title=meta.get("title") or doc_id,
+            text=text,
+            rel=rel,
+            files=files,
+            open_file=functools.partial(doc_file_path, store, doc_id),
+            file_url=file_url_builder(link, doc_id),
+            created=meta.get("created", ""),
         )
 
     @app.get("/{token}/thumb/{doc_id}/{rel:path}")

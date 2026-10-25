@@ -168,3 +168,34 @@ def test_share_export_needs_a_live_link_and_a_shared_file(share_client):
         == 404
     )
     assert c.get(f"/{rec['token']}/export/other-doc").status_code == 404
+
+
+def test_a_non_ascii_title_names_the_download(tmp_path):
+    store = DocStore(tmp_path / "data")
+    meta = store.publish(text="# x\n", title="日本語 タイトル")
+    c = TestClient(mk_api(store=store, thumbnailer=None))
+    cd = c.get(f"/export/{meta['id']}", params={"format": "md"}).headers[
+        "content-disposition"
+    ]
+    assert "filename*=UTF-8''%E6%97%A5%E6%9C%AC%E8%AA%9E" in cd and 'filename="' in cd
+
+
+def test_a_pdf_of_a_huge_page_is_refused(tmp_path):
+    from annals.export import PDF_MAX_TEXT_BYTES
+
+    store = DocStore(tmp_path / "data")
+    meta = store.publish(text="x " * PDF_MAX_TEXT_BYTES, title="Big")
+    c = TestClient(mk_api(store=store, thumbnailer=None))
+    assert c.get(f"/export/{meta['id']}", params={"format": "pdf"}).status_code == 413
+    assert c.get(f"/export/{meta['id']}", params={"format": "md"}).status_code == 200
+
+
+def test_busy_server_answers_503_without_waiting(doc, monkeypatch):
+    import annals.export as ex
+
+    store, meta = doc
+    monkeypatch.setattr(ex, "_pdf_active", ex.PDF_CONCURRENCY)
+    c = TestClient(mk_api(store=store, thumbnailer=None))
+    r = c.get(f"/export/{meta['id']}", params={"format": "pdf"})
+    assert r.status_code == 503 and "retry-after" in r.headers
+    assert c.get(f"/export/{meta['id']}", params={"format": "md"}).status_code == 200

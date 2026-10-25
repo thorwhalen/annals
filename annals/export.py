@@ -19,7 +19,7 @@ from __future__ import annotations
 import html
 import io
 import posixpath
-import threading
+import re
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
@@ -35,11 +35,17 @@ FORMATS = ("md", "pdf")
 PDF_IMAGE_MAX_PX = 1800
 #: an image larger than this on disk is linked, not embedded
 PDF_IMAGE_MAX_BYTES = 25_000_000
+#: an image with more pixels than this is not decoded to be shrunk (a small box would run out of memory)
+PDF_IMAGE_MAX_PIXELS = 40_000_000
 #: all embedded images of one PDF together
 PDF_IMAGES_TOTAL_BYTES = 80_000_000
 #: PDFs rendered at once (each takes a core for a few seconds on a small server)
 PDF_CONCURRENCY = 2
-_pdf_slots = threading.BoundedSemaphore(PDF_CONCURRENCY)
+#: markdown larger than this is not made into a PDF (rendering cost grows faster than size)
+PDF_MAX_TEXT_BYTES = 400_000
+#: seconds a busy server tells a client to wait before asking again
+PDF_RETRY_AFTER_S = 10
+_pdf_active = 0  # PDFs being made; only touched on the event loop, so no lock
 _MEDIA_LABELS = {"video": "Video", "audio": "Audio", "pdf": "PDF", "html": "Page"}
 
 PDF_CSS = """
@@ -74,9 +80,12 @@ def export_filename(title: str, ext: str) -> str:
     return f"{slugify(title or '')}.{ext}"
 
 
-def _attachment(name: str) -> str:
-    """``Content-Disposition`` for ``name`` (ascii by construction, still quoted)."""
-    return f"attachment; filename=\"{name}\"; filename*=UTF-8''{quote(name)}"
+def _attachment(title: str, ext: str) -> str:
+    """``Content-Disposition``: an ascii name for old clients, the title itself in ``filename*``."""
+    ascii_name = export_filename(title, ext)
+    full = re.sub(r'[\x00-\x1f\x7f/\\:*?"<>|]+', " ", title or "").strip()[:100]
+    utf8 = f"{full}.{ext}" if full else ascii_name
+    return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(utf8)}"
 
 
 def export_response(
@@ -100,31 +109,28 @@ def export_response(
             text.encode("utf-8"),
             media_type="text/markdown; charset=utf-8",
             headers={
-                "Content-Disposition": _attachment(export_filename(title, "md")),
+                "Content-Disposition": _attachment(title, "md"),
                 "Cache-Control": "private, no-store",
                 "X-Content-Type-Options": "nosniff",
             },
         )
     if fmt == "pdf":
-        if not _pdf_slots.acquire(timeout=20):
-            raise HTTPException(503, "busy making other PDFs, try again in a moment")
-        try:
-            pdf = markdown_to_pdf(
-                text,
-                title=title,
-                rel=rel,
-                files=files,
-                open_file=open_file,
-                file_url=file_url,
-                created=created,
-            )
-        finally:
-            _pdf_slots.release()
+        if len(text.encode("utf-8")) > PDF_MAX_TEXT_BYTES:
+            raise HTTPException(413, "this page is too large to make a PDF of")
+        pdf = markdown_to_pdf(
+            text,
+            title=title,
+            rel=rel,
+            files=files,
+            open_file=open_file,
+            file_url=file_url,
+            created=created,
+        )
         return Response(
             pdf,
             media_type="application/pdf",
             headers={
-                "Content-Disposition": _attachment(export_filename(title, "pdf")),
+                "Content-Disposition": _attachment(title, "pdf"),
                 "Cache-Control": "private, no-store",
                 "X-Content-Type-Options": "nosniff",
             },
@@ -160,6 +166,30 @@ def file_url_builder(base: str, doc_id: str) -> Callable[[str], str | None]:
     return file_url
 
 
+async def run_export(fmt: str, **kwargs) -> Response:
+    """:func:`export_response` in a worker thread, at most ``PDF_CONCURRENCY`` PDFs at once.
+
+    A PDF over the limit is refused at once (``503`` and ``Retry-After``) instead of
+    waiting: a waiting request would hold one of the threads every app shares.
+    """
+    global _pdf_active
+    import anyio.to_thread
+
+    if fmt != "pdf":
+        return await anyio.to_thread.run_sync(lambda: export_response(fmt, **kwargs))
+    if _pdf_active >= PDF_CONCURRENCY:
+        raise HTTPException(
+            503,
+            "busy making other PDFs, try again in a moment",
+            headers={"Retry-After": str(PDF_RETRY_AFTER_S)},
+        )
+    _pdf_active += 1
+    try:
+        return await anyio.to_thread.run_sync(lambda: export_response(fmt, **kwargs))
+    finally:
+        _pdf_active -= 1
+
+
 def resolve_ref(href: str, *, rel: str, files: Sequence[str]) -> str | None:
     """The document file a relative ``href`` of the markdown file ``rel`` names, or ``None``.
 
@@ -180,6 +210,10 @@ def _shrunk(data: bytes, rel: str) -> tuple[bytes, str]:
         return data, kind_of_mime(rel)
     try:
         with Image.open(io.BytesIO(data)) as im:
+            if im.width * im.height > PDF_IMAGE_MAX_PIXELS:
+                return data, Image.MIME.get(
+                    im.format, kind_of_mime(rel)
+                )  # not decoded here
             if max(im.size) <= PDF_IMAGE_MAX_PX or im.format == "GIF":
                 return data, Image.MIME.get(im.format, kind_of_mime(rel))
             im.thumbnail((PDF_IMAGE_MAX_PX, PDF_IMAGE_MAX_PX))
@@ -215,9 +249,12 @@ def markdown_to_pdf(
     try:
         from markdown_it import MarkdownIt
         from weasyprint import HTML
-    except ImportError:
+    except (
+        ImportError,
+        OSError,
+    ):  # not installed, or its Pango/GLib libraries are missing
         raise HTTPException(
-            501, "PDF export needs `pip install annals[pdf]` on the server"
+            501, "PDF export needs `pip install annals[pdf]` (and Pango) on the server"
         )
 
     allowed = list(files)
@@ -284,6 +321,8 @@ def markdown_to_pdf(
                     referenced.add(target)
                     linked.add(target)
                     child.attrSet("href", link_for(target) or "")
+                elif href.startswith("#"):
+                    child.attrSet("href", "")
                 elif urlsplit(href).scheme not in ("http", "https", "mailto"):
                     child.attrSet("href", "")
 

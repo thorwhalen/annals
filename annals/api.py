@@ -60,7 +60,7 @@ from annals.config import (
     default_data_dir,
 )
 from annals.catalog import Catalog, mk_catalog
-from annals.export import export_response, file_url_builder, trusted_base
+from annals.export import run_export, file_url_builder, trusted_base
 from annals.sources import (
     PUBLISHED,
     PublishedSource,
@@ -529,18 +529,15 @@ def mk_api(
             text = await anyio.to_thread.run_sync(store.read_text, doc_id, rel)
         except (KeyError, OSError, ValueError):
             raise HTTPException(404, "no readable text for this document")
-        return await anyio.to_thread.run_sync(
-            functools.partial(
-                export_response,
-                format,
-                title=meta.get("title") or doc_id,
-                text=text,
-                rel=rel,
-                files=meta["files"],
-                open_file=functools.partial(doc_file_path, store, doc_id),
-                file_url=file_url_builder(trusted_base(request, base), doc_id),
-                created=meta.get("created", ""),
-            )
+        return await run_export(
+            format,
+            title=meta.get("title") or doc_id,
+            text=text,
+            rel=rel,
+            files=meta["files"],
+            open_file=functools.partial(doc_file_path, store, doc_id),
+            file_url=file_url_builder(trusted_base(request, base), doc_id),
+            created=meta.get("created", ""),
         )
 
     thumbs = ThumbServer(store, thumbnailer)

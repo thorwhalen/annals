@@ -580,9 +580,13 @@
   }
   /* Saves what the server makes for `url` (a PDF takes a few seconds, so say so); a failure
      says why and leaves the page as it was. */
+  var downloading = {};   /* one at a time per url: a second tap would start a second PDF job */
   function saveDownload(url, label) {
-    toast("Preparing " + label + "…", 15000);
+    if (downloading[url]) return toast("Still preparing the " + label + "…");
+    downloading[url] = true;
+    toast("Preparing " + label + "…", 30000);
     return fetch(url, { credentials: "same-origin" }).then(function (r) {
+      if (r.status === 401) { if (SHARE) location.reload(); else toLogin(); throw new Error("login"); }
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.detail || r.statusText); });
       var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "download";
       return r.blob().then(function (blob) {
@@ -591,7 +595,8 @@
         setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
         toast("Saved " + name);
       });
-    }).catch(function (e) { toast("Could not make the " + label + ": " + (e.message || e), 4000); });
+    }).catch(function (e) { if (e.message !== "login") toast("Could not make the " + label + ": " + (e.message || e), 4000); })
+      .then(function () { delete downloading[url]; });
   }
   /* The download actions for one file: a markdown file is exported (.md, PDF); anything else
      is the file itself. */
@@ -632,6 +637,7 @@
     }
     function onOutside(e) { if (!root.contains(e.target)) setOpen(false, true); }
     function onKey(e) {
+      if (!menu.isConnected) return setOpen(false, true);   /* the page changed under an open menu */
       var list = items(), i = list.indexOf(document.activeElement);
       if (e.key === "Escape") { e.preventDefault(); setOpen(false); }
       else if (e.key === "ArrowDown") { e.preventDefault(); list[(i + 1) % list.length].focus(); }
