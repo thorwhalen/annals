@@ -23,6 +23,7 @@ owner's view of it, without the owner's controls.
 
 from __future__ import annotations
 
+import functools
 import html
 import json
 import secrets
@@ -31,6 +32,8 @@ from pathlib import Path
 from typing import Callable
 from urllib.parse import parse_qs
 
+import anyio
+import anyio.to_thread
 from caplinks import RateLimiter, SlidingWindowLimiter  # noqa: F401  (re-exported)
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
@@ -46,6 +49,7 @@ from annals.api import (
     doc_file_path,
     doctype_guard,
 )
+from annals.export import run_export, file_url_builder, trusted_base
 from annals.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
 from annals.share import Shares, dir_of, filter_refs
 from annals.sources import with_thumb
@@ -426,6 +430,46 @@ def mk_share_api(
             }
             return Response(body, media_type=media_type, headers=headers)
         return raw_response(path, rel, cache=SHARED_FILE_CACHE)
+
+    @app.get("/{token}/export/{doc_id}")
+    async def shared_export(
+        token: str,
+        doc_id: str,
+        request: Request,
+        format: str = "pdf",
+        file: str = "",
+        base: str = "",
+    ) -> Response:
+        """The shared page as a ``.md`` or ``.pdf``: its filtered text, its included files."""
+        rec = _open(token, request)
+        meta, files = _shared_files(rec, doc_id)
+        rel = file or meta["main"]
+        if rel not in files or kind_of(rel) != "md":
+            raise HTTPException(404, "no markdown file to export in this share")
+        path = doc_file_path(store, doc_id, rel)
+        if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
+            raise HTTPException(413, "this page is too large to export")
+        text = _filtered(
+            rec,
+            request,
+            doc_id,
+            rel,
+            files,
+            await anyio.to_thread.run_sync(
+                functools.partial(path.read_text, encoding="utf-8", errors="replace")
+            ),
+        )
+        link = trusted_base(request, base)
+        return await run_export(
+            format,
+            title=meta.get("title") or doc_id,
+            text=text,
+            rel=rel,
+            files=files,
+            open_file=functools.partial(doc_file_path, store, doc_id),
+            file_url=file_url_builder(link, doc_id),
+            created=meta.get("created", ""),
+        )
 
     @app.get("/{token}/thumb/{doc_id}/{rel:path}")
     async def shared_thumb(

@@ -60,6 +60,7 @@ from annals.config import (
     default_data_dir,
 )
 from annals.catalog import Catalog, mk_catalog
+from annals.export import run_export, file_url_builder, trusted_base
 from annals.sources import (
     PUBLISHED,
     PublishedSource,
@@ -504,6 +505,40 @@ def mk_api(
         if kind_of(rel) == "html":
             return _html_response(path, rel, cache=cache, request_etag=if_none_match)
         return raw_response(path, rel, cache=cache)
+
+    @api.get("/export/{doc_id}")
+    async def export_doc(
+        doc_id: str,
+        request: Request,
+        format: str = "pdf",
+        file: str = "",
+        base: str = "",
+    ) -> Response:
+        """A markdown document as a ``.md`` or a titled ``.pdf`` download (images inside).
+
+        ``file`` names another markdown file of a folder document (default: the main
+        one); ``base`` is the page's own url prefix, for the links to media in the PDF.
+        """
+        meta = _meta_or_404(store, doc_id)
+        rel = file or meta["main"]
+        if rel not in meta["files"] or kind_of(rel) != "md":
+            raise HTTPException(404, "no markdown file to export")
+        if (meta.get("sizes") or {}).get(rel, 0) > MAX_INLINE_TEXT_BYTES:
+            raise HTTPException(413, "this file is too large to export")
+        try:
+            text = await anyio.to_thread.run_sync(store.read_text, doc_id, rel)
+        except (KeyError, OSError, ValueError):
+            raise HTTPException(404, "no readable text for this document")
+        return await run_export(
+            format,
+            title=meta.get("title") or doc_id,
+            text=text,
+            rel=rel,
+            files=meta["files"],
+            open_file=functools.partial(doc_file_path, store, doc_id),
+            file_url=file_url_builder(trusted_base(request, base), doc_id),
+            created=meta.get("created", ""),
+        )
 
     thumbs = ThumbServer(store, thumbnailer)
 
