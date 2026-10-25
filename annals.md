@@ -1,4 +1,4 @@
-> built 2026-10-23 06:58 UTC from 79bbd80 (main) · annals 0.0.17. Details: build_info.json
+> built 2026-10-25 06:06 UTC from 44c76a9 (main) · annals 0.0.18. Details: build_info.json
 
 # index.html.md
 
@@ -132,6 +132,10 @@ app = mk_share_api(data_dir="/root/.local/share/annals")
 ```
 
 then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or `mk_api(share_base_url=...)` for the owner’s page) to that app’s public URL. Until it is set, shares are made but carry no link. `mk_share_api` takes `rate_limiter=` and `link_failure_limiter=` (anything with `allow(key) -> bool`, such as heed’s Redis limiter; the defaults count per process), `trusted_proxies=` (whose `X-Forwarded-For` names the client; loopback by default) and `private_hosts=`; the password `hasher` is a keyword of `annals.share.Shares` (argon2, or anything with `hash`/`verify`).
+
+## Downloads
+
+Every markdown page has an **Actions** menu (Share, Copy, Download, View) with two downloads made by the server: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
 
 ## Other folders, search, filters and tags
 
@@ -1930,18 +1934,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-23 06:58 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/79bbd806b390c8bbbd2cc6ec7e3aa010e6a41583"><code>79bbd80</code></a> on branch <code>main</code>, for **annals 0.0.17** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-25 06:06 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/44c76a93709a75a7a884746342dcdd754f2f67f0"><code>44c76a9</code></a> on branch <code>main</code>, for **annals 0.0.18** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.17) is behind the latest release on PyPI (0.0.18): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.18) is behind the latest release on PyPI (0.0.19): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/79bbd806b390c8bbbd2cc6ec7e3aa010e6a41583"><code>79bbd806b390c8bbbd2cc6ec7e3aa010e6a41583</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/44c76a93709a75a7a884746342dcdd754f2f67f0"><code>44c76a93709a75a7a884746342dcdd754f2f67f0</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1952,9 +1956,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/39914669669">39914669669</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40167827486">40167827486</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>79bbd806b390c8bbbd2cc6ec7e3aa010e6a41583</code> (in the history of the built commit) |
+| Event commit | <code>44c76a93709a75a7a884746342dcdd754f2f67f0</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1979,13 +1983,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.18/">0.0.18</a>, newer than the documented version (0.0.17).
+Latest release: <a href="https://pypi.org/project/annals/0.0.19/">0.0.19</a>, newer than the documented version (0.0.18).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 79bbd806b390c8bbbd2cc6ec7e3aa010e6a41583
+git checkout 44c76a93709a75a7a884746342dcdd754f2f67f0
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

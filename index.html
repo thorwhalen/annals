@@ -104,6 +104,7 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#hosting-the-page">Hosting the page</a></li>
 <li><a class="reference internal" href="#sharing-one-page">Sharing one page</a></li>
+<li><a class="reference internal" href="#downloads">Downloads</a></li>
 <li><a class="reference internal" href="#other-folders-search-filters-and-tags">Other folders, search, filters and tags</a></li>
 <li><a class="reference internal" href="#python-api">Python API</a></li>
 <li><a class="reference internal" href="#design-notes">Design notes</a></li>
@@ -281,6 +282,10 @@ data-aria-dark="Switch to auto color mode">
 </div>
 <p>then set <code class="docutils literal notranslate"><span class="pre">ANNALS_SHARE_BASE_URL</span></code> (or <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--share-base-url</span> <span class="pre">...</span></code>, or <code class="docutils literal notranslate"><span class="pre">mk_api(share_base_url=...)</span></code> for the owner’s page) to that app’s public URL. Until it is set, shares are made but carry no link. <code class="docutils literal notranslate"><span class="pre">mk_share_api</span></code> takes <code class="docutils literal notranslate"><span class="pre">rate_limiter=</span></code> and <code class="docutils literal notranslate"><span class="pre">link_failure_limiter=</span></code> (anything with <code class="docutils literal notranslate"><span class="pre">allow(key)</span> <span class="pre">-&gt;</span> <span class="pre">bool</span></code>, such as heed’s Redis limiter; the defaults count per process), <code class="docutils literal notranslate"><span class="pre">trusted_proxies=</span></code> (whose <code class="docutils literal notranslate"><span class="pre">X-Forwarded-For</span></code> names the client; loopback by default) and <code class="docutils literal notranslate"><span class="pre">private_hosts=</span></code>; the password <code class="docutils literal notranslate"><span class="pre">hasher</span></code> is a keyword of <code class="docutils literal notranslate"><span class="pre">annals.share.Shares</span></code> (argon2, or anything with <code class="docutils literal notranslate"><span class="pre">hash</span></code>/<code class="docutils literal notranslate"><span class="pre">verify</span></code>).</p>
 </section>
+<section id="downloads">
+<h2>Downloads<a class="headerlink" href="#downloads" title="Link to this heading">#</a></h2>
+<p>Every markdown page has an <strong>Actions</strong> menu (Share, Copy, Download, View) with two downloads made by the server: <strong>Markdown (.md)</strong> and a titled <strong>PDF</strong> with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (<code class="docutils literal notranslate"><span class="pre">quarterly-report-q3.pdf</span></code>) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;annals[pdf]&quot;</span></code> (WeasyPrint, which uses Pango; <code class="docutils literal notranslate"><span class="pre">annals[server]</span></code> includes it); without it the PDF action answers with that hint. Pages (<code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;</span></code>) are drawn in the browser by <code class="docutils literal notranslate"><span class="pre">app.js</span></code>, so a page that gains an action gains it for every existing document.</p>
+</section>
 <section id="other-folders-search-filters-and-tags">
 <h2>Other folders, search, filters and tags<a class="headerlink" href="#other-folders-search-filters-and-tags" title="Link to this heading">#</a></h2>
 <p>Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (<code class="docutils literal notranslate"><span class="pre">/annals/s/&lt;name&gt;</span></code>) and in <code class="docutils literal notranslate"><span class="pre">/annals/all</span></code>:</p>
@@ -321,7 +326,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-23 06:58 UTC from <a href="https://github.com/thorwhalen/annals/commit/79bbd806b390c8bbbd2cc6ec7e3aa010e6a41583">79bbd80</a> (main) · annals 0.0.17 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-25 06:06 UTC from <a href="https://github.com/thorwhalen/annals/commit/44c76a93709a75a7a884746342dcdd754f2f67f0">44c76a9</a> (main) · annals 0.0.18 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -356,7 +361,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=63b572e7"></script>
+      <script src="_static/documentation_options.js?v=8bafd125"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

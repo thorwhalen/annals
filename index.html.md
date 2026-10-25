@@ -129,6 +129,10 @@ app = mk_share_api(data_dir="/root/.local/share/annals")
 
 then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or `mk_api(share_base_url=...)` for the owner’s page) to that app’s public URL. Until it is set, shares are made but carry no link. `mk_share_api` takes `rate_limiter=` and `link_failure_limiter=` (anything with `allow(key) -> bool`, such as heed’s Redis limiter; the defaults count per process), `trusted_proxies=` (whose `X-Forwarded-For` names the client; loopback by default) and `private_hosts=`; the password `hasher` is a keyword of `annals.share.Shares` (argon2, or anything with `hash`/`verify`).
 
+## Downloads
+
+Every markdown page has an **Actions** menu (Share, Copy, Download, View) with two downloads made by the server: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
+
 ## Other folders, search, filters and tags
 
 Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (`/annals/s/<name>`) and in `/annals/all`:

@@ -38,6 +38,7 @@
    auth
    catalog
    config
+   export
    mcp
    share
    share_api
