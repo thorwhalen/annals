@@ -60,6 +60,11 @@
   function toLogin() { location.href = "/auth/login?login_required=1&next=" + encodeURIComponent(location.pathname + location.search); }
   function encPath(rel) { return rel.split("/").map(encodeURIComponent).join("/"); }
   function rawUrl(id, rel) { return API + "/raw/" + id + "/" + encPath(rel); }
+  /* A markdown document as a download made by the server (annals.export): the same access
+     as the page, the same filtered text on a share link. `base` lets the PDF link its media. */
+  function exportUrl(id, fmt, file) {
+    return API + "/export/" + id + "?format=" + fmt + (file ? "&file=" + encodeURIComponent(file) : "") + "&base=" + encodeURIComponent(new URL(API, location.href).href.replace(/\/$/, ""));
+  }
   function filesUrl(source, rel) { return API + "/files/" + encodeURIComponent(source) + "/" + encPath(rel); }
   function itemHref(r) { return r.source === "published" ? BASE + "/d/" + r.id : BASE + "/i/" + encodeURIComponent(r.source) + "/" + encPath(r.id); }
   function scopeHref(scope) { return scope === "published" ? BASE + "/" : scope === "all" ? BASE + "/all" : BASE + "/s/" + encodeURIComponent(scope); }
@@ -103,10 +108,10 @@
   }
   function ageEl(iso) { return h("span", { class: "age", title: when(iso) }, [age(iso)]); }
   function size(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(0) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
-  function toast(msg) {
-    if (!toastEl) { toastEl = h("div", { class: "toast" }); document.body.appendChild(toastEl); }
+  function toast(msg, ms) {
+    if (!toastEl) { toastEl = h("div", { class: "toast", role: "status" }); document.body.appendChild(toastEl); }
     toastEl.textContent = msg; toastEl.classList.add("show");
-    clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove("show"); }, 1600);
+    clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove("show"); }, ms || 1600);
   }
   function copyText(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { toast("Copied"); });
@@ -509,6 +514,7 @@
     return {
       title: m.title, main: m.main, text: m.text, sizes: m.sizes || {},
       raw: function (rel) { return rawUrl(m.id, rel); },
+      exportUrl: function (fmt, rel) { return exportUrl(m.id, fmt, rel === m.main ? "" : rel); },
       view: function (rel) { return (m.file_kinds || {})[rel] === "file" ? null : fileUrl(m.id, rel); },
       known: function (rel) { return files.indexOf(rel) >= 0; }
     };
@@ -550,9 +556,109 @@
     return fetch(ctx.raw(rel), { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw new Error(r.statusText); return r.text(); });
   }
 
-  /* Renders `rel` into a container; returns tools for the toolbar. */
+  /* -------- page actions: one declared list, one bar ----------------------------------- */
+  /* Every action of a page is a spec {section, label, hint, icon, href|run, ...}; the bar
+     shows the primary ones and puts the rest in one "Actions" menu, grouped by section
+     (Share, Copy, Download, View, Manage), each with the same icon-and-label row, a
+     tooltip, and the keyboard (arrows, Home/End, Esc, type to open). On a phone the menu is
+     a bottom sheet with 44px rows. A recipient of a share link gets the same bar without
+     the owner's sections. */
+  var ACTION_SECTIONS = [["share", "Share"], ["copy", "Copy"], ["download", "Download"], ["view", "View"], ["manage", "Manage"]];
+  var ICONS = {
+    share: "M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14",
+    link: "M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1",
+    copy: "M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1",
+    download: "M12 3v12M7 10l5 5 5-5M5 21h14",
+    file: "M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7zM14 3v4h4",
+    open: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
+    trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13",
+    restore: "M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5",
+    more: "M5 12h.01M12 12h.01M19 12h.01"
+  };
+  function icon(name) {
+    return h("span", { class: "ico", "aria-hidden": "true", html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (ICONS[name] || ICONS.file) + '"/></svg>' });
+  }
+  /* Saves what the server makes for `url` (a PDF takes a few seconds, so say so); a failure
+     says why and leaves the page as it was. */
+  function saveDownload(url, label) {
+    toast("Preparing " + label + "…", 15000);
+    return fetch(url, { credentials: "same-origin" }).then(function (r) {
+      if (!r.ok) return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.detail || r.statusText); });
+      var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "download";
+      return r.blob().then(function (blob) {
+        var a = h("a", { href: URL.createObjectURL(blob), download: name });
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 10000);
+        toast("Saved " + name);
+      });
+    }).catch(function (e) { toast("Could not make the " + label + ": " + (e.message || e), 4000); });
+  }
+  /* The download actions for one file: a markdown file is exported (.md, PDF); anything else
+     is the file itself. */
+  function downloadActions(ctx, rel, kind) {
+    if (kind === "md" && ctx.exportUrl) return [
+      { section: "download", label: "Markdown (.md)", hint: "Save the text as a .md file named after the title", icon: "file", run: function () { return saveDownload(ctx.exportUrl("md", rel), "Markdown"); } },
+      { section: "download", label: "PDF", hint: "Save a titled PDF with the images inside; other media are linked", icon: "download", run: function () { return saveDownload(ctx.exportUrl("pdf", rel), "PDF"); } }
+    ];
+    if (kind === "md") return [];
+    return [{ section: "download", label: kind === "file" ? "File" : "Original file", hint: "Save the file as it is", icon: "download", href: downloadUrl(ctx.raw(rel)), download: basename(rel) }];
+  }
+  function actionItem(a, close) {
+    var inner = [icon(a.icon), h("span", { class: "lbl" }, [a.label])];
+    var attrs = { role: "menuitem", class: "menuitem" + (a.danger ? " danger" : ""), title: a.hint || null, tabindex: "-1" };
+    if (a.href) {
+      Object.assign(attrs, { href: a.href, download: a.download || null, target: a.newTab ? "_blank" : null, rel: a.newTab ? "noopener" : null, onclick: close });
+      return h("a", attrs, inner);
+    }
+    attrs.type = "button"; attrs.onclick = function () { close(); a.run(); };
+    return h("button", attrs, inner);
+  }
+  function actionMenu(actions) {
+    if (!actions.length) return null;
+    var open = false, root = h("div", { class: "menu-wrap" });
+    var btn = h("button", { class: "btn menu-btn", type: "button", "aria-haspopup": "menu", "aria-expanded": "false", title: "Share, copy, download, view" }, [icon("more"), h("span", { class: "lbl" }, ["Actions"])]);
+    var menu = h("div", { class: "menu", role: "menu", "aria-label": "Actions", hidden: "" });
+    var scrim = h("div", { class: "menu-scrim", hidden: "", onclick: function () { setOpen(false); } });
+    ACTION_SECTIONS.forEach(function (sec) {
+      var rows = actions.filter(function (a) { return a.section === sec[0]; });
+      if (!rows.length) return;
+      menu.appendChild(h("div", { class: "menu-group", role: "group", "aria-label": sec[1] }, [h("div", { class: "menu-title", "aria-hidden": "true" }, [sec[1]])].concat(rows.map(function (a) { return actionItem(a, function () { setOpen(false, true); }); }))));
+    });
+    function items() { return Array.prototype.slice.call(menu.querySelectorAll("[role=menuitem]")); }
+    function setOpen(v, keepFocus) {
+      open = v; btn.setAttribute("aria-expanded", String(v)); menu.hidden = !v; scrim.hidden = !v;
+      if (v) { document.addEventListener("keydown", onKey, true); document.addEventListener("pointerdown", onOutside, true); }
+      else { document.removeEventListener("keydown", onKey, true); document.removeEventListener("pointerdown", onOutside, true); if (!keepFocus) btn.focus(); }
+    }
+    function onOutside(e) { if (!root.contains(e.target)) setOpen(false, true); }
+    function onKey(e) {
+      var list = items(), i = list.indexOf(document.activeElement);
+      if (e.key === "Escape") { e.preventDefault(); setOpen(false); }
+      else if (e.key === "ArrowDown") { e.preventDefault(); list[(i + 1) % list.length].focus(); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); list[(i - 1 + list.length) % list.length].focus(); }
+      else if (e.key === "Home") { e.preventDefault(); list[0].focus(); }
+      else if (e.key === "End") { e.preventDefault(); list[list.length - 1].focus(); }
+      else if (e.key === "Tab") setOpen(false, true);
+    }
+    btn.addEventListener("click", function () { setOpen(!open); if (!open) return; items()[0].focus(); });
+    btn.addEventListener("keydown", function (e) { if (e.key === "ArrowDown" && !open) { e.preventDefault(); setOpen(true); items()[0].focus(); } });
+    root.appendChild(btn); root.appendChild(scrim); root.appendChild(menu);
+    return root;
+  }
+  /* view: controls that change how it is shown (Rendered | Source); primary: buttons that
+     stay on the bar; actions: the menu. Any may be empty. */
+  function actionBar(parts) {
+    var primary = (parts.primary || []).filter(Boolean).map(function (a) {
+      return h("button", { class: "btn", type: "button", "aria-expanded": a.expanded ? "false" : null, title: a.hint || null, onclick: a.run }, [icon(a.icon), h("span", { class: "lbl" }, [a.label])]);
+    });
+    var kids = [parts.lead || null].concat(parts.view || [], primary, [actionMenu((parts.actions || []).filter(Boolean))]);
+    return h("div", { class: "toolbar actionbar", role: "toolbar", "aria-label": "Page actions" }, kids);
+  }
+  var COPY_LINK = function () { return { section: "share", label: "Copy link", hint: "Copy this page's link", icon: "link", run: function () { return copyText(location.href); } }; };
+
+  /* Renders `rel` into a container; returns {view, actions} for the page's action bar. */
   function renderFile(ctx, rel, kind, container) {
-    var tools = [];
+    var view = [], actions = [];
     if (kind === "md") {
       var mode = readPref("mdmode", "rendered"), text = "";
       var seg = h("div", { class: "seg" }, ["rendered", "source"].map(function (v) {
@@ -570,12 +676,13 @@
       }
       container.appendChild(h("p", { class: "muted" }, ["Loading…"]));
       textOf(ctx, rel).then(function (t) { text = t; draw(); }).catch(function (e) { container.innerHTML = ""; container.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
-      tools.push(seg, h("button", { class: "btn", onclick: function () { copyText(text); } }, ["Copy source"]));
+      view.push(seg);
+      actions.push({ section: "copy", label: "Copy source", hint: "Copy the markdown text", icon: "copy", run: function () { return copyText(text); } });
     } else if (kind === "text") {
       var pre = h("pre", { class: "source" }, ["Loading…"]), t2 = "";
       container.appendChild(pre);
       textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; }).catch(function (e) { pre.textContent = String(e.message || e); });
-      tools.push(h("button", { class: "btn", onclick: function () { copyText(t2); } }, ["Copy"]));
+      actions.push({ section: "copy", label: "Copy text", hint: "Copy the file's text", icon: "copy", run: function () { return copyText(t2); } });
     } else if (kind === "html") {
       container.appendChild(h("iframe", { class: "frame", src: ctx.raw(rel), sandbox: "allow-scripts allow-popups allow-forms allow-modals allow-downloads", title: ctx.title }));
     } else if (kind === "image" || kind === "video" || kind === "audio" || kind === "pdf") {
@@ -584,9 +691,8 @@
       container.appendChild(h("div", { class: "empty" }, [h("a", { class: "btn primary", href: ctx.raw(rel), download: basename(rel) }, ["Download " + basename(rel)]),
         ctx.sizes[rel] ? h("p", { class: "muted" }, [size(ctx.sizes[rel])]) : null]));
     }
-    tools.push(h("a", { class: "btn", href: ctx.raw(rel), target: "_blank", rel: "noopener" }, [kind === "html" ? "Open full page" : "Open raw"]));
-    if (kind !== "file") tools.push(downloadLink(ctx.raw(rel), rel));
-    return tools;
+    actions.push({ section: "view", label: kind === "html" ? "Open full page" : "Open raw", hint: "Open the file itself in a new tab", icon: "open", href: ctx.raw(rel), newTab: true });
+    return { view: view, actions: actions.concat(downloadActions(ctx, rel, kind)) };
   }
 
   /* -------- the owner's tags on one item -------------------------------------------- */
@@ -719,7 +825,7 @@
       if (rel && (m.files || []).indexOf(rel) < 0) rel = null;
       var showRel = rel || (m.kind === "folder" ? null : m.main);
       var body = h("div", { class: "doc-body" });
-      var tools = [];
+      var tools = { view: [], actions: [] };
       if (showRel) tools = renderFile(docCtx(m), showRel, rel ? kinds[rel] : m.kind, body);
 
       var fileNav = null;
@@ -736,13 +842,16 @@
         ]);
       }
       var sharePanel = h("div");
-      var docTools = h("div", { class: "toolbar" }, [SHARE ? null : artifactLink(m)].concat(tools, [
-        h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"]),
-        rel || SHARE || m.in_trash ? null : h("button", { class: "btn", "aria-expanded": "false", onclick: function (e) { toggleShare(e.currentTarget, sharePanel, { kind: "doc", id: m.id, title: m.title }); } }, ["Share"]),
-        rel || SHARE ? null : (m.in_trash
-          ? h("button", { class: "btn", onclick: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }, ["Restore"])
-          : h("button", { class: "btn danger", onclick: function () { api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); } }, ["Move to bin"]))
-      ]));
+      var owner = !(rel || SHARE || m.in_trash);
+      var docTools = actionBar({
+        lead: SHARE ? null : artifactLink(m), view: tools.view,
+        primary: [owner ? { label: "Share", hint: "Make a link anyone can open, with the files you choose", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, sharePanel, { kind: "doc", id: m.id, title: m.title }); } } : null],
+        actions: [COPY_LINK()].concat(tools.actions, [
+          rel || SHARE ? null : (m.in_trash
+            ? { section: "manage", label: "Restore", hint: "Take it out of the recycle bin", icon: "restore", run: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }
+            : { section: "manage", label: "Move to bin", hint: "Move it to the recycle bin (you can restore it)", icon: "trash", danger: true, run: function () { api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); } })
+        ])
+      });
       var isVersion = !!m.version_of;
       var meta = h("div", { class: "meta" }, [
         kindBadge(m.kind), h("span", { title: when(m.created) }, [age(m.created)]),
@@ -758,7 +867,7 @@
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
         h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
-        fileNav, isVersion ? h("div", { class: "toolbar" }, tools.concat([h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"])])) : docTools, sharePanel, body,
+        fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_LINK()].concat(tools.actions) }) : docTools, sharePanel, body,
         rel || SHARE ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
       ]);
@@ -773,8 +882,10 @@
       var groupPanel = h("div");
       page(g.title, mainNav("published"), [
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
-        h("div", { class: "toolbar" }, [h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"]),
-          h("button", { class: "btn", "aria-expanded": "false", onclick: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } }, ["Share"])]),
+        actionBar({
+          primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } }],
+          actions: [COPY_LINK()]
+        }),
         groupPanel,
         h("div", { class: "list" }, items.length ? items.map(function (m) { return card(m); }) : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])])
       ]);
@@ -982,7 +1093,7 @@
       ]);
       page(it.title || basename(id), mainNav(source), [
         h("div", { class: "doc-head" }, [h("h2", null, [it.title || it.id]), meta, tagEditor(key, it.tags, back)]),
-        h("div", { class: "toolbar" }, tools.concat([h("button", { class: "btn", onclick: function () { copyText(location.href); } }, ["Copy link"])])),
+        actionBar({ view: tools.view, actions: [COPY_LINK()].concat(tools.actions) }),
         body
       ]);
     }).catch(function (e) { page("Not found", mainNav(source), [h("div", { class: "empty" }, [String(e.message || e), h("p", null, [link(back, "Back to " + sourceTitle(source))])])]); });

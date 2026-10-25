@@ -12,6 +12,7 @@
     --md: #7fc79b; --html: #c6a2e6; --text: #9a9a94; --file: #d6b35a; --media: #e59a6f; --skel: #23242a;
   }
 }
+[hidden] { display: none !important; }
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--fg); }
 body { font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -195,3 +196,29 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .share-row.dead { opacity: .6; }
 .share-gate { max-width: 420px; margin: 10vh auto 0; display: flex; flex-direction: column; gap: 12px; text-align: left; }
 .share-gate label { display: flex; flex-direction: column; gap: 6px; }
+
+/* page actions: one bar, one menu of sections (Share, Copy, Download, View, Manage) */
+.actionbar { align-items: center; }
+.actionbar .btn, .menuitem { display: inline-flex; align-items: center; gap: 8px; }
+.ico { display: inline-flex; flex: 0 0 auto; }
+.menu-wrap { position: relative; }
+.menu { position: absolute; z-index: 30; top: calc(100% + 6px); left: 0; min-width: 240px; max-width: min(92vw, 340px);
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px;
+  box-shadow: 0 8px 28px rgb(0 0 0 / .18); max-height: 70vh; overflow: auto; }
+.menu-group + .menu-group { border-top: 1px solid var(--line); margin-top: 4px; padding-top: 4px; }
+.menu-title { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 4px 10px 2px; }
+.menuitem { width: 100%; box-sizing: border-box; padding: 9px 10px; border: 0; border-radius: 8px; background: none; color: var(--fg);
+  font: inherit; font-size: .95rem; text-align: left; cursor: pointer; text-decoration: none; }
+.menuitem:hover { text-decoration: none; }
+.menuitem:focus-visible, .actionbar .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.menuitem.danger { color: var(--danger); }
+.menu-scrim { display: none; }
+@media (hover: hover) { .menuitem:hover { background: var(--chip); } }
+@media (pointer: coarse) { .menuitem { min-height: 44px; } .actionbar .btn { min-height: 44px; } }
+/* a phone: the menu is a sheet from the bottom, over a scrim */
+@media (max-width: 640px) {
+  .menu-scrim:not([hidden]) { display: block; position: fixed; inset: 0; z-index: 29; background: rgb(0 0 0 / .4); }
+  .menu { position: fixed; left: 0; right: 0; bottom: 0; top: auto; max-width: none; border-radius: 16px 16px 0 0;
+    padding: 8px 10px calc(14px + env(safe-area-inset-bottom)); max-height: 75vh; }
+  .menuitem { min-height: 48px; font-size: 1rem; }
+}
