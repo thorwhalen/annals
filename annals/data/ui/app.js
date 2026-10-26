@@ -202,10 +202,12 @@
       el.addEventListener("load", done); el.addEventListener("error", fail);
     } else if (kind === "video") {
       el = h("video", { src: src, controls: "", preload: opts.preload || "metadata", playsinline: "" });
-      el.addEventListener(opts.preload === "none" ? "loadstart" : "loadedmetadata", done); el.addEventListener("error", fail);
+      el.addEventListener("loadedmetadata", done); el.addEventListener("error", fail);
+      if (opts.preload === "none") done();  /* nothing is fetched until pressed: nothing to wait for */
     } else if (kind === "audio") {
       el = h("audio", { src: src, controls: "", preload: opts.preload || "metadata" });
-      el.addEventListener(opts.preload === "none" ? "loadstart" : "loadedmetadata", done); el.addEventListener("error", fail);
+      el.addEventListener("loadedmetadata", done); el.addEventListener("error", fail);
+      if (opts.preload === "none") done();  /* nothing is fetched until pressed: nothing to wait for */
     } else if (kind === "pdf") {
       el = h("iframe", { src: src, title: opts.name || "pdf" });
       el.addEventListener("load", done);
@@ -264,12 +266,12 @@
   /* A group's entry: audio, video and images play or show in place (nothing is fetched until
      pressed, for media with preload "none"), so options can be compared without a view each;
      other kinds keep their card. */
-  var INLINE_KINDS = ["audio", "video", "image"];
+  var INLINE_KINDS = ["audio", "video", "image"], INLINE_IMAGE_W = 960;
   function inlineItem(m) {
     if (INLINE_KINDS.indexOf(m.kind) < 0 || !m.main) return card(m);
     return h("div", { class: "card inline-item" }, [
       h("p", { class: "title" }, [link(BASE + "/d/" + m.id, m.title || m.id)]),
-      mediaBox(m.kind, rawUrl(m.id, m.main), { name: m.main, preload: "none", lazy: true })
+      mediaBox(m.kind, m.kind === "image" ? thumbUrl(m.id, m.main, INLINE_IMAGE_W) : rawUrl(m.id, m.main), { name: m.main, preload: "none", lazy: true })
     ]);
   }
   function groupCard(g) {
@@ -903,7 +905,6 @@
           primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } }],
           actions: [COPY_LINK()]
         }),
-        g.note ? h("p", { class: "group-note" }, [g.note]) : null,
         groupPanel,
         h("div", { class: "list" }, items.length ? items.map(inlineItem) : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])])
       ]);
