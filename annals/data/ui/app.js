@@ -201,11 +201,11 @@
       el = h("img", { src: src, alt: opts.name ? basename(opts.name) : "", loading: opts.lazy ? "lazy" : null, decoding: "async" });
       el.addEventListener("load", done); el.addEventListener("error", fail);
     } else if (kind === "video") {
-      el = h("video", { src: src, controls: "", preload: "metadata", playsinline: "" });
-      el.addEventListener("loadedmetadata", done); el.addEventListener("error", fail);
+      el = h("video", { src: src, controls: "", preload: opts.preload || "metadata", playsinline: "" });
+      el.addEventListener(opts.preload === "none" ? "loadstart" : "loadedmetadata", done); el.addEventListener("error", fail);
     } else if (kind === "audio") {
-      el = h("audio", { src: src, controls: "", preload: "metadata" });
-      el.addEventListener("loadedmetadata", done); el.addEventListener("error", fail);
+      el = h("audio", { src: src, controls: "", preload: opts.preload || "metadata" });
+      el.addEventListener(opts.preload === "none" ? "loadstart" : "loadedmetadata", done); el.addEventListener("error", fail);
     } else if (kind === "pdf") {
       el = h("iframe", { src: src, title: opts.name || "pdf" });
       el.addEventListener("load", done);
@@ -260,6 +260,17 @@
       h("div", { class: "card-body" }, [h("p", { class: "title" }, [m.title || m.id]), meta, text ? h("p", { class: "excerpt" + (m.snippet ? " snippet" : "") }, [text]) : null])
     ]);
     return extra ? h("div", null, [c, extra]) : c;
+  }
+  /* A group's entry: audio, video and images play or show in place (nothing is fetched until
+     pressed, for media with preload "none"), so options can be compared without a view each;
+     other kinds keep their card. */
+  var INLINE_KINDS = ["audio", "video", "image"];
+  function inlineItem(m) {
+    if (INLINE_KINDS.indexOf(m.kind) < 0 || !m.main) return card(m);
+    return h("div", { class: "card inline-item" }, [
+      h("p", { class: "title" }, [link(BASE + "/d/" + m.id, m.title || m.id)]),
+      mediaBox(m.kind, rawUrl(m.id, m.main), { name: m.main, preload: "none", lazy: true })
+    ]);
   }
   function groupCard(g) {
     var href = BASE + "/g/" + g.id;
@@ -892,8 +903,9 @@
           primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } }],
           actions: [COPY_LINK()]
         }),
+        g.note ? h("p", { class: "group-note" }, [g.note]) : null,
         groupPanel,
-        h("div", { class: "list" }, items.length ? items.map(function (m) { return card(m); }) : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])])
+        h("div", { class: "list" }, items.length ? items.map(inlineItem) : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])])
       ]);
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
@@ -1078,7 +1090,7 @@
     api("/share").then(function (s) {
       page(s.title, [], [shareNotice(),
         h("div", { class: "doc-head" }, [h("h2", null, [s.title]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["shared"]), h("span", null, [s.docs.length + (s.docs.length === 1 ? " document" : " documents")])])]),
-        h("div", { class: "list" }, s.docs.length ? s.docs.map(function (m) { return card(m); }) : [h("div", { class: "empty" }, ["Nothing here any more."])])
+        h("div", { class: "list" }, s.docs.length ? s.docs.map(inlineItem) : [h("div", { class: "empty" }, ["Nothing here any more."])])
       ]);
     }).catch(function (e) { page(NAME, [], [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
