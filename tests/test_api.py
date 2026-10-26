@@ -59,6 +59,8 @@ def test_groups_endpoint(client, store):
     got = client.get(f"/annals/api/groups/{g['id']}").json()
     assert got["title"] == "Pair" and [m["id"] for m in got["items"]] == [a["id"]]
     assert client.get("/annals/api/groups").json()["groups"][0]["id"] == g["id"]
+    # the page plays a group's media inline: it needs each item's kind and main file
+    assert {"kind", "main"} <= set(got["items"][0])
     assert client.get("/annals/api/groups/20200101-000000-nope-0000").status_code == 404
 
 

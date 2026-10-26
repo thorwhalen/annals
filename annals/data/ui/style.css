@@ -225,4 +225,4 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .inline-item .title { margin: 0 0 8px; }
 .inline-item .media.audio audio { width: 100%; }
 .inline-item .media.image img { height: auto; max-height: 60vh; object-fit: contain; }
-.group-note { margin: 0 0 12px; color: var(--muted); }
+.inline-item:hover { border-color: var(--line); }
