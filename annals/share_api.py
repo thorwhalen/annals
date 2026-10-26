@@ -34,7 +34,13 @@ from urllib.parse import parse_qs
 
 import anyio
 import anyio.to_thread
-from caplinks import RateLimiter, SlidingWindowLimiter  # noqa: F401  (re-exported)
+from caplinks import (  # noqa: F401  (the limiter names are re-exported)
+    DFLT_MAX_ATTEMPTS,
+    DFLT_MAX_LINK_FAILURES,
+    AttemptGuard,
+    RateLimiter,
+    SlidingWindowLimiter,
+)
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
@@ -68,11 +74,8 @@ SHARED_FILE_CACHE = "private, no-cache"
 SHARE_UI_FILES = frozenset({"app.js", "style.css", "marked.min.js", "purify.min.js"})
 COOKIE_NAME = "annals_share"
 DFLT_UNLOCK_MAX_AGE_S = 7 * 24 * 3600
-#: password attempts one client may make on one link in each window
-DFLT_MAX_ATTEMPTS = 10
-#: wrong passwords one link takes, from everyone together, in each window; past it the
-#: link refuses every try until the window moves (it bounds a distributed guess)
-DFLT_MAX_LINK_FAILURES = 100
+#: how long a link that takes too many wrong passwords refuses every try (it bounds a
+#: distributed guess); the counts are caplinks' DFLT_MAX_ATTEMPTS and DFLT_MAX_LINK_FAILURES
 DFLT_ATTEMPT_WINDOW_S = 300.0
 #: peers whose X-Forwarded-For is believed (a reverse proxy on the same machine)
 DFLT_TRUSTED_PROXIES = ("127.0.0.1", "::1")
@@ -161,13 +164,11 @@ def mk_share_api(
     store = store or (shares.store if shares else None)
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     shares = shares or Shares(store)
-    limiter = rate_limiter or SlidingWindowLimiter(
-        max_per_window=DFLT_MAX_ATTEMPTS, window_s=DFLT_ATTEMPT_WINDOW_S
+    guard = AttemptGuard(
+        client_limiter=rate_limiter,
+        link_limiter=link_failure_limiter,
+        lock_s=DFLT_ATTEMPT_WINDOW_S,
     )
-    link_failures = link_failure_limiter or SlidingWindowLimiter(
-        max_per_window=DFLT_MAX_LINK_FAILURES, window_s=DFLT_ATTEMPT_WINDOW_S
-    )
-    locked: dict[str, float] = {}  # token -> monotonic time its lock ends
     trusted = set(trusted_proxies)
     if thumbnailer is True:
         thumbnailer = default_thumbnailer()
@@ -325,9 +326,7 @@ def mk_share_api(
         name = rec.get("title") or title
         if not rec.get("password"):
             return RedirectResponse(nxt, status_code=303)
-        if locked.get(token, 0) > time.monotonic() or not limiter.allow(
-            f"{token}:{_client(request)}"
-        ):
+        if not guard.allow(token, _client(request)):
             return _password_page(
                 name,
                 f"{link}/unlock",
@@ -337,8 +336,7 @@ def mk_share_api(
                 status=429,
             )
         if not shares.check_password(rec, password):
-            if not link_failures.allow(token):
-                locked[token] = time.monotonic() + DFLT_ATTEMPT_WINDOW_S
+            guard.failed(token)
             return _password_page(
                 name, f"{link}/unlock", nxt, ui, error="That password is not right."
             )
