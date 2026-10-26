@@ -1,4 +1,4 @@
-> built 2026-10-26 09:11 UTC from 48293a5 (main) · annals 0.0.19. Details: build_info.json
+> built 2026-10-26 09:26 UTC from 17171aa (main) · annals 0.0.20. Details: build_info.json
 
 # index.html.md
 
@@ -1934,16 +1934,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-26 09:11 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/48293a5b6ee14b46df86feb5c3ccf09878418093"><code>48293a5</code></a> on branch <code>main</code>, for **annals 0.0.19** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-26 09:26 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/17171aa8e692157013c99ae1fa608796e8e0bdcc"><code>17171aa</code></a> on branch <code>main</code>, for **annals 0.0.20** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.20) is behind the latest release on PyPI (0.0.21): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/48293a5b6ee14b46df86feb5c3ccf09878418093"><code>48293a5b6ee14b46df86feb5c3ccf09878418093</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/17171aa8e692157013c99ae1fa608796e8e0bdcc"><code>17171aa8e692157013c99ae1fa608796e8e0bdcc</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1954,9 +1956,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40297406191">40297406191</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40299283827">40299283827</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>48293a5b6ee14b46df86feb5c3ccf09878418093</code> (in the history of the built commit) |
+| Event commit | <code>17171aa8e692157013c99ae1fa608796e8e0bdcc</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1981,13 +1983,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.19/">0.0.19</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.21/">0.0.21</a>, newer than the documented version (0.0.20).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 48293a5b6ee14b46df86feb5c3ccf09878418093
+git checkout 17171aa8e692157013c99ae1fa608796e8e0bdcc
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
