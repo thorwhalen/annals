@@ -444,3 +444,12 @@ def test_wrong_passwords_from_everywhere_lock_the_link_for_a_while(shares, repor
         c.post(f"/{rec['token']}/unlock", content=b"password=x", headers={**hdr, "x-forwarded-for": f"9.9.9.{i}"})
     r = c.post(f"/{rec['token']}/unlock", content=b"password=right-one", headers={**hdr, "x-forwarded-for": "1.1.1.1"})
     assert r.status_code == 429
+
+
+def test_a_share_record_without_its_scope_is_a_missing_link(shares, report):
+    meta, _ = report
+    token = shares.create(meta["id"])["token"]
+    assert shares.links.status(token)[0] == "ok"
+    texts = shares.links.store.texts
+    texts[f"{token}.json"] = json.dumps({"token": token, "created": "2026-01-01"})
+    assert shares.links.status(token)[0] == "missing"

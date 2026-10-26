@@ -32,7 +32,6 @@ password or revoking the link ends every open session.
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Iterator, MutableMapping
 from datetime import datetime
@@ -44,7 +43,6 @@ from caplinks import (  # noqa: F401  (ScryptHasher, is_expired, parse_expires: 
     JsonRecords,
     PasswordHasher,
     ScryptHasher,
-    check_token,
     is_expired,
     now_utc,
     parse_expires,
@@ -291,7 +289,7 @@ class _TargetTexts(MutableMapping):
     def __getitem__(self, name: str) -> str:
         try:
             return self.target.read_text(f"{SHARES}/{name}")
-        except (OSError, RuntimeError):
+        except (OSError, RuntimeError, ValueError):  # ValueError: outside the root
             raise KeyError(name) from None
 
     def __setitem__(self, name: str, text: str) -> None:

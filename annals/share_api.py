@@ -27,7 +27,6 @@ import functools
 import html
 import json
 import secrets
-import time
 from pathlib import Path
 from typing import Callable
 from urllib.parse import parse_qs
@@ -41,6 +40,7 @@ from caplinks import (  # noqa: F401  (the limiter names are re-exported)
     RateLimiter,
     SlidingWindowLimiter,
 )
+from caplinks.limits import DFLT_WINDOW_S
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 
@@ -74,9 +74,10 @@ SHARED_FILE_CACHE = "private, no-cache"
 SHARE_UI_FILES = frozenset({"app.js", "style.css", "marked.min.js", "purify.min.js"})
 COOKIE_NAME = "annals_share"
 DFLT_UNLOCK_MAX_AGE_S = 7 * 24 * 3600
-#: how long a link that takes too many wrong passwords refuses every try (it bounds a
-#: distributed guess); the counts are caplinks' DFLT_MAX_ATTEMPTS and DFLT_MAX_LINK_FAILURES
-DFLT_ATTEMPT_WINDOW_S = 300.0
+#: the counts and the window of the password lock-out are caplinks' (DFLT_MAX_ATTEMPTS,
+#: DFLT_MAX_LINK_FAILURES, DFLT_WINDOW_S); a link over the limit refuses every try for
+#: one window (it bounds a distributed guess)
+DFLT_ATTEMPT_WINDOW_S = DFLT_WINDOW_S
 #: peers whose X-Forwarded-For is believed (a reverse proxy on the same machine)
 DFLT_TRUSTED_PROXIES = ("127.0.0.1", "::1")
 MAX_FORM_BYTES = 4096
@@ -167,7 +168,7 @@ def mk_share_api(
     guard = AttemptGuard(
         client_limiter=rate_limiter,
         link_limiter=link_failure_limiter,
-        lock_s=DFLT_ATTEMPT_WINDOW_S,
+        lock_s=DFLT_WINDOW_S,
     )
     trusted = set(trusted_proxies)
     if thumbnailer is True:
