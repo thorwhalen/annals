@@ -32,7 +32,6 @@ password or revoking the link ends every open session.
 
 from __future__ import annotations
 
-import json
 import re
 from collections.abc import Iterator, MutableMapping
 from datetime import datetime
@@ -41,9 +40,9 @@ from typing import Callable, Iterable
 from caplinks import (  # noqa: F401  (ScryptHasher, is_expired, parse_expires: re-exported)
     DFLT_EXPIRES,
     CapabilityLinks,
+    JsonRecords,
     PasswordHasher,
     ScryptHasher,
-    check_token,
     is_expired,
     now_utc,
     parse_expires,
@@ -277,46 +276,45 @@ def share_url(base: str | None, token: str) -> str | None:
     return f"{base.rstrip('/')}/{token}/" if base else None
 
 
-class _ShareRecords(MutableMapping):
-    """The share records, ``shares/<token>.json`` under the data root, as a mapping.
-
-    Read and written through the store's :class:`~annals.target.Target`, so it works
-    over ssh. A record that cannot be read, or has no scope, raises ``KeyError``, and
-    the link is then missing. Records are never deleted: a revoke leaves a tombstone.
+class _TargetTexts(MutableMapping):
+    """The files of ``shares/`` under the data root as a mapping of text, through the
+    store's :class:`~annals.target.Target` (so it works over ssh). Reading a file that
+    cannot be read is a ``KeyError``; records are never deleted (a revoke leaves a
+    tombstone).
     """
 
     def __init__(self, target):
         self.target = target
 
-    def _path(self, token: str) -> str:
-        return f"{SHARES}/{check_token(token)}.json"
-
-    def __getitem__(self, token: str) -> dict:
+    def __getitem__(self, name: str) -> str:
         try:
-            rec = json.loads(self.target.read_text(self._path(token)))
-        except (ValueError, KeyError, OSError, RuntimeError):
-            raise KeyError(token) from None
-        if not (
-            isinstance(rec, dict)
-            and isinstance(rec.get("docs"), dict)
-            and isinstance(rec.get("root"), dict)
-        ):
-            raise KeyError(token)
-        return rec
+            return self.target.read_text(f"{SHARES}/{name}")
+        except (OSError, RuntimeError, ValueError):  # ValueError: outside the root
+            raise KeyError(name) from None
 
-    def __setitem__(self, token: str, record: dict) -> None:
-        self.target.write_text(self._path(token), json.dumps(record, indent=1))
+    def __setitem__(self, name: str, text: str) -> None:
+        self.target.write_text(f"{SHARES}/{name}", text)
 
-    def __delitem__(self, token: str) -> None:
+    def __delitem__(self, name: str) -> None:
         raise TypeError("share records are never deleted; revoke the link instead")
 
     def __iter__(self) -> Iterator[str]:
-        for name in self.target.list_files(SHARES):
-            if name.endswith(".json"):
-                yield name[: -len(".json")]
+        return iter(self.target.list_files(SHARES))
 
     def __len__(self) -> int:
         return sum(1 for _ in self)
+
+
+def _is_share_record(rec: dict) -> bool:
+    """A record without its scope grants nothing: the link is then missing."""
+    return isinstance(rec.get("docs"), dict) and isinstance(rec.get("root"), dict)
+
+
+def _share_records(target) -> JsonRecords:
+    """The share records, ``shares/<token>.json`` under the data root, as a mapping."""
+    return JsonRecords(
+        _TargetTexts(target), valid=_is_share_record, deletable=False, indent=1
+    )
 
 
 class Shares:
@@ -338,7 +336,7 @@ class Shares:
         self.store = store
         self.clock = clock
         self.links = CapabilityLinks(
-            _ShareRecords(store.target), hasher=hasher, clock=clock
+            _share_records(store.target), hasher=hasher, clock=clock
         )
 
     # -- what can be shared --
