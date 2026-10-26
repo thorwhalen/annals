@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-26T09:26:06Z",
+  "built_at": "2026-10-26T10:31:36Z",
   "package": {
     "name": "annals",
-    "version": "0.0.20",
+    "version": "0.0.21",
     "display_name": "annals",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "17171aa8e692157013c99ae1fa608796e8e0bdcc",
-    "short_commit": "17171aa",
+    "commit": "99207be6e639daf11bc9a7ccf3e362627e1fb77e",
+    "short_commit": "99207be",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/annals",
-    "commit_url": "https://github.com/thorwhalen/annals/commit/17171aa8e692157013c99ae1fa608796e8e0bdcc",
+    "commit_url": "https://github.com/thorwhalen/annals/commit/99207be6e639daf11bc9a7ccf3e362627e1fb77e",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/annals",
-    "sha": "17171aa8e692157013c99ae1fa608796e8e0bdcc",
+    "sha": "99207be6e639daf11bc9a7ccf3e362627e1fb77e",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "40299283827",
-    "run_url": "https://github.com/thorwhalen/annals/actions/runs/40299283827",
+    "run_id": "40307827122",
+    "run_url": "https://github.com/thorwhalen/annals/actions/runs/40307827122",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -60,16 +60,16 @@
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.21",
+    "latest": "0.0.22",
     "relation": "behind",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout 17171aa8e692157013c99ae1fa608796e8e0bdcc\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout 99207be6e639daf11bc9a7ccf3e362627e1fb77e\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": false,
     "notes": [
-      "The documented version (0.0.20) is behind the latest release on PyPI (0.0.21): `pip install annals` gives newer code than these docs describe."
+      "The documented version (0.0.21) is behind the latest release on PyPI (0.0.22): `pip install annals` gives newer code than these docs describe."
     ]
   }
 }

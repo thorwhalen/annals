@@ -1,4 +1,4 @@
-> built 2026-10-26 09:26 UTC from 17171aa (main) · annals 0.0.20. Details: build_info.json
+> built 2026-10-26 10:31 UTC from 99207be (main) · annals 0.0.21. Details: build_info.json
 
 # index.html.md
 
@@ -1934,18 +1934,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-26 09:26 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/17171aa8e692157013c99ae1fa608796e8e0bdcc"><code>17171aa</code></a> on branch <code>main</code>, for **annals 0.0.20** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-26 10:31 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/99207be6e639daf11bc9a7ccf3e362627e1fb77e"><code>99207be</code></a> on branch <code>main</code>, for **annals 0.0.21** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.20) is behind the latest release on PyPI (0.0.21): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.21) is behind the latest release on PyPI (0.0.22): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/17171aa8e692157013c99ae1fa608796e8e0bdcc"><code>17171aa8e692157013c99ae1fa608796e8e0bdcc</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/99207be6e639daf11bc9a7ccf3e362627e1fb77e"><code>99207be6e639daf11bc9a7ccf3e362627e1fb77e</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1956,9 +1956,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40299283827">40299283827</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40307827122">40307827122</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>17171aa8e692157013c99ae1fa608796e8e0bdcc</code> (in the history of the built commit) |
+| Event commit | <code>99207be6e639daf11bc9a7ccf3e362627e1fb77e</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1983,13 +1983,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.21/">0.0.21</a>, newer than the documented version (0.0.20).
+Latest release: <a href="https://pypi.org/project/annals/0.0.22/">0.0.22</a>, newer than the documented version (0.0.21).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 17171aa8e692157013c99ae1fa608796e8e0bdcc
+git checkout 99207be6e639daf11bc9a7ccf3e362627e1fb77e
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
