@@ -5,19 +5,17 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-10-25 06:06 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/44c76a93709a75a7a884746342dcdd754f2f67f0"><code>44c76a9</code></a> on branch <code>main</code>, for **annals 0.0.18** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-26 09:11 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/48293a5b6ee14b46df86feb5c3ccf09878418093"><code>48293a5</code></a> on branch <code>main</code>, for **annals 0.0.19** (from <code>pyproject.toml</code>).
 
-:::{warning}
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.18) is behind the latest release on PyPI (0.0.19): `pip install annals` gives newer code than these docs describe.
+:::{note}
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 :::
 
 ## Source
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/annals/commit/44c76a93709a75a7a884746342dcdd754f2f67f0"><code>44c76a93709a75a7a884746342dcdd754f2f67f0</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/annals/commit/48293a5b6ee14b46df86feb5c3ccf09878418093"><code>48293a5b6ee14b46df86feb5c3ccf09878418093</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
@@ -28,9 +26,9 @@ The documentation and the package may be misaligned:
 | | |
 |---|---|
 | Repository | <code>thorwhalen/annals</code> |
-| Run | <a href="https://github.com/thorwhalen/annals/actions/runs/40167827486">40167827486</a> |
+| Run | <a href="https://github.com/thorwhalen/annals/actions/runs/40297406191">40297406191</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>44c76a93709a75a7a884746342dcdd754f2f67f0</code> (in the history of the built commit) |
+| Event commit | <code>48293a5b6ee14b46df86feb5c3ccf09878418093</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -55,13 +53,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.19/">0.0.19</a>, newer than the documented version (0.0.18).
+Latest release: <a href="https://pypi.org/project/annals/0.0.19/">0.0.19</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 44c76a93709a75a7a884746342dcdd754f2f67f0
+git checkout 48293a5b6ee14b46df86feb5c3ccf09878418093
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
