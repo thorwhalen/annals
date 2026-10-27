@@ -366,3 +366,51 @@ def test_any_media_can_be_downloaded_from_its_viewer(store, tmp_path):
         assert name in saved.headers["content-disposition"]
     assert c.get(f"/raw/{m['id']}/doc.pdf?download=1").content == b"%PDF-1.4 x"
     assert c.get(f"/raw/{m['id']}/nope.pdf?download=1").status_code == 404
+
+
+# --- tables: scroll, zoom, never break mid-word ---------------------------------------
+
+WIDE_TABLE = (
+    "<table><thead><tr><th>clip</th><th>title</th><th>dur.s</th></tr></thead>"
+    "<tbody><tr><td>82L37zm</td><td>15 Old School Hip Hop Dance Moves</td><td>60</td></tr></tbody></table>"
+)
+
+
+def test_html_page_gets_table_tools(client, store):
+    doc = store.publish(text=f"<!doctype html><html><body>{WIDE_TABLE}</body></html>", filename="t.html")
+    r = client.get(f"/annals/api/raw/{doc['id']}/t.html")
+    assert r.text.count("<script data-watch") == 1
+    assert r.text.index("<table") < r.text.index("<script data-watch") < r.text.rindex("</body>")
+    assert r.headers["etag"] and client.get(
+        f"/annals/api/raw/{doc['id']}/t.html", headers={"If-None-Match": r.headers["etag"]}
+    ).status_code == 304
+
+
+def test_html_page_without_table_or_with_opt_out_is_untouched(client, store):
+    plain = store.publish(text="<!doctype html><p>hi</p>", filename="p.html")
+    assert b"annalsTables" not in client.get(f"/annals/api/raw/{plain['id']}/p.html").content
+    off = store.publish(
+        text=f'<!doctype html><html data-annals-tables="off"><body>{WIDE_TABLE}</body></html>',
+        filename="o.html",
+    )
+    assert b"annalsTables" not in client.get(f"/annals/api/raw/{off['id']}/o.html").content
+
+
+def test_viewport_that_forbids_zoom_is_lifted():
+    from annals.tables import add_table_tools
+
+    page = (
+        b'<!doctype html><meta name="viewport" content="width=device-width, initial-scale=1, '
+        b'maximum-scale=1, user-scalable=no"><body>' + WIDE_TABLE.encode() + b"</body>"
+    )
+    out = add_table_tools(page)
+    assert b"user-scalable" not in out and b"maximum-scale" not in out
+    assert b'content="width=device-width, initial-scale=1"' in out
+
+
+def test_page_wraps_markdown_tables(client):
+    """Markdown renders in the browser: the shell must load the script that wraps tables."""
+    assert client.get("/annals/api/ui/tables.js").status_code == 200
+    app_js = client.get("/annals/api/ui/app.js").text
+    assert 'loadScript("tables.js")' in app_js and "annalsTables.enhance" in app_js
+    assert "overflow-wrap" in client.get("/annals/api/ui/tables.js").text

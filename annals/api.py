@@ -80,6 +80,7 @@ from annals.store import (
     split_version,
 )
 from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore
+from annals.tables import add_table_tools, tables_version
 from annals.target import check_rel
 
 UI_DIR = Path(__file__).parent / "data" / "ui"
@@ -680,7 +681,7 @@ def _html_response(
     Carries an ETag from the file's size and mtime, so a revalidation is a 304.
     """
     st = path.stat()
-    etag = f'"{st.st_size:x}-{st.st_mtime_ns:x}"'
+    etag = f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}"'
     headers = {
         "Cache-Control": cache,
         "ETag": etag,
@@ -690,7 +691,9 @@ def _html_response(
     if request_etag and etag in {t.strip() for t in request_etag.split(",")}:
         return Response(status_code=304, headers=headers)
     return Response(
-        doctype_guard(path.read_bytes()), media_type=media_type_of(rel), headers=headers
+        add_table_tools(doctype_guard(path.read_bytes())),
+        media_type=media_type_of(rel),
+        headers=headers,
     )
 
 
