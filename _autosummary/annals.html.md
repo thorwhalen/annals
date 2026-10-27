@@ -332,6 +332,7 @@ Move documents to the recycle bin (restorable).
 | [`share`](annals.share.html.md#module-annals.share)     | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](annals.sources.html.md#module-annals.sources) | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
 | [`store`](annals.store.html.md#module-annals.store)     | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`tables`](annals.tables.html.md#module-annals.tables)   | Scrolling, zooming tables for published html pages.                                                                                                |
 | [`tags`](annals.tags.html.md#module-annals.tags)       | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
 | [`target`](annals.target.html.md#module-annals.target)   | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
 | [`tools`](annals.tools.html.md#module-annals.tools)     | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |

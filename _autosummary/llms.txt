@@ -13,6 +13,7 @@
 - [annals.share](annals.share.html.md): Share links: one document (or a group) behind a public, unguessable, revocable link.
 - [annals.sources](annals.sources.html.md): Item sources: everything the page lists, wherever it lives, as rows of one shape.
 - [annals.store](annals.store.html.md): The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
+- [annals.tables](annals.tables.html.md): Scrolling, zooming tables for published html pages.
 - [annals.tags](annals.tags.html.md): The owner’s tags: a &#96;MutableMapping&#96; from item key to tag list, kept apart from the items.
 - [annals.target](annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
 - [annals.tools](annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.

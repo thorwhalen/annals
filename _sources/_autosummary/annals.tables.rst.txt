@@ -1,0 +1,14 @@
+annals.tables
+=============
+
+.. automodule:: annals.tables
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      add_table_tools
+      allow_zoom
+      tables_version
+   

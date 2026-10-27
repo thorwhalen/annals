@@ -44,6 +44,7 @@
    share_api
    sources
    store
+   tables
    tags
    target
    tools

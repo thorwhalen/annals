@@ -1,4 +1,4 @@
-> built 2026-10-26 10:31 UTC from 99207be (main) · annals 0.0.21. Details: build_info.json
+> built 2026-10-27 13:17 UTC from dfd54e8 (main) · annals 0.0.22. Details: build_info.json
 
 # index.html.md
 
@@ -819,6 +819,7 @@ Move documents to the recycle bin (restorable).
 | [`share`](_autosummary/annals.share.html.md#module-annals.share)     | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](_autosummary/annals.sources.html.md#module-annals.sources) | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
 | [`store`](_autosummary/annals.store.html.md#module-annals.store)     | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`tables`](_autosummary/annals.tables.html.md#module-annals.tables)   | Scrolling, zooming tables for published html pages.                                                                                                |
 | [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)       | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
 | [`target`](_autosummary/annals.target.html.md#module-annals.target)   | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
 | [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)     | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
@@ -1577,6 +1578,46 @@ A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
+# _autosummary/annals.tables.html.md
+
+# annals.tables
+
+Scrolling, zooming tables for published html pages.
+
+A published html page is served as written; this adds one inlined script (the page’s own
+`ui/tables.js`) that wraps each data table in a horizontally scrollable, zoomable box,
+and lifts a viewport meta that forbids pinch-zoom. Markdown documents get the same script
+from the page itself, so both paths share one implementation.
+
+### Functions
+
+| [`add_table_tools`](_autosummary/annals.tables.html.md#annals.tables.add_table_tools)(html)   | `html` with the table script injected, unless it has no table or opts out.                                          |
+|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| [`allow_zoom`](_autosummary/annals.tables.html.md#annals.tables.allow_zoom)(html)        | `html` with pinch-zoom allowed: no `user-scalable=no` or scale limits in its viewport meta.                         |
+| [`tables_version`](_autosummary/annals.tables.html.md#annals.tables.tables_version)()        | A short hash of what [`add_table_tools()`](_autosummary/annals.tables.html.md#annals.tables.add_table_tools) injects, for a page's ETag. |
+
+### annals.tables.add_table_tools(html)
+
+`html` with the table script injected, unless it has no table or opts out.
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### annals.tables.allow_zoom(html)
+
+`html` with pinch-zoom allowed: no `user-scalable=no` or scale limits in its viewport meta.
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### annals.tables.tables_version()
+
+A short hash of what [`add_table_tools()`](_autosummary/annals.tables.html.md#annals.tables.add_table_tools) injects, for a page’s ETag.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+
 # _autosummary/annals.tags.html.md
 
 # annals.tags
@@ -1934,18 +1975,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-26 10:31 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/99207be6e639daf11bc9a7ccf3e362627e1fb77e"><code>99207be</code></a> on branch <code>main</code>, for **annals 0.0.21** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-27 13:17 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/dfd54e8ebf6fad5830c750e721af9af7351654e3"><code>dfd54e8</code></a> on branch <code>main</code>, for **annals 0.0.22** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.21) is behind the latest release on PyPI (0.0.22): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.22) is behind the latest release on PyPI (0.0.23): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/99207be6e639daf11bc9a7ccf3e362627e1fb77e"><code>99207be6e639daf11bc9a7ccf3e362627e1fb77e</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/dfd54e8ebf6fad5830c750e721af9af7351654e3"><code>dfd54e8ebf6fad5830c750e721af9af7351654e3</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1956,9 +1997,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40307827122">40307827122</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40510429042">40510429042</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>99207be6e639daf11bc9a7ccf3e362627e1fb77e</code> (in the history of the built commit) |
+| Event commit | <code>dfd54e8ebf6fad5830c750e721af9af7351654e3</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -1983,13 +2024,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.22/">0.0.22</a>, newer than the documented version (0.0.21).
+Latest release: <a href="https://pypi.org/project/annals/0.0.23/">0.0.23</a>, newer than the documented version (0.0.22).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 99207be6e639daf11bc9a7ccf3e362627e1fb77e
+git checkout dfd54e8ebf6fad5830c750e721af9af7351654e3
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
