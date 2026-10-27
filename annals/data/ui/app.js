@@ -131,8 +131,8 @@
     });
   }
   function withMarked() {
-    if (window.marked && window.DOMPurify) return Promise.resolve(window.marked);
-    markedReady = markedReady || Promise.all([loadScript("marked.min.js"), loadScript("purify.min.js")]).then(function () { return window.marked; });
+    if (window.marked && window.DOMPurify && window.annalsTables) return Promise.resolve(window.marked);
+    markedReady = markedReady || Promise.all([loadScript("marked.min.js"), loadScript("purify.min.js"), loadScript("tables.js")]).then(function () { return window.marked; });
     return markedReady;
   }
   /* Items go through @zodal/store-http's provider (GET /items?q=, GET and PATCH /items/<key>):
@@ -566,6 +566,7 @@
         withMarked().then(function (mk) {
           var art = h("article", { class: "rendered", html: safeHtml(mk.parse(text, { gfm: true, breaks: false })) });
           rebase(art, ctx, rel); container.innerHTML = ""; container.appendChild(art);
+          if (window.annalsTables) window.annalsTables.enhance(art);
         }).catch(function (e) { container.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
       }
       container.appendChild(h("p", { class: "muted" }, ["Loading…"]));

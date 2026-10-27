@@ -49,6 +49,7 @@ from annals.api import (
 from annals.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
 from annals.share import Shares, dir_of, filter_refs
 from annals.sources import with_thumb
+from annals.tables import add_table_tools
 from annals.store import PAGE_KINDS, TEXT_KINDS, DocStore, kind_of
 
 #: on every response: never indexed, never leak the url onward (heed.review's set)
@@ -61,7 +62,7 @@ NO_STORE = {"Cache-Control": "no-store"}
 #: shared files revalidate on every view, so the per-request check always runs
 SHARED_FILE_CACHE = "private, no-cache"
 #: the page's assets a recipient may load (the owner's other assets stay unlisted)
-SHARE_UI_FILES = frozenset({"app.js", "style.css", "marked.min.js", "purify.min.js"})
+SHARE_UI_FILES = frozenset({"app.js", "style.css", "marked.min.js", "purify.min.js", "tables.js"})
 COOKIE_NAME = "annals_share"
 DFLT_UNLOCK_MAX_AGE_S = 7 * 24 * 3600
 #: password attempts one client may make on one link in each window
@@ -415,7 +416,7 @@ def mk_share_api(
             text = path.read_text(encoding="utf-8", errors="replace")
             body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
             if kind_of(rel) == "html":
-                body = doctype_guard(body)
+                body = add_table_tools(doctype_guard(body))
             media_type = media_type_of(rel)
             if "charset" not in media_type:
                 media_type += "; charset=utf-8"
