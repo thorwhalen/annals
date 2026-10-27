@@ -72,7 +72,9 @@ NO_STORE = {"Cache-Control": "no-store"}
 #: shared files revalidate on every view, so the per-request check always runs
 SHARED_FILE_CACHE = "private, no-cache"
 #: the page's assets a recipient may load (the owner's other assets stay unlisted)
-SHARE_UI_FILES = frozenset({"app.js", "style.css", "marked.min.js", "purify.min.js", "tables.js"})
+SHARE_UI_FILES = frozenset(
+    {"app.js", "style.css", "marked.min.js", "purify.min.js", "tables.js"}
+)
 COOKIE_NAME = "annals_share"
 DFLT_UNLOCK_MAX_AGE_S = 7 * 24 * 3600
 #: the counts and the window of the password lock-out are caplinks' (DFLT_MAX_ATTEMPTS,

@@ -38,7 +38,9 @@ def allow_zoom(html: bytes) -> bytes:
 
     def fix(m: re.Match) -> bytes:
         tag = _NO_ZOOM_RE.sub(b"", m.group(0))
-        return re.sub(rb"content\s*=\s*([\"'])\s*,?\s*", rb"content=\1", tag, flags=re.I)
+        return re.sub(
+            rb"content\s*=\s*([\"'])\s*,?\s*", rb"content=\1", tag, flags=re.I
+        )
 
     return _VIEWPORT_RE.sub(fix, html)
 
