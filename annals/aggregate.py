@@ -41,6 +41,7 @@ Nothing is stored: the document is made per request.
 from __future__ import annotations
 
 import re
+import unicodedata
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
 
 from annals.store import FOLDER, kind_of
@@ -54,9 +55,11 @@ _ATX = re.compile(r"^( {0,3})(#{1,6})(?=[ \t]|$)(.*)$")
 _SETEXT = re.compile(r"^ {0,3}(=+|-+)[ \t]*$")
 _LIST_ITEM = re.compile(r"^ *(?:[-*+]|\d{1,9}[.)])(?:[ \t]|$)")
 _BREAK = re.compile(r"^ {0,3}([-*_])(?:[ \t]*\1){2,}[ \t]*$")
-_TABLE_DELIM = re.compile(
-    r"^ *\|?(?: *:?-+:? *\|)+ *:?-*:? *\|? *$|^ *\|? *:?-+:? *\|? *$"
-)
+_DELIM_CELL = re.compile(r":?-+:?")
+_RAW_HTML = re.compile(r"^ {0,3}<(pre|script|style|textarea)(?=[\s>]|$)", re.I)
+_FOOTNOTE = re.compile(r"\[\^([^\]\s]+)\]")
+_FRONT_KEY = re.compile(r"^[\w-]+[ \t]*:")
+_MD_SPECIAL = re.compile(r"([\\`*_\[\]<>])")
 _REF_DEF = re.compile(r"^ {0,3}\[[^\]]+\]:")
 #: lines that start a block of their own: never joined to the line before, nor it to them
 _STRUCTURAL = (_ATX, _SETEXT, _LIST_ITEM, _BREAK, _REF_DEF, _FENCE)
@@ -94,27 +97,60 @@ def numbered_first(paths: Sequence[str]) -> list[str]:
     return [p for _, p in sorted(enumerate(paths), key=key)]
 
 
-def _fenced(lines: Sequence[str]) -> list[bool]:
-    """For each line, whether it is inside (or delimits) a fenced code block."""
-    out, fence = [], None
+def _scan(lines: Sequence[str]) -> tuple[list[bool], str | None]:
+    """For each line, whether it is verbatim, and what would close a block left open.
+
+    Verbatim: inside (or delimiting) a fenced code block, a ``<pre>``, ``<script>``,
+    ``<style>`` or ``<textarea>`` block, an html comment, or a ``$$`` math block. Nothing
+    there is a heading or a wrapped line. The closer (a fence, ``</pre>``, ``-->``,
+    ``$$``) is ``None`` when every block was closed.
+    """
+    out: list[bool] = []
+    closer: str | None = None  # what ends the open block; a fence is matched by prefix
     for line in lines:
-        m = _FENCE.match(line)
-        if fence is None:
+        if closer is None:
+            m = _FENCE.match(line)
+            raw = _RAW_HTML.match(line)
+            stripped = line.strip()
             if m:
-                fence = m.group(1)
-            out.append(fence is not None)
-        else:
+                closer = m.group(1)
+            elif raw:
+                closer = f"</{raw.group(1).lower()}>"
+                if closer in line.lower()[raw.end() :]:
+                    closer = None
+            elif stripped.startswith("<!--"):
+                closer = None if "-->" in stripped[4:] else "-->"
+            elif stripped.startswith("$$"):
+                closer = None if stripped[2:].rstrip().endswith("$$") else "$$"
+            else:
+                out.append(False)
+                continue
             out.append(True)
-            if m and m.group(1)[0] == fence[0] and len(m.group(1)) >= len(fence):
+            continue
+        out.append(True)
+        if closer[0] in "`~":
+            m = _FENCE.match(line)
+            if m and m.group(1)[0] == closer[0] and len(m.group(1)) >= len(closer):
                 if not line.strip()[len(m.group(1)) :].strip():
-                    fence = None
-    return out
+                    closer = None
+        elif closer in (line.lower() if closer.startswith("</") else line):
+            closer = None
+    return out, closer
+
+
+def _is_table_delim(line: str) -> bool:
+    """A table's delimiter row (``|---|:--:|``), checked cell by cell (no backtracking)."""
+    s = line.strip()
+    if "|" not in s or "-" not in s:
+        return False
+    cells = s.strip("|").split("|")
+    return all(_DELIM_CELL.fullmatch(c.strip()) for c in cells)
 
 
 def _is_plain(line: str) -> bool:
     """A line of ordinary paragraph text (not blank, not the start of another block)."""
     s = line.lstrip()
-    if not s or s.startswith(_OPAQUE_STARTS):
+    if not s or s.startswith(_OPAQUE_STARTS) or s.startswith(": "):
         return False
     return not any(rx.match(line) for rx in _STRUCTURAL)
 
@@ -122,10 +158,15 @@ def _is_plain(line: str) -> bool:
 def strip_front_matter(text: str) -> str:
     """``text`` without a leading YAML front-matter block (``---`` ... ``---``).
 
+    It must start with a ``key:`` line, so a page that opens with a horizontal rule
+    keeps it.
+
     >>> strip_front_matter("---\\ntitle: x\\n---\\n# Body")
     '# Body'
+    >>> strip_front_matter("---\\nIntro\\n---\\nbody")
+    '---\\nIntro\\n---\\nbody'
     """
-    if not text.startswith("---\n"):
+    if not text.startswith("---\n") or not _FRONT_KEY.match(text[4:]):
         return text
     end = re.search(r"^(?:---|\.\.\.)[ \t]*$\n?", text[4:], flags=re.M)
     return text[4 + end.end() :].lstrip("\n") if end else text
@@ -146,7 +187,7 @@ def demote_headings(text: str, levels: int = 1, *, max_level: int = 6) -> str:
     if levels <= 0:
         return text
     lines = text.split("\n")
-    fenced = _fenced(lines)
+    fenced, _ = _scan(lines)
     out: list[str] = []
     for i, line in enumerate(lines):
         if fenced[i]:
@@ -185,44 +226,56 @@ def unwrap_lines(text: str) -> str:
         more
     """
     lines = text.split("\n")
-    fenced = _fenced(lines)
+    verbatim, _ = _scan(lines)
     table_heads = {
         i
         for i in range(len(lines) - 1)
-        if "|" in lines[i] and _TABLE_DELIM.match(lines[i + 1])
+        if "|" in lines[i] and _is_table_delim(lines[i + 1])
     }
-    out: list[str] = []
-    prev = "blank"  # what the last line was: blank, para, list, code, other
-    in_list = False
+    out: list[list[str]] = []  # one entry per output line: the pieces joined into it
+    prev = "blank"  # the last line: blank, para, list, code, table, html, other
+    list_at = None  # the column a list item's text starts at, while in a list
     for i, line in enumerate(lines):
-        if fenced[i]:
-            out.append(line)
+        if verbatim[i]:
+            out.append([line])
             prev = "other"
             continue
         if not line.strip():
-            out.append(line)
+            out.append([line])
             prev = "blank"
             continue
-        indent = len(line) - len(line.lstrip(" "))
-        if i in table_heads or _TABLE_DELIM.match(line) and "|" in line:
-            kind = "other"
-        elif _LIST_ITEM.match(line):
-            kind, in_list = "list", True
+        expanded = line.expandtabs(4)
+        indent = len(expanded) - len(expanded.lstrip(" "))
+        item = _LIST_ITEM.match(expanded)
+        if i in table_heads or _is_table_delim(line):
+            kind = "table"
+        elif prev == "table" and "|" in line:
+            kind = "table"  # a body row, with or without a leading pipe
+        elif prev == "html":
+            kind = "html"  # an html block runs to the next blank line
+        elif line.lstrip().startswith("<"):
+            kind = "html"
+        elif item:
+            kind, list_at = "list", item.end()
         elif not _is_plain(line):
             kind = "other"
-        elif indent >= 4 and prev in ("blank", "code", "other") and not in_list:
+        elif prev == "blank" and list_at is not None and indent >= list_at + 4:
+            kind = "code"  # indented code inside a list item
+        elif indent >= 4 and prev in ("blank", "code", "other") and list_at is None:
             kind = "code"
         else:
-            hard_break = out and (out[-1].endswith("  ") or out[-1].endswith("\\"))
+            last = out[-1][-1] if out else ""
+            hard_break = last.endswith("  ") or last.endswith("\\")
             if prev in ("para", "list") and not hard_break:
-                out[-1] = f"{out[-1].rstrip()} {line.strip()}"
+                out[-1][-1] = last.rstrip()
+                out[-1].append(line.strip())
                 continue
-            if prev == "blank" and in_list and indent == 0:
-                in_list = False
-            kind = "list" if in_list and indent else "para"
-        out.append(line)
+            if prev == "blank" and list_at is not None and indent == 0:
+                list_at = None
+            kind = "list" if list_at is not None and indent else "para"
+        out.append([line])
         prev = kind
-    return "\n".join(out)
+    return "\n".join(" ".join(pieces) for pieces in out)
 
 
 def heading_anchor(text: str, seen: dict[str, int] | None = None) -> str:
@@ -232,12 +285,43 @@ def heading_anchor(text: str, seen: dict[str, int] | None = None) -> str:
     >>> heading_anchor("01-intro.md", seen), heading_anchor("01-intro.md", seen)
     ('01-intromd', '01-intromd-1')
     """
+    text = unicodedata.normalize("NFC", text)
     slug = re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
     if seen is None:
         return slug
     n = seen.get(slug, 0)
     seen[slug] = n + 1
     return slug if n == 0 else f"{slug}-{n}"
+
+
+def _escaped(text: str) -> str:
+    """``text`` shown as itself in markdown (``__init__.md`` is not bold)."""
+    return _MD_SPECIAL.sub(r"\\\1", text)
+
+
+def _own_footnotes(text: str, prefix: str) -> str:
+    """``text`` with its footnote labels prefixed, so files cannot claim each other's notes."""
+    lines = text.split("\n")
+    verbatim, _ = _scan(lines)
+    return "\n".join(
+        line
+        if verbatim[i]
+        else _FOOTNOTE.sub(lambda m: f"[^{prefix}-{m.group(1)}]", line)
+        for i, line in enumerate(lines)
+    )
+
+
+def _section_body(text: str, *, n: int, demote: int, unwrap: bool) -> str:
+    """One file's text as a section: front matter out, headings down, notes its own, closed."""
+    body = strip_front_matter(text.replace("\r\n", "\n"))
+    body = demote_headings(body, demote)
+    if unwrap:
+        body = unwrap_lines(body)
+    body = _own_footnotes(body, str(n)).strip()
+    _, closer = _scan(body.split("\n"))
+    if closer:  # a block left open would swallow every section after it
+        body += f"\n{closer}"
+    return body
 
 
 def _unique(pairs: Sequence[tuple[str, str]]) -> list[tuple[str, str]]:
@@ -266,7 +350,8 @@ def aggregate_markdown(
     with the file's text below (front matter dropped, headings ``demote``-d, lines
     unwrapped); see the module docstring for each choice.
     """
-    pairs = _unique(list(files.items() if isinstance(files, Mapping) else files))
+    pairs = list(files.items() if isinstance(files, Mapping) else files)
+    pairs = _unique([(unicodedata.normalize("NFC", p), t) for p, t in pairs])
     texts = dict(pairs)
     paths = list(order([p for p, _ in pairs]) if order else texts)
     seen: dict[str, int] = {}
@@ -278,14 +363,11 @@ def aggregate_markdown(
     if toc and paths:
         parts.append(
             "**Contents**\n\n"
-            + "\n".join(f"- [{p}](#{a})" for p, a in zip(paths, anchors))
+            + "\n".join(f"- [{_escaped(p)}](#{a})" for p, a in zip(paths, anchors))
         )
-    for path in paths:
-        body = strip_front_matter(texts[path].replace("\r\n", "\n"))
-        body = demote_headings(body, demote)
-        if unwrap:
-            body = unwrap_lines(body)
-        parts.append(f"{head} {path}\n\n{body.strip()}".rstrip())
+    for n, path in enumerate(paths, 1):
+        body = _section_body(texts[path], n=n, demote=demote, unwrap=unwrap)
+        parts.append(f"{head} {_escaped(path)}\n\n{body}".rstrip())
     return "\n\n".join(parts) + "\n"
 
 
@@ -313,7 +395,10 @@ def doc_markdown_files(
         mds = [f for f in files if kind_of(f) == "md"]
         nested = meta.get("kind") == FOLDER or len(mds) > 1
         label = (meta.get("title") or meta["id"]).replace("/", "-").strip()
+        sizes = meta.get("sizes") or {}
         for rel in mds:
+            if max_bytes is not None and total + sizes.get(rel, 0) > max_bytes:
+                raise TooLarge(f"more than {max_bytes} bytes of markdown to combine")
             try:
                 text = read(meta["id"], rel)
             except skip:

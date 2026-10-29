@@ -321,3 +321,96 @@ def test_cli_aggregate(bundle, store, monkeypatch, tmp_path):
         run(["aggregate", g["id"], "--order", "bogus"], out=io.StringIO(), err=err) == 1
     )
     assert "order must be one of" in err.getvalue()
+
+
+# -- what the adversarial review of the first version found ---------------------------
+
+
+def test_no_catastrophic_backtracking_on_table_like_lines():
+    import time
+
+    t0 = time.perf_counter()
+    unwrap_lines("| a | b |\n|---|---|" + " " * 5000 + "x\n" + "|-|" + " " * 5000 + "x")
+    assert time.perf_counter() - t0 < 0.5
+
+
+def test_unwrap_is_linear_in_a_long_paragraph():
+    import time
+
+    t0 = time.perf_counter()
+    out = unwrap_lines("word\n" * 200_000)
+    assert time.perf_counter() - t0 < 2 and out.count("\n") == 1
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "a | b\n--- | ---\n1 | 2\n3 | 4",
+        "\tcode1\n\tcode2",
+        "- a\n\n      code\n      more",
+        "<pre>\nline 1\nline 2\n</pre>",
+        "<!--\nnote\nmore\n-->",
+        "$$\na = 1 % comment\nb = 2\n$$",
+        "Term\n: definition",
+        "<div>\nline 1\nline 2\n</div>",
+    ],
+)
+def test_unwrap_leaves_more_structure_alone(text):
+    assert unwrap_lines(text) == text
+
+
+def test_demote_skips_pre_comments_and_math():
+    for text in ["<pre>\n# not\n</pre>", "<!--\n# not\n-->", "$$\n# not\n$$"]:
+        assert demote_headings(text) == text
+
+
+def test_one_file_cannot_break_the_sections_after_it():
+    md = aggregate_markdown(
+        {"a.md": "```python\nx=1\n", "b.md": "# B", "c.md": "<!-- open"}
+    )
+    assert "```python\nx=1\n```\n\n## b.md" in md and md.rstrip().endswith("-->")
+
+
+def test_footnotes_stay_with_their_file():
+    md = aggregate_markdown(
+        {
+            "a.md": "A[^1]\n\n[^1]: note a",
+            "b.md": "B[^1]\n\n[^1]: note b\n\n```\n[^1]\n```",
+        }
+    )
+    assert "A[^1-1]" in md and "[^1-1]: note a" in md
+    assert "B[^2-1]" in md and "[^2-1]: note b" in md and "```\n[^1]\n```" in md
+
+
+def test_horizontal_rule_is_not_front_matter_and_paths_are_escaped():
+    import unicodedata
+
+    md = aggregate_markdown(
+        {
+            "__init__.md": "---\nIntro\n---\nbody",
+            unicodedata.normalize("NFD", "Résumé.md"): "x",
+        },
+        unwrap=False,
+    )
+    assert (
+        "## \\_\\_init\\_\\_.md" in md and "- [\\_\\_init\\_\\_.md](#__init__md)" in md
+    )
+    assert "Intro" in md
+    assert "(#résumémd)" in md and "## Résumé.md" in md
+
+
+def test_size_cap_is_checked_before_reading():
+    reads = []
+    docs = [
+        (
+            {"id": "d", "title": "D", "kind": "md", "sizes": {"big.md": 10_000}},
+            ["big.md"],
+        )
+    ]
+    with pytest.raises(TooLarge):
+        list(
+            doc_markdown_files(
+                docs, read=lambda i, r: reads.append(r) or "x", max_bytes=100
+            )
+        )
+    assert reads == []
