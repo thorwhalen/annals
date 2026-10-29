@@ -250,6 +250,49 @@ def groups(
     }
 
 
+def aggregate(
+    group_id: str,
+    *,
+    demote: int = 1,
+    order: str = "numbered",
+    no_toc: bool = False,
+    keep_wraps: bool = False,
+    target: str | None = None,
+    to: str | None = None,
+) -> str:
+    """Every markdown file of a group as ONE markdown document, printed (nothing is stored).
+
+    ``group_id`` is a group's id or link. The document has the group's title, a table of
+    contents, then one ``##`` section per file named after its path (a folder document's
+    files under its title). ``order``: ``numbered`` puts paths that start with a number
+    first, numerically, the rest in the group's order; ``given`` keeps the group's order.
+    ``demote`` pushes each file's headings that many levels down (``0``: as written).
+    Hard-wrapped lines are joined unless ``keep_wraps``; ``no_toc`` leaves out the table
+    of contents. Redirect
+    to save it: ``annals aggregate <id> > bundle.md``.
+    """
+    from annals.aggregate import aggregate_markdown, doc_markdown_files, numbered_first
+
+    orders = {"numbered": numbered_first, "given": None}
+    if order not in orders:
+        raise ValueError(f"order must be one of {', '.join(orders)}, not {order!r}")
+    store = _store(load_settings(target=target, to=to))
+    g, metas = store.group_docs(_parse_ref(group_id)[1])
+    files = list(
+        doc_markdown_files(((m, m.get("files", [])) for m in metas), read=store.read_text)
+    )
+    if not files:
+        raise ValueError(f"group {g['id']} has no markdown files")
+    return aggregate_markdown(
+        files,
+        title=g.get("title") or g["id"],
+        order=orders[order],
+        demote=demote,
+        toc=not no_toc,
+        unwrap=not keep_wraps,
+    )
+
+
 def configure(
     *,
     target: str | None = None,
@@ -612,6 +655,7 @@ _dispatch_funcs[:] = [
     restore,
     group,
     groups,
+    aggregate,
     copy,
     share,
     shares,

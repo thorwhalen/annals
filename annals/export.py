@@ -12,6 +12,10 @@ text, never interpreted). Images are embedded in it; audio, video, other PDFs an
 become a visible link to the resource, so the reader can open or play it. WeasyPrint is
 imported on first use, and a missing one is a ``501`` with the install hint, not an import
 error at startup.
+
+:func:`aggregate_response` is the same kind of download for many files at once: a group's
+(or a share's) markdown files as one ``.md``, made by :mod:`annals.aggregate` from what the
+caller passes in.
 """
 
 from __future__ import annotations
@@ -20,13 +24,15 @@ import html
 import io
 import posixpath
 import re
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
 from urllib.parse import quote, unquote, urlsplit
 
 from fastapi import HTTPException
 from fastapi.responses import Response
 
+from annals.aggregate import TooLarge, aggregate_markdown, doc_markdown_files
+from annals.config import MAX_AGGREGATE_BYTES
 from annals.share import dir_of
 from annals.store import kind_of, slugify
 
@@ -88,6 +94,23 @@ def _attachment(title: str, ext: str) -> str:
     return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(utf8)}"
 
 
+def markdown_response(text: str, *, title: str, download: bool = True) -> Response:
+    """``text`` as a ``.md`` download named after ``title``, or (``download=False``) shown
+    as plain text in the browser, which every phone can display, select and copy."""
+    disposition = _attachment(title, "md")
+    if not download:
+        disposition = "inline" + disposition[len("attachment") :]
+    return Response(
+        text.encode("utf-8"),
+        media_type=f"text/{'markdown' if download else 'plain'}; charset=utf-8",
+        headers={
+            "Content-Disposition": disposition,
+            "Cache-Control": "private, no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
+
+
 def export_response(
     fmt: str,
     *,
@@ -105,15 +128,7 @@ def export_response(
     ``file_url(rel)`` is the absolute url a reader of the PDF can open it at, or ``None``.
     """
     if fmt == "md":
-        return Response(
-            text.encode("utf-8"),
-            media_type="text/markdown; charset=utf-8",
-            headers={
-                "Content-Disposition": _attachment(title, "md"),
-                "Cache-Control": "private, no-store",
-                "X-Content-Type-Options": "nosniff",
-            },
-        )
+        return markdown_response(text, title=title)
     if fmt == "pdf":
         if len(text.encode("utf-8")) > PDF_MAX_TEXT_BYTES:
             raise HTTPException(413, "this page is too large to make a PDF of")
@@ -136,6 +151,33 @@ def export_response(
             },
         )
     raise HTTPException(400, f"format must be one of {', '.join(FORMATS)}")
+
+
+def aggregate_response(
+    docs: Iterable[tuple[dict, Iterable[str]]],
+    *,
+    read: Callable[[str, str], str],
+    title: str,
+    download: bool = False,
+    demote: int = 1,
+    max_bytes: int = MAX_AGGREGATE_BYTES,
+) -> Response:
+    """Every markdown file of ``docs`` as one ``.md`` (:mod:`annals.aggregate`), made now.
+
+    ``docs`` are ``(meta, files)`` pairs, ``files`` being what the caller may serve, and
+    ``read(doc_id, rel)`` gives one file's text (filtered, for a share). Nothing is kept.
+    The ``X-Annals-Sections`` header says how many files went in.
+    """
+    try:
+        files = list(doc_markdown_files(docs, read=read, max_bytes=max_bytes))
+    except TooLarge as e:
+        raise HTTPException(413, str(e))
+    if not files:
+        raise HTTPException(404, "no markdown files to combine")
+    text = aggregate_markdown(files, title=title, demote=demote)
+    response = markdown_response(text, title=title, download=download)
+    response.headers["X-Annals-Sections"] = str(len(files))
+    return response
 
 
 def trusted_base(request, base: str) -> str:
