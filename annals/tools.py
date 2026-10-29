@@ -279,7 +279,9 @@ def aggregate(
     store = _store(load_settings(target=target, to=to))
     g, metas = store.group_docs(_parse_ref(group_id)[1])
     files = list(
-        doc_markdown_files(((m, m.get("files", [])) for m in metas), read=store.read_text)
+        doc_markdown_files(
+            ((m, m.get("files", [])) for m in metas), read=store.read_text
+        )
     )
     if not files:
         raise ValueError(f"group {g['id']} has no markdown files")
