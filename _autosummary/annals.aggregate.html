@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.aggregate - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.auth" href="annals.auth.html" /><link rel="prev" title="annals" href="annals.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.aggregate"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.aggregate.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.aggregate.TooLarge"><code class="docutils literal notranslate"><span class="pre">TooLarge</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.aggregate_markdown"><code class="docutils literal notranslate"><span class="pre">aggregate_markdown()</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.demote_headings"><code class="docutils literal notranslate"><span class="pre">demote_headings()</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.doc_markdown_files"><code class="docutils literal notranslate"><span class="pre">doc_markdown_files()</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.heading_anchor"><code class="docutils literal notranslate"><span class="pre">heading_anchor()</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.numbered_first"><code class="docutils literal notranslate"><span class="pre">numbered_first()</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.strip_front_matter"><code class="docutils literal notranslate"><span class="pre">strip_front_matter()</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.unwrap_lines"><code class="docutils literal notranslate"><span class="pre">unwrap_lines()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.aggregate</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.aggregate">
+<span id="annals-aggregate"></span><h1>annals.aggregate<a class="headerlink" href="#module-annals.aggregate" title="Link to this heading">#</a></h1>
+<p>Many markdown files as ONE markdown document: a title, a table of contents, a section per file.</p>
+<p>The mechanism is text in, text out. <a class="reference internal" href="#annals.aggregate.aggregate_markdown" title="annals.aggregate.aggregate_markdown"><code class="xref py py-func docutils literal notranslate"><span class="pre">aggregate_markdown()</span></code></a> takes <code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> pairs
+and knows nothing of documents, groups or shares; its choices are keyword arguments with
+working defaults:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">aggregate_markdown</span><span class="p">(</span>
+</span><span data-line="2"><span class="gp">... </span>    <span class="p">{</span><span class="s2">"notes.md"</span><span class="p">:</span> <span class="s2">"# Notes</span><span class="se">\n</span><span class="s2">One line</span><span class="se">\n</span><span class="s2">wrapped."</span><span class="p">,</span> <span class="s2">"01-intro.md"</span><span class="p">:</span> <span class="s2">"Hello."</span><span class="p">},</span>
+</span><span data-line="3"><span class="gp">... </span>    <span class="n">title</span><span class="o">=</span><span class="s2">"Bundle"</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+</span><span data-line="4"><span class="go"># Bundle</span>
+</span><span data-line="5">
+</span><span data-line="6"><span class="go">**Contents**</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="go">- [01-intro.md](#01-intromd)</span>
+</span><span data-line="9"><span class="go">- [notes.md](#notesmd)</span>
+</span><span data-line="10">
+</span><span data-line="11"><span class="go">## 01-intro.md</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="go">Hello.</span>
+</span><span data-line="14">
+</span><span data-line="15"><span class="go">## notes.md</span>
+</span><span data-line="16">
+</span><span data-line="17"><span class="go">## Notes</span>
+</span><span data-line="18"><span class="go">One line wrapped.</span>
+</span></pre></div>
+</div>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">order</span></code>: how the files are arranged; <a class="reference internal" href="#annals.aggregate.numbered_first" title="annals.aggregate.numbered_first"><code class="xref py py-func docutils literal notranslate"><span class="pre">numbered_first()</span></code></a> by default (paths whose
+parts start with a number first, numerically, the rest in the order given), <code class="docutils literal notranslate"><span class="pre">None</span></code>
+keeps the order given, or any <code class="docutils literal notranslate"><span class="pre">paths</span> <span class="pre">-&gt;</span> <span class="pre">paths</span></code> callable.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">demote</span></code>: how many levels each file’s own headings go down (<code class="docutils literal notranslate"><span class="pre">1</span></code>: a file’s <code class="docutils literal notranslate"><span class="pre">#</span></code>
+becomes <code class="docutils literal notranslate"><span class="pre">##</span></code>); <code class="docutils literal notranslate"><span class="pre">0</span></code> leaves them.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">unwrap</span></code>: join hard-wrapped lines of a paragraph or list item into one line
+(<a class="reference internal" href="#annals.aggregate.unwrap_lines" title="annals.aggregate.unwrap_lines"><code class="xref py py-func docutils literal notranslate"><span class="pre">unwrap_lines()</span></code></a>); code, tables, quotes and html are left as they are.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">toc</span></code>: the table of contents, as links to the sections’ GitHub-style anchors.</p></li>
+</ul>
+<p><a class="reference internal" href="#annals.aggregate.doc_markdown_files" title="annals.aggregate.doc_markdown_files"><code class="xref py py-func docutils literal notranslate"><span class="pre">doc_markdown_files()</span></code></a> is the bridge from annals documents: it yields the pairs for a
+set of documents and the files of each a caller may read, through a <code class="docutils literal notranslate"><span class="pre">read</span></code> callable, so
+the owner’s API, the share server (which reads filtered text) and the CLI share it.
+Nothing is stored: the document is made per request.</p>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.aggregate.aggregate_markdown" title="annals.aggregate.aggregate_markdown"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aggregate_markdown</span></code></a>(files, *[, title, order, ...])</p></td>
+<td><p>One markdown document of <code class="docutils literal notranslate"><span class="pre">files</span></code> (<code class="docutils literal notranslate"><span class="pre">{path:</span> <span class="pre">text}</span></code> or <code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> pairs).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.aggregate.demote_headings" title="annals.aggregate.demote_headings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">demote_headings</span></code></a>(text[, levels, max_level])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every heading <code class="docutils literal notranslate"><span class="pre">levels</span></code> deeper (at most <code class="docutils literal notranslate"><span class="pre">max_level</span></code>); code untouched.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.aggregate.doc_markdown_files" title="annals.aggregate.doc_markdown_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">doc_markdown_files</span></code></a>(docs, *, read[, ...])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> for every markdown file of <code class="docutils literal notranslate"><span class="pre">docs</span></code> (<code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> pairs).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.aggregate.heading_anchor" title="annals.aggregate.heading_anchor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">heading_anchor</span></code></a>(text[, seen])</p></td>
+<td><p>The id GitHub (and most renderers) give a heading; <code class="docutils literal notranslate"><span class="pre">seen</span></code> numbers repeats.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.aggregate.numbered_first" title="annals.aggregate.numbered_first"><code class="xref py py-obj docutils literal notranslate"><span class="pre">numbered_first</span></code></a>(paths)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">paths</span></code> with numbered ones first, compared part by part, the rest in their given order.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.aggregate.strip_front_matter" title="annals.aggregate.strip_front_matter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_front_matter</span></code></a>(text)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> without a leading YAML front-matter block (<code class="docutils literal notranslate"><span class="pre">---</span></code> .</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.aggregate.unwrap_lines" title="annals.aggregate.unwrap_lines"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unwrap_lines</span></code></a>(text)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with hard-wrapped paragraphs and list items joined into one line each.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Exceptions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.aggregate.TooLarge" title="annals.aggregate.TooLarge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TooLarge</span></code></a></p></td>
+<td><p>The markdown to aggregate is over the size a caller allows.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py exception">
+<dt class="sig sig-object py" id="annals.aggregate.TooLarge">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">TooLarge</span></span><a class="reference internal" href="../_modules/annals/aggregate.html#TooLarge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.TooLarge" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a></p>
+<p>The markdown to aggregate is over the size a caller allows.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.aggregate_markdown">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">aggregate_markdown</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">numbered_first&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unwrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">section_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#aggregate_markdown"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.aggregate_markdown" title="Link to this definition">#</a></dt>
+<dd><p>One markdown document of <code class="docutils literal notranslate"><span class="pre">files</span></code> (<code class="docutils literal notranslate"><span class="pre">{path:</span> <span class="pre">text}</span></code> or <code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> pairs).</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">title</span></code>, a table of contents, then one section per file, headed by its path,
+with the file’s text below (front matter dropped, headings <code class="docutils literal notranslate"><span class="pre">demote</span></code>-d, lines
+unwrapped); see the module docstring for each choice.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.demote_headings">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">demote_headings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">levels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#demote_headings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.demote_headings" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every heading <code class="docutils literal notranslate"><span class="pre">levels</span></code> deeper (at most <code class="docutils literal notranslate"><span class="pre">max_level</span></code>); code untouched.</p>
+<p>Setext headings (a line underlined with <code class="docutils literal notranslate"><span class="pre">===</span></code> or <code class="docutils literal notranslate"><span class="pre">---</span></code>) become <code class="docutils literal notranslate"><span class="pre">#</span></code> headings.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">demote_headings</span><span class="p">(</span><span class="s2">"# A</span><span class="se">\n</span><span class="s2">B</span><span class="se">\n</span><span class="s2">---</span><span class="se">\n</span><span class="s2">```</span><span class="se">\n</span><span class="s2"># code</span><span class="se">\n</span><span class="s2">```"</span><span class="p">))</span>
+</span><span data-line="2"><span class="go">## A</span>
+</span><span data-line="3"><span class="go">### B</span>
+</span></pre></div>
+</div>
+<div class="highlight-text notranslate"><div class="highlight"><pre><span></span><span data-line="1"># code
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.doc_markdown_files">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">doc_markdown_files</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">docs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;class</span> <span class="pre">'KeyError'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'OSError'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'ValueError'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#doc_markdown_files"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.doc_markdown_files" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> for every markdown file of <code class="docutils literal notranslate"><span class="pre">docs</span></code> (<code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> pairs).</p>
+<p><code class="docutils literal notranslate"><span class="pre">files</span></code> are the files of that document the caller may read, and <code class="docutils literal notranslate"><span class="pre">read(doc_id,</span>
+<span class="pre">rel)</span></code> reads one (the share server passes its filtered reader). A document whose one
+markdown file is its page is named by that file; a folder, or a document with several
+markdown files, by its title then the file (<code class="docutils literal notranslate"><span class="pre">Report/01-intro.md</span></code>). A file <code class="docutils literal notranslate"><span class="pre">read</span></code>
+cannot read (one of <code class="docutils literal notranslate"><span class="pre">skip</span></code>) is left out; past <code class="docutils literal notranslate"><span class="pre">max_bytes</span></code> in all, <a class="reference internal" href="#annals.aggregate.TooLarge" title="annals.aggregate.TooLarge"><code class="xref py py-class docutils literal notranslate"><span class="pre">TooLarge</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.heading_anchor">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">heading_anchor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">seen</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#heading_anchor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.heading_anchor" title="Link to this definition">#</a></dt>
+<dd><p>The id GitHub (and most renderers) give a heading; <code class="docutils literal notranslate"><span class="pre">seen</span></code> numbers repeats.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="2"><span class="gp">&gt;&gt;&gt; </span><span class="n">heading_anchor</span><span class="p">(</span><span class="s2">"01-intro.md"</span><span class="p">,</span> <span class="n">seen</span><span class="p">),</span> <span class="n">heading_anchor</span><span class="p">(</span><span class="s2">"01-intro.md"</span><span class="p">,</span> <span class="n">seen</span><span class="p">)</span>
+</span><span data-line="3"><span class="go">('01-intromd', '01-intromd-1')</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.numbered_first">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">numbered_first</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#numbered_first"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.numbered_first" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">paths</span></code> with numbered ones first, compared part by part, the rest in their given order.</p>
+<p>A part (a folder or file name) that starts with digits sorts by that number, before any
+part that does not; parts without a number keep the order they first appeared in, so a
+folder’s files stay together.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">numbered_first</span><span class="p">([</span><span class="s2">"b.md"</span><span class="p">,</span> <span class="s2">"10-z.md"</span><span class="p">,</span> <span class="s2">"a.md"</span><span class="p">,</span> <span class="s2">"2-y.md"</span><span class="p">,</span> <span class="s2">"r/02.md"</span><span class="p">,</span> <span class="s2">"r/01.md"</span><span class="p">])</span>
+</span><span data-line="2"><span class="go">['2-y.md', '10-z.md', 'b.md', 'a.md', 'r/01.md', 'r/02.md']</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.strip_front_matter">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">strip_front_matter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#strip_front_matter"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.strip_front_matter" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">text</span></code> without a leading YAML front-matter block (<code class="docutils literal notranslate"><span class="pre">---</span></code> … <code class="docutils literal notranslate"><span class="pre">---</span></code>).</p>
+<p>It must start with a <code class="docutils literal notranslate"><span class="pre">key:</span></code> line, so a page that opens with a horizontal rule
+keeps it.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">strip_front_matter</span><span class="p">(</span><span class="s2">"---</span><span class="se">\n</span><span class="s2">title: x</span><span class="se">\n</span><span class="s2">---</span><span class="se">\n</span><span class="s2"># Body"</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">'# Body'</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">strip_front_matter</span><span class="p">(</span><span class="s2">"---</span><span class="se">\n</span><span class="s2">Intro</span><span class="se">\n</span><span class="s2">---</span><span class="se">\n</span><span class="s2">body"</span><span class="p">)</span>
+</span><span data-line="4"><span class="go">'---\nIntro\n---\nbody'</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.unwrap_lines">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">unwrap_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#unwrap_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.unwrap_lines" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with hard-wrapped paragraphs and list items joined into one line each.</p>
+<p>Only ordinary text lines are joined: headings, list markers, quotes, tables, html,
+fenced or indented code, and a line ending in a hard break (two spaces or <code class="docutils literal notranslate"><span class="pre">\</span></code>)
+keep their line breaks.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">unwrap_lines</span><span class="p">(</span><span class="s2">"A long</span><span class="se">\n</span><span class="s2">sentence.</span><span class="se">\n\n</span><span class="s2">- item</span><span class="se">\n</span><span class="s2">  goes on</span><span class="se">\n</span><span class="s2">- next</span><span class="se">\n\n</span><span class="s2">    code</span><span class="se">\n</span><span class="s2">    more"</span><span class="p">))</span>
+</span><span data-line="2"><span class="go">A long sentence.</span>
+</span><span data-line="3">
+</span><span data-line="4"><span class="go">- item goes on</span>
+</span><span data-line="5"><span class="go">- next</span>
+</span><span data-line="6">
+</span><span data-line="7"><span class="go">    code</span>
+</span><span data-line="8"><span class="go">    more</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.auth.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.auth</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=3294188c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

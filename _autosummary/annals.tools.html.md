@@ -9,21 +9,38 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.         |
-|-------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])       | Copy documents or groups to a named target, keeping their ids; print the new link.     |
-| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.              |
-| [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                             |
-| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to])          | List documents (newest first), optionally filtered by words or showing the bin.        |
-| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                   | The page's html shell, for a host that serves the API under its own prefix.            |
-| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.       |
-| [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                             |
-| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])    | Serve the annals page and API (needs `pip install 'annals[server]'`).                  |
-| [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])    | Make a public link to ONE document (or group) and print it; nothing else is reachable. |
-| [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])              | List share links, newest first (`all`: revoked and expired ones too).                  |
-| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                              |
-| [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                        |
-| [`unshare`](#annals.tools.unshare)(links, \*[, target, to])                     | Revoke share links (their token or full link): they stop working at once.              |
+| [`aggregate`](#annals.tools.aggregate)(group_id, \*[, demote, order, ...])      | Every markdown file of a group as ONE markdown document, printed (nothing is stored).   |
+|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.          |
+| [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.      |
+| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.               |
+| [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                              |
+| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.         |
+| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.             |
+| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.        |
+| [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                              |
+| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                   |
+| [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.  |
+| [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                   |
+| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata and link (`to`: on a named target).                               |
+| [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                         |
+| [`unshare`](#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.               |
+
+### annals.tools.aggregate(group_id, , demote=1, order='numbered', no_toc=False, keep_wraps=False, target=None, to=None)
+
+Every markdown file of a group as ONE markdown document, printed (nothing is stored).
+
+`group_id` is a group’s id or link. The document has the group’s title, a table of
+contents, then one `##` section per file named after its path (a folder document’s
+files under its title). `order`: `numbered` puts paths that start with a number
+first, numerically, the rest in the group’s order; `given` keeps the group’s order.
+`demote` pushes each file’s headings that many levels down (`0`: as written).
+Hard-wrapped lines are joined unless `keep_wraps`; `no_toc` leaves out the table
+of contents. Redirect
+to save it: `annals aggregate <id> > bundle.md`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
 

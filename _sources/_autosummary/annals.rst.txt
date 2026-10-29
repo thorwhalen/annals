@@ -34,6 +34,7 @@
    :toctree:
    :recursive:
 
+   aggregate
    api
    auth
    catalog

@@ -63,6 +63,7 @@ data-aria-dark="Switch to auto color mode">
         <div class="globaltoc" data-expand-depth="0"><ul>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../_autosummary/annals.html">annals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.aggregate.html">annals.aggregate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.auth.html">annals.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
@@ -1109,22 +1110,38 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="910">        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">GROUPS</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">gid</span><span class="si">}</span><span class="s2">.json"</span><span class="p">))</span></div>
 
 </span><span data-line="911">
+<div class="viewcode-block" id="DocStore.group_docs">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.DocStore.group_docs">[docs]</a>
+</span><span data-line="912">    <span class="k">def</span><span class="w"> </span><span class="nf">group_docs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]]:</span>
+</span><span data-line="913"><span class="w">        </span><span class="sd">"""A group and the meta of each of its documents, in its order (missing or binned ones left out)."""</span>
+</span><span data-line="914">        <span class="n">group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+</span><span data-line="915">        <span class="n">metas</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="916">        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">group</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">]:</span>
+</span><span data-line="917">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="918">                <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+</span><span data-line="919">            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+</span><span data-line="920">                <span class="k">continue</span>
+</span><span data-line="921">            <span class="k">if</span> <span class="ow">not</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"in_trash"</span><span class="p">):</span>
+</span><span data-line="922">                <span class="n">metas</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span>
+</span><span data-line="923">        <span class="k">return</span> <span class="n">group</span><span class="p">,</span> <span class="n">metas</span></div>
+
+</span><span data-line="924">
 <div class="viewcode-block" id="DocStore.list_groups">
 <a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.DocStore.list_groups">[docs]</a>
-</span><span data-line="912">    <span class="k">def</span><span class="w"> </span><span class="nf">list_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="913"><span class="w">        </span><span class="sd">"""Every group, newest first."""</span>
-</span><span data-line="914">        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">list_files</span><span class="p">(</span><span class="n">GROUPS</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".json"</span><span class="p">)]</span>
-</span><span data-line="915">        <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="916">        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
-</span><span data-line="917">            <span class="k">try</span><span class="p">:</span>
-</span><span data-line="918">                <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">GROUPS</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)))</span>
-</span><span data-line="919">            <span class="k">except</span> <span class="p">(</span>
-</span><span data-line="920">                <span class="ne">OSError</span><span class="p">,</span>
-</span><span data-line="921">                <span class="ne">RuntimeError</span><span class="p">,</span>
-</span><span data-line="922">                <span class="ne">ValueError</span><span class="p">,</span>
-</span><span data-line="923">            <span class="p">):</span>  <span class="c1"># ValueError: bad JSON, or a symlink out of the root</span>
-</span><span data-line="924">                <span class="k">continue</span>
-</span><span data-line="925">        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">g</span><span class="p">:</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+</span><span data-line="925">    <span class="k">def</span><span class="w"> </span><span class="nf">list_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="926"><span class="w">        </span><span class="sd">"""Every group, newest first."""</span>
+</span><span data-line="927">        <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">n</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">list_files</span><span class="p">(</span><span class="n">GROUPS</span><span class="p">)</span> <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">".json"</span><span class="p">)]</span>
+</span><span data-line="928">        <span class="n">groups</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="929">        <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+</span><span data-line="930">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="931">                <span class="n">groups</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">GROUPS</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2">"</span><span class="p">)))</span>
+</span><span data-line="932">            <span class="k">except</span> <span class="p">(</span>
+</span><span data-line="933">                <span class="ne">OSError</span><span class="p">,</span>
+</span><span data-line="934">                <span class="ne">RuntimeError</span><span class="p">,</span>
+</span><span data-line="935">                <span class="ne">ValueError</span><span class="p">,</span>
+</span><span data-line="936">            <span class="p">):</span>  <span class="c1"># ValueError: bad JSON, or a symlink out of the root</span>
+</span><span data-line="937">                <span class="k">continue</span>
+</span><span data-line="938">        <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">groups</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">g</span><span class="p">:</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
 </div>
 
 </span></pre></div>
@@ -1154,7 +1171,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=96ec9c95"></script>
+      <script src="../../_static/documentation_options.js?v=3294188c"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

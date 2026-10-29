@@ -1,0 +1,24 @@
+annals.aggregate
+================
+
+.. automodule:: annals.aggregate
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      aggregate_markdown
+      demote_headings
+      doc_markdown_files
+      heading_anchor
+      numbered_first
+      strip_front_matter
+      unwrap_lines
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      TooLarge
+   

@@ -1,4 +1,4 @@
-> built 2026-10-27 13:17 UTC from dfd54e8 (main) · annals 0.0.22. Details: build_info.json
+> built 2026-10-29 14:16 UTC from 640bffd (main) · annals 0.0.23. Details: build_info.json
 
 # index.html.md
 
@@ -137,6 +137,22 @@ then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or
 
 Every markdown page has an **Actions** menu (Share, Copy, Download, View) with two downloads made by the server: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
 
+## One Markdown file from a group
+
+A group’s page has a **Combine** button: it makes one Markdown file from every `.md` in the group, folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same button, built from the share’s filtered text and only the files it includes.
+
+```bash
+annals aggregate <group-id-or-link> > all.md          # the same file, from a shell
+annals aggregate <id> --order given --demote 0 --no-toc --keep-wraps
+```
+
+```python
+from annals.aggregate import aggregate_markdown
+aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundle", demote=1)
+```
+
+`aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The API is `GET /groups/<gid>/aggregate` (`?download=1` to save it, `&demote=`), and `GET /<token>/aggregate` on the share server.
+
 ## Other folders, search, filters and tags
 
 Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (`/annals/s/<name>`) and in `/annals/all`:
@@ -178,6 +194,185 @@ gh skill install thorwhalen/annals annals-publish
 The skill also ships inside the package at `annals/data/skills/annals-publish/`.
 
 <p class="epythet-aggregates">This documentation as a single file: <a href="annals.md">annals.md</a> (Markdown, for agents).</p>
+
+
+# _autosummary/annals.aggregate.html.md
+
+# annals.aggregate
+
+Many markdown files as ONE markdown document: a title, a table of contents, a section per file.
+
+The mechanism is text in, text out. [`aggregate_markdown()`](_autosummary/annals.aggregate.html.md#annals.aggregate.aggregate_markdown) takes `(path, text)` pairs
+and knows nothing of documents, groups or shares; its choices are keyword arguments with
+working defaults:
+
+```default
+>>> print(aggregate_markdown(
+...     {"notes.md": "# Notes\nOne line\nwrapped.", "01-intro.md": "Hello."},
+...     title="Bundle"), end="")
+# Bundle
+
+**Contents**
+
+- [01-intro.md](#01-intromd)
+- [notes.md](#notesmd)
+
+## 01-intro.md
+
+Hello.
+
+## notes.md
+
+## Notes
+One line wrapped.
+```
+
+- `order`: how the files are arranged; [`numbered_first()`](_autosummary/annals.aggregate.html.md#annals.aggregate.numbered_first) by default (paths whose
+  parts start with a number first, numerically, the rest in the order given), `None`
+  keeps the order given, or any `paths -> paths` callable.
+- `demote`: how many levels each file’s own headings go down (`1`: a file’s `#`
+  becomes `##`); `0` leaves them.
+- `unwrap`: join hard-wrapped lines of a paragraph or list item into one line
+  ([`unwrap_lines()`](_autosummary/annals.aggregate.html.md#annals.aggregate.unwrap_lines)); code, tables, quotes and html are left as they are.
+- `toc`: the table of contents, as links to the sections’ GitHub-style anchors.
+
+[`doc_markdown_files()`](_autosummary/annals.aggregate.html.md#annals.aggregate.doc_markdown_files) is the bridge from annals documents: it yields the pairs for a
+set of documents and the files of each a caller may read, through a `read` callable, so
+the owner’s API, the share server (which reads filtered text) and the CLI share it.
+Nothing is stored: the document is made per request.
+
+### Functions
+
+| [`aggregate_markdown`](_autosummary/annals.aggregate.html.md#annals.aggregate.aggregate_markdown)(files, \*[, title, order, ...])   | One markdown document of `files` (`{path: text}` or `(path, text)` pairs).              |
+|-------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [`demote_headings`](_autosummary/annals.aggregate.html.md#annals.aggregate.demote_headings)(text[, levels, max_level])           | `text` with every heading `levels` deeper (at most `max_level`); code untouched.        |
+| [`doc_markdown_files`](_autosummary/annals.aggregate.html.md#annals.aggregate.doc_markdown_files)(docs, \*, read[, ...])            | `(path, text)` for every markdown file of `docs` (`(meta, files)` pairs).               |
+| [`heading_anchor`](_autosummary/annals.aggregate.html.md#annals.aggregate.heading_anchor)(text[, seen])                         | The id GitHub (and most renderers) give a heading; `seen` numbers repeats.              |
+| [`numbered_first`](_autosummary/annals.aggregate.html.md#annals.aggregate.numbered_first)(paths)                                | `paths` with numbered ones first, compared part by part, the rest in their given order. |
+| [`strip_front_matter`](_autosummary/annals.aggregate.html.md#annals.aggregate.strip_front_matter)(text)                             | `text` without a leading YAML front-matter block (`---` .                               |
+| [`unwrap_lines`](_autosummary/annals.aggregate.html.md#annals.aggregate.unwrap_lines)(text)                                   | `text` with hard-wrapped paragraphs and list items joined into one line each.           |
+
+### Exceptions
+
+| [`TooLarge`](_autosummary/annals.aggregate.html.md#annals.aggregate.TooLarge)   | The markdown to aggregate is over the size a caller allows.   |
+|-------------------------------------------------------------|---------------------------------------------------------------|
+
+### *exception* annals.aggregate.TooLarge
+
+Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueError)
+
+The markdown to aggregate is over the size a caller allows.
+
+### annals.aggregate.aggregate_markdown(files, \*, title='', order=<function numbered_first>, demote=1, unwrap=True, toc=True, section_level=2)
+
+One markdown document of `files` (`{path: text}` or `(path, text)` pairs).
+
+A `# title`, a table of contents, then one section per file, headed by its path,
+with the file’s text below (front matter dropped, headings `demote`-d, lines
+unwrapped); see the module docstring for each choice.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.aggregate.demote_headings(text, levels=1, , max_level=6)
+
+`text` with every heading `levels` deeper (at most `max_level`); code untouched.
+
+Setext headings (a line underlined with `===` or `---`) become `#` headings.
+
+```pycon
+>>> print(demote_headings("# A\nB\n---\n```\n# code\n```"))
+## A
+### B
+```
+
+```text
+# code
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.aggregate.doc_markdown_files(docs, \*, read, max_bytes=None, skip=(<class 'KeyError'>, <class 'OSError'>, <class 'ValueError'>))
+
+`(path, text)` for every markdown file of `docs` (`(meta, files)` pairs).
+
+`files` are the files of that document the caller may read, and `read(doc_id,
+rel)` reads one (the share server passes its filtered reader). A document whose one
+markdown file is its page is named by that file; a folder, or a document with several
+markdown files, by its title then the file (`Report/01-intro.md`). A file `read`
+cannot read (one of `skip`) is left out; past `max_bytes` in all, [`TooLarge`](_autosummary/annals.aggregate.html.md#annals.aggregate.TooLarge).
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
+### annals.aggregate.heading_anchor(text, seen=None)
+
+The id GitHub (and most renderers) give a heading; `seen` numbers repeats.
+
+```pycon
+>>> seen = {}
+>>> heading_anchor("01-intro.md", seen), heading_anchor("01-intro.md", seen)
+('01-intromd', '01-intromd-1')
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.aggregate.numbered_first(paths)
+
+`paths` with numbered ones first, compared part by part, the rest in their given order.
+
+A part (a folder or file name) that starts with digits sorts by that number, before any
+part that does not; parts without a number keep the order they first appeared in, so a
+folder’s files stay together.
+
+```pycon
+>>> numbered_first(["b.md", "10-z.md", "a.md", "2-y.md", "r/02.md", "r/01.md"])
+['2-y.md', '10-z.md', 'b.md', 'a.md', 'r/01.md', 'r/02.md']
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.aggregate.strip_front_matter(text)
+
+`text` without a leading YAML front-matter block (`---` … `---`).
+
+It must start with a `key:` line, so a page that opens with a horizontal rule
+keeps it.
+
+```pycon
+>>> strip_front_matter("---\ntitle: x\n---\n# Body")
+'# Body'
+>>> strip_front_matter("---\nIntro\n---\nbody")
+'---\nIntro\n---\nbody'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.aggregate.unwrap_lines(text)
+
+`text` with hard-wrapped paragraphs and list items joined into one line each.
+
+Only ordinary text lines are joined: headings, list markers, quotes, tables, html,
+fenced or indented code, and a line ending in a hard break (two spaces or `\`)
+keep their line breaks.
+
+```pycon
+>>> print(unwrap_lines("A long\nsentence.\n\n- item\n  goes on\n- next\n\n    code\n    more"))
+A long sentence.
+
+- item goes on
+- next
+
+    code
+    more
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/annals.auth.html.md
@@ -543,6 +738,13 @@ One group, by id.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+#### group_docs(gid)
+
+A group and the meta of each of its documents, in its order (missing or binned ones left out).
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](_autosummary/annals.html.md#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]]
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).
@@ -811,18 +1013,19 @@ Move documents to the recycle bin (restorable).
 
 ### Modules
 
-| [`auth`](_autosummary/annals.auth.html.md#module-annals.auth)       | The auth seam: who may read the annals.                                                                                                            |
-|--------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog) | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
-| [`config`](_autosummary/annals.config.html.md#module-annals.config)   | Settings: where documents are published and what link to print.                                                                                    |
-| [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)         | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
-| [`share`](_autosummary/annals.share.html.md#module-annals.share)     | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
-| [`sources`](_autosummary/annals.sources.html.md#module-annals.sources) | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
-| [`store`](_autosummary/annals.store.html.md#module-annals.store)     | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
-| [`tables`](_autosummary/annals.tables.html.md#module-annals.tables)   | Scrolling, zooming tables for published html pages.                                                                                                |
-| [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)       | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
-| [`target`](_autosummary/annals.target.html.md#module-annals.target)   | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
-| [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)     | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
+| [`aggregate`](_autosummary/annals.aggregate.html.md#module-annals.aggregate)   | Many markdown files as ONE markdown document: a title, a table of contents, a section per file.                                                    |
+|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`auth`](_autosummary/annals.auth.html.md#module-annals.auth)             | The auth seam: who may read the annals.                                                                                                            |
+| [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog)       | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
+| [`config`](_autosummary/annals.config.html.md#module-annals.config)         | Settings: where documents are published and what link to print.                                                                                    |
+| [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)               | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`share`](_autosummary/annals.share.html.md#module-annals.share)           | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
+| [`sources`](_autosummary/annals.sources.html.md#module-annals.sources)       | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
+| [`store`](_autosummary/annals.store.html.md#module-annals.store)           | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`tables`](_autosummary/annals.tables.html.md#module-annals.tables)         | Scrolling, zooming tables for published html pages.                                                                                                |
+| [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)             | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
+| [`target`](_autosummary/annals.target.html.md#module-annals.target)         | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)           | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
 
 
 # _autosummary/annals.mcp.html.md
@@ -1341,6 +1544,13 @@ One group, by id.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+#### group_docs(gid)
+
+A group and the meta of each of its documents, in its order (missing or binned ones left out).
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]]
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).
@@ -1800,21 +2010,38 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.         |
-|-------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
-| [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])       | Copy documents or groups to a named target, keeping their ids; print the new link.     |
-| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.              |
-| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                             |
-| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])          | List documents (newest first), optionally filtered by words or showing the bin.        |
-| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                   | The page's html shell, for a host that serves the API under its own prefix.            |
-| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.       |
-| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                             |
-| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])    | Serve the annals page and API (needs `pip install 'annals[server]'`).                  |
-| [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])    | Make a public link to ONE document (or group) and print it; nothing else is reachable. |
-| [`shares`](_autosummary/annals.tools.html.md#annals.tools.shares)(\*[, all, target, base_url, to])              | List share links, newest first (`all`: revoked and expired ones too).                  |
-| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                              |
-| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                        |
-| [`unshare`](_autosummary/annals.tools.html.md#annals.tools.unshare)(links, \*[, target, to])                     | Revoke share links (their token or full link): they stop working at once.              |
+| [`aggregate`](_autosummary/annals.tools.html.md#annals.tools.aggregate)(group_id, \*[, demote, order, ...])      | Every markdown file of a group as ONE markdown document, printed (nothing is stored).   |
+|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.          |
+| [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.      |
+| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.               |
+| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                              |
+| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.         |
+| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.             |
+| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.        |
+| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                              |
+| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                   |
+| [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.  |
+| [`shares`](_autosummary/annals.tools.html.md#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                   |
+| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata and link (`to`: on a named target).                               |
+| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                         |
+| [`unshare`](_autosummary/annals.tools.html.md#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.               |
+
+### annals.tools.aggregate(group_id, , demote=1, order='numbered', no_toc=False, keep_wraps=False, target=None, to=None)
+
+Every markdown file of a group as ONE markdown document, printed (nothing is stored).
+
+`group_id` is a group’s id or link. The document has the group’s title, a table of
+contents, then one `##` section per file named after its path (a folder document’s
+files under its title). `order`: `numbered` puts paths that start with a number
+first, numerically, the rest in the group’s order; `given` keeps the group’s order.
+`demote` pushes each file’s headings that many levels down (`0`: as written).
+Hard-wrapped lines are joined unless `keep_wraps`; `no_toc` leaves out the table
+of contents. Redirect
+to save it: `annals aggregate <id> > bundle.md`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
 
@@ -1975,18 +2202,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-27 13:17 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/dfd54e8ebf6fad5830c750e721af9af7351654e3"><code>dfd54e8</code></a> on branch <code>main</code>, for **annals 0.0.22** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-29 14:16 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/640bffd095f470c7cae25d6bfc2213c5770f6533"><code>640bffd</code></a> on branch <code>main</code>, for **annals 0.0.23** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.22) is behind the latest release on PyPI (0.0.23): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.23) is behind the latest release on PyPI (0.0.24): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/dfd54e8ebf6fad5830c750e721af9af7351654e3"><code>dfd54e8ebf6fad5830c750e721af9af7351654e3</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/640bffd095f470c7cae25d6bfc2213c5770f6533"><code>640bffd095f470c7cae25d6bfc2213c5770f6533</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -1997,9 +2224,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40510429042">40510429042</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/40889520681">40889520681</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>dfd54e8ebf6fad5830c750e721af9af7351654e3</code> (in the history of the built commit) |
+| Event commit | <code>640bffd095f470c7cae25d6bfc2213c5770f6533</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2024,13 +2251,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.23/">0.0.23</a>, newer than the documented version (0.0.22).
+Latest release: <a href="https://pypi.org/project/annals/0.0.24/">0.0.24</a>, newer than the documented version (0.0.23).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout dfd54e8ebf6fad5830c750e721af9af7351654e3
+git checkout 640bffd095f470c7cae25d6bfc2213c5770f6533
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

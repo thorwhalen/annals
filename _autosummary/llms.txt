@@ -6,6 +6,7 @@
 ## Pages in this subsection
 
 - [annals](annals.html.md): annals: an in-tray for AI agents. Publish documents and media to a private page; get a link.
+- [annals.aggregate](annals.aggregate.html.md): Many markdown files as ONE markdown document: a title, a table of contents, a section per file.
 - [annals.auth](annals.auth.html.md): The auth seam: who may read the annals.
 - [annals.catalog](annals.catalog.html.md): The catalog: every source’s items as one list, with search and the owner’s tags.
 - [annals.config](annals.config.html.md): Settings: where documents are published and what link to print.

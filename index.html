@@ -66,6 +66,7 @@ data-aria-dark="Switch to auto color mode">
         <div class="globaltoc" data-expand-depth="0"><ul>
 <li class="toctree-l1"><a class="reference internal" href="api.html">API reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="_autosummary/annals.html">annals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.aggregate.html">annals.aggregate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.auth.html">annals.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.config.html">annals.config</a></li>
@@ -106,6 +107,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#hosting-the-page">Hosting the page</a></li>
 <li><a class="reference internal" href="#sharing-one-page">Sharing one page</a></li>
 <li><a class="reference internal" href="#downloads">Downloads</a></li>
+<li><a class="reference internal" href="#one-markdown-file-from-a-group">One Markdown file from a group</a></li>
 <li><a class="reference internal" href="#other-folders-search-filters-and-tags">Other folders, search, filters and tags</a></li>
 <li><a class="reference internal" href="#python-api">Python API</a></li>
 <li><a class="reference internal" href="#design-notes">Design notes</a></li>
@@ -287,6 +289,19 @@ data-aria-dark="Switch to auto color mode">
 <h2>Downloads<a class="headerlink" href="#downloads" title="Link to this heading">#</a></h2>
 <p>Every markdown page has an <strong>Actions</strong> menu (Share, Copy, Download, View) with two downloads made by the server: <strong>Markdown (.md)</strong> and a titled <strong>PDF</strong> with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (<code class="docutils literal notranslate"><span class="pre">quarterly-report-q3.pdf</span></code>) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;annals[pdf]&quot;</span></code> (WeasyPrint, which uses Pango; <code class="docutils literal notranslate"><span class="pre">annals[server]</span></code> includes it); without it the PDF action answers with that hint. Pages (<code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;</span></code>) are drawn in the browser by <code class="docutils literal notranslate"><span class="pre">app.js</span></code>, so a page that gains an action gains it for every existing document.</p>
 </section>
+<section id="one-markdown-file-from-a-group">
+<h2>One Markdown file from a group<a class="headerlink" href="#one-markdown-file-from-a-group" title="Link to this heading">#</a></h2>
+<p>A group’s page has a <strong>Combine</strong> button: it makes one Markdown file from every <code class="docutils literal notranslate"><span class="pre">.md</span></code> in the group, folder documents included, and offers <strong>Copy Markdown</strong>, <strong>Download .md</strong> and <strong>Open as text</strong>, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one <code class="docutils literal notranslate"><span class="pre">##</span></code> section per file named after its path (<code class="docutils literal notranslate"><span class="pre">Report/01-intro.md</span></code>); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same button, built from the share’s filtered text and only the files it includes.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;group-id-or-link&gt;<span class="w"> </span>&gt;<span class="w"> </span>all.md<span class="w">          </span><span class="c1"># the same file, from a shell</span>
+</span><span data-line="2">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--order<span class="w"> </span>given<span class="w"> </span>--demote<span class="w"> </span><span class="m">0</span><span class="w"> </span>--no-toc<span class="w"> </span>--keep-wraps
+</span></pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.aggregate</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_markdown</span>
+</span><span data-line="2"><span class="n">aggregate_markdown</span><span class="p">({</span><span class="s2">"notes.md"</span><span class="p">:</span> <span class="s2">"# Notes"</span><span class="p">,</span> <span class="s2">"01-intro.md"</span><span class="p">:</span> <span class="s2">"Hello"</span><span class="p">},</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Bundle"</span><span class="p">,</span> <span class="n">demote</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">aggregate_markdown</span></code> takes <code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> pairs and knows nothing of annals: <code class="docutils literal notranslate"><span class="pre">order=</span></code> (<code class="docutils literal notranslate"><span class="pre">numbered_first</span></code> by default, <code class="docutils literal notranslate"><span class="pre">None</span></code> for the order given, or any <code class="docutils literal notranslate"><span class="pre">paths</span> <span class="pre">-&gt;</span> <span class="pre">paths</span></code> callable), <code class="docutils literal notranslate"><span class="pre">demote=</span></code>, <code class="docutils literal notranslate"><span class="pre">unwrap=</span></code>, <code class="docutils literal notranslate"><span class="pre">toc=</span></code>. The API is <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/groups/&lt;gid&gt;/aggregate</span></code> (<code class="docutils literal notranslate"><span class="pre">?download=1</span></code> to save it, <code class="docutils literal notranslate"><span class="pre">&amp;demote=</span></code>), and <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/&lt;token&gt;/aggregate</span></code> on the share server.</p>
+</section>
 <section id="other-folders-search-filters-and-tags">
 <h2>Other folders, search, filters and tags<a class="headerlink" href="#other-folders-search-filters-and-tags" title="Link to this heading">#</a></h2>
 <p>Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (<code class="docutils literal notranslate"><span class="pre">/annals/s/&lt;name&gt;</span></code>) and in <code class="docutils literal notranslate"><span class="pre">/annals/all</span></code>:</p>
@@ -327,7 +342,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-27 13:17 UTC from <a href="https://github.com/thorwhalen/annals/commit/dfd54e8ebf6fad5830c750e721af9af7351654e3">dfd54e8</a> (main) · annals 0.0.22 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-29 14:16 UTC from <a href="https://github.com/thorwhalen/annals/commit/640bffd095f470c7cae25d6bfc2213c5770f6533">640bffd</a> (main) · annals 0.0.23 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -362,7 +377,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=96ec9c95"></script>
+      <script src="_static/documentation_options.js?v=3294188c"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

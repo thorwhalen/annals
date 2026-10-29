@@ -8,6 +8,7 @@ annals.tools
 
    .. autosummary::
    
+      aggregate
       configure
       copy
       group

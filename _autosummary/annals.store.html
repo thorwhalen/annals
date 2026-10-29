@@ -66,6 +66,7 @@ data-aria-dark="Switch to auto color mode">
         <div class="globaltoc" data-expand-depth="0"><ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
 <li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
@@ -100,6 +101,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.DocStore.add_to_group"><code class="docutils literal notranslate"><span class="pre">DocStore.add_to_group()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.doc_rel"><code class="docutils literal notranslate"><span class="pre">DocStore.doc_rel()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.group"><code class="docutils literal notranslate"><span class="pre">DocStore.group()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.group_docs"><code class="docutils literal notranslate"><span class="pre">DocStore.group_docs()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.list"><code class="docutils literal notranslate"><span class="pre">DocStore.list()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.list_groups"><code class="docutils literal notranslate"><span class="pre">DocStore.list_groups()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.make_group"><code class="docutils literal notranslate"><span class="pre">DocStore.make_group()</span></code></a></li>
@@ -344,6 +346,17 @@ version of a page lives there, and the document’s page links out to it</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.group_docs">
+<span class="sig-name descname"><span class="pre">group_docs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.group_docs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.group_docs" title="Link to this definition">#</a></dt>
+<dd><p>A group and the meta of each of its documents, in its order (missing or binned ones left out).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>, <a class="reference internal" href="#annals.store.DocStore.list" title="annals.store.DocStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -734,7 +747,7 @@ dns labels only, printable ascii without quotes, angle brackets or backslashes.<
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=96ec9c95"></script>
+      <script src="../_static/documentation_options.js?v=3294188c"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

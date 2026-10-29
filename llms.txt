@@ -8,6 +8,7 @@
 - [annals](index.html.md): Annals for AI agents. An agent publishes a document (markdown, html, an image, a video, a PDF, or a ...
 - [API reference](api.html.md): | &#96;annals&#96;   | annals: an in-tray for AI agents.   |
 - [annals](_autosummary/annals.html.md): annals: an in-tray for AI agents. Publish documents and media to a private page; get a link.
+- [annals.aggregate](_autosummary/annals.aggregate.html.md): Many markdown files as ONE markdown document: a title, a table of contents, a section per file.
 - [annals.auth](_autosummary/annals.auth.html.md): The auth seam: who may read the annals.
 - [annals.catalog](_autosummary/annals.catalog.html.md): The catalog: every source’s items as one list, with search and the owner’s tags.
 - [annals.config](_autosummary/annals.config.html.md): Settings: where documents are published and what link to print.
@@ -20,7 +21,7 @@
 - [annals.target](_autosummary/annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
 - [annals.tools](_autosummary/annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 - [For AI agents](ai-agents.html.md): &#96;annals&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-27 13:17 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-10-29 14:16 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

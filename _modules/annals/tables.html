@@ -63,6 +63,7 @@ data-aria-dark="Switch to auto color mode">
         <div class="globaltoc" data-expand-depth="0"><ul>
 <li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="../../_autosummary/annals.html">annals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.aggregate.html">annals.aggregate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.auth.html">annals.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
@@ -169,23 +170,25 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="38">
 </span><span data-line="39">    <span class="k">def</span><span class="w"> </span><span class="nf">fix</span><span class="p">(</span><span class="n">m</span><span class="p">:</span> <span class="n">re</span><span class="o">.</span><span class="n">Match</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 </span><span data-line="40">        <span class="n">tag</span> <span class="o">=</span> <span class="n">_NO_ZOOM_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">b</span><span class="s2">""</span><span class="p">,</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span>
-</span><span data-line="41">        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">rb</span><span class="s2">"content\s*=\s*([</span><span class="se">\"</span><span class="s2">'])\s*,?\s*"</span><span class="p">,</span> <span class="sa">rb</span><span class="s2">"content=\1"</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
-</span><span data-line="42">
-</span><span data-line="43">    <span class="k">return</span> <span class="n">_VIEWPORT_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">fix</span><span class="p">,</span> <span class="n">html</span><span class="p">)</span></div>
-
+</span><span data-line="41">        <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span>
+</span><span data-line="42">            <span class="sa">rb</span><span class="s2">"content\s*=\s*([</span><span class="se">\"</span><span class="s2">'])\s*,?\s*"</span><span class="p">,</span> <span class="sa">rb</span><span class="s2">"content=\1"</span><span class="p">,</span> <span class="n">tag</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">I</span>
+</span><span data-line="43">        <span class="p">)</span>
 </span><span data-line="44">
-</span><span data-line="45">
+</span><span data-line="45">    <span class="k">return</span> <span class="n">_VIEWPORT_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="n">fix</span><span class="p">,</span> <span class="n">html</span><span class="p">)</span></div>
+
+</span><span data-line="46">
+</span><span data-line="47">
 <div class="viewcode-block" id="add_table_tools">
 <a class="viewcode-back" href="../../_autosummary/annals.tables.html#annals.tables.add_table_tools">[docs]</a>
-</span><span data-line="46"><span class="k">def</span><span class="w"> </span><span class="nf">add_table_tools</span><span class="p">(</span><span class="n">html</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-</span><span data-line="47"><span class="w">    </span><span class="sd">"""``html`` with the table script injected, unless it has no table or opts out."""</span>
-</span><span data-line="48">    <span class="n">head</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-</span><span data-line="49">    <span class="k">if</span> <span class="sa">b</span><span class="s2">"&lt;table"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">head</span> <span class="ow">or</span> <span class="sa">b</span><span class="s1">'data-annals-tables="off"'</span> <span class="ow">in</span> <span class="n">head</span><span class="p">:</span>
-</span><span data-line="50">        <span class="k">return</span> <span class="n">html</span>
-</span><span data-line="51">    <span class="n">html</span> <span class="o">=</span> <span class="n">allow_zoom</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
-</span><span data-line="52">    <span class="n">m</span> <span class="o">=</span> <span class="n">_BODY_END_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
-</span><span data-line="53">    <span class="n">at</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
-</span><span data-line="54">    <span class="k">return</span> <span class="n">html</span><span class="p">[:</span><span class="n">at</span><span class="p">]</span> <span class="o">+</span> <span class="n">_snippet</span><span class="p">()</span> <span class="o">+</span> <span class="n">html</span><span class="p">[</span><span class="n">at</span><span class="p">:]</span></div>
+</span><span data-line="48"><span class="k">def</span><span class="w"> </span><span class="nf">add_table_tools</span><span class="p">(</span><span class="n">html</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span data-line="49"><span class="w">    </span><span class="sd">"""``html`` with the table script injected, unless it has no table or opts out."""</span>
+</span><span data-line="50">    <span class="n">head</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span data-line="51">    <span class="k">if</span> <span class="sa">b</span><span class="s2">"&lt;table"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">head</span> <span class="ow">or</span> <span class="sa">b</span><span class="s1">'data-annals-tables="off"'</span> <span class="ow">in</span> <span class="n">head</span><span class="p">:</span>
+</span><span data-line="52">        <span class="k">return</span> <span class="n">html</span>
+</span><span data-line="53">    <span class="n">html</span> <span class="o">=</span> <span class="n">allow_zoom</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+</span><span data-line="54">    <span class="n">m</span> <span class="o">=</span> <span class="n">_BODY_END_RE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+</span><span data-line="55">    <span class="n">at</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">start</span><span class="p">()</span> <span class="k">if</span> <span class="n">m</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">html</span><span class="p">)</span>
+</span><span data-line="56">    <span class="k">return</span> <span class="n">html</span><span class="p">[:</span><span class="n">at</span><span class="p">]</span> <span class="o">+</span> <span class="n">_snippet</span><span class="p">()</span> <span class="o">+</span> <span class="n">html</span><span class="p">[</span><span class="n">at</span><span class="p">:]</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -214,7 +217,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=96ec9c95"></script>
+      <script src="../../_static/documentation_options.js?v=3294188c"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
