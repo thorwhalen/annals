@@ -335,11 +335,20 @@ def test_no_catastrophic_backtracking_on_table_like_lines():
 
 
 def test_unwrap_is_linear_in_a_long_paragraph():
+    """4x the lines costs about 4x the time (quadratic joining cost 16x), on any runner."""
     import time
 
-    t0 = time.perf_counter()
-    out = unwrap_lines("word\n" * 200_000)
-    assert time.perf_counter() - t0 < 2 and out.count("\n") == 1
+    def cost(n):
+        text = "word\n" * n
+        best = float("inf")
+        for _ in range(3):
+            t0 = time.perf_counter()
+            out = unwrap_lines(text)
+            best = min(best, time.perf_counter() - t0)
+        assert out.count("\n") == 1
+        return best
+
+    assert cost(160_000) / cost(40_000) < 10
 
 
 @pytest.mark.parametrize(
