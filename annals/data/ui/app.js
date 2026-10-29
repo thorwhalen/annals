@@ -13,6 +13,8 @@
    with an optional password and expiry (annals.share). The same file is the recipient's
    page: the share server sets window.ANNALS.share, BASE and API to the link, and the page
    then shows only what the share includes, without the owner's controls.
+   A group (the owner's, or a share's) has a Combine button: its markdown files as one .md,
+   made by the server on each request (annals.aggregate), to copy, save or read raw.
    The API lives at window.ANNALS.api (standalone: BASE/api; on enlace: /api/<app>). Items
    (every source's rows, and their tags) are read and patched through @zodal/store-http's
    provider, vendored at API/ui/vendor/, so the storage behind them can change without
@@ -113,10 +115,32 @@
     toastEl.textContent = msg; toastEl.classList.add("show");
     clearTimeout(toastEl._t); toastEl._t = setTimeout(function () { toastEl.classList.remove("show"); }, ms || 1600);
   }
-  function copyText(text) {
-    if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text).then(function () { toast("Copied"); });
-    var ta = h("textarea", null, [text]); document.body.appendChild(ta); ta.select();
-    try { document.execCommand("copy"); toast("Copied"); } finally { ta.remove(); }
+  /* The old way to copy: select a hidden textarea and ask the browser to copy it. An
+     editable one at 16px, because iOS Safari selects nothing in a read-only one and
+     zooms on a smaller font; inputmode none keeps its keyboard down. */
+  function copyByCommand(text) {
+    var ta = h("textarea", { class: "copy-buffer", inputmode: "none", "aria-hidden": "true", tabindex: "-1" }, [text]);
+    document.body.appendChild(ta);
+    var ok = false;
+    try { ta.focus(); ta.select(); ta.setSelectionRange(0, text.length); ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    ta.remove();
+    return ok;
+  }
+  /* Copies inside the tap that asked for it (iOS Safari refuses a clipboard write that
+     waited on the network, so the text must already be here): the clipboard API, else
+     the old way. When both fail, `selectEl` (a textarea on the page holding the same
+     text) is selected, so the device's own Copy finishes the job. */
+  function copyText(text, selectEl) {
+    function byHand() {
+      if (copyByCommand(text)) return toast("Copied");
+      if (!selectEl) return toast("Could not copy", 3000);
+      selectEl.focus(); selectEl.select(); selectEl.setSelectionRange(0, text.length);
+      toast("Selected: use Copy from your device's menu", 4000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext !== false) {
+      return navigator.clipboard.writeText(text).then(function () { toast("Copied"); }, byHand);
+    }
+    byHand();
     return Promise.resolve();
   }
   function kindBadge(kind) { return h("span", { class: "kind " + kind }, [kind]); }
@@ -903,13 +927,57 @@
       page(g.title, mainNav("published"), [
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
         actionBar({
-          primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } }],
+          primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } },
+            hasMarkdown(items) ? combineAction(groupPanel, API + "/groups/" + encodeURIComponent(g.id) + "/aggregate") : null],
           actions: [COPY_LINK()]
         }),
         groupPanel,
         h("div", { class: "list" }, items.length ? items.map(inlineItem) : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])])
       ]);
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
+  }
+
+  /* -------- a group's markdown as one file (annals.aggregate) ---------------------- */
+  /* The server makes it on each request and keeps nothing. The text is fetched when the
+     panel opens, so Copy runs inside the tap (see copyText), and it is shown raw below
+     the buttons: on a phone where copying or saving fails, it can be selected by hand. */
+  function hasMarkdown(docs) { return docs.some(function (m) { return m.kind === "md" || m.kind === "folder"; }); }
+  function combineAction(panel, url) {
+    return { label: "Combine", hint: "All the markdown files as one .md: copy it or save it", icon: "file", expanded: true,
+      run: function (e) {
+        var btn = e.currentTarget, open = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!open));
+        panel.innerHTML = "";
+        if (!open) panel.appendChild(combinePanel(url));
+      } };
+  }
+  function combinePanel(url) {
+    var status = h("p", { class: "muted" }, ["Combining the markdown files…"]);
+    var wrap = h("section", { class: "share-panel combine-panel", "aria-label": "Combined Markdown", "aria-busy": "true" }, [h("h3", null, ["One Markdown file"]), status]);
+    fetch(url, { credentials: "same-origin" }).then(function (r) {
+      if (r.status === 401) { if (SHARE) location.reload(); else toLogin(); throw new Error("login"); }
+      if (!r.ok) return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.detail || r.statusText); });
+      var n = +(r.headers.get("X-Annals-Sections") || 0);
+      var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "combined.md";
+      return r.text().then(function (text) { draw(text, n, name); });
+    }).catch(function (e) {
+      if (e.message === "login") return;
+      wrap.removeAttribute("aria-busy");
+      status.className = "err"; status.textContent = "Could not combine them: " + (e.message || e);
+    });
+    function draw(text, n, name) {
+      var bytes = new Blob([text]).size;
+      var raw = h("textarea", { class: "combine-text", readonly: "", rows: "10", spellcheck: "false", "aria-label": "The combined Markdown" }, [text]);
+      wrap.removeAttribute("aria-busy");
+      status.textContent = n + (n === 1 ? " file, " : " files, ") + size(bytes) + ", with a table of contents. Made just now, not saved anywhere.";
+      wrap.appendChild(h("div", { class: "toolbar combine-actions" }, [
+        h("button", { class: "btn primary", type: "button", onclick: function () { copyText(text, raw); } }, [icon("copy"), h("span", { class: "lbl" }, ["Copy Markdown"])]),
+        h("a", { class: "btn", href: downloadUrl(url), download: name }, [icon("download"), h("span", { class: "lbl" }, ["Download .md"])]),
+        h("a", { class: "btn", href: url, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open as text"])])
+      ]));
+      wrap.appendChild(raw);
+    }
+    return wrap;
   }
 
   /* -------- share links: the owner's dialog, the owner's list, the recipient's root -- */
@@ -1090,8 +1158,11 @@
   function shareRootView() {
     page(NAME, [], [h("p", { class: "muted" }, ["Loading…"])]);
     api("/share").then(function (s) {
+      var panel = h("div");
       page(s.title, [], [shareNotice(),
         h("div", { class: "doc-head" }, [h("h2", null, [s.title]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["shared"]), h("span", null, [s.docs.length + (s.docs.length === 1 ? " document" : " documents")])])]),
+        hasMarkdown(s.docs) ? actionBar({ primary: [combineAction(panel, API + "/aggregate")] }) : null,
+        panel,
         h("div", { class: "list" }, s.docs.length ? s.docs.map(inlineItem) : [h("div", { class: "empty" }, ["Nothing here any more."])])
       ]);
     }).catch(function (e) { page(NAME, [], [h("div", { class: "empty" }, [String(e.message || e)])]); });

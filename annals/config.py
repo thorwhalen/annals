@@ -58,6 +58,8 @@ DFLT_SERVE_PORT = 8765
 _NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 # A document's content file is read whole into the API's JSON response; this is the cap.
 MAX_INLINE_TEXT_BYTES = 2_000_000
+# All the markdown one combined download (annals.aggregate) may hold.
+MAX_AGGREGATE_BYTES = 8_000_000
 # How many documents' texts the published source keeps for search (least recently used out first).
 DFLT_MAX_CACHED_TEXTS = 512
 

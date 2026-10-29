@@ -131,6 +131,22 @@ then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or
 
 Every markdown page has an **Actions** menu (Share, Copy, Download, View) with two downloads made by the server: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner's login, or a share link's scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
 
+## One Markdown file from a group
+
+A group's page has a **Combine** button: it makes one Markdown file from every `.md` in the group, folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group's title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group's order; each file's headings go one level down and hard-wrapped lines are joined. It is made on each request and never stored. A share link to a group has the same button, built from the share's filtered text and only the files it includes.
+
+```bash
+annals aggregate <group-id-or-link> > all.md          # the same file, from a shell
+annals aggregate <id> --order given --demote 0 --no-toc --keep-wraps
+```
+
+```python
+from annals.aggregate import aggregate_markdown
+aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundle", demote=1)
+```
+
+`aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The API is `GET /groups/<gid>/aggregate` (`?download=1` to save it, `&demote=`), and `GET /<token>/aggregate` on the share server.
+
 ## Other folders, search, filters and tags
 
 Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (`/annals/s/<name>`) and in `/annals/all`:

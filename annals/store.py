@@ -909,6 +909,19 @@ class DocStore:
             raise KeyError(gid)
         return json.loads(self.target.read_text(f"{GROUPS}/{gid}.json"))
 
+    def group_docs(self, gid: str) -> tuple[dict, list[dict]]:
+        """A group and the meta of each of its documents, in its order (missing or binned ones left out)."""
+        group = self.group(gid)
+        metas = []
+        for i in group["docs"]:
+            try:
+                meta = self.meta(i)
+            except (KeyError, ValueError):
+                continue
+            if not meta.get("in_trash"):
+                metas.append(meta)
+        return group, metas
+
     def list_groups(self) -> list[dict]:
         """Every group, newest first."""
         names = [n for n in self.target.list_files(GROUPS) if n.endswith(".json")]

@@ -60,7 +60,12 @@ from annals.config import (
     default_data_dir,
 )
 from annals.catalog import Catalog, mk_catalog
-from annals.export import run_export, file_url_builder, trusted_base
+from annals.export import (
+    aggregate_response,
+    file_url_builder,
+    run_export,
+    trusted_base,
+)
 from annals.sources import (
     PUBLISHED,
     PublishedSource,
@@ -356,6 +361,31 @@ def mk_api(
             except (KeyError, ValueError):
                 continue
         return {**group, "items": docs}
+
+    @api.get("/groups/{gid}/aggregate")
+    async def aggregate_group(
+        gid: str, download: bool = False, demote: int = 1
+    ) -> Response:
+        """Every markdown file of a group's documents as one ``.md``, made per request.
+
+        Shown as plain text, or saved as ``<title>.md`` with ``?download=1``. Documents in
+        the bin are left out. See :mod:`annals.aggregate` for the layout.
+        """
+
+        def make() -> Response:
+            try:
+                group, docs = store.group_docs(gid)
+            except (KeyError, ValueError):
+                raise HTTPException(404, "no such group")
+            return aggregate_response(
+                ((m, m.get("files", [])) for m in docs),
+                read=store.read_text,
+                title=group.get("title") or gid,
+                download=download,
+                demote=demote,
+            )
+
+        return await anyio.to_thread.run_sync(make)
 
     # -- shares: public links to one document or group (the owner's side) -------------
     # The recipient's side is annals.share_api, mounted where this API's login does not

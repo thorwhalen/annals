@@ -80,6 +80,7 @@ annals ls --trash            # the recycle bin
 annals trash <id>            # move to the bin (the owner can restore from the page)
 annals restore <id>
 annals group "Title" <id> <id> ...   # one link for existing documents
+annals aggregate <group-id> > all.md # every markdown file of a group as one .md (title, contents, a section per file)
 annals configure             # show where documents go and what link is printed
 ```
 

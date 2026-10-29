@@ -55,7 +55,12 @@ from annals.api import (
     doc_file_path,
     doctype_guard,
 )
-from annals.export import run_export, file_url_builder, trusted_base
+from annals.export import (
+    aggregate_response,
+    file_url_builder,
+    run_export,
+    trusted_base,
+)
 from annals.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
 from annals.share import Shares, dir_of, filter_refs
 from annals.sources import with_thumb
@@ -470,6 +475,45 @@ def mk_share_api(
             file_url=file_url_builder(link, doc_id),
             created=meta.get("created", ""),
         )
+
+    @app.get("/{token}/aggregate")
+    async def shared_aggregate(
+        token: str, request: Request, download: bool = False
+    ) -> Response:
+        """The share's markdown files as one ``.md``: the same filtered text ``/raw`` sends.
+
+        Only files the share includes are read, each through the filter, so the combined
+        file shows nothing the recipient could not already open one file at a time.
+        """
+        rec = _open(token, request)
+
+        def make() -> Response:
+            docs = []
+            for doc_id in rec["docs"]:
+                try:
+                    docs.append(_shared_files(rec, doc_id))
+                except HTTPException:
+                    continue  # trashed or deleted since
+            allowed = {meta["id"]: files for meta, files in docs}
+
+            def read(doc_id: str, rel: str) -> str:
+                try:
+                    path = doc_file_path(store, doc_id, rel)
+                except HTTPException:
+                    raise FileNotFoundError(rel)
+                if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
+                    raise HTTPException(413, "a page is too large to combine")
+                text = path.read_text(encoding="utf-8", errors="replace")
+                return _filtered(rec, request, doc_id, rel, allowed[doc_id], text)
+
+            return aggregate_response(
+                docs,
+                read=read,
+                title=rec.get("title") or title,
+                download=download,
+            )
+
+        return await anyio.to_thread.run_sync(make)
 
     @app.get("/{token}/thumb/{doc_id}/{rel:path}")
     async def shared_thumb(
