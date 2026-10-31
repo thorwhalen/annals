@@ -81,7 +81,9 @@ class _Text(HTMLParser):
         self.skipping = 0
 
     def handle_starttag(self, tag, attrs):
-        if tag == "body":  # end tags are optional in HTML, so nothing skipped runs past this
+        if (
+            tag == "body"
+        ):  # end tags are optional in HTML, so nothing skipped runs past this
             self.skipping = 0
         elif tag in _SKIPPED_TAGS:
             self.skipping += 1
@@ -122,9 +124,13 @@ def _older_than(stamp, seconds: float) -> bool:
 
 def _lost(record: dict) -> str | None:
     """Why an active request will never finish by itself, or ``None`` if it still may."""
-    if record.get("state") == QUEUED and _older_than(record.get("requested"), QUEUED_EXPIRY_S):
+    if record.get("state") == QUEUED and _older_than(
+        record.get("requested"), QUEUED_EXPIRY_S
+    ):
         return "no worker picked this up"
-    if record.get("state") == RUNNING and _older_than(record.get("started"), DFLT_TIMEOUT_S + RUNNING_MARGIN_S):
+    if record.get("state") == RUNNING and _older_than(
+        record.get("started"), DFLT_TIMEOUT_S + RUNNING_MARGIN_S
+    ):
         return "the worker stopped before finishing"
     return None
 
@@ -183,7 +189,10 @@ class Requests:
             lines = (self.folder / SPEND_LOG).read_text(encoding="utf-8").splitlines()
         except FileNotFoundError:
             return 0
-        return sum(not _older_than(line.split()[0] if line.split() else None, 24 * 3600) for line in lines)
+        return sum(
+            not _older_than(line.split()[0] if line.split() else None, 24 * 3600)
+            for line in lines
+        )
 
     def note_start(self, doc_id: str) -> None:
         """Logged before the money is spent, so a crash still counts against the limit."""
@@ -216,7 +225,12 @@ def state_of(store, requests: Requests, meta: dict) -> dict:
 
 
 def request(
-    store, requests: Requests, doc_id: str, *, minutes: int = DFLT_MINUTES, force: bool = False
+    store,
+    requests: Requests,
+    doc_id: str,
+    *,
+    minutes: int = DFLT_MINUTES,
+    force: bool = False,
 ) -> dict:
     """Ask for an overview of a document. Raises ``ValueError`` if it cannot be asked for.
 
@@ -235,7 +249,12 @@ def request(
         return current
     requests.put(
         doc_id,
-        {"state": QUEUED, "minutes": minutes, "version": meta.get("version"), "requested": _now()},
+        {
+            "state": QUEUED,
+            "minutes": minutes,
+            "version": meta.get("version"),
+            "requested": _now(),
+        },
     )
     return state_of(store, requests, meta)
 
@@ -254,7 +273,11 @@ def _already_made(store, doc_id: str, version) -> str | None:
     """A published overview of this version: what a worker that died after publishing left."""
     for meta in store.list():
         src = meta.get("source") or {}
-        if src.get("of") == doc_id and src.get("of_version") == version and TAG in (meta.get("tags") or []):
+        if (
+            src.get("of") == doc_id
+            and src.get("of_version") == version
+            and TAG in (meta.get("tags") or [])
+        ):
             return meta["id"]
     return None
 
@@ -293,7 +316,9 @@ def _run(argv: Sequence[str], *, cwd: str, timeout: float) -> tuple[int, str]:
         return code, _last_line(said.read())
 
 
-def _fulfil(store, doc_id: str, *, minutes: int, command: Sequence[str], timeout: float) -> tuple[str, object]:
+def _fulfil(
+    store, doc_id: str, *, minutes: int, command: Sequence[str], timeout: float
+) -> tuple[str, object]:
     """Make the overview and publish it; return the new document's id and the version spoken."""
     meta = store.meta(doc_id)
     if not eligible(meta):
@@ -314,7 +339,9 @@ def _fulfil(store, doc_id: str, *, minutes: int, command: Sequence[str], timeout
         try:
             code, said = _run(argv, cwd=tmp, timeout=timeout)
         except OSError as e:
-            raise RuntimeError(f"could not run the overview command: {e.strerror}") from None
+            raise RuntimeError(
+                f"could not run the overview command: {e.strerror}"
+            ) from None
         if code:
             raise RuntimeError(said or f"the overview command exited {code}")
         if not out.is_file() or not out.stat().st_size:
@@ -363,7 +390,9 @@ def _daily_limit(limit: int | None) -> int:
     return int(os.environ.get(ENV_DAILY_LIMIT) or DFLT_DAILY_LIMIT)
 
 
-def _step(store, requests: Requests, doc_id: str, *, argv, timeout: float, limit: int) -> dict | None:
+def _step(
+    store, requests: Requests, doc_id: str, *, argv, timeout: float, limit: int
+) -> dict | None:
     """Take one request as far as it goes; return what happened, or ``None`` if nothing did."""
     record = requests.get(doc_id)
     if not record:
@@ -374,10 +403,14 @@ def _step(store, requests: Requests, doc_id: str, *, argv, timeout: float, limit
 
     def fail(why: str) -> dict:
         why = str(why)[:MAX_ERROR_CHARS]
-        requests.put(doc_id, {**record, "state": FAILED, "error": why, "finished": _now()})
+        requests.put(
+            doc_id, {**record, "state": FAILED, "error": why, "finished": _now()}
+        )
         return {"doc": doc_id, "state": FAILED, "error": why}
 
-    if state == RUNNING:  # this worker holds the lock, so whoever was running it is gone
+    if (
+        state == RUNNING
+    ):  # this worker holds the lock, so whoever was running it is gone
         return fail("the worker stopped before finishing")
     if why := _lost(record):
         return fail(why)
@@ -389,10 +422,21 @@ def _step(store, requests: Requests, doc_id: str, *, argv, timeout: float, limit
     requests.note_start(doc_id)
     requests.put(doc_id, {**record, "state": RUNNING, "started": _now()})
     try:
-        made, version = _fulfil(store, doc_id, minutes=minutes, command=argv, timeout=timeout)
+        made, version = _fulfil(
+            store, doc_id, minutes=minutes, command=argv, timeout=timeout
+        )
     except Exception as e:  # recorded for the page; the next request must still run
         return fail(e)
-    requests.put(doc_id, {**record, "state": DONE, "overview": made, "version": version, "finished": _now()})
+    requests.put(
+        doc_id,
+        {
+            **record,
+            "state": DONE,
+            "overview": made,
+            "version": version,
+            "finished": _now(),
+        },
+    )
     return {"doc": doc_id, "state": DONE, "overview": made}
 
 
@@ -420,9 +464,15 @@ def work(
             for doc_id in fresh:
                 seen.add(doc_id)
                 try:
-                    happened = _step(store, requests, doc_id, argv=argv, timeout=timeout, limit=limit)
+                    happened = _step(
+                        store, requests, doc_id, argv=argv, timeout=timeout, limit=limit
+                    )
                 except Exception as e:  # one damaged request must not stop the others
-                    happened = {"doc": doc_id, "state": FAILED, "error": str(e)[:MAX_ERROR_CHARS]}
+                    happened = {
+                        "doc": doc_id,
+                        "state": FAILED,
+                        "error": str(e)[:MAX_ERROR_CHARS],
+                    }
                 if happened:
                     results.append(happened)
     return results

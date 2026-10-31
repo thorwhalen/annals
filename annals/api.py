@@ -905,7 +905,11 @@ def mk_app(
 
     shared = base + "/shared"
     owner_api = mk_api(
-        store=store, sources=sources, tags=tags, share_base_url=shared, title=title,
+        store=store,
+        sources=sources,
+        tags=tags,
+        share_base_url=shared,
+        title=title,
         overviews=overviews,
     )
     app.mount(base + "/api", owner_api)

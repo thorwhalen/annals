@@ -657,12 +657,19 @@ def _overviews_here(*, target, to):
     settings = load_settings(target=target, to=to)
     store = _store(settings)
     if settings.outbox or not isinstance(store.target, LocalTarget):
-        raise ValueError("spoken overviews run where the documents are: this target is not local")
+        raise ValueError(
+            "spoken overviews run where the documents are: this target is not local"
+        )
     return store, Requests(store.target.root)
 
 
 def listen(
-    doc_id: str, *, minutes: int = 5, force: bool = False, target: str | None = None, to: str | None = None
+    doc_id: str,
+    *,
+    minutes: int = 5,
+    force: bool = False,
+    target: str | None = None,
+    to: str | None = None,
 ) -> dict:
     """Ask for a spoken overview of a document, as its page's Listen button does. Spends money."""
     from annals import overview
@@ -671,7 +678,9 @@ def listen(
     return overview.request(store, requests, doc_id, minutes=minutes, force=force)
 
 
-def listen_work(*, command: str = "", target: str | None = None, to: str | None = None) -> dict:
+def listen_work(
+    *, command: str = "", target: str | None = None, to: str | None = None
+) -> dict:
     """Fulfil the queued overview requests, one at a time (a timer runs this on the server).
 
     ``command`` makes one overview, with {source}, {minutes} and {out} filled in; by default,
