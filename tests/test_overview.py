@@ -326,3 +326,12 @@ def test_the_command_is_told_the_source_documents_page(store, doc, requests, tmp
     )  # fmt: skip
     assert (tmp_path / "url").read_text() == f"https://x.test/d/{doc}"
     assert store.meta(requests.get(doc)["overview"])["source"]["of"] == doc
+
+
+def test_force_makes_a_new_one_rather_than_reusing_the_last(client, store, doc, requests, tmp_path):
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    overview.work(store, requests, command=_maker(tmp_path, GOOD))
+    first = requests.get(doc)["overview"]
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3, "force": True})
+    overview.work(store, requests, command=_maker(tmp_path, GOOD))
+    assert requests.get(doc)["overview"] != first
