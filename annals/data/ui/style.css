@@ -80,7 +80,7 @@ header.bar nav a { margin-left: 12px; font-size: .95rem; }
 .rendered pre code { background: none; padding: 0; }
 .rendered table { border-collapse: collapse; overflow-wrap: normal; word-break: normal; }
 .rendered th, .rendered td { border: 1px solid var(--line); padding: 5px 9px; text-align: left; }
-/* tables.js wraps each table in .at-table (scroll, zoom, sticky header); these rules are the no-script fallback */
+/* tables.js wraps each table in .at-table (scroll, zoom, stripes, measured sticking); these rules are the no-script fallback */
 .rendered table:not([data-annals-tables]) { display: block; overflow: auto; max-width: 100%; }
 .rendered blockquote { margin: 0; padding: 0 0 0 14px; border-left: 3px solid var(--line); color: var(--muted); }
 .rendered h1, .rendered h2, .rendered h3 { line-height: 1.25; }

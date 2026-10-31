@@ -1212,6 +1212,9 @@
       return listView("published");
     });
   }
-  window.addEventListener("popstate", route);
+  // Back closes an expanded table (tables.js) before it changes the view.
+  window.addEventListener("popstate", function () {
+    if (!(window.annalsTables && window.annalsTables.closeOnBack())) route();
+  });
   route();
 })();
