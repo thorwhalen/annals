@@ -647,6 +647,35 @@ def page_shell(
     return page_html(base=base, api=api, title=title)
 
 
+def _local_requests(store: DocStore):
+    from annals.overview import Requests
+
+    root = getattr(store.target, "root", None)
+    if root is None or not Path(root).is_dir():
+        raise ValueError("spoken overviews run where the documents are: this target is not local")
+    return Requests(root)
+
+
+def listen(doc_id: str, *, minutes: int = 5, target: str | None = None, to: str | None = None) -> dict:
+    """Ask for a spoken overview of a document, as its page's Listen button does. Spends money."""
+    from annals import overview
+
+    store = _store(load_settings(target=target, to=to))
+    return overview.request(store, _local_requests(store), doc_id, minutes=minutes)
+
+
+def listen_work(*, command: str = "", target: str | None = None, to: str | None = None) -> dict:
+    """Fulfil the queued overview requests, one at a time (a service runs this on the server).
+
+    ``command`` makes one overview, with {source}, {minutes} and {out} filled in; by default,
+    ``$ANNALS_OVERVIEW_COMMAND``.
+    """
+    from annals import overview
+
+    store = _store(load_settings(target=target, to=to))
+    return {"results": overview.work(store, _local_requests(store), command=command or None)}
+
+
 _dispatch_funcs[:] = [
     publish,
     ls,
@@ -663,4 +692,6 @@ _dispatch_funcs[:] = [
     configure,
     serve,
     page_shell,
+    listen,
+    listen_work,
 ]

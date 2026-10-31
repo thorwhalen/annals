@@ -183,6 +183,7 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 
 /* share links: the owner's dialog and list, the recipient's gate */
 .share-panel { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 14px; }
+.listen-panel .seg { margin: 8px 0; }
 .share-panel h3 { margin: 0 0 4px; font-size: 1.05rem; }
 .share-panel h4 { margin: 14px 0 6px; font-size: .9rem; }
 .share-picks summary { padding: 4px 0; color: var(--accent); }
