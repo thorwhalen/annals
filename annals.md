@@ -1,4 +1,4 @@
-> built 2026-10-31 09:15 UTC from 000a4fc (main) · annals 0.0.25. Details: build_info.json
+> built 2026-10-31 09:51 UTC from 3971721 (main) · annals 0.0.26. Details: build_info.json
 
 # index.html.md
 
@@ -1079,10 +1079,11 @@ document of its own. The page polls the request’s state.
 
 annals does not know how an overview is made. The command is the seam: any program that
 takes a text file and writes one HTML page, named in `ANNALS_OVERVIEW_COMMAND` or passed to
-[`work()`](_autosummary/annals.overview.html.md#annals.overview.work), with `{source}`, `{minutes}` and `{out}` filled in:
+[`work()`](_autosummary/annals.overview.html.md#annals.overview.work), with `{source}`, `{minutes}` and `{out}` filled in, and `{url}`, the source document’s
+page, so the overview can link to what it was based on:
 
 ```default
-my-overview {source} --minutes {minutes} --player-to {out}
+my-overview {source} --minutes {minutes} --player-to {out} --source-url {url}
 ```
 
 The feature is off unless the host turns it on (`mk_api(overviews=True)`), because making
@@ -1225,12 +1226,13 @@ Whether this is a length on offer. Exactly an int: not `True`, and not `3.0`.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-### annals.overview.work(store, requests, , command=None, timeout=1800, daily_limit=None)
+### annals.overview.work(store, requests, \*, command=None, timeout=1800, daily_limit=None, doc_url=<class 'str'>)
 
 Fulfil every queued request, one at a time, until none is left; return what happened.
 
 A failure is recorded on its request, for the page to show, and the next one still runs.
-A request made while this runs is picked up before it exits.
+A request made while this runs is picked up before it exits. `doc_url` turns a document
+id into its page, for `{url}`.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -2291,7 +2293,7 @@ Ask for a spoken overview of a document, as its page’s Listen button does. Spe
 
 Fulfil the queued overview requests, one at a time (a timer runs this on the server).
 
-`command` makes one overview, with {source}, {minutes} and {out} filled in; by default,
+`command` makes one overview, with {source}, {minutes}, {out} and {url} filled in; by default,
 `$ANNALS_OVERVIEW_COMMAND`.
 
 * **Return type:**
@@ -2410,7 +2412,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-31 09:15 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/000a4fc24a099fceae58390653f96f8ea6805b4d"><code>000a4fc</code></a> on branch <code>main</code>, for **annals 0.0.25** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-31 09:51 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/3971721aa79f8624f1762b154751bd156ca29c79"><code>3971721</code></a> on branch <code>main</code>, for **annals 0.0.26** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2419,7 +2421,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/000a4fc24a099fceae58390653f96f8ea6805b4d"><code>000a4fc24a099fceae58390653f96f8ea6805b4d</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/3971721aa79f8624f1762b154751bd156ca29c79"><code>3971721aa79f8624f1762b154751bd156ca29c79</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -2430,9 +2432,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41187845035">41187845035</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41190238820">41190238820</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>000a4fc24a099fceae58390653f96f8ea6805b4d</code> (in the history of the built commit) |
+| Event commit | <code>3971721aa79f8624f1762b154751bd156ca29c79</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2457,13 +2459,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.25/">0.0.25</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.26/">0.0.26</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 000a4fc24a099fceae58390653f96f8ea6805b4d
+git checkout 3971721aa79f8624f1762b154751bd156ca29c79
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

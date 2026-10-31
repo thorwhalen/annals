@@ -101,7 +101,7 @@ Ask for a spoken overview of a document, as its page’s Listen button does. Spe
 
 Fulfil the queued overview requests, one at a time (a timer runs this on the server).
 
-`command` makes one overview, with {source}, {minutes} and {out} filled in; by default,
+`command` makes one overview, with {source}, {minutes}, {out} and {url} filled in; by default,
 `$ANNALS_OVERVIEW_COMMAND`.
 
 * **Return type:**

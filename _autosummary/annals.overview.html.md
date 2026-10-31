@@ -9,10 +9,11 @@ document of its own. The page polls the request’s state.
 
 annals does not know how an overview is made. The command is the seam: any program that
 takes a text file and writes one HTML page, named in `ANNALS_OVERVIEW_COMMAND` or passed to
-[`work()`](#annals.overview.work), with `{source}`, `{minutes}` and `{out}` filled in:
+[`work()`](#annals.overview.work), with `{source}`, `{minutes}` and `{out}` filled in, and `{url}`, the source document’s
+page, so the overview can link to what it was based on:
 
 ```default
-my-overview {source} --minutes {minutes} --player-to {out}
+my-overview {source} --minutes {minutes} --player-to {out} --source-url {url}
 ```
 
 The feature is off unless the host turns it on (`mk_api(overviews=True)`), because making
@@ -155,12 +156,13 @@ Whether this is a length on offer. Exactly an int: not `True`, and not `3.0`.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-### annals.overview.work(store, requests, , command=None, timeout=1800, daily_limit=None)
+### annals.overview.work(store, requests, \*, command=None, timeout=1800, daily_limit=None, doc_url=<class 'str'>)
 
 Fulfil every queued request, one at a time, until none is left; return what happened.
 
 A failure is recorded on its request, for the page to show, and the next one still runs.
-A request made while this runs is picked up before it exits.
+A request made while this runs is picked up before it exits. `doc_url` turns a document
+id into its page, for `{url}`.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
