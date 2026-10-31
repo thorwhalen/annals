@@ -386,7 +386,12 @@ def _command(command: str | Sequence[str] | None) -> list[str]:
     if not command:
         raise ValueError(f"no overview command: pass one, or set {ENV_COMMAND}")
     argv = shlex.split(command) if isinstance(command, str) else list(command)
-    probe = {"source": "\0source", "minutes": "\0minutes", "out": "\0out", "url": "\0url"}
+    probe = {
+        "source": "\0source",
+        "minutes": "\0minutes",
+        "out": "\0out",
+        "url": "\0url",
+    }
     try:
         filled = " ".join(arg.format(**probe) for arg in argv)
     except (KeyError, IndexError, ValueError) as e:
@@ -403,7 +408,14 @@ def _daily_limit(limit: int | None) -> int:
 
 
 def _step(
-    store, requests: Requests, doc_id: str, *, argv, timeout: float, limit: int, doc_url=str
+    store,
+    requests: Requests,
+    doc_id: str,
+    *,
+    argv,
+    timeout: float,
+    limit: int,
+    doc_url=str,
 ) -> dict | None:
     """Take one request as far as it goes; return what happened, or ``None`` if nothing did."""
     record = requests.get(doc_id)
@@ -435,7 +447,12 @@ def _step(
     requests.put(doc_id, {**record, "state": RUNNING, "started": _now()})
     try:
         made, version = _fulfil(
-            store, doc_id, minutes=minutes, command=argv, timeout=timeout, doc_url=doc_url
+            store,
+            doc_id,
+            minutes=minutes,
+            command=argv,
+            timeout=timeout,
+            doc_url=doc_url,
         )
     except Exception as e:  # recorded for the page; the next request must still run
         return fail(e)
@@ -479,7 +496,13 @@ def work(
                 seen.add(doc_id)
                 try:
                     happened = _step(
-                        store, requests, doc_id, argv=argv, timeout=timeout, limit=limit, doc_url=doc_url
+                        store,
+                        requests,
+                        doc_id,
+                        argv=argv,
+                        timeout=timeout,
+                        limit=limit,
+                        doc_url=doc_url,
                     )
                 except Exception as e:  # one damaged request must not stop the others
                     happened = {
