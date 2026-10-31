@@ -49,7 +49,10 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
+from annals import overview
 from annals.auth import Authorizer, authorizer_from_env, no_auth
+from annals.overview import Requests
+from annals.target import LocalTarget
 from annals.config import (
     APP_NAME,
     DFLT_SERVE_PORT,
@@ -240,6 +243,7 @@ def mk_api(
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
     share_base_url: str | None = None,
+    overviews: bool = False,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The JSON API, raw files and page assets, rooted at ``/``, with no auth of its own.
@@ -256,8 +260,14 @@ def mk_api(
     ``share_base_url`` is where the public share server (:mod:`annals.share_api`) answers,
     so a new share comes back with its link (by default ``ANNALS_SHARE_BASE_URL``; with
     neither, shares are made but carry no link, since nothing public serves them here).
+    ``overviews`` offers a spoken overview of a document on its page (off by default, since
+    making one spends money); it needs a local data root and a worker, see
+    :mod:`annals.overview`.
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
+    if overviews and not isinstance(store.target, LocalTarget):
+        raise ValueError("overviews need a data root on this machine")
+    requests = Requests(store.target.root) if overviews else None
     shares = Shares(store)
     share_base = (
         share_base_url
@@ -305,6 +315,8 @@ def mk_api(
             except ValueError:
                 del meta["artifact"]
         meta["file_kinds"] = {f: kind_of(f) for f in meta.get("files", [])}
+        if requests and overview.eligible(meta):
+            meta["listen"] = overview.state_of(store, requests, meta)
         if meta["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:
             try:
                 meta["text"] = store.read_text(doc_id)
@@ -315,6 +327,31 @@ def mk_api(
             ):  # missing, unreadable or outside the root
                 raise HTTPException(404, "no readable text for this document")
         return meta
+
+    def _spoken(doc_id: str) -> dict:
+        if not requests:
+            raise HTTPException(404, "overviews are not offered here")
+        return _meta_or_404(store, doc_id)
+
+    @api.get("/docs/{doc_id}/overview")
+    def get_overview(doc_id: str) -> dict:
+        """The state of a document's spoken overview; a page polls this while one is made."""
+        return overview.state_of(store, requests, _spoken(doc_id))
+
+    @api.post("/docs/{doc_id}/overview", dependencies=[Depends(_require_same_origin)])
+    def request_overview(doc_id: str, body: dict = Body(default={})) -> dict:
+        """Ask for a spoken overview ``{"minutes": 3|5|7, "force"?: true}``. This spends money.
+
+        A current overview is returned as it is, unless ``force``.
+        """
+        _spoken(doc_id)
+        try:
+            return overview.request(
+                store, requests, doc_id,
+                minutes=body.get("minutes", overview.DFLT_MINUTES), force=body.get("force") is True,
+            )  # fmt: skip
+        except ValueError as e:
+            raise HTTPException(400, str(e))
 
     @api.post("/docs/{doc_id}/trash", dependencies=[Depends(_require_same_origin)])
     def trash_doc(doc_id: str) -> dict:
@@ -828,13 +865,14 @@ def mk_app(
     base_path: str = DFLT_BASE_PATH,
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
+    overviews: bool = False,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The standalone server: page + API under ``base_path``, behind ``authorizer``.
 
     Every argument has a working default (the local data dir; auth from the environment,
     which is none on a bare machine, so bind to localhost). ``sources`` and ``tags`` are
-    :func:`mk_api`'s. Share links are served, ungated, at ``{base_path}/shared/<token>/``
+    :func:`mk_api`'s, and so is ``overviews``. Share links are served, ungated, at ``{base_path}/shared/<token>/``
     (:func:`annals.share_api.mk_share_api`).
     """
     from annals.share_api import mk_share_api
@@ -867,7 +905,8 @@ def mk_app(
 
     shared = base + "/shared"
     owner_api = mk_api(
-        store=store, sources=sources, tags=tags, share_base_url=shared, title=title
+        store=store, sources=sources, tags=tags, share_base_url=shared, title=title,
+        overviews=overviews,
     )
     app.mount(base + "/api", owner_api)
     app.mount(shared, mk_share_api(shares=owner_api.state.shares, title=title))

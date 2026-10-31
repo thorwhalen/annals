@@ -603,6 +603,7 @@
   var ACTION_SECTIONS = [["share", "Share"], ["copy", "Copy"], ["download", "Download"], ["view", "View"], ["manage", "Manage"]];
   var ICONS = {
     share: "M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14",
+    listen: "M4 14v-2a8 8 0 0 1 16 0v2M4 14a2 2 0 0 1 2-2h1v7H6a2 2 0 0 1-2-2zM20 14a2 2 0 0 0-2-2h-1v7h1a2 2 0 0 0 2-2z",
     link: "M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1",
     copy: "M9 9h10a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1zM5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1",
     download: "M12 3v12M7 10l5 5 5-5M5 21h14",
@@ -692,7 +693,7 @@
      stay on the bar; actions: the menu. Any may be empty. */
   function actionBar(parts) {
     var primary = (parts.primary || []).filter(Boolean).map(function (a) {
-      return h("button", { class: "btn", type: "button", "aria-expanded": a.expanded ? "false" : null, title: a.hint || null, onclick: a.run }, [icon(a.icon), h("span", { class: "lbl" }, [a.label])]);
+      return h("button", { class: "btn", type: "button", "aria-expanded": a.expanded ? (a.expanded === "open" ? "true" : "false") : null, title: a.hint || null, onclick: a.run }, [icon(a.icon), h("span", { class: "lbl" }, [a.label])]);
     });
     var kids = [parts.lead || null].concat(parts.view || [], primary, [actionMenu((parts.actions || []).filter(Boolean))]);
     return h("div", { class: "toolbar actionbar", role: "toolbar", "aria-label": "Page actions" }, kids);
@@ -885,11 +886,11 @@
           h("button", { class: "btn", disabled: next ? null : "", onclick: function () { go(fileUrl(m.id, next), true); } }, ["Next"])
         ]);
       }
-      var sharePanel = h("div");
+      var sharePanel = h("div"), listenPanel = h("div");
       var owner = !(rel || SHARE || m.in_trash);
       var docTools = actionBar({
         lead: SHARE ? null : artifactLink(m), view: tools.view,
-        primary: [owner ? { label: "Share", hint: "Make a link anyone can open, with the files you choose", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, sharePanel, { kind: "doc", id: m.id, title: m.title }); } } : null],
+        primary: [owner && m.listen ? listenAction(m, listenPanel) : null, owner ? { label: "Share", hint: "Make a link anyone can open, with the files you choose", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, sharePanel, { kind: "doc", id: m.id, title: m.title }); } } : null],
         actions: [COPY_LINK()].concat(tools.actions, [
           rel || SHARE ? null : (m.in_trash
             ? { section: "manage", label: "Restore", hint: "Take it out of the recycle bin", icon: "restore", run: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }
@@ -911,7 +912,7 @@
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
         h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
-        fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_LINK()].concat(tools.actions) }) : docTools, sharePanel, body,
+        fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_LINK()].concat(tools.actions) }) : docTools, listenPanel, sharePanel, body,
         rel || SHARE ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
       ]);
@@ -942,6 +943,74 @@
      panel opens, so Copy runs inside the tap (see copyText), and it is shown raw below
      the buttons: on a phone where copying or saving fails, it can be selected by hand. */
   function hasMarkdown(docs) { return docs.some(function (m) { return m.kind === "md" || m.kind === "folder"; }); }
+  /* The Listen button: a spoken overview of this document, made on the server (annals.overview).
+     A finished one just plays. Anything else opens a panel, because starting one spends money
+     and so names its cost first. */
+  var LISTEN_POLL_MS = 5000, LISTEN_MAX_MISSES = 5;
+  function listenAction(m, panel) {
+    var ready = m.listen.state === "done" && !m.listen.stale;
+    var active = m.listen.state === "queued" || m.listen.state === "running";
+    if (active) panel.appendChild(listenPanel(m, m.listen));
+    return { label: ready ? "Play overview" : "Listen", hint: "Hear a few minutes on this document, with its script in sync", icon: "listen", expanded: ready ? false : (active ? "open" : true), run: function (e) {
+      if (m.listen.state === "done" && !m.listen.stale) return go(BASE + "/d/" + m.listen.overview);
+      var btn = e.currentTarget, open = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!open));
+      panel.innerHTML = "";
+      if (!open) panel.appendChild(listenPanel(m, m.listen));
+    } };
+  }
+  function listenPanel(m, first) {
+    var wrap = h("section", { class: "share-panel listen-panel", "aria-label": "Spoken overview" });
+    var url = "/docs/" + encodeURIComponent(m.id) + "/overview";
+    var picked = first.minutes, misses = 0;
+    function show(s, note) {
+      m.listen = s;  /* so reopening the panel shows this, not what the page loaded with */
+      wrap.innerHTML = "";
+      wrap.setAttribute("aria-busy", String(s.state === "queued" || s.state === "running"));
+      wrap.appendChild(h("h3", null, ["Listen to this document"]));
+      if (s.state === "queued" || s.state === "running") {
+        wrap.appendChild(h("p", { role: "status" }, ["Preparing your " + s.minutes + " minute overview. This takes about 2 minutes, and you can leave this page."]));
+        setTimeout(function () {
+          if (!wrap.isConnected) return;
+          api(url).then(function (next) { misses = 0; show(next); }).catch(function (e) {
+            misses += 1;
+            if (misses < LISTEN_MAX_MISSES) return show(s, "Could not check on it. Trying again.");
+            wrap.setAttribute("aria-busy", "false");
+            wrap.innerHTML = "";
+            wrap.appendChild(h("p", { class: "err", role: "alert" }, ["Stopped checking on it: " + (e.message || e) + ". Reload this page to look again."]));
+          });
+        }, LISTEN_POLL_MS);
+        if (note) wrap.appendChild(h("p", { class: "muted" }, [note]));
+        return;
+      }
+      if (s.state === "done") wrap.appendChild(h("p", null, [link(BASE + "/d/" + s.overview, "Play overview", "btn"), s.stale ? " This document has changed since it was made." : ""]));
+      if (s.state === "done" && !s.stale) return;  /* current, so there is nothing to pay for */
+      if (s.state === "failed") wrap.appendChild(h("p", { class: "err", role: "alert" }, ["That did not work: " + (s.error || "no reason given")]));
+      if (note) wrap.appendChild(h("p", { class: "err", role: "alert" }, [note]));
+      var cost = h("p", { class: "muted" });
+      function drawCost() {
+        var c = s.choices.filter(function (x) { return x.minutes === picked; })[0];
+        cost.textContent = "About " + c.characters.toLocaleString() + " characters of voice, plus one Claude call. Your voice service bills by the character.";
+      }
+      var seg = h("div", { class: "seg", role: "group", "aria-label": "Length" }, s.choices.map(function (c) {
+        return h("button", { class: "btn", type: "button", "aria-pressed": String(c.minutes === picked), onclick: function () {
+          picked = c.minutes;
+          [].forEach.call(seg.children, function (b, i) { b.setAttribute("aria-pressed", String(s.choices[i].minutes === picked)); });
+          drawCost();
+        } }, [c.minutes + " min"]);
+      }));
+      drawCost();
+      var start = h("button", { class: "btn", type: "button", onclick: function () {
+        start.disabled = true; start.textContent = "Asking…";
+        api(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: picked }) })
+          .then(function (next) { show(next); })
+          .catch(function (e) { show(s, "Could not ask for it: " + (e.message || e)); });
+      } }, [s.state === "done" ? "Make a new one" : "Make it"]);
+      wrap.appendChild(seg); wrap.appendChild(cost); wrap.appendChild(start);
+    }
+    show(first);
+    return wrap;
+  }
   function combineAction(panel, url) {
     return { label: "Combine", hint: "All the markdown files as one .md: copy it or save it", icon: "file", expanded: true,
       run: function (e) {
