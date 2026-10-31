@@ -337,6 +337,7 @@ Move documents to the recycle bin (restorable).
 | [`catalog`](annals.catalog.html.md#module-annals.catalog)       | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
 | [`config`](annals.config.html.md#module-annals.config)         | Settings: where documents are published and what link to print.                                                                                    |
 | [`mcp`](annals.mcp.html.md#module-annals.mcp)               | MCP surface: the same operations as the CLI, from [`annals.tools`](annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`overview`](annals.overview.html.md#module-annals.overview)     | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
 | [`share`](annals.share.html.md#module-annals.share)           | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](annals.sources.html.md#module-annals.sources)       | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
 | [`store`](annals.store.html.md#module-annals.store)           | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |

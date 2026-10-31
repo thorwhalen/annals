@@ -15,6 +15,8 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.      |
 | [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.               |
 | [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                              |
+| [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.              |
+| [`listen_work`](#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).   |
 | [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.         |
 | [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.             |
 | [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.        |
@@ -84,6 +86,23 @@ Make a group (one URL for a set of documents) from existing document ids.
 ### annals.tools.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.listen(doc_id, , minutes=5, force=False, target=None, to=None)
+
+Ask for a spoken overview of a document, as its page’s Listen button does. Spends money.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.listen_work(, command='', target=None, to=None)
+
+Fulfil the queued overview requests, one at a time (a timer runs this on the server).
+
+`command` makes one overview, with {source}, {minutes} and {out} filled in; by default,
+`$ANNALS_OVERVIEW_COMMAND`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

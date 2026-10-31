@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.overview - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.share" href="annals.share.html" /><link rel="prev" title="annals.mcp" href="annals.mcp.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.overview"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.overview.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.overview.CHARS_PER_MINUTE"><code class="docutils literal notranslate"><span class="pre">CHARS_PER_MINUTE</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.DFLT_DAILY_LIMIT"><code class="docutils literal notranslate"><span class="pre">DFLT_DAILY_LIMIT</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.MINUTES"><code class="docutils literal notranslate"><span class="pre">MINUTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.QUEUED_EXPIRY_S"><code class="docutils literal notranslate"><span class="pre">QUEUED_EXPIRY_S</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.RUNNING_MARGIN_S"><code class="docutils literal notranslate"><span class="pre">RUNNING_MARGIN_S</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.Requests"><code class="docutils literal notranslate"><span class="pre">Requests</span></code></a><ul>
+<li><a class="reference internal" href="#annals.overview.Requests.ids"><code class="docutils literal notranslate"><span class="pre">Requests.ids()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.Requests.note_start"><code class="docutils literal notranslate"><span class="pre">Requests.note_start()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.Requests.started_today"><code class="docutils literal notranslate"><span class="pre">Requests.started_today()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.overview.TAG"><code class="docutils literal notranslate"><span class="pre">TAG</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.choices"><code class="docutils literal notranslate"><span class="pre">choices()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.eligible"><code class="docutils literal notranslate"><span class="pre">eligible()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.html_to_text"><code class="docutils literal notranslate"><span class="pre">html_to_text()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.request"><code class="docutils literal notranslate"><span class="pre">request()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.state_of"><code class="docutils literal notranslate"><span class="pre">state_of()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.valid_minutes"><code class="docutils literal notranslate"><span class="pre">valid_minutes()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.work"><code class="docutils literal notranslate"><span class="pre">work()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.overview</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.overview">
+<span id="annals-overview"></span><h1>annals.overview<a class="headerlink" href="#module-annals.overview" title="Link to this heading">#</a></h1>
+<p>Spoken overviews of a document: the request a page makes, and the worker that fulfils it.</p>
+<p>A reader asks for an overview from a document’s page. That writes one small JSON file under
+the data root (<code class="docutils literal notranslate"><span class="pre">overviews/&lt;doc</span> <span class="pre">id&gt;.json</span></code>). A worker on the same machine reads the document
+from the store, runs a command that makes the overview, and publishes the result as a
+document of its own. The page polls the request’s state.</p>
+<p>annals does not know how an overview is made. The command is the seam: any program that
+takes a text file and writes one HTML page, named in <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEW_COMMAND</span></code> or passed to
+<a class="reference internal" href="#annals.overview.work" title="annals.overview.work"><code class="xref py py-func docutils literal notranslate"><span class="pre">work()</span></code></a>, with <code class="docutils literal notranslate"><span class="pre">{source}</span></code>, <code class="docutils literal notranslate"><span class="pre">{minutes}</span></code> and <code class="docutils literal notranslate"><span class="pre">{out}</span></code> filled in:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">my</span><span class="o">-</span><span class="n">overview</span> <span class="p">{</span><span class="n">source</span><span class="p">}</span> <span class="o">--</span><span class="n">minutes</span> <span class="p">{</span><span class="n">minutes</span><span class="p">}</span> <span class="o">--</span><span class="n">player</span><span class="o">-</span><span class="n">to</span> <span class="p">{</span><span class="n">out</span><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>The feature is off unless the host turns it on (<code class="docutils literal notranslate"><span class="pre">mk_api(overviews=True)</span></code>), because making
+an overview spends money. For the same reason, a current overview is not made again unless
+forced, a crash after publishing does not pay twice, <code class="docutils literal notranslate"><span class="pre">work</span></code> stops at a daily limit, and a
+request nobody fulfilled expires rather than spending money whenever a worker next wakes.</p>
+<p>Run the worker on a timer. Finished request files stay in the folder and the worker writes
+there, so a watcher on the folder would keep waking it.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">html_to_text</span><span class="p">(</span><span class="s2">"&lt;title&gt;x&lt;/title&gt;&lt;p&gt;One &amp;amp; two&lt;/p&gt;&lt;script&gt;no()&lt;/script&gt;&lt;p&gt;Three&lt;/p&gt;"</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">'One &amp; two\n\nThree'</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">c</span><span class="p">[</span><span class="s2">"characters"</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">choices</span><span class="p">()]</span>
+</span><span data-line="4"><span class="go">[2700, 4500, 6300]</span>
+</span></pre></div>
+</div>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.DFLT_DAILY_LIMIT" title="annals.overview.DFLT_DAILY_LIMIT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_DAILY_LIMIT</span></code></a></p></td>
+<td><p>at most this many overviews are started in any 24 hours, whoever asks</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.QUEUED_EXPIRY_S" title="annals.overview.QUEUED_EXPIRY_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QUEUED_EXPIRY_S</span></code></a></p></td>
+<td><p>nobody is waiting for it now</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.RUNNING_MARGIN_S" title="annals.overview.RUNNING_MARGIN_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUNNING_MARGIN_S</span></code></a></p></td>
+<td><p>a request still running after this long has lost its worker</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.MINUTES" title="annals.overview.MINUTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MINUTES</span></code></a></p></td>
+<td><p>the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.CHARS_PER_MINUTE" title="annals.overview.CHARS_PER_MINUTE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHARS_PER_MINUTE</span></code></a></p></td>
+<td><p>spoken English at about 150 words a minute and 6 characters a word; shown as an estimate</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.TAG" title="annals.overview.TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TAG</span></code></a></p></td>
+<td><p>marks a document that is itself an overview, so nobody makes an overview of an overview</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.choices" title="annals.overview.choices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">choices</span></code></a>()</p></td>
+<td><p>Each length on offer and what it would cost in voice characters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.eligible" title="annals.overview.eligible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eligible</span></code></a>(meta)</p></td>
+<td><p>Whether a document can be spoken: readable text, current, and not itself an overview.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.html_to_text" title="annals.overview.html_to_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_to_text</span></code></a>(html)</p></td>
+<td><p>The readable text of a page: no markup, scripts or styles.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.request" title="annals.overview.request"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request</span></code></a>(store, requests, doc_id, *[, ...])</p></td>
+<td><p>Ask for an overview of a document.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.state_of" title="annals.overview.state_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state_of</span></code></a>(store, requests, meta)</p></td>
+<td><p>What a page shows for a document: its request's state and what it can start.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.valid_minutes" title="annals.overview.valid_minutes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">valid_minutes</span></code></a>(minutes)</p></td>
+<td><p>Whether this is a length on offer.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.work" title="annals.overview.work"><code class="xref py py-obj docutils literal notranslate"><span class="pre">work</span></code></a>(store, requests, *[, command, timeout, ...])</p></td>
+<td><p>Fulfil every queued request, one at a time, until none is left; return what happened.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.Requests" title="annals.overview.Requests"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Requests</span></code></a>(data_dir)</p></td>
+<td><p>The request files: one per document, each replaced whole so a reader never sees half.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.CHARS_PER_MINUTE">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">CHARS_PER_MINUTE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">900</span></span><a class="headerlink" href="#annals.overview.CHARS_PER_MINUTE" title="Link to this definition">#</a></dt>
+<dd><p>spoken English at about 150 words a minute and 6 characters a word; shown as an estimate</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.DFLT_DAILY_LIMIT">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">DFLT_DAILY_LIMIT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20</span></span><a class="headerlink" href="#annals.overview.DFLT_DAILY_LIMIT" title="Link to this definition">#</a></dt>
+<dd><p>at most this many overviews are started in any 24 hours, whoever asks</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.MINUTES">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">MINUTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(3,</span> <span class="pre">5,</span> <span class="pre">7)</span></span><a class="headerlink" href="#annals.overview.MINUTES" title="Link to this definition">#</a></dt>
+<dd><p>the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.QUEUED_EXPIRY_S">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">QUEUED_EXPIRY_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">3600</span></span><a class="headerlink" href="#annals.overview.QUEUED_EXPIRY_S" title="Link to this definition">#</a></dt>
+<dd><p>nobody is waiting for it now</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>a request still queued after this long is dropped</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.RUNNING_MARGIN_S">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">RUNNING_MARGIN_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">600</span></span><a class="headerlink" href="#annals.overview.RUNNING_MARGIN_S" title="Link to this definition">#</a></dt>
+<dd><p>a request still running after this long has lost its worker</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.overview.Requests">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">Requests</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data_dir</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#Requests"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.Requests" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The request files: one per document, each replaced whole so a reader never sees half.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.overview.Requests.ids">
+<span class="sig-name descname"><span class="pre">ids</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#Requests.ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.Requests.ids" title="Link to this definition">#</a></dt>
+<dd><p>Documents with a request, oldest request first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.overview.Requests.note_start">
+<span class="sig-name descname"><span class="pre">note_start</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#Requests.note_start"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.Requests.note_start" title="Link to this definition">#</a></dt>
+<dd><p>Logged before the money is spent, so a crash still counts against the limit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.overview.Requests.started_today">
+<span class="sig-name descname"><span class="pre">started_today</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#Requests.started_today"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.Requests.started_today" title="Link to this definition">#</a></dt>
+<dd><p>How many overviews were started in the last 24 hours.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.TAG">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">TAG</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'overview'</span></span><a class="headerlink" href="#annals.overview.TAG" title="Link to this definition">#</a></dt>
+<dd><p>marks a document that is itself an overview, so nobody makes an overview of an overview</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.choices">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">choices</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#choices"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.choices" title="Link to this definition">#</a></dt>
+<dd><p>Each length on offer and what it would cost in voice characters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.eligible">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">eligible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#eligible"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.eligible" title="Link to this definition">#</a></dt>
+<dd><p>Whether a document can be spoken: readable text, current, and not itself an overview.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.html_to_text">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">html_to_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#html_to_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.html_to_text" title="Link to this definition">#</a></dt>
+<dd><p>The readable text of a page: no markup, scripts or styles.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.request">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">request</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requests</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#request"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.request" title="Link to this definition">#</a></dt>
+<dd><p>Ask for an overview of a document. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if it cannot be asked for.</p>
+<p>Asking again while one is being made changes nothing, and neither does asking for one
+that exists and is current unless <code class="docutils literal notranslate"><span class="pre">force</span></code>, so a repeat costs nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.state_of">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">state_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requests</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#state_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.state_of" title="Link to this definition">#</a></dt>
+<dd><p>What a page shows for a document: its request’s state and what it can start.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.valid_minutes">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">valid_minutes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minutes</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#valid_minutes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.valid_minutes" title="Link to this definition">#</a></dt>
+<dd><p>Whether this is a length on offer. Exactly an int: not <code class="docutils literal notranslate"><span class="pre">True</span></code>, and not <code class="docutils literal notranslate"><span class="pre">3.0</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.work">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">work</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requests</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">command</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">daily_limit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#work"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.work" title="Link to this definition">#</a></dt>
+<dd><p>Fulfil every queued request, one at a time, until none is left; return what happened.</p>
+<p>A failure is recorded on its request, for the page to show, and the next one still runs.
+A request made while this runs is picked up before it exits.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.mcp.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.mcp</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.share.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.share</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=5d650c58"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

@@ -102,6 +102,24 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
 | Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
 
+## Spoken overviews
+
+A document’s page can offer a Listen button: a few minutes of speech about the document, played with its script in sync. It is off unless the host turns it on, because making one spends money.
+
+```python
+app = mk_api(overviews=True)  # the button, and POST /docs/{id}/overview
+```
+
+A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:
+
+```bash
+export ANNALS_OVERVIEW_COMMAND='hailing overview {source} --minutes {minutes} --no-publish --player-to {out}'
+annals listen-work                 # fulfils what is queued, one at a time
+annals listen <doc-id> --minutes 3 # asks for one from the command line, as the button does
+```
+
+Run `annals listen-work` from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (`ANNALS_OVERVIEW_DAILY_LIMIT`). `annals.overview` has the details.
+
 ## Sharing one page
 
 The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, the Share button on a document lists its files and the annals pages it links to, so you choose what goes; from a shell:

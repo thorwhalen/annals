@@ -1,4 +1,4 @@
-> built 2026-10-31 09:13 UTC from 49b6357 (main) · annals 0.0.24. Details: build_info.json
+> built 2026-10-31 09:15 UTC from 000a4fc (main) · annals 0.0.25. Details: build_info.json
 
 # index.html.md
 
@@ -105,6 +105,24 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | Behind an existing login that exposes a who-am-I endpoint | `ANNALS_WHOAMI_URL`, `ANNALS_ALLOWED_USERS=me@example.com`, optionally `ANNALS_LOGIN_URL=/auth/login` | the browser’s cookies are forwarded to that endpoint and the listed emails are allowed; anyone else is sent to the login page |
 | No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
 | Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
+
+## Spoken overviews
+
+A document’s page can offer a Listen button: a few minutes of speech about the document, played with its script in sync. It is off unless the host turns it on, because making one spends money.
+
+```python
+app = mk_api(overviews=True)  # the button, and POST /docs/{id}/overview
+```
+
+A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:
+
+```bash
+export ANNALS_OVERVIEW_COMMAND='hailing overview {source} --minutes {minutes} --no-publish --player-to {out}'
+annals listen-work                 # fulfils what is queued, one at a time
+annals listen <doc-id> --minutes 3 # asks for one from the command line, as the button does
+```
+
+Run `annals listen-work` from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (`ANNALS_OVERVIEW_DAILY_LIMIT`). `annals.overview` has the details.
 
 ## Sharing one page
 
@@ -1019,6 +1037,7 @@ Move documents to the recycle bin (restorable).
 | [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog)       | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
 | [`config`](_autosummary/annals.config.html.md#module-annals.config)         | Settings: where documents are published and what link to print.                                                                                    |
 | [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)               | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)     | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
 | [`share`](_autosummary/annals.share.html.md#module-annals.share)           | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](_autosummary/annals.sources.html.md#module-annals.sources)       | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
 | [`store`](_autosummary/annals.store.html.md#module-annals.store)           | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
@@ -1045,6 +1064,176 @@ core free of any MCP import; the function list is the one the CLI dispatches.
 ### annals.mcp.mk_server()
 
 Build the MCP server over [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools).
+
+
+# _autosummary/annals.overview.html.md
+
+# annals.overview
+
+Spoken overviews of a document: the request a page makes, and the worker that fulfils it.
+
+A reader asks for an overview from a document’s page. That writes one small JSON file under
+the data root (`overviews/<doc id>.json`). A worker on the same machine reads the document
+from the store, runs a command that makes the overview, and publishes the result as a
+document of its own. The page polls the request’s state.
+
+annals does not know how an overview is made. The command is the seam: any program that
+takes a text file and writes one HTML page, named in `ANNALS_OVERVIEW_COMMAND` or passed to
+[`work()`](_autosummary/annals.overview.html.md#annals.overview.work), with `{source}`, `{minutes}` and `{out}` filled in:
+
+```default
+my-overview {source} --minutes {minutes} --player-to {out}
+```
+
+The feature is off unless the host turns it on (`mk_api(overviews=True)`), because making
+an overview spends money. For the same reason, a current overview is not made again unless
+forced, a crash after publishing does not pay twice, `work` stops at a daily limit, and a
+request nobody fulfilled expires rather than spending money whenever a worker next wakes.
+
+Run the worker on a timer. Finished request files stay in the folder and the worker writes
+there, so a watcher on the folder would keep waking it.
+
+```pycon
+>>> html_to_text("<title>x</title><p>One &amp; two</p><script>no()</script><p>Three</p>")
+'One & two\n\nThree'
+>>> [c["characters"] for c in choices()]
+[2700, 4500, 6300]
+```
+
+### Module Attributes
+
+| [`DFLT_DAILY_LIMIT`](_autosummary/annals.overview.html.md#annals.overview.DFLT_DAILY_LIMIT)   | at most this many overviews are started in any 24 hours, whoever asks                        |
+|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                 |
+| [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                  |
+| [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed |
+| [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate     |
+| [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview      |
+
+### Functions
+
+| [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
+|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
+| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
+| [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
+| [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
+| [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
+| [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
+
+### Classes
+
+| [`Requests`](_autosummary/annals.overview.html.md#annals.overview.Requests)(data_dir)   | The request files: one per document, each replaced whole so a reader never sees half.   |
+|-----------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+
+### annals.overview.CHARS_PER_MINUTE *= 900*
+
+spoken English at about 150 words a minute and 6 characters a word; shown as an estimate
+
+### annals.overview.DFLT_DAILY_LIMIT *= 20*
+
+at most this many overviews are started in any 24 hours, whoever asks
+
+### annals.overview.MINUTES *= (3, 5, 7)*
+
+the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed
+
+### annals.overview.QUEUED_EXPIRY_S *= 3600*
+
+nobody is waiting for it now
+
+* **Type:**
+  a request still queued after this long is dropped
+
+### annals.overview.RUNNING_MARGIN_S *= 600*
+
+a request still running after this long has lost its worker
+
+### *class* annals.overview.Requests(data_dir)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+The request files: one per document, each replaced whole so a reader never sees half.
+
+#### ids()
+
+Documents with a request, oldest request first.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+#### note_start(doc_id)
+
+Logged before the money is spent, so a crash still counts against the limit.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### started_today()
+
+How many overviews were started in the last 24 hours.
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+### annals.overview.TAG *= 'overview'*
+
+marks a document that is itself an overview, so nobody makes an overview of an overview
+
+### annals.overview.choices()
+
+Each length on offer and what it would cost in voice characters.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### annals.overview.eligible(meta)
+
+Whether a document can be spoken: readable text, current, and not itself an overview.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.overview.html_to_text(html)
+
+The readable text of a page: no markup, scripts or styles.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.overview.request(store, requests, doc_id, , minutes=5, force=False)
+
+Ask for an overview of a document. Raises `ValueError` if it cannot be asked for.
+
+Asking again while one is being made changes nothing, and neither does asking for one
+that exists and is current unless `force`, so a repeat costs nothing.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.state_of(store, requests, meta)
+
+What a page shows for a document: its request’s state and what it can start.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.valid_minutes(minutes)
+
+Whether this is a length on offer. Exactly an int: not `True`, and not `3.0`.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.overview.work(store, requests, , command=None, timeout=1800, daily_limit=None)
+
+Fulfil every queued request, one at a time, until none is left; return what happened.
+
+A failure is recorded on its request, for the page to show, and the next one still runs.
+A request made while this runs is picked up before it exits.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 
 # _autosummary/annals.share.html.md
@@ -2016,6 +2205,8 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.      |
 | [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.               |
 | [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                              |
+| [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.              |
+| [`listen_work`](_autosummary/annals.tools.html.md#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).   |
 | [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.         |
 | [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.             |
 | [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.        |
@@ -2085,6 +2276,23 @@ Make a group (one URL for a set of documents) from existing document ids.
 ### annals.tools.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.listen(doc_id, , minutes=5, force=False, target=None, to=None)
+
+Ask for a spoken overview of a document, as its page’s Listen button does. Spends money.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.listen_work(, command='', target=None, to=None)
+
+Fulfil the queued overview requests, one at a time (a timer runs this on the server).
+
+`command` makes one overview, with {source}, {minutes} and {out} filled in; by default,
+`$ANNALS_OVERVIEW_COMMAND`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2202,18 +2410,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-31 09:13 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/49b6357d6b89d6eb602a12575a740a7a012f07c5"><code>49b6357</code></a> on branch <code>main</code>, for **annals 0.0.24** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-10-31 09:15 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/000a4fc24a099fceae58390653f96f8ea6805b4d"><code>000a4fc</code></a> on branch <code>main</code>, for **annals 0.0.25** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.24) is behind the latest release on PyPI (0.0.25): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/49b6357d6b89d6eb602a12575a740a7a012f07c5"><code>49b6357d6b89d6eb602a12575a740a7a012f07c5</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/000a4fc24a099fceae58390653f96f8ea6805b4d"><code>000a4fc24a099fceae58390653f96f8ea6805b4d</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -2224,9 +2430,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41187712560">41187712560</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41187845035">41187845035</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>49b6357d6b89d6eb602a12575a740a7a012f07c5</code> (in the history of the built commit) |
+| Event commit | <code>000a4fc24a099fceae58390653f96f8ea6805b4d</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2251,13 +2457,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.25/">0.0.25</a>, newer than the documented version (0.0.24).
+Latest release: <a href="https://pypi.org/project/annals/0.0.25/">0.0.25</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 49b6357d6b89d6eb602a12575a740a7a012f07c5
+git checkout 000a4fc24a099fceae58390653f96f8ea6805b4d
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

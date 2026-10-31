@@ -68,6 +68,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.store.html">annals.store</a></li>
@@ -821,23 +822,65 @@ data-aria-dark="Switch to auto color mode">
 
 </span><span data-line="650">
 </span><span data-line="651">
-</span><span data-line="652"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="653">    <span class="n">publish</span><span class="p">,</span>
-</span><span data-line="654">    <span class="n">ls</span><span class="p">,</span>
-</span><span data-line="655">    <span class="n">show</span><span class="p">,</span>
-</span><span data-line="656">    <span class="n">trash</span><span class="p">,</span>
-</span><span data-line="657">    <span class="n">restore</span><span class="p">,</span>
-</span><span data-line="658">    <span class="n">group</span><span class="p">,</span>
-</span><span data-line="659">    <span class="n">groups</span><span class="p">,</span>
-</span><span data-line="660">    <span class="n">aggregate</span><span class="p">,</span>
-</span><span data-line="661">    <span class="n">copy</span><span class="p">,</span>
-</span><span data-line="662">    <span class="n">share</span><span class="p">,</span>
-</span><span data-line="663">    <span class="n">shares</span><span class="p">,</span>
-</span><span data-line="664">    <span class="n">unshare</span><span class="p">,</span>
-</span><span data-line="665">    <span class="n">configure</span><span class="p">,</span>
-</span><span data-line="666">    <span class="n">serve</span><span class="p">,</span>
-</span><span data-line="667">    <span class="n">page_shell</span><span class="p">,</span>
-</span><span data-line="668"><span class="p">]</span>
+</span><span data-line="652"><span class="k">def</span><span class="w"> </span><span class="nf">_overviews_here</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="p">):</span>
+</span><span data-line="653"><span class="w">    </span><span class="sd">"""The store and the request files, or an error saying this is the wrong machine."""</span>
+</span><span data-line="654">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.overview</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requests</span>
+</span><span data-line="655">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.target</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalTarget</span>
+</span><span data-line="656">
+</span><span data-line="657">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="658">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</span><span data-line="659">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">LocalTarget</span><span class="p">):</span>
+</span><span data-line="660">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"spoken overviews run where the documents are: this target is not local"</span><span class="p">)</span>
+</span><span data-line="661">    <span class="k">return</span> <span class="n">store</span><span class="p">,</span> <span class="n">Requests</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+</span><span data-line="662">
+</span><span data-line="663">
+<div class="viewcode-block" id="listen">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.listen">[docs]</a>
+</span><span data-line="664"><span class="k">def</span><span class="w"> </span><span class="nf">listen</span><span class="p">(</span>
+</span><span data-line="665">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span> <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="666"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="667"><span class="w">    </span><span class="sd">"""Ask for a spoken overview of a document, as its page's Listen button does. Spends money."""</span>
+</span><span data-line="668">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
+</span><span data-line="669">
+</span><span data-line="670">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="671">    <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span></div>
+
+</span><span data-line="672">
+</span><span data-line="673">
+<div class="viewcode-block" id="listen_work">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.listen_work">[docs]</a>
+</span><span data-line="674"><span class="k">def</span><span class="w"> </span><span class="nf">listen_work</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="675"><span class="w">    </span><span class="sd">"""Fulfil the queued overview requests, one at a time (a timer runs this on the server).</span>
+</span><span data-line="676">
+</span><span data-line="677"><span class="sd">    ``command`` makes one overview, with {source}, {minutes} and {out} filled in; by default,</span>
+</span><span data-line="678"><span class="sd">    ``$ANNALS_OVERVIEW_COMMAND``.</span>
+</span><span data-line="679"><span class="sd">    """</span>
+</span><span data-line="680">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
+</span><span data-line="681">
+</span><span data-line="682">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="683">    <span class="k">return</span> <span class="p">{</span><span class="s2">"results"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">work</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="n">command</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)}</span></div>
+
+</span><span data-line="684">
+</span><span data-line="685">
+</span><span data-line="686"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="687">    <span class="n">publish</span><span class="p">,</span>
+</span><span data-line="688">    <span class="n">ls</span><span class="p">,</span>
+</span><span data-line="689">    <span class="n">show</span><span class="p">,</span>
+</span><span data-line="690">    <span class="n">trash</span><span class="p">,</span>
+</span><span data-line="691">    <span class="n">restore</span><span class="p">,</span>
+</span><span data-line="692">    <span class="n">group</span><span class="p">,</span>
+</span><span data-line="693">    <span class="n">groups</span><span class="p">,</span>
+</span><span data-line="694">    <span class="n">aggregate</span><span class="p">,</span>
+</span><span data-line="695">    <span class="n">copy</span><span class="p">,</span>
+</span><span data-line="696">    <span class="n">share</span><span class="p">,</span>
+</span><span data-line="697">    <span class="n">shares</span><span class="p">,</span>
+</span><span data-line="698">    <span class="n">unshare</span><span class="p">,</span>
+</span><span data-line="699">    <span class="n">configure</span><span class="p">,</span>
+</span><span data-line="700">    <span class="n">serve</span><span class="p">,</span>
+</span><span data-line="701">    <span class="n">page_shell</span><span class="p">,</span>
+</span><span data-line="702">    <span class="n">listen</span><span class="p">,</span>
+</span><span data-line="703">    <span class="n">listen_work</span><span class="p">,</span>
+</span><span data-line="704"><span class="p">]</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -865,7 +908,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=f91d8841"></script>
+      <script src="../../_static/documentation_options.js?v=5d650c58"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

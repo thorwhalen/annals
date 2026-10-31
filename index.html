@@ -71,6 +71,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.store.html">annals.store</a></li>
@@ -105,6 +106,7 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#hosting-the-page">Hosting the page</a></li>
+<li><a class="reference internal" href="#spoken-overviews">Spoken overviews</a></li>
 <li><a class="reference internal" href="#sharing-one-page">Sharing one page</a></li>
 <li><a class="reference internal" href="#downloads">Downloads</a></li>
 <li><a class="reference internal" href="#one-markdown-file-from-a-group">One Markdown file from a group</a></li>
@@ -262,6 +264,20 @@ data-aria-dark="Switch to auto color mode">
 </table>
 </div>
 </section>
+<section id="spoken-overviews">
+<h2>Spoken overviews<a class="headerlink" href="#spoken-overviews" title="Link to this heading">#</a></h2>
+<p>A document’s page can offer a Listen button: a few minutes of speech about the document, played with its script in sync. It is off unless the host turns it on, because making one spends money.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">app</span> <span class="o">=</span> <span class="n">mk_api</span><span class="p">(</span><span class="n">overviews</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># the button, and POST /docs/{id}/overview</span>
+</span></pre></div>
+</div>
+<p>A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">export</span><span class="w"> </span><span class="nv">ANNALS_OVERVIEW_COMMAND</span><span class="o">=</span><span class="s1">'hailing overview {source} --minutes {minutes} --no-publish --player-to {out}'</span>
+</span><span data-line="2">annals<span class="w"> </span>listen-work<span class="w">                 </span><span class="c1"># fulfils what is queued, one at a time</span>
+</span><span data-line="3">annals<span class="w"> </span>listen<span class="w"> </span>&lt;doc-id&gt;<span class="w"> </span>--minutes<span class="w"> </span><span class="m">3</span><span class="w"> </span><span class="c1"># asks for one from the command line, as the button does</span>
+</span></pre></div>
+</div>
+<p>Run <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">listen-work</span></code> from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (<code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEW_DAILY_LIMIT</span></code>). <code class="docutils literal notranslate"><span class="pre">annals.overview</span></code> has the details.</p>
+</section>
 <section id="sharing-one-page">
 <h2>Sharing one page<a class="headerlink" href="#sharing-one-page" title="Link to this heading">#</a></h2>
 <p>The annals is private; a <strong>share link</strong> lets someone without an account read ONE document (or one group) and nothing else. From the page, the Share button on a document lists its files and the annals pages it links to, so you choose what goes; from a shell:</p>
@@ -342,7 +358,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-31 09:13 UTC from <a href="https://github.com/thorwhalen/annals/commit/49b6357d6b89d6eb602a12575a740a7a012f07c5">49b6357</a> (main) · annals 0.0.24 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-10-31 09:15 UTC from <a href="https://github.com/thorwhalen/annals/commit/000a4fc24a099fceae58390653f96f8ea6805b4d">000a4fc</a> (main) · annals 0.0.25 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -377,7 +393,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=f91d8841"></script>
+      <script src="_static/documentation_options.js?v=5d650c58"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

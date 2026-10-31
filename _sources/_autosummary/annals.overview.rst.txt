@@ -1,0 +1,35 @@
+annals.overview
+===============
+
+.. automodule:: annals.overview
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_DAILY_LIMIT
+      QUEUED_EXPIRY_S
+      RUNNING_MARGIN_S
+      MINUTES
+      CHARS_PER_MINUTE
+      TAG
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      choices
+      eligible
+      html_to_text
+      request
+      state_of
+      valid_minutes
+      work
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Requests
+   

@@ -13,6 +13,8 @@ annals.tools
       copy
       group
       groups
+      listen
+      listen_work
       ls
       page_shell
       publish
