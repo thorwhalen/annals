@@ -310,3 +310,19 @@ def test_a_daemon_holding_the_output_does_not_lose_a_paid_result(store, doc, req
 
 def test_a_page_whose_head_never_closes_still_has_text():
     assert overview.html_to_text("<html><head><title>T</title><body><p>Body") == "Body"
+
+
+def test_the_command_is_told_the_source_documents_page(store, doc, requests, tmp_path):
+    overview.request(store, requests, doc, minutes=3)
+    script = tmp_path / "maker.py"
+    script.write_text(
+        "import sys\nopen(sys.argv[1], 'w').write('page')\n"
+        f"open({str(tmp_path / 'url')!r}, 'w').write(sys.argv[2])\n"
+    )
+    overview.work(
+        store, requests,
+        command=[sys.executable, str(script), "{out}", "{url}", "{source}"],
+        doc_url=lambda i: f"https://x.test/d/{i}",
+    )  # fmt: skip
+    assert (tmp_path / "url").read_text() == f"https://x.test/d/{doc}"
+    assert store.meta(requests.get(doc)["overview"])["source"]["of"] == doc

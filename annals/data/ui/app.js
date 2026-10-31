@@ -904,6 +904,7 @@
         m.version > 1 || isVersion ? h("span", null, ["version " + m.version]) : null,
         m.size ? h("span", null, [size(m.size)]) : null,
         sourceText(m.source) ? h("span", null, [sourceText(m.source)]) : null,
+        m.source && /^[\w.-]+$/.test(m.source.of || "") ? h("span", null, ["Overview of ", link(BASE + "/d/" + m.source.of, "this document")]) : null,
         m.files && m.files.length > 1 ? h("span", null, [m.files.length + " files"]) : null
       ]);
       var showFiles = !rel && m.files && m.files.length > 1;

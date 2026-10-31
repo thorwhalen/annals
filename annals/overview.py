@@ -7,9 +7,10 @@ document of its own. The page polls the request's state.
 
 annals does not know how an overview is made. The command is the seam: any program that
 takes a text file and writes one HTML page, named in ``ANNALS_OVERVIEW_COMMAND`` or passed to
-:func:`work`, with ``{source}``, ``{minutes}`` and ``{out}`` filled in::
+:func:`work`, with ``{source}``, ``{minutes}`` and ``{out}`` filled in, and ``{url}``, the source document's
+page, so the overview can link to what it was based on::
 
-    my-overview {source} --minutes {minutes} --player-to {out}
+    my-overview {source} --minutes {minutes} --player-to {out} --source-url {url}
 
 The feature is off unless the host turns it on (``mk_api(overviews=True)``), because making
 an overview spends money. For the same reason, a current overview is not made again unless
@@ -37,7 +38,7 @@ from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Sequence
+from typing import Callable, Sequence
 
 ENV_COMMAND = "ANNALS_OVERVIEW_COMMAND"
 FOLDER = "overviews"
@@ -317,7 +318,13 @@ def _run(argv: Sequence[str], *, cwd: str, timeout: float) -> tuple[int, str]:
 
 
 def _fulfil(
-    store, doc_id: str, *, minutes: int, command: Sequence[str], timeout: float
+    store,
+    doc_id: str,
+    *,
+    minutes: int,
+    command: Sequence[str],
+    timeout: float,
+    doc_url: Callable[[str], str] = str,
 ) -> tuple[str, object]:
     """Make the overview and publish it; return the new document's id and the version spoken."""
     meta = store.meta(doc_id)
@@ -334,7 +341,12 @@ def _fulfil(
         title = meta.get("title") or doc_id
         source.write_text(f"# {title}\n\n{text}\n", encoding="utf-8")
         out = Path(tmp) / "overview.html"
-        fill = {"source": str(source), "minutes": str(minutes), "out": str(out)}
+        fill = {
+            "source": str(source),
+            "minutes": str(minutes),
+            "out": str(out),
+            "url": doc_url(doc_id),
+        }
         argv = [arg.format(**fill) for arg in command]
         try:
             code, said = _run(argv, cwd=tmp, timeout=timeout)
@@ -374,7 +386,7 @@ def _command(command: str | Sequence[str] | None) -> list[str]:
     if not command:
         raise ValueError(f"no overview command: pass one, or set {ENV_COMMAND}")
     argv = shlex.split(command) if isinstance(command, str) else list(command)
-    probe = {"source": "\0source", "minutes": "\0minutes", "out": "\0out"}
+    probe = {"source": "\0source", "minutes": "\0minutes", "out": "\0out", "url": "\0url"}
     try:
         filled = " ".join(arg.format(**probe) for arg in argv)
     except (KeyError, IndexError, ValueError) as e:
@@ -391,7 +403,7 @@ def _daily_limit(limit: int | None) -> int:
 
 
 def _step(
-    store, requests: Requests, doc_id: str, *, argv, timeout: float, limit: int
+    store, requests: Requests, doc_id: str, *, argv, timeout: float, limit: int, doc_url=str
 ) -> dict | None:
     """Take one request as far as it goes; return what happened, or ``None`` if nothing did."""
     record = requests.get(doc_id)
@@ -423,7 +435,7 @@ def _step(
     requests.put(doc_id, {**record, "state": RUNNING, "started": _now()})
     try:
         made, version = _fulfil(
-            store, doc_id, minutes=minutes, command=argv, timeout=timeout
+            store, doc_id, minutes=minutes, command=argv, timeout=timeout, doc_url=doc_url
         )
     except Exception as e:  # recorded for the page; the next request must still run
         return fail(e)
@@ -447,11 +459,13 @@ def work(
     command: str | Sequence[str] | None = None,
     timeout: float = DFLT_TIMEOUT_S,
     daily_limit: int | None = None,
+    doc_url: Callable[[str], str] = str,
 ) -> list[dict]:
     """Fulfil every queued request, one at a time, until none is left; return what happened.
 
     A failure is recorded on its request, for the page to show, and the next one still runs.
-    A request made while this runs is picked up before it exits.
+    A request made while this runs is picked up before it exits. ``doc_url`` turns a document
+    id into its page, for ``{url}``.
     """
     argv = _command(command)
     limit = _daily_limit(daily_limit)
@@ -465,7 +479,7 @@ def work(
                 seen.add(doc_id)
                 try:
                     happened = _step(
-                        store, requests, doc_id, argv=argv, timeout=timeout, limit=limit
+                        store, requests, doc_id, argv=argv, timeout=timeout, limit=limit, doc_url=doc_url
                     )
                 except Exception as e:  # one damaged request must not stop the others
                     happened = {
