@@ -252,6 +252,7 @@ def request(
         doc_id,
         {
             "state": QUEUED,
+            "force": force,
             "minutes": minutes,
             "version": meta.get("version"),
             "requested": _now(),
@@ -325,13 +326,14 @@ def _fulfil(
     command: Sequence[str],
     timeout: float,
     doc_url: Callable[[str], str] = str,
+    force: bool = False,
 ) -> tuple[str, object]:
     """Make the overview and publish it; return the new document's id and the version spoken."""
     meta = store.meta(doc_id)
     if not eligible(meta):
         raise RuntimeError("this document can no longer be spoken")
     version = meta.get("version")
-    if made := _already_made(store, doc_id, version):
+    if not force and (made := _already_made(store, doc_id, version)):
         return made, version
     text = _source_text(store, meta).strip()
     if not text:
@@ -452,7 +454,7 @@ def _step(
             minutes=minutes,
             command=argv,
             timeout=timeout,
-            doc_url=doc_url,
+            doc_url=doc_url, force=record.get("force") is True,
         )
     except Exception as e:  # recorded for the page; the next request must still run
         return fail(e)
