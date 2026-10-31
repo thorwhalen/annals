@@ -409,247 +409,272 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="252">        <span class="n">doc_id</span><span class="p">,</span>
 </span><span data-line="253">        <span class="p">{</span>
 </span><span data-line="254">            <span class="s2">"state"</span><span class="p">:</span> <span class="n">QUEUED</span><span class="p">,</span>
-</span><span data-line="255">            <span class="s2">"minutes"</span><span class="p">:</span> <span class="n">minutes</span><span class="p">,</span>
-</span><span data-line="256">            <span class="s2">"version"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"version"</span><span class="p">),</span>
-</span><span data-line="257">            <span class="s2">"requested"</span><span class="p">:</span> <span class="n">_now</span><span class="p">(),</span>
-</span><span data-line="258">        <span class="p">},</span>
-</span><span data-line="259">    <span class="p">)</span>
-</span><span data-line="260">    <span class="k">return</span> <span class="n">state_of</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span></div>
+</span><span data-line="255">            <span class="s2">"force"</span><span class="p">:</span> <span class="n">force</span><span class="p">,</span>
+</span><span data-line="256">            <span class="s2">"minutes"</span><span class="p">:</span> <span class="n">minutes</span><span class="p">,</span>
+</span><span data-line="257">            <span class="s2">"version"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"version"</span><span class="p">),</span>
+</span><span data-line="258">            <span class="s2">"requested"</span><span class="p">:</span> <span class="n">_now</span><span class="p">(),</span>
+</span><span data-line="259">        <span class="p">},</span>
+</span><span data-line="260">    <span class="p">)</span>
+</span><span data-line="261">    <span class="k">return</span> <span class="n">state_of</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span></div>
 
-</span><span data-line="261">
 </span><span data-line="262">
-</span><span data-line="263"><span class="k">def</span><span class="w"> </span><span class="nf">_last_line</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="264">    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
-</span><span data-line="265">    <span class="k">return</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">]</span> <span class="k">if</span> <span class="n">lines</span> <span class="k">else</span> <span class="s2">""</span>
-</span><span data-line="266">
+</span><span data-line="263">
+</span><span data-line="264"><span class="k">def</span><span class="w"> </span><span class="nf">_last_line</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="265">    <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">ln</span> <span class="ow">in</span> <span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="n">ln</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+</span><span data-line="266">    <span class="k">return</span> <span class="n">lines</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">]</span> <span class="k">if</span> <span class="n">lines</span> <span class="k">else</span> <span class="s2">""</span>
 </span><span data-line="267">
-</span><span data-line="268"><span class="k">def</span><span class="w"> </span><span class="nf">_source_text</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="269">    <span class="n">text</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
-</span><span data-line="270">    <span class="k">return</span> <span class="n">html_to_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"kind"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"html"</span> <span class="k">else</span> <span class="n">text</span>
-</span><span data-line="271">
+</span><span data-line="268">
+</span><span data-line="269"><span class="k">def</span><span class="w"> </span><span class="nf">_source_text</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="270">    <span class="n">text</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
+</span><span data-line="271">    <span class="k">return</span> <span class="n">html_to_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"kind"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"html"</span> <span class="k">else</span> <span class="n">text</span>
 </span><span data-line="272">
-</span><span data-line="273"><span class="k">def</span><span class="w"> </span><span class="nf">_already_made</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="274"><span class="w">    </span><span class="sd">"""A published overview of this version: what a worker that died after publishing left."""</span>
-</span><span data-line="275">    <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
-</span><span data-line="276">        <span class="n">src</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
-</span><span data-line="277">        <span class="k">if</span> <span class="p">(</span>
-</span><span data-line="278">            <span class="n">src</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"of"</span><span class="p">)</span> <span class="o">==</span> <span class="n">doc_id</span>
-</span><span data-line="279">            <span class="ow">and</span> <span class="n">src</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"of_version"</span><span class="p">)</span> <span class="o">==</span> <span class="n">version</span>
-</span><span data-line="280">            <span class="ow">and</span> <span class="n">TAG</span> <span class="ow">in</span> <span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
-</span><span data-line="281">        <span class="p">):</span>
-</span><span data-line="282">            <span class="k">return</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
-</span><span data-line="283">    <span class="k">return</span> <span class="kc">None</span>
-</span><span data-line="284">
+</span><span data-line="273">
+</span><span data-line="274"><span class="k">def</span><span class="w"> </span><span class="nf">_already_made</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">version</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="275"><span class="w">    </span><span class="sd">"""A published overview of this version: what a worker that died after publishing left."""</span>
+</span><span data-line="276">    <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
+</span><span data-line="277">        <span class="n">src</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span data-line="278">        <span class="k">if</span> <span class="p">(</span>
+</span><span data-line="279">            <span class="n">src</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"of"</span><span class="p">)</span> <span class="o">==</span> <span class="n">doc_id</span>
+</span><span data-line="280">            <span class="ow">and</span> <span class="n">src</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"of_version"</span><span class="p">)</span> <span class="o">==</span> <span class="n">version</span>
+</span><span data-line="281">            <span class="ow">and</span> <span class="n">TAG</span> <span class="ow">in</span> <span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span data-line="282">        <span class="p">):</span>
+</span><span data-line="283">            <span class="k">return</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
+</span><span data-line="284">    <span class="k">return</span> <span class="kc">None</span>
 </span><span data-line="285">
-</span><span data-line="286"><span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-</span><span data-line="287"><span class="w">    </span><span class="sd">"""Run ``argv`` in its own process group; return its exit code and what it last said.</span>
-</span><span data-line="288">
-</span><span data-line="289"><span class="sd">    Output goes to a file, so a daemon left holding the pipe cannot hang this. A timeout stops</span>
-</span><span data-line="290"><span class="sd">    the whole group, because a generator's children are what bill.</span>
-</span><span data-line="291"><span class="sd">    """</span>
-</span><span data-line="292">    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"w+"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">)</span> <span class="k">as</span> <span class="n">said</span><span class="p">:</span>
-</span><span data-line="293">        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
-</span><span data-line="294">            <span class="n">argv</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">cwd</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">said</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span>
-</span><span data-line="295">            <span class="n">start_new_session</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-</span><span data-line="296">        <span class="p">)</span>  <span class="c1"># fmt: skip</span>
-</span><span data-line="297">
-</span><span data-line="298">        <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="n">sig</span><span class="p">):</span>
-</span><span data-line="299">            <span class="k">try</span><span class="p">:</span>
-</span><span data-line="300">                <span class="n">os</span><span class="o">.</span><span class="n">killpg</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span>
-</span><span data-line="301">            <span class="k">except</span> <span class="ne">ProcessLookupError</span><span class="p">:</span>
-</span><span data-line="302">                <span class="k">pass</span>
-</span><span data-line="303">
-</span><span data-line="304">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="305">            <span class="n">code</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
-</span><span data-line="306">        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
-</span><span data-line="307">            <span class="n">stop</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
-</span><span data-line="308">            <span class="k">try</span><span class="p">:</span>
-</span><span data-line="309">                <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">KILL_GRACE_S</span><span class="p">)</span>
-</span><span data-line="310">            <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
-</span><span data-line="311">                <span class="k">pass</span>
-</span><span data-line="312">            <span class="n">stop</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
-</span><span data-line="313">            <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-</span><span data-line="314">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"gave up after </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
-</span><span data-line="315">        <span class="n">stop</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>  <span class="c1"># nothing of a finished run keeps running</span>
-</span><span data-line="316">        <span class="n">said</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-</span><span data-line="317">        <span class="k">return</span> <span class="n">code</span><span class="p">,</span> <span class="n">_last_line</span><span class="p">(</span><span class="n">said</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
-</span><span data-line="318">
+</span><span data-line="286">
+</span><span data-line="287"><span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="n">argv</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">cwd</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="288"><span class="w">    </span><span class="sd">"""Run ``argv`` in its own process group; return its exit code and what it last said.</span>
+</span><span data-line="289">
+</span><span data-line="290"><span class="sd">    Output goes to a file, so a daemon left holding the pipe cannot hang this. A timeout stops</span>
+</span><span data-line="291"><span class="sd">    the whole group, because a generator's children are what bill.</span>
+</span><span data-line="292"><span class="sd">    """</span>
+</span><span data-line="293">    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryFile</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"w+"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"replace"</span><span class="p">)</span> <span class="k">as</span> <span class="n">said</span><span class="p">:</span>
+</span><span data-line="294">        <span class="n">proc</span> <span class="o">=</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">Popen</span><span class="p">(</span>
+</span><span data-line="295">            <span class="n">argv</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">cwd</span><span class="p">,</span> <span class="n">stdin</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">DEVNULL</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">said</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">STDOUT</span><span class="p">,</span>
+</span><span data-line="296">            <span class="n">start_new_session</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span data-line="297">        <span class="p">)</span>  <span class="c1"># fmt: skip</span>
+</span><span data-line="298">
+</span><span data-line="299">        <span class="k">def</span><span class="w"> </span><span class="nf">stop</span><span class="p">(</span><span class="n">sig</span><span class="p">):</span>
+</span><span data-line="300">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="301">                <span class="n">os</span><span class="o">.</span><span class="n">killpg</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">,</span> <span class="n">sig</span><span class="p">)</span>
+</span><span data-line="302">            <span class="k">except</span> <span class="ne">ProcessLookupError</span><span class="p">:</span>
+</span><span data-line="303">                <span class="k">pass</span>
+</span><span data-line="304">
+</span><span data-line="305">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="306">            <span class="n">code</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+</span><span data-line="307">        <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
+</span><span data-line="308">            <span class="n">stop</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
+</span><span data-line="309">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="310">                <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="n">KILL_GRACE_S</span><span class="p">)</span>
+</span><span data-line="311">            <span class="k">except</span> <span class="n">subprocess</span><span class="o">.</span><span class="n">TimeoutExpired</span><span class="p">:</span>
+</span><span data-line="312">                <span class="k">pass</span>
+</span><span data-line="313">            <span class="n">stop</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGKILL</span><span class="p">)</span>
+</span><span data-line="314">            <span class="n">proc</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
+</span><span data-line="315">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"gave up after </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">timeout</span><span class="p">)</span><span class="si">}</span><span class="s2"> seconds"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+</span><span data-line="316">        <span class="n">stop</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>  <span class="c1"># nothing of a finished run keeps running</span>
+</span><span data-line="317">        <span class="n">said</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</span><span data-line="318">        <span class="k">return</span> <span class="n">code</span><span class="p">,</span> <span class="n">_last_line</span><span class="p">(</span><span class="n">said</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
 </span><span data-line="319">
-</span><span data-line="320"><span class="k">def</span><span class="w"> </span><span class="nf">_fulfil</span><span class="p">(</span>
-</span><span data-line="321">    <span class="n">store</span><span class="p">,</span>
-</span><span data-line="322">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="323">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="324">    <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-</span><span data-line="325">    <span class="n">command</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-</span><span data-line="326">    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
-</span><span data-line="327">    <span class="n">doc_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="328"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
-</span><span data-line="329"><span class="w">    </span><span class="sd">"""Make the overview and publish it; return the new document's id and the version spoken."""</span>
-</span><span data-line="330">    <span class="n">meta</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="331">    <span class="k">if</span> <span class="ow">not</span> <span class="n">eligible</span><span class="p">(</span><span class="n">meta</span><span class="p">):</span>
-</span><span data-line="332">        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"this document can no longer be spoken"</span><span class="p">)</span>
-</span><span data-line="333">    <span class="n">version</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"version"</span><span class="p">)</span>
-</span><span data-line="334">    <span class="k">if</span> <span class="n">made</span> <span class="o">:=</span> <span class="n">_already_made</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">version</span><span class="p">):</span>
-</span><span data-line="335">        <span class="k">return</span> <span class="n">made</span><span class="p">,</span> <span class="n">version</span>
-</span><span data-line="336">    <span class="n">text</span> <span class="o">=</span> <span class="n">_source_text</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-</span><span data-line="337">    <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
-</span><span data-line="338">        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"this document has no text to speak"</span><span class="p">)</span>
-</span><span data-line="339">    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">"annals-overview-"</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp</span><span class="p">:</span>
-</span><span data-line="340">        <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"source.md"</span>
-</span><span data-line="341">        <span class="n">title</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">doc_id</span>
-</span><span data-line="342">        <span class="n">source</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"# </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
-</span><span data-line="343">        <span class="n">out</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"overview.html"</span>
-</span><span data-line="344">        <span class="n">fill</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="345">            <span class="s2">"source"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span>
-</span><span data-line="346">            <span class="s2">"minutes"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">minutes</span><span class="p">),</span>
-</span><span data-line="347">            <span class="s2">"out"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">out</span><span class="p">),</span>
-</span><span data-line="348">            <span class="s2">"url"</span><span class="p">:</span> <span class="n">doc_url</span><span class="p">(</span><span class="n">doc_id</span><span class="p">),</span>
-</span><span data-line="349">        <span class="p">}</span>
-</span><span data-line="350">        <span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">fill</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">command</span><span class="p">]</span>
-</span><span data-line="351">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="352">            <span class="n">code</span><span class="p">,</span> <span class="n">said</span> <span class="o">=</span> <span class="n">_run</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
-</span><span data-line="353">        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span data-line="354">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-</span><span data-line="355">                <span class="sa">f</span><span class="s2">"could not run the overview command: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">strerror</span><span class="si">}</span><span class="s2">"</span>
-</span><span data-line="356">            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
-</span><span data-line="357">        <span class="k">if</span> <span class="n">code</span><span class="p">:</span>
-</span><span data-line="358">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">said</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"the overview command exited </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="359">        <span class="k">if</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span><span class="p">:</span>
-</span><span data-line="360">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"the overview command wrote no page"</span><span class="p">)</span>
-</span><span data-line="361">        <span class="n">made</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
-</span><span data-line="362">            <span class="n">out</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Listen: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="n">TAG</span><span class="p">],</span>
-</span><span data-line="363">            <span class="n">source</span><span class="o">=</span><span class="p">{</span><span class="s2">"session"</span><span class="p">:</span> <span class="s2">"annals overview"</span><span class="p">,</span> <span class="s2">"of"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"of_version"</span><span class="p">:</span> <span class="n">version</span><span class="p">},</span>
-</span><span data-line="364">        <span class="p">)</span>  <span class="c1"># fmt: skip</span>
-</span><span data-line="365">    <span class="k">return</span> <span class="n">made</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">version</span>
-</span><span data-line="366">
-</span><span data-line="367">
-</span><span data-line="368"><span class="nd">@contextmanager</span>
-</span><span data-line="369"><span class="k">def</span><span class="w"> </span><span class="nf">_only_one_worker</span><span class="p">(</span><span class="n">folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
-</span><span data-line="370"><span class="w">    </span><span class="sd">"""Yields whether this process holds the lock. Another worker means this one does nothing."""</span>
-</span><span data-line="371">    <span class="kn">import</span><span class="w"> </span><span class="nn">fcntl</span>
-</span><span data-line="372">
-</span><span data-line="373">    <span class="n">folder</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span data-line="374">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">folder</span> <span class="o">/</span> <span class="n">LOCK_NAME</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">lock</span><span class="p">:</span>
-</span><span data-line="375">        <span class="k">try</span><span class="p">:</span>
-</span><span data-line="376">            <span class="n">fcntl</span><span class="o">.</span><span class="n">flock</span><span class="p">(</span><span class="n">lock</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_EX</span> <span class="o">|</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_NB</span><span class="p">)</span>
-</span><span data-line="377">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
-</span><span data-line="378">            <span class="k">yield</span> <span class="kc">False</span>
-</span><span data-line="379">            <span class="k">return</span>
-</span><span data-line="380">        <span class="k">yield</span> <span class="kc">True</span>
-</span><span data-line="381">
-</span><span data-line="382">
-</span><span data-line="383"><span class="k">def</span><span class="w"> </span><span class="nf">_command</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span data-line="384"><span class="w">    </span><span class="sd">"""The command as a list of arguments, checked now rather than after money is spent."""</span>
-</span><span data-line="385">    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_COMMAND</span><span class="p">)</span>
-</span><span data-line="386">    <span class="k">if</span> <span class="ow">not</span> <span class="n">command</span><span class="p">:</span>
-</span><span data-line="387">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no overview command: pass one, or set </span><span class="si">{</span><span class="n">ENV_COMMAND</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="388">    <span class="n">argv</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">command</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
-</span><span data-line="389">    <span class="n">probe</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"source"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">source"</span><span class="p">,</span> <span class="s2">"minutes"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">minutes"</span><span class="p">,</span> <span class="s2">"out"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">out"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">url"</span><span class="p">}</span>
-</span><span data-line="390">    <span class="k">try</span><span class="p">:</span>
-</span><span data-line="391">        <span class="n">filled</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">probe</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">)</span>
-</span><span data-line="392">    <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span data-line="393">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the overview command has a bad placeholder: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
-</span><span data-line="394">    <span class="k">if</span> <span class="n">probe</span><span class="p">[</span><span class="s2">"source"</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filled</span> <span class="ow">or</span> <span class="n">probe</span><span class="p">[</span><span class="s2">"out"</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filled</span><span class="p">:</span>
-</span><span data-line="395">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"the overview command must name </span><span class="si">{source}</span><span class="s2"> and </span><span class="si">{out}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="396">    <span class="k">return</span> <span class="n">argv</span>
-</span><span data-line="397">
-</span><span data-line="398">
-</span><span data-line="399"><span class="k">def</span><span class="w"> </span><span class="nf">_daily_limit</span><span class="p">(</span><span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-</span><span data-line="400">    <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="401">        <span class="k">return</span> <span class="n">limit</span>
-</span><span data-line="402">    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_DAILY_LIMIT</span><span class="p">)</span> <span class="ow">or</span> <span class="n">DFLT_DAILY_LIMIT</span><span class="p">)</span>
-</span><span data-line="403">
+</span><span data-line="320">
+</span><span data-line="321"><span class="k">def</span><span class="w"> </span><span class="nf">_fulfil</span><span class="p">(</span>
+</span><span data-line="322">    <span class="n">store</span><span class="p">,</span>
+</span><span data-line="323">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="324">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="325">    <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="326">    <span class="n">command</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="327">    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="328">    <span class="n">doc_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="329">    <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="330"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+</span><span data-line="331"><span class="w">    </span><span class="sd">"""Make the overview and publish it; return the new document's id and the version spoken."""</span>
+</span><span data-line="332">    <span class="n">meta</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="333">    <span class="k">if</span> <span class="ow">not</span> <span class="n">eligible</span><span class="p">(</span><span class="n">meta</span><span class="p">):</span>
+</span><span data-line="334">        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"this document can no longer be spoken"</span><span class="p">)</span>
+</span><span data-line="335">    <span class="n">version</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"version"</span><span class="p">)</span>
+</span><span data-line="336">    <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="p">(</span><span class="n">made</span> <span class="o">:=</span> <span class="n">_already_made</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">version</span><span class="p">)):</span>
+</span><span data-line="337">        <span class="k">return</span> <span class="n">made</span><span class="p">,</span> <span class="n">version</span>
+</span><span data-line="338">    <span class="n">text</span> <span class="o">=</span> <span class="n">_source_text</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">meta</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span data-line="339">    <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span><span class="p">:</span>
+</span><span data-line="340">        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"this document has no text to speak"</span><span class="p">)</span>
+</span><span data-line="341">    <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s2">"annals-overview-"</span><span class="p">)</span> <span class="k">as</span> <span class="n">tmp</span><span class="p">:</span>
+</span><span data-line="342">        <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"source.md"</span>
+</span><span data-line="343">        <span class="n">title</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">doc_id</span>
+</span><span data-line="344">        <span class="n">source</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="sa">f</span><span class="s2">"# </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">text</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+</span><span data-line="345">        <span class="n">out</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"overview.html"</span>
+</span><span data-line="346">        <span class="n">fill</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="347">            <span class="s2">"source"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">),</span>
+</span><span data-line="348">            <span class="s2">"minutes"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">minutes</span><span class="p">),</span>
+</span><span data-line="349">            <span class="s2">"out"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">out</span><span class="p">),</span>
+</span><span data-line="350">            <span class="s2">"url"</span><span class="p">:</span> <span class="n">doc_url</span><span class="p">(</span><span class="n">doc_id</span><span class="p">),</span>
+</span><span data-line="351">        <span class="p">}</span>
+</span><span data-line="352">        <span class="n">argv</span> <span class="o">=</span> <span class="p">[</span><span class="n">arg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">fill</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">command</span><span class="p">]</span>
+</span><span data-line="353">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="354">            <span class="n">code</span><span class="p">,</span> <span class="n">said</span> <span class="o">=</span> <span class="n">_run</span><span class="p">(</span><span class="n">argv</span><span class="p">,</span> <span class="n">cwd</span><span class="o">=</span><span class="n">tmp</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">)</span>
+</span><span data-line="355">        <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span data-line="356">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+</span><span data-line="357">                <span class="sa">f</span><span class="s2">"could not run the overview command: </span><span class="si">{</span><span class="n">e</span><span class="o">.</span><span class="n">strerror</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="358">            <span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+</span><span data-line="359">        <span class="k">if</span> <span class="n">code</span><span class="p">:</span>
+</span><span data-line="360">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="n">said</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"the overview command exited </span><span class="si">{</span><span class="n">code</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="361">        <span class="k">if</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">out</span><span class="o">.</span><span class="n">stat</span><span class="p">()</span><span class="o">.</span><span class="n">st_size</span><span class="p">:</span>
+</span><span data-line="362">            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"the overview command wrote no page"</span><span class="p">)</span>
+</span><span data-line="363">        <span class="n">made</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">publish</span><span class="p">(</span>
+</span><span data-line="364">            <span class="n">out</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"Listen: </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="p">[</span><span class="n">TAG</span><span class="p">],</span>
+</span><span data-line="365">            <span class="n">source</span><span class="o">=</span><span class="p">{</span><span class="s2">"session"</span><span class="p">:</span> <span class="s2">"annals overview"</span><span class="p">,</span> <span class="s2">"of"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"of_version"</span><span class="p">:</span> <span class="n">version</span><span class="p">},</span>
+</span><span data-line="366">        <span class="p">)</span>  <span class="c1"># fmt: skip</span>
+</span><span data-line="367">    <span class="k">return</span> <span class="n">made</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">version</span>
+</span><span data-line="368">
+</span><span data-line="369">
+</span><span data-line="370"><span class="nd">@contextmanager</span>
+</span><span data-line="371"><span class="k">def</span><span class="w"> </span><span class="nf">_only_one_worker</span><span class="p">(</span><span class="n">folder</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+</span><span data-line="372"><span class="w">    </span><span class="sd">"""Yields whether this process holds the lock. Another worker means this one does nothing."""</span>
+</span><span data-line="373">    <span class="kn">import</span><span class="w"> </span><span class="nn">fcntl</span>
+</span><span data-line="374">
+</span><span data-line="375">    <span class="n">folder</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="376">    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">folder</span> <span class="o">/</span> <span class="n">LOCK_NAME</span><span class="p">,</span> <span class="s2">"w"</span><span class="p">)</span> <span class="k">as</span> <span class="n">lock</span><span class="p">:</span>
+</span><span data-line="377">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="378">            <span class="n">fcntl</span><span class="o">.</span><span class="n">flock</span><span class="p">(</span><span class="n">lock</span><span class="p">,</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_EX</span> <span class="o">|</span> <span class="n">fcntl</span><span class="o">.</span><span class="n">LOCK_NB</span><span class="p">)</span>
+</span><span data-line="379">        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+</span><span data-line="380">            <span class="k">yield</span> <span class="kc">False</span>
+</span><span data-line="381">            <span class="k">return</span>
+</span><span data-line="382">        <span class="k">yield</span> <span class="kc">True</span>
+</span><span data-line="383">
+</span><span data-line="384">
+</span><span data-line="385"><span class="k">def</span><span class="w"> </span><span class="nf">_command</span><span class="p">(</span><span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="386"><span class="w">    </span><span class="sd">"""The command as a list of arguments, checked now rather than after money is spent."""</span>
+</span><span data-line="387">    <span class="n">command</span> <span class="o">=</span> <span class="n">command</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_COMMAND</span><span class="p">)</span>
+</span><span data-line="388">    <span class="k">if</span> <span class="ow">not</span> <span class="n">command</span><span class="p">:</span>
+</span><span data-line="389">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no overview command: pass one, or set </span><span class="si">{</span><span class="n">ENV_COMMAND</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="390">    <span class="n">argv</span> <span class="o">=</span> <span class="n">shlex</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">command</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">command</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span data-line="391">    <span class="n">probe</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="392">        <span class="s2">"source"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">source"</span><span class="p">,</span>
+</span><span data-line="393">        <span class="s2">"minutes"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">minutes"</span><span class="p">,</span>
+</span><span data-line="394">        <span class="s2">"out"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">out"</span><span class="p">,</span>
+</span><span data-line="395">        <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"</span><span class="se">\0</span><span class="s2">url"</span><span class="p">,</span>
+</span><span data-line="396">    <span class="p">}</span>
+</span><span data-line="397">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="398">        <span class="n">filled</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">arg</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">probe</span><span class="p">)</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="n">argv</span><span class="p">)</span>
+</span><span data-line="399">    <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span data-line="400">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the overview command has a bad placeholder: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+</span><span data-line="401">    <span class="k">if</span> <span class="n">probe</span><span class="p">[</span><span class="s2">"source"</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filled</span> <span class="ow">or</span> <span class="n">probe</span><span class="p">[</span><span class="s2">"out"</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">filled</span><span class="p">:</span>
+</span><span data-line="402">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"the overview command must name </span><span class="si">{source}</span><span class="s2"> and </span><span class="si">{out}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="403">    <span class="k">return</span> <span class="n">argv</span>
 </span><span data-line="404">
-</span><span data-line="405"><span class="k">def</span><span class="w"> </span><span class="nf">_step</span><span class="p">(</span>
-</span><span data-line="406">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">:</span> <span class="n">Requests</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">argv</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">doc_url</span><span class="o">=</span><span class="nb">str</span>
-</span><span data-line="407"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="408"><span class="w">    </span><span class="sd">"""Take one request as far as it goes; return what happened, or ``None`` if nothing did."""</span>
-</span><span data-line="409">    <span class="n">record</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="410">    <span class="k">if</span> <span class="ow">not</span> <span class="n">record</span><span class="p">:</span>
-</span><span data-line="411">        <span class="k">return</span> <span class="kc">None</span>
-</span><span data-line="412">    <span class="n">state</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state"</span><span class="p">)</span>
-</span><span data-line="413">    <span class="k">if</span> <span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ACTIVE</span><span class="p">:</span>
-</span><span data-line="414">        <span class="k">return</span> <span class="kc">None</span>
-</span><span data-line="415">
-</span><span data-line="416">    <span class="k">def</span><span class="w"> </span><span class="nf">fail</span><span class="p">(</span><span class="n">why</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="417">        <span class="n">why</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">why</span><span class="p">)[:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">]</span>
-</span><span data-line="418">        <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
-</span><span data-line="419">            <span class="n">doc_id</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">record</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="n">why</span><span class="p">,</span> <span class="s2">"finished"</span><span class="p">:</span> <span class="n">_now</span><span class="p">()}</span>
-</span><span data-line="420">        <span class="p">)</span>
-</span><span data-line="421">        <span class="k">return</span> <span class="p">{</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="n">why</span><span class="p">}</span>
-</span><span data-line="422">
-</span><span data-line="423">    <span class="k">if</span> <span class="p">(</span>
-</span><span data-line="424">        <span class="n">state</span> <span class="o">==</span> <span class="n">RUNNING</span>
-</span><span data-line="425">    <span class="p">):</span>  <span class="c1"># this worker holds the lock, so whoever was running it is gone</span>
-</span><span data-line="426">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="s2">"the worker stopped before finishing"</span><span class="p">)</span>
-</span><span data-line="427">    <span class="k">if</span> <span class="n">why</span> <span class="o">:=</span> <span class="n">_lost</span><span class="p">(</span><span class="n">record</span><span class="p">):</span>
-</span><span data-line="428">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="n">why</span><span class="p">)</span>
-</span><span data-line="429">    <span class="n">minutes</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"minutes"</span><span class="p">)</span>
-</span><span data-line="430">    <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_minutes</span><span class="p">(</span><span class="n">minutes</span><span class="p">):</span>
-</span><span data-line="431">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not a length on offer: </span><span class="si">{</span><span class="n">minutes</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="432">    <span class="k">if</span> <span class="n">requests</span><span class="o">.</span><span class="n">started_today</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">limit</span><span class="p">:</span>
-</span><span data-line="433">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the limit of </span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2"> overviews a day was reached"</span><span class="p">)</span>
-</span><span data-line="434">    <span class="n">requests</span><span class="o">.</span><span class="n">note_start</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="435">    <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">record</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">RUNNING</span><span class="p">,</span> <span class="s2">"started"</span><span class="p">:</span> <span class="n">_now</span><span class="p">()})</span>
-</span><span data-line="436">    <span class="k">try</span><span class="p">:</span>
-</span><span data-line="437">        <span class="n">made</span><span class="p">,</span> <span class="n">version</span> <span class="o">=</span> <span class="n">_fulfil</span><span class="p">(</span>
-</span><span data-line="438">            <span class="n">store</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span>
-</span><span data-line="439">        <span class="p">)</span>
-</span><span data-line="440">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># recorded for the page; the next request must still run</span>
-</span><span data-line="441">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span data-line="442">    <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
-</span><span data-line="443">        <span class="n">doc_id</span><span class="p">,</span>
-</span><span data-line="444">        <span class="p">{</span>
-</span><span data-line="445">            <span class="o">**</span><span class="n">record</span><span class="p">,</span>
-</span><span data-line="446">            <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span>
-</span><span data-line="447">            <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">,</span>
-</span><span data-line="448">            <span class="s2">"version"</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
-</span><span data-line="449">            <span class="s2">"finished"</span><span class="p">:</span> <span class="n">_now</span><span class="p">(),</span>
-</span><span data-line="450">        <span class="p">},</span>
-</span><span data-line="451">    <span class="p">)</span>
-</span><span data-line="452">    <span class="k">return</span> <span class="p">{</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span> <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">}</span>
-</span><span data-line="453">
-</span><span data-line="454">
+</span><span data-line="405">
+</span><span data-line="406"><span class="k">def</span><span class="w"> </span><span class="nf">_daily_limit</span><span class="p">(</span><span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+</span><span data-line="407">    <span class="k">if</span> <span class="n">limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="408">        <span class="k">return</span> <span class="n">limit</span>
+</span><span data-line="409">    <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_DAILY_LIMIT</span><span class="p">)</span> <span class="ow">or</span> <span class="n">DFLT_DAILY_LIMIT</span><span class="p">)</span>
+</span><span data-line="410">
+</span><span data-line="411">
+</span><span data-line="412"><span class="k">def</span><span class="w"> </span><span class="nf">_step</span><span class="p">(</span>
+</span><span data-line="413">    <span class="n">store</span><span class="p">,</span>
+</span><span data-line="414">    <span class="n">requests</span><span class="p">:</span> <span class="n">Requests</span><span class="p">,</span>
+</span><span data-line="415">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="416">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="417">    <span class="n">argv</span><span class="p">,</span>
+</span><span data-line="418">    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+</span><span data-line="419">    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="420">    <span class="n">doc_url</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
+</span><span data-line="421"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="422"><span class="w">    </span><span class="sd">"""Take one request as far as it goes; return what happened, or ``None`` if nothing did."""</span>
+</span><span data-line="423">    <span class="n">record</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="424">    <span class="k">if</span> <span class="ow">not</span> <span class="n">record</span><span class="p">:</span>
+</span><span data-line="425">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="426">    <span class="n">state</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"state"</span><span class="p">)</span>
+</span><span data-line="427">    <span class="k">if</span> <span class="n">state</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ACTIVE</span><span class="p">:</span>
+</span><span data-line="428">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="429">
+</span><span data-line="430">    <span class="k">def</span><span class="w"> </span><span class="nf">fail</span><span class="p">(</span><span class="n">why</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="431">        <span class="n">why</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">why</span><span class="p">)[:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">]</span>
+</span><span data-line="432">        <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+</span><span data-line="433">            <span class="n">doc_id</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">record</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="n">why</span><span class="p">,</span> <span class="s2">"finished"</span><span class="p">:</span> <span class="n">_now</span><span class="p">()}</span>
+</span><span data-line="434">        <span class="p">)</span>
+</span><span data-line="435">        <span class="k">return</span> <span class="p">{</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">:</span> <span class="n">why</span><span class="p">}</span>
+</span><span data-line="436">
+</span><span data-line="437">    <span class="k">if</span> <span class="p">(</span>
+</span><span data-line="438">        <span class="n">state</span> <span class="o">==</span> <span class="n">RUNNING</span>
+</span><span data-line="439">    <span class="p">):</span>  <span class="c1"># this worker holds the lock, so whoever was running it is gone</span>
+</span><span data-line="440">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="s2">"the worker stopped before finishing"</span><span class="p">)</span>
+</span><span data-line="441">    <span class="k">if</span> <span class="n">why</span> <span class="o">:=</span> <span class="n">_lost</span><span class="p">(</span><span class="n">record</span><span class="p">):</span>
+</span><span data-line="442">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="n">why</span><span class="p">)</span>
+</span><span data-line="443">    <span class="n">minutes</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"minutes"</span><span class="p">)</span>
+</span><span data-line="444">    <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_minutes</span><span class="p">(</span><span class="n">minutes</span><span class="p">):</span>
+</span><span data-line="445">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not a length on offer: </span><span class="si">{</span><span class="n">minutes</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="446">    <span class="k">if</span> <span class="n">requests</span><span class="o">.</span><span class="n">started_today</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="n">limit</span><span class="p">:</span>
+</span><span data-line="447">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="sa">f</span><span class="s2">"the limit of </span><span class="si">{</span><span class="n">limit</span><span class="si">}</span><span class="s2"> overviews a day was reached"</span><span class="p">)</span>
+</span><span data-line="448">    <span class="n">requests</span><span class="o">.</span><span class="n">note_start</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="449">    <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span> <span class="p">{</span><span class="o">**</span><span class="n">record</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">RUNNING</span><span class="p">,</span> <span class="s2">"started"</span><span class="p">:</span> <span class="n">_now</span><span class="p">()})</span>
+</span><span data-line="450">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="451">        <span class="n">made</span><span class="p">,</span> <span class="n">version</span> <span class="o">=</span> <span class="n">_fulfil</span><span class="p">(</span>
+</span><span data-line="452">            <span class="n">store</span><span class="p">,</span>
+</span><span data-line="453">            <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="454">            <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span>
+</span><span data-line="455">            <span class="n">command</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span>
+</span><span data-line="456">            <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+</span><span data-line="457">            <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"force"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">,</span>
+</span><span data-line="458">        <span class="p">)</span>
+</span><span data-line="459">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># recorded for the page; the next request must still run</span>
+</span><span data-line="460">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</span><span data-line="461">    <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+</span><span data-line="462">        <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="463">        <span class="p">{</span>
+</span><span data-line="464">            <span class="o">**</span><span class="n">record</span><span class="p">,</span>
+</span><span data-line="465">            <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span>
+</span><span data-line="466">            <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">,</span>
+</span><span data-line="467">            <span class="s2">"version"</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+</span><span data-line="468">            <span class="s2">"finished"</span><span class="p">:</span> <span class="n">_now</span><span class="p">(),</span>
+</span><span data-line="469">        <span class="p">},</span>
+</span><span data-line="470">    <span class="p">)</span>
+</span><span data-line="471">    <span class="k">return</span> <span class="p">{</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span> <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">}</span>
+</span><span data-line="472">
+</span><span data-line="473">
 <div class="viewcode-block" id="work">
 <a class="viewcode-back" href="../../_autosummary/annals.overview.html#annals.overview.work">[docs]</a>
-</span><span data-line="455"><span class="k">def</span><span class="w"> </span><span class="nf">work</span><span class="p">(</span>
-</span><span data-line="456">    <span class="n">store</span><span class="p">,</span>
-</span><span data-line="457">    <span class="n">requests</span><span class="p">:</span> <span class="n">Requests</span><span class="p">,</span>
-</span><span data-line="458">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="459">    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="460">    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DFLT_TIMEOUT_S</span><span class="p">,</span>
-</span><span data-line="461">    <span class="n">daily_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="462">    <span class="n">doc_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="463"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="464"><span class="w">    </span><span class="sd">"""Fulfil every queued request, one at a time, until none is left; return what happened.</span>
-</span><span data-line="465">
-</span><span data-line="466"><span class="sd">    A failure is recorded on its request, for the page to show, and the next one still runs.</span>
-</span><span data-line="467"><span class="sd">    A request made while this runs is picked up before it exits. ``doc_url`` turns a document</span>
-</span><span data-line="468"><span class="sd">    id into its page, for ``{url}``.</span>
-</span><span data-line="469"><span class="sd">    """</span>
-</span><span data-line="470">    <span class="n">argv</span> <span class="o">=</span> <span class="n">_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
-</span><span data-line="471">    <span class="n">limit</span> <span class="o">=</span> <span class="n">_daily_limit</span><span class="p">(</span><span class="n">daily_limit</span><span class="p">)</span>
-</span><span data-line="472">    <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="473">    <span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-</span><span data-line="474">    <span class="k">with</span> <span class="n">_only_one_worker</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">folder</span><span class="p">)</span> <span class="k">as</span> <span class="n">mine</span><span class="p">:</span>
-</span><span data-line="475">        <span class="k">if</span> <span class="ow">not</span> <span class="n">mine</span><span class="p">:</span>
-</span><span data-line="476">            <span class="k">return</span> <span class="n">results</span>
-</span><span data-line="477">        <span class="k">while</span> <span class="n">fresh</span> <span class="o">:=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">requests</span><span class="o">.</span><span class="n">ids</span><span class="p">()</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">]:</span>
-</span><span data-line="478">            <span class="k">for</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">fresh</span><span class="p">:</span>
-</span><span data-line="479">                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="480">                <span class="k">try</span><span class="p">:</span>
-</span><span data-line="481">                    <span class="n">happened</span> <span class="o">=</span> <span class="n">_step</span><span class="p">(</span>
-</span><span data-line="482">                        <span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">argv</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span> <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span>
-</span><span data-line="483">                    <span class="p">)</span>
-</span><span data-line="484">                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># one damaged request must not stop the others</span>
-</span><span data-line="485">                    <span class="n">happened</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="486">                        <span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span>
-</span><span data-line="487">                        <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span>
-</span><span data-line="488">                        <span class="s2">"error"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)[:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">],</span>
-</span><span data-line="489">                    <span class="p">}</span>
-</span><span data-line="490">                <span class="k">if</span> <span class="n">happened</span><span class="p">:</span>
-</span><span data-line="491">                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">happened</span><span class="p">)</span>
-</span><span data-line="492">    <span class="k">return</span> <span class="n">results</span></div>
+</span><span data-line="474"><span class="k">def</span><span class="w"> </span><span class="nf">work</span><span class="p">(</span>
+</span><span data-line="475">    <span class="n">store</span><span class="p">,</span>
+</span><span data-line="476">    <span class="n">requests</span><span class="p">:</span> <span class="n">Requests</span><span class="p">,</span>
+</span><span data-line="477">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="478">    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="479">    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DFLT_TIMEOUT_S</span><span class="p">,</span>
+</span><span data-line="480">    <span class="n">daily_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="481">    <span class="n">doc_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="482"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="483"><span class="w">    </span><span class="sd">"""Fulfil every queued request, one at a time, until none is left; return what happened.</span>
+</span><span data-line="484">
+</span><span data-line="485"><span class="sd">    A failure is recorded on its request, for the page to show, and the next one still runs.</span>
+</span><span data-line="486"><span class="sd">    A request made while this runs is picked up before it exits. ``doc_url`` turns a document</span>
+</span><span data-line="487"><span class="sd">    id into its page, for ``{url}``.</span>
+</span><span data-line="488"><span class="sd">    """</span>
+</span><span data-line="489">    <span class="n">argv</span> <span class="o">=</span> <span class="n">_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span data-line="490">    <span class="n">limit</span> <span class="o">=</span> <span class="n">_daily_limit</span><span class="p">(</span><span class="n">daily_limit</span><span class="p">)</span>
+</span><span data-line="491">    <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="492">    <span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+</span><span data-line="493">    <span class="k">with</span> <span class="n">_only_one_worker</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">folder</span><span class="p">)</span> <span class="k">as</span> <span class="n">mine</span><span class="p">:</span>
+</span><span data-line="494">        <span class="k">if</span> <span class="ow">not</span> <span class="n">mine</span><span class="p">:</span>
+</span><span data-line="495">            <span class="k">return</span> <span class="n">results</span>
+</span><span data-line="496">        <span class="k">while</span> <span class="n">fresh</span> <span class="o">:=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">requests</span><span class="o">.</span><span class="n">ids</span><span class="p">()</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">]:</span>
+</span><span data-line="497">            <span class="k">for</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">fresh</span><span class="p">:</span>
+</span><span data-line="498">                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="499">                <span class="k">try</span><span class="p">:</span>
+</span><span data-line="500">                    <span class="n">happened</span> <span class="o">=</span> <span class="n">_step</span><span class="p">(</span>
+</span><span data-line="501">                        <span class="n">store</span><span class="p">,</span>
+</span><span data-line="502">                        <span class="n">requests</span><span class="p">,</span>
+</span><span data-line="503">                        <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="504">                        <span class="n">argv</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span>
+</span><span data-line="505">                        <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+</span><span data-line="506">                        <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
+</span><span data-line="507">                        <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span><span class="p">,</span>
+</span><span data-line="508">                    <span class="p">)</span>
+</span><span data-line="509">                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># one damaged request must not stop the others</span>
+</span><span data-line="510">                    <span class="n">happened</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="511">                        <span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="512">                        <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span>
+</span><span data-line="513">                        <span class="s2">"error"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)[:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">],</span>
+</span><span data-line="514">                    <span class="p">}</span>
+</span><span data-line="515">                <span class="k">if</span> <span class="n">happened</span><span class="p">:</span>
+</span><span data-line="516">                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">happened</span><span class="p">)</span>
+</span><span data-line="517">    <span class="k">return</span> <span class="n">results</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -678,7 +703,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=6a9d8632"></script>
+      <script src="../../_static/documentation_options.js?v=cee5022b"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
