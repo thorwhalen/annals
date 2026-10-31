@@ -683,13 +683,21 @@ def listen_work(
 ) -> dict:
     """Fulfil the queued overview requests, one at a time (a timer runs this on the server).
 
-    ``command`` makes one overview, with {source}, {minutes} and {out} filled in; by default,
+    ``command`` makes one overview, with {source}, {minutes}, {out} and {url} filled in; by default,
     ``$ANNALS_OVERVIEW_COMMAND``.
     """
     from annals import overview
 
     store, requests = _overviews_here(target=target, to=to)
-    return {"results": overview.work(store, requests, command=command or None)}
+    settings = load_settings(target=target, to=to)
+    return {
+        "results": overview.work(
+            store,
+            requests,
+            command=command or None,
+            doc_url=lambda doc_id: _doc_url(settings, doc_id),
+        )
+    }
 
 
 _dispatch_funcs[:] = [
