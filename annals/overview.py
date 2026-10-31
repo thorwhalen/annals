@@ -454,7 +454,8 @@ def _step(
             minutes=minutes,
             command=argv,
             timeout=timeout,
-            doc_url=doc_url, force=record.get("force") is True,
+            doc_url=doc_url,
+            force=record.get("force") is True,
         )
     except Exception as e:  # recorded for the page; the next request must still run
         return fail(e)
