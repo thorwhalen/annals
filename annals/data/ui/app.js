@@ -693,7 +693,7 @@
      stay on the bar; actions: the menu. Any may be empty. */
   function actionBar(parts) {
     var primary = (parts.primary || []).filter(Boolean).map(function (a) {
-      return h("button", { class: "btn", type: "button", "aria-expanded": a.expanded ? "false" : null, title: a.hint || null, onclick: a.run }, [icon(a.icon), h("span", { class: "lbl" }, [a.label])]);
+      return h("button", { class: "btn", type: "button", "aria-expanded": a.expanded ? (a.expanded === "open" ? "true" : "false") : null, title: a.hint || null, onclick: a.run }, [icon(a.icon), h("span", { class: "lbl" }, [a.label])]);
     });
     var kids = [parts.lead || null].concat(parts.view || [], primary, [actionMenu((parts.actions || []).filter(Boolean))]);
     return h("div", { class: "toolbar actionbar", role: "toolbar", "aria-label": "Page actions" }, kids);
@@ -946,13 +946,14 @@
   /* The Listen button: a spoken overview of this document, made on the server (annals.overview).
      A finished one just plays. Anything else opens a panel, because starting one spends money
      and so names its cost first. */
-  var LISTEN_POLL_MS = 5000;
+  var LISTEN_POLL_MS = 5000, LISTEN_MAX_MISSES = 5;
   function listenAction(m, panel) {
     var ready = m.listen.state === "done" && !m.listen.stale;
-    if (m.listen.state === "queued" || m.listen.state === "running") panel.appendChild(listenPanel(m, m.listen));
-    return { label: ready ? "Play overview" : "Listen", hint: "Hear a few minutes on this document, with its script in sync", icon: "listen", expanded: !ready, run: function (e) {
-      if (ready) return go(BASE + "/d/" + m.listen.overview);
-      var btn = e.currentTarget, open = panel.childNodes.length > 0;
+    var active = m.listen.state === "queued" || m.listen.state === "running";
+    if (active) panel.appendChild(listenPanel(m, m.listen));
+    return { label: ready ? "Play overview" : "Listen", hint: "Hear a few minutes on this document, with its script in sync", icon: "listen", expanded: ready ? false : (active ? "open" : true), run: function (e) {
+      if (m.listen.state === "done" && !m.listen.stale) return go(BASE + "/d/" + m.listen.overview);
+      var btn = e.currentTarget, open = btn.getAttribute("aria-expanded") === "true";
       btn.setAttribute("aria-expanded", String(!open));
       panel.innerHTML = "";
       if (!open) panel.appendChild(listenPanel(m, m.listen));
@@ -961,8 +962,9 @@
   function listenPanel(m, first) {
     var wrap = h("section", { class: "share-panel listen-panel", "aria-label": "Spoken overview" });
     var url = "/docs/" + encodeURIComponent(m.id) + "/overview";
-    var picked = first.minutes;
+    var picked = first.minutes, misses = 0;
     function show(s, note) {
+      m.listen = s;  /* so reopening the panel shows this, not what the page loaded with */
       wrap.innerHTML = "";
       wrap.setAttribute("aria-busy", String(s.state === "queued" || s.state === "running"));
       wrap.appendChild(h("h3", null, ["Listen to this document"]));
@@ -970,12 +972,19 @@
         wrap.appendChild(h("p", { role: "status" }, ["Preparing your " + s.minutes + " minute overview. This takes about 2 minutes, and you can leave this page."]));
         setTimeout(function () {
           if (!wrap.isConnected) return;
-          api(url).then(function (next) { show(next); }).catch(function () { show(s, "Could not check on it. Trying again."); });
+          api(url).then(function (next) { misses = 0; show(next); }).catch(function (e) {
+            misses += 1;
+            if (misses < LISTEN_MAX_MISSES) return show(s, "Could not check on it. Trying again.");
+            wrap.setAttribute("aria-busy", "false");
+            wrap.innerHTML = "";
+            wrap.appendChild(h("p", { class: "err", role: "alert" }, ["Stopped checking on it: " + (e.message || e) + ". Reload this page to look again."]));
+          });
         }, LISTEN_POLL_MS);
         if (note) wrap.appendChild(h("p", { class: "muted" }, [note]));
         return;
       }
       if (s.state === "done") wrap.appendChild(h("p", null, [link(BASE + "/d/" + s.overview, "Play overview", "btn"), s.stale ? " This document has changed since it was made." : ""]));
+      if (s.state === "done" && !s.stale) return;  /* current, so there is nothing to pay for */
       if (s.state === "failed") wrap.appendChild(h("p", { class: "err", role: "alert" }, ["That did not work: " + (s.error || "no reason given")]));
       if (note) wrap.appendChild(h("p", { class: "err", role: "alert" }, [note]));
       var cost = h("p", { class: "muted" });

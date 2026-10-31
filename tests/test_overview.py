@@ -2,6 +2,7 @@
 
 import stat
 import sys
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -155,7 +156,7 @@ def test_a_binned_overview_is_gone_from_the_button(client, store, doc, requests,
 
 
 def test_a_request_left_running_belonged_to_a_dead_worker(store, doc, requests, tmp_path):
-    requests.put(doc, {"state": "running", "minutes": 3, "version": 1})
+    requests.put(doc, {"state": "running", "minutes": 3, "version": 1, "started": overview._now()})
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
     assert requests.get(doc)["state"] == "failed"
 
@@ -185,9 +186,127 @@ def test_the_request_files_do_not_show_up_as_documents(client, store, doc):
 
 def test_a_remote_store_cannot_offer_it():
     from annals.api import mk_api
+    from annals.target import SshTarget
 
-    class Remote:
-        target = object()
-
+    remote = DocStore(SshTarget("somehost", "/data"), settle=False)
     with pytest.raises(ValueError, match="on this machine"):
-        mk_api(store=Remote(), overviews=True)
+        mk_api(store=remote, overviews=True)
+
+
+def test_float_and_bool_minutes_are_refused(client, doc):
+    for minutes in (3.0, 5.0, True):
+        assert client.post(f"/docs/{doc}/overview", json={"minutes": minutes}).status_code == 400
+
+
+def test_a_current_overview_is_not_paid_for_twice(client, store, doc, requests, tmp_path):
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    overview.work(store, requests, command=_maker(tmp_path, GOOD))
+    first = requests.get(doc)["overview"]
+    again = client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()
+    assert again["state"] == "done" and again["overview"] == first
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3, "force": True}).json()["state"] == "queued"
+
+
+def test_a_crash_after_publishing_does_not_pay_again(store, doc, requests, tmp_path):
+    overview.request(store, requests, doc, minutes=3)
+    overview.work(store, requests, command=_maker(tmp_path, GOOD))
+    made = requests.get(doc)["overview"]
+    # As if the worker had died between publishing and recording it.
+    requests.put(doc, {"state": "queued", "minutes": 3, "requested": overview._now()})
+    marker = tmp_path / "ran"
+    overview.work(store, requests, command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD))
+    assert not marker.exists()
+    assert requests.get(doc)["overview"] == made
+    assert sum(overview.TAG in m.get("tags", []) for m in store.list()) == 1
+
+
+def test_the_daily_limit_stops_the_spending(store, requests, tmp_path):
+    docs = [store.publish(text=f"# D{i}\n\nText.", title=f"D{i}")["id"] for i in range(3)]
+    for d in docs:
+        overview.request(store, requests, d, minutes=3)
+    results = overview.work(store, requests, command=_maker(tmp_path, GOOD), daily_limit=2)
+    assert [r["state"] for r in results] == ["done", "done", "failed"]
+    assert "limit" in results[2]["error"]
+
+
+def test_a_request_made_during_a_run_is_picked_up(store, doc, requests, tmp_path):
+    other = store.publish(text="# Other\n\nMore.", title="Other")["id"]
+    overview.request(store, requests, doc, minutes=3)
+    body = (
+        "import json, os\n"
+        f"p = {str(requests.folder / other)!r} + '.json'\n"
+        "if not os.path.exists(p):\n"
+        f"    json.dump({{'state': 'queued', 'minutes': 3, 'requested': {overview._now()!r}}}, open(p, 'w'))\n"
+        + GOOD
+    )
+    results = overview.work(store, requests, command=_maker(tmp_path, body))
+    assert {r["doc"] for r in results} == {doc, other}
+
+
+def test_a_request_nobody_fulfilled_expires_and_can_be_retried(client, store, doc, requests, tmp_path):
+    old = "2020-01-01T00:00:00+00:00"
+    requests.put(doc, {"state": "queued", "minutes": 3, "requested": old})
+    seen = client.get(f"/docs/{doc}/overview").json()
+    assert seen["state"] == "failed" and "no worker" in seen["error"]
+    marker = tmp_path / "ran"
+    overview.work(store, requests, command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD))
+    assert not marker.exists(), "an expired request must not spend money when a worker wakes"
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "queued"
+
+
+def test_a_dead_workers_request_can_be_retried_without_a_worker(client, doc, requests):
+    requests.put(doc, {"state": "running", "minutes": 3, "started": "2020-01-01T00:00:00+00:00"})
+    assert client.get(f"/docs/{doc}/overview").json()["state"] == "failed"
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "queued"
+
+
+@pytest.mark.parametrize("junk", ["[1]", "7", '"x"', '{"state": "done"}', '{"state": "done", "overview": 3}'])
+def test_a_damaged_record_breaks_nothing(client, store, doc, requests, tmp_path, junk):
+    other = store.publish(text="# Other\n\nMore.", title="Other")["id"]
+    requests.folder.mkdir(parents=True, exist_ok=True)
+    (requests.folder / f"{doc}.json").write_text(junk)
+    assert client.get(f"/docs/{doc}").status_code == 200
+    assert client.get(f"/docs/{doc}/overview").json()["state"] == "none"
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).status_code == 200
+    overview.request(store, requests, other, minutes=3)
+    overview.work(store, requests, command=_maker(tmp_path, GOOD))
+    assert requests.get(other)["state"] == "done"
+
+
+def test_the_version_recorded_is_the_one_spoken(client, store, doc, requests, tmp_path):
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    store.publish(text="# Hello\n\nChanged first.", title="Hello", replace=doc)
+    overview.work(store, requests, command=_maker(tmp_path, GOOD))
+    state = client.get(f"/docs/{doc}/overview").json()
+    assert state["state"] == "done" and not state["stale"]
+    assert "Changed first." in store.read_text(state["overview"])
+
+
+@pytest.mark.parametrize("bad", [["x", "{{source}}", "{{out}}"], ["x", "{source}", "{out}", "{nope}"], ["x", "{source}", '{"a":1}', "{out}"]])
+def test_a_bad_command_fails_before_any_money_is_spent(store, requests, bad):
+    with pytest.raises(ValueError):
+        overview.work(store, requests, command=bad)
+
+
+def test_a_timeout_stops_the_children_too(store, doc, requests, tmp_path):
+    marker = tmp_path / "grandchild-ran"
+    child = tmp_path / "child.py"
+    child.write_text(f"import time\ntime.sleep(2)\nopen({str(marker)!r}, 'w')\n")
+    body = f"import subprocess, sys, time\nsubprocess.Popen([sys.executable, {str(child)!r}])\ntime.sleep(30)\n"
+    overview.request(store, requests, doc, minutes=3)
+    overview.work(store, requests, command=_maker(tmp_path, body), timeout=0.5)
+    assert "gave up" in requests.get(doc)["error"]
+    time.sleep(2.5)
+    assert not marker.exists()
+
+
+def test_a_daemon_holding_the_output_does_not_lose_a_paid_result(store, doc, requests, tmp_path):
+    body = "import subprocess, sys\nsubprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n" + GOOD
+    overview.request(store, requests, doc, minutes=3)
+    began = time.monotonic()
+    overview.work(store, requests, command=_maker(tmp_path, body), timeout=15)
+    assert requests.get(doc)["state"] == "done" and time.monotonic() - began < 10
+
+
+def test_a_page_whose_head_never_closes_still_has_text():
+    assert overview.html_to_text("<html><head><title>T</title><body><p>Body") == "Body"

@@ -116,7 +116,7 @@ annals listen-work                 # fulfils what is queued, one at a time
 annals listen <doc-id> --minutes 3 # asks for one from the command line, as the button does
 ```
 
-Run `annals listen-work` from a service that watches `overviews/` under the data root. `annals.overview` has the details.
+Run `annals listen-work` from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (`ANNALS_OVERVIEW_DAILY_LIMIT`). `annals.overview` has the details.
 
 ## Sharing one page
 

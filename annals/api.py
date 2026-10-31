@@ -52,6 +52,7 @@ from fastapi.staticfiles import StaticFiles
 from annals import overview
 from annals.auth import Authorizer, authorizer_from_env, no_auth
 from annals.overview import Requests
+from annals.target import LocalTarget
 from annals.config import (
     APP_NAME,
     DFLT_SERVE_PORT,
@@ -264,7 +265,7 @@ def mk_api(
     :mod:`annals.overview`.
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
-    if overviews and getattr(store.target, "root", None) is None:
+    if overviews and not isinstance(store.target, LocalTarget):
         raise ValueError("overviews need a data root on this machine")
     requests = Requests(store.target.root) if overviews else None
     shares = Shares(store)
@@ -339,10 +340,16 @@ def mk_api(
 
     @api.post("/docs/{doc_id}/overview", dependencies=[Depends(_require_same_origin)])
     def request_overview(doc_id: str, body: dict = Body(default={})) -> dict:
-        """Ask for a spoken overview ``{"minutes": 3|5|7}``. This spends money."""
+        """Ask for a spoken overview ``{"minutes": 3|5|7, "force"?: true}``. This spends money.
+
+        A current overview is returned as it is, unless ``force``.
+        """
         _spoken(doc_id)
         try:
-            return overview.request(store, requests, doc_id, minutes=body.get("minutes", overview.DFLT_MINUTES))
+            return overview.request(
+                store, requests, doc_id,
+                minutes=body.get("minutes", overview.DFLT_MINUTES), force=body.get("force") is True,
+            )  # fmt: skip
         except ValueError as e:
             raise HTTPException(400, str(e))
 
