@@ -223,261 +223,275 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="91">
 <div class="viewcode-block" id="source_scope">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.source_scope">[docs]</a>
-</span><span data-line="92"><span class="k">def</span><span class="w"> </span><span class="nf">source_scope</span><span class="p">(</span><span class="n">read_text</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Mapping</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-</span><span data-line="93"><span class="w">    </span><span class="sd">"""``meta -&gt; files``: a document's source pages and the files they show, for a share.</span>
-</span><span data-line="94">
-</span><span data-line="95"><span class="sd">    ``read_text(doc_id, rel)`` reads one file. A notebook share made with this (the</span>
-</span><span data-line="96"><span class="sd">    ``files_of`` of :meth:`annals.share.Shares.create`) reaches nothing else of a folder.</span>
-</span><span data-line="97"><span class="sd">    """</span>
-</span><span data-line="98">
-</span><span data-line="99">    <span class="k">def</span><span class="w"> </span><span class="nf">files_of</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span data-line="100">        <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"files"</span><span class="p">,</span> <span class="p">[]))</span>
-</span><span data-line="101">        <span class="n">keep</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">source_files</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">files</span><span class="p">))</span>
-</span><span data-line="102">        <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">keep</span><span class="p">):</span>
-</span><span data-line="103">            <span class="k">try</span><span class="p">:</span>
-</span><span data-line="104">                <span class="n">text</span> <span class="o">=</span> <span class="n">read_text</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">rel</span><span class="p">)</span>
-</span><span data-line="105">            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">UnicodeDecodeError</span><span class="p">):</span>
-</span><span data-line="106">                <span class="k">continue</span>
-</span><span data-line="107">            <span class="n">keep</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">references</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">rel</span><span class="p">),</span> <span class="n">from_dir</span><span class="o">=</span><span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">))[</span><span class="s2">"files"</span><span class="p">])</span>
-</span><span data-line="108">        <span class="k">return</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">keep</span><span class="p">]</span>
-</span><span data-line="109">
-</span><span data-line="110">    <span class="k">return</span> <span class="n">files_of</span></div>
-
+</span><span data-line="92"><span class="k">def</span><span class="w"> </span><span class="nf">source_scope</span><span class="p">(</span>
+</span><span data-line="93">    <span class="n">read_text</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
+</span><span data-line="94"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Mapping</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+</span><span data-line="95"><span class="w">    </span><span class="sd">"""``meta -&gt; files``: a document's source pages and the files they show, for a share.</span>
+</span><span data-line="96">
+</span><span data-line="97"><span class="sd">    ``read_text(doc_id, rel)`` reads one file. A notebook share made with this (the</span>
+</span><span data-line="98"><span class="sd">    ``files_of`` of :meth:`annals.share.Shares.create`) reaches nothing else of a folder.</span>
+</span><span data-line="99"><span class="sd">    """</span>
+</span><span data-line="100">
+</span><span data-line="101">    <span class="k">def</span><span class="w"> </span><span class="nf">files_of</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="102">        <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"files"</span><span class="p">,</span> <span class="p">[]))</span>
+</span><span data-line="103">        <span class="n">keep</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">source_files</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">files</span><span class="p">))</span>
+</span><span data-line="104">        <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">keep</span><span class="p">):</span>
+</span><span data-line="105">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="106">                <span class="n">text</span> <span class="o">=</span> <span class="n">read_text</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">rel</span><span class="p">)</span>
+</span><span data-line="107">            <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">UnicodeDecodeError</span><span class="p">):</span>
+</span><span data-line="108">                <span class="k">continue</span>
+</span><span data-line="109">            <span class="n">keep</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">references</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">rel</span><span class="p">),</span> <span class="n">from_dir</span><span class="o">=</span><span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">))[</span><span class="s2">"files"</span><span class="p">])</span>
+</span><span data-line="110">        <span class="k">return</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">keep</span><span class="p">]</span>
 </span><span data-line="111">
-</span><span data-line="112">
+</span><span data-line="112">    <span class="k">return</span> <span class="n">files_of</span></div>
+
+</span><span data-line="113">
+</span><span data-line="114">
 <div class="viewcode-block" id="source_title">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.source_title">[docs]</a>
-</span><span data-line="113"><span class="k">def</span><span class="w"> </span><span class="nf">source_title</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">several</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="114"><span class="w">    </span><span class="sd">"""The source's name in the notebook: the document's title, plus the file if it has several."""</span>
-</span><span data-line="115">    <span class="n">title</span> <span class="o">=</span> <span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">rel</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-</span><span data-line="116">    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> · </span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">several</span> <span class="k">else</span> <span class="n">title</span></div>
+</span><span data-line="115"><span class="k">def</span><span class="w"> </span><span class="nf">source_title</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">several</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="116"><span class="w">    </span><span class="sd">"""The source's name in the notebook: the document's title, plus the file if it has several."""</span>
+</span><span data-line="117">    <span class="n">title</span> <span class="o">=</span> <span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">rel</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+</span><span data-line="118">    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2"> · </span><span class="si">{</span><span class="n">rel</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">several</span> <span class="k">else</span> <span class="n">title</span></div>
 
-</span><span data-line="117">
-</span><span data-line="118">
+</span><span data-line="119">
+</span><span data-line="120">
 <div class="viewcode-block" id="source_url">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.source_url">[docs]</a>
-</span><span data-line="119"><span class="k">def</span><span class="w"> </span><span class="nf">source_url</span><span class="p">(</span><span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="120"><span class="w">    </span><span class="sd">"""``&lt;link&gt;/source/&lt;doc id&gt;/&lt;file&gt;`` (``link``: the share's, with or without a slash)."""</span>
-</span><span data-line="121">    <span class="n">rel_q</span> <span class="o">=</span> <span class="s2">"/"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">quote</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">))</span>
-</span><span data-line="122">    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">SOURCE_SEGMENT</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">rel_q</span><span class="si">}</span><span class="s2">"</span></div>
+</span><span data-line="121"><span class="k">def</span><span class="w"> </span><span class="nf">source_url</span><span class="p">(</span><span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="122"><span class="w">    </span><span class="sd">"""``&lt;link&gt;/source/&lt;doc id&gt;/&lt;file&gt;`` (``link``: the share's, with or without a slash)."""</span>
+</span><span data-line="123">    <span class="n">rel_q</span> <span class="o">=</span> <span class="s2">"/"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">quote</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">))</span>
+</span><span data-line="124">    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">SOURCE_SEGMENT</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">rel_q</span><span class="si">}</span><span class="s2">"</span></div>
 
-</span><span data-line="123">
-</span><span data-line="124">
+</span><span data-line="125">
+</span><span data-line="126">
 <div class="viewcode-block" id="notebook_sources">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.notebook_sources">[docs]</a>
-</span><span data-line="125"><span class="k">def</span><span class="w"> </span><span class="nf">notebook_sources</span><span class="p">(</span>
-</span><span data-line="126">    <span class="n">scope</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="o">*</span><span class="p">,</span> <span class="n">link</span><span class="p">:</span> <span class="nb">str</span>
-</span><span data-line="127"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="128"><span class="w">    </span><span class="sd">"""One row per source file of ``scope`` (``(meta, files)`` pairs, in the share's order).</span>
-</span><span data-line="129">
-</span><span data-line="130"><span class="sd">    ``{"sources": [{"doc", "file", "title", "url"}], "skipped": [{"doc", "title",</span>
-</span><span data-line="131"><span class="sd">    "kinds"}]}``; ``skipped`` names the documents with nothing a notebook can take from a</span>
-</span><span data-line="132"><span class="sd">    link (only images, audio, pdf...), so the page can say why they are missing.</span>
-</span><span data-line="133"><span class="sd">    """</span>
-</span><span data-line="134">    <span class="n">sources</span><span class="p">,</span> <span class="n">skipped</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
-</span><span data-line="135">    <span class="k">for</span> <span class="n">meta</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">scope</span><span class="p">:</span>
-</span><span data-line="136">        <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
-</span><span data-line="137">        <span class="n">rels</span> <span class="o">=</span> <span class="n">source_files</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
-</span><span data-line="138">        <span class="k">if</span> <span class="ow">not</span> <span class="n">rels</span><span class="p">:</span>
-</span><span data-line="139">            <span class="n">kinds</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">kind_of</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">})</span>
-</span><span data-line="140">            <span class="n">skipped</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="s2">"title"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">),</span> <span class="s2">"kinds"</span><span class="p">:</span> <span class="n">kinds</span><span class="p">})</span>
-</span><span data-line="141">            <span class="k">continue</span>
-</span><span data-line="142">        <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">rels</span><span class="p">:</span>
-</span><span data-line="143">            <span class="n">sources</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span data-line="144">                <span class="p">{</span>
-</span><span data-line="145">                    <span class="s2">"doc"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="146">                    <span class="s2">"file"</span><span class="p">:</span> <span class="n">rel</span><span class="p">,</span>
-</span><span data-line="147">                    <span class="s2">"title"</span><span class="p">:</span> <span class="n">source_title</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">rel</span><span class="p">,</span> <span class="n">several</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">rels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">),</span>
-</span><span data-line="148">                    <span class="s2">"url"</span><span class="p">:</span> <span class="n">source_url</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">rel</span><span class="p">),</span>
-</span><span data-line="149">                <span class="p">}</span>
-</span><span data-line="150">            <span class="p">)</span>
-</span><span data-line="151">    <span class="k">return</span> <span class="p">{</span><span class="s2">"sources"</span><span class="p">:</span> <span class="n">sources</span><span class="p">,</span> <span class="s2">"skipped"</span><span class="p">:</span> <span class="n">skipped</span><span class="p">}</span></div>
+</span><span data-line="127"><span class="k">def</span><span class="w"> </span><span class="nf">notebook_sources</span><span class="p">(</span>
+</span><span data-line="128">    <span class="n">scope</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span> <span class="o">*</span><span class="p">,</span> <span class="n">link</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="129"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="130"><span class="w">    </span><span class="sd">"""One row per source file of ``scope`` (``(meta, files)`` pairs, in the share's order).</span>
+</span><span data-line="131">
+</span><span data-line="132"><span class="sd">    ``{"sources": [{"doc", "file", "title", "url"}], "skipped": [{"doc", "title",</span>
+</span><span data-line="133"><span class="sd">    "kinds"}]}``; ``skipped`` names the documents with nothing a notebook can take from a</span>
+</span><span data-line="134"><span class="sd">    link (only images, audio, pdf...), so the page can say why they are missing.</span>
+</span><span data-line="135"><span class="sd">    """</span>
+</span><span data-line="136">    <span class="n">sources</span><span class="p">,</span> <span class="n">skipped</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>
+</span><span data-line="137">    <span class="k">for</span> <span class="n">meta</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">scope</span><span class="p">:</span>
+</span><span data-line="138">        <span class="n">files</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+</span><span data-line="139">        <span class="n">rels</span> <span class="o">=</span> <span class="n">source_files</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+</span><span data-line="140">        <span class="k">if</span> <span class="ow">not</span> <span class="n">rels</span><span class="p">:</span>
+</span><span data-line="141">            <span class="n">kinds</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">kind_of</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span><span class="p">})</span>
+</span><span data-line="142">            <span class="n">skipped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="143">                <span class="p">{</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="s2">"title"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">),</span> <span class="s2">"kinds"</span><span class="p">:</span> <span class="n">kinds</span><span class="p">}</span>
+</span><span data-line="144">            <span class="p">)</span>
+</span><span data-line="145">            <span class="k">continue</span>
+</span><span data-line="146">        <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">rels</span><span class="p">:</span>
+</span><span data-line="147">            <span class="n">sources</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="148">                <span class="p">{</span>
+</span><span data-line="149">                    <span class="s2">"doc"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="150">                    <span class="s2">"file"</span><span class="p">:</span> <span class="n">rel</span><span class="p">,</span>
+</span><span data-line="151">                    <span class="s2">"title"</span><span class="p">:</span> <span class="n">source_title</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">rel</span><span class="p">,</span> <span class="n">several</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">rels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">),</span>
+</span><span data-line="152">                    <span class="s2">"url"</span><span class="p">:</span> <span class="n">source_url</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">rel</span><span class="p">),</span>
+</span><span data-line="153">                <span class="p">}</span>
+</span><span data-line="154">            <span class="p">)</span>
+</span><span data-line="155">    <span class="k">return</span> <span class="p">{</span><span class="s2">"sources"</span><span class="p">:</span> <span class="n">sources</span><span class="p">,</span> <span class="s2">"skipped"</span><span class="p">:</span> <span class="n">skipped</span><span class="p">}</span></div>
 
-</span><span data-line="152">
-</span><span data-line="153">
-</span><span data-line="154"><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-</span><span data-line="155"><span class="k">def</span><span class="w"> </span><span class="nf">_markdown_it</span><span class="p">():</span>
-</span><span data-line="156">    <span class="k">try</span><span class="p">:</span>
-</span><span data-line="157">        <span class="kn">from</span><span class="w"> </span><span class="nn">markdown_it</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarkdownIt</span>
-</span><span data-line="158">    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-</span><span data-line="159">        <span class="k">return</span> <span class="kc">None</span>
-</span><span data-line="160">    <span class="c1"># raw html in the markdown is shown as text, never run: the page is public</span>
-</span><span data-line="161">    <span class="k">return</span> <span class="n">MarkdownIt</span><span class="p">(</span><span class="s2">"commonmark"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"html"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"linkify"</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span>
-</span><span data-line="162">        <span class="p">[</span><span class="s2">"table"</span><span class="p">,</span> <span class="s2">"strikethrough"</span><span class="p">]</span>
-</span><span data-line="163">    <span class="p">)</span>
-</span><span data-line="164">
-</span><span data-line="165">
-</span><span data-line="166"><span class="k">def</span><span class="w"> </span><span class="nf">_default_markdown_renderer</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="167">    <span class="n">md</span> <span class="o">=</span> <span class="n">_markdown_it</span><span class="p">()</span>
-</span><span data-line="168">    <span class="k">if</span> <span class="n">md</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="169">        <span class="k">return</span> <span class="kc">None</span>
-</span><span data-line="170">
-</span><span data-line="171">    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="172">        <span class="n">tokens</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-</span><span data-line="173">        <span class="k">if</span> <span class="n">rewrite_url</span><span class="p">:</span>
-</span><span data-line="174">            <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
-</span><span data-line="175">                <span class="k">if</span> <span class="n">tok</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
-</span><span data-line="176">                    <span class="n">tok</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="n">_rewritten</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">children</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">)</span>
-</span><span data-line="177">        <span class="k">return</span> <span class="n">md</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">md</span><span class="o">.</span><span class="n">options</span><span class="p">,</span> <span class="p">{})</span>
-</span><span data-line="178">
-</span><span data-line="179">    <span class="k">return</span> <span class="n">render</span>
-</span><span data-line="180">
-</span><span data-line="181">
-</span><span data-line="182"><span class="k">def</span><span class="w"> </span><span class="nf">_rewritten</span><span class="p">(</span><span class="n">children</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-</span><span data-line="183"><span class="w">    </span><span class="sd">"""Inline tokens with every link and image passed through ``rewrite_url``.</span>
+</span><span data-line="156">
+</span><span data-line="157">
+</span><span data-line="158"><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</span><span data-line="159"><span class="k">def</span><span class="w"> </span><span class="nf">_markdown_it</span><span class="p">():</span>
+</span><span data-line="160">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="161">        <span class="kn">from</span><span class="w"> </span><span class="nn">markdown_it</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarkdownIt</span>
+</span><span data-line="162">    <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+</span><span data-line="163">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="164">    <span class="c1"># raw html in the markdown is shown as text, never run: the page is public</span>
+</span><span data-line="165">    <span class="k">return</span> <span class="n">MarkdownIt</span><span class="p">(</span><span class="s2">"commonmark"</span><span class="p">,</span> <span class="p">{</span><span class="s2">"html"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"linkify"</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span>
+</span><span data-line="166">        <span class="p">[</span><span class="s2">"table"</span><span class="p">,</span> <span class="s2">"strikethrough"</span><span class="p">]</span>
+</span><span data-line="167">    <span class="p">)</span>
+</span><span data-line="168">
+</span><span data-line="169">
+</span><span data-line="170"><span class="k">def</span><span class="w"> </span><span class="nf">_default_markdown_renderer</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="171">    <span class="n">md</span> <span class="o">=</span> <span class="n">_markdown_it</span><span class="p">()</span>
+</span><span data-line="172">    <span class="k">if</span> <span class="n">md</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="173">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="174">
+</span><span data-line="175">    <span class="k">def</span><span class="w"> </span><span class="nf">render</span><span class="p">(</span>
+</span><span data-line="176">        <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="177">    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="178">        <span class="n">tokens</span> <span class="o">=</span> <span class="n">md</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</span><span data-line="179">        <span class="k">if</span> <span class="n">rewrite_url</span><span class="p">:</span>
+</span><span data-line="180">            <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">:</span>
+</span><span data-line="181">                <span class="k">if</span> <span class="n">tok</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+</span><span data-line="182">                    <span class="n">tok</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="n">_rewritten</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">children</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">)</span>
+</span><span data-line="183">        <span class="k">return</span> <span class="n">md</span><span class="o">.</span><span class="n">renderer</span><span class="o">.</span><span class="n">render</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">md</span><span class="o">.</span><span class="n">options</span><span class="p">,</span> <span class="p">{})</span>
 </span><span data-line="184">
-</span><span data-line="185"><span class="sd">    A link it refuses keeps its words and loses its target, except an autolink, whose</span>
-</span><span data-line="186"><span class="sd">    words are the target: they become :data:`annals.share.REMOVED_LINK`. An image it</span>
-</span><span data-line="187"><span class="sd">    refuses goes.</span>
-</span><span data-line="188"><span class="sd">    """</span>
-</span><span data-line="189">    <span class="n">out</span><span class="p">,</span> <span class="n">dropped</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>  <span class="c1"># dropped: one flag per open link, so its close goes too</span>
-</span><span data-line="190">    <span class="n">hiding</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># inside a refused autolink</span>
-</span><span data-line="191">    <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
-</span><span data-line="192">        <span class="k">if</span> <span class="n">tok</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"link_open"</span><span class="p">:</span>
-</span><span data-line="193">            <span class="n">new</span> <span class="o">=</span> <span class="n">rewrite_url</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">attrGet</span><span class="p">(</span><span class="s2">"href"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
-</span><span data-line="194">            <span class="n">dropped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="195">            <span class="k">if</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="196">                <span class="n">hiding</span> <span class="o">=</span> <span class="n">tok</span><span class="o">.</span><span class="n">markup</span> <span class="o">==</span> <span class="s2">"autolink"</span>
-</span><span data-line="197">                <span class="k">continue</span>
-</span><span data-line="198">            <span class="n">tok</span><span class="o">.</span><span class="n">attrSet</span><span class="p">(</span><span class="s2">"href"</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
-</span><span data-line="199">        <span class="k">elif</span> <span class="n">tok</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"link_close"</span><span class="p">:</span>
-</span><span data-line="200">            <span class="k">if</span> <span class="n">dropped</span> <span class="ow">and</span> <span class="n">dropped</span><span class="o">.</span><span class="n">pop</span><span class="p">():</span>
-</span><span data-line="201">                <span class="k">if</span> <span class="n">hiding</span><span class="p">:</span>
-</span><span data-line="202">                    <span class="n">tok</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">tok</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">tok</span><span class="o">.</span><span class="n">nesting</span><span class="p">,</span> <span class="n">tok</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="s2">"text"</span><span class="p">,</span> <span class="s2">""</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">REMOVED_LINK</span>
-</span><span data-line="203">                    <span class="n">hiding</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="204">                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
-</span><span data-line="205">                <span class="k">continue</span>
-</span><span data-line="206">        <span class="k">elif</span> <span class="n">hiding</span><span class="p">:</span>
-</span><span data-line="207">            <span class="k">continue</span>
-</span><span data-line="208">        <span class="k">elif</span> <span class="n">tok</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"image"</span><span class="p">:</span>
-</span><span data-line="209">            <span class="n">new</span> <span class="o">=</span> <span class="n">rewrite_url</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">attrGet</span><span class="p">(</span><span class="s2">"src"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
-</span><span data-line="210">            <span class="k">if</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="211">                <span class="k">continue</span>
-</span><span data-line="212">            <span class="n">tok</span><span class="o">.</span><span class="n">attrSet</span><span class="p">(</span><span class="s2">"src"</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
-</span><span data-line="213">        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
-</span><span data-line="214">    <span class="k">return</span> <span class="n">out</span>
-</span><span data-line="215">
-</span><span data-line="216">
+</span><span data-line="185">    <span class="k">return</span> <span class="n">render</span>
+</span><span data-line="186">
+</span><span data-line="187">
+</span><span data-line="188"><span class="k">def</span><span class="w"> </span><span class="nf">_rewritten</span><span class="p">(</span><span class="n">children</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+</span><span data-line="189"><span class="w">    </span><span class="sd">"""Inline tokens with every link and image passed through ``rewrite_url``.</span>
+</span><span data-line="190">
+</span><span data-line="191"><span class="sd">    A link it refuses keeps its words and loses its target, except an autolink, whose</span>
+</span><span data-line="192"><span class="sd">    words are the target: they become :data:`annals.share.REMOVED_LINK`. An image it</span>
+</span><span data-line="193"><span class="sd">    refuses goes.</span>
+</span><span data-line="194"><span class="sd">    """</span>
+</span><span data-line="195">    <span class="n">out</span><span class="p">,</span> <span class="n">dropped</span> <span class="o">=</span> <span class="p">[],</span> <span class="p">[]</span>  <span class="c1"># dropped: one flag per open link, so its close goes too</span>
+</span><span data-line="196">    <span class="n">hiding</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># inside a refused autolink</span>
+</span><span data-line="197">    <span class="k">for</span> <span class="n">tok</span> <span class="ow">in</span> <span class="n">children</span><span class="p">:</span>
+</span><span data-line="198">        <span class="k">if</span> <span class="n">tok</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"link_open"</span><span class="p">:</span>
+</span><span data-line="199">            <span class="n">new</span> <span class="o">=</span> <span class="n">rewrite_url</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">attrGet</span><span class="p">(</span><span class="s2">"href"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+</span><span data-line="200">            <span class="n">dropped</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="201">            <span class="k">if</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="202">                <span class="n">hiding</span> <span class="o">=</span> <span class="n">tok</span><span class="o">.</span><span class="n">markup</span> <span class="o">==</span> <span class="s2">"autolink"</span>
+</span><span data-line="203">                <span class="k">continue</span>
+</span><span data-line="204">            <span class="n">tok</span><span class="o">.</span><span class="n">attrSet</span><span class="p">(</span><span class="s2">"href"</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+</span><span data-line="205">        <span class="k">elif</span> <span class="n">tok</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"link_close"</span><span class="p">:</span>
+</span><span data-line="206">            <span class="k">if</span> <span class="n">dropped</span> <span class="ow">and</span> <span class="n">dropped</span><span class="o">.</span><span class="n">pop</span><span class="p">():</span>
+</span><span data-line="207">                <span class="k">if</span> <span class="n">hiding</span><span class="p">:</span>
+</span><span data-line="208">                    <span class="n">tok</span><span class="o">.</span><span class="n">type</span><span class="p">,</span> <span class="n">tok</span><span class="o">.</span><span class="n">tag</span><span class="p">,</span> <span class="n">tok</span><span class="o">.</span><span class="n">nesting</span><span class="p">,</span> <span class="n">tok</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="209">                        <span class="s2">"text"</span><span class="p">,</span>
+</span><span data-line="210">                        <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="211">                        <span class="mi">0</span><span class="p">,</span>
+</span><span data-line="212">                        <span class="n">REMOVED_LINK</span><span class="p">,</span>
+</span><span data-line="213">                    <span class="p">)</span>
+</span><span data-line="214">                    <span class="n">hiding</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="215">                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
+</span><span data-line="216">                <span class="k">continue</span>
+</span><span data-line="217">        <span class="k">elif</span> <span class="n">hiding</span><span class="p">:</span>
+</span><span data-line="218">            <span class="k">continue</span>
+</span><span data-line="219">        <span class="k">elif</span> <span class="n">tok</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"image"</span><span class="p">:</span>
+</span><span data-line="220">            <span class="n">new</span> <span class="o">=</span> <span class="n">rewrite_url</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">attrGet</span><span class="p">(</span><span class="s2">"src"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+</span><span data-line="221">            <span class="k">if</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="222">                <span class="k">continue</span>
+</span><span data-line="223">            <span class="n">tok</span><span class="o">.</span><span class="n">attrSet</span><span class="p">(</span><span class="s2">"src"</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+</span><span data-line="224">        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tok</span><span class="p">)</span>
+</span><span data-line="225">    <span class="k">return</span> <span class="n">out</span>
+</span><span data-line="226">
+</span><span data-line="227">
 <div class="viewcode-block" id="markdown_html">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.markdown_html">[docs]</a>
-</span><span data-line="217"><span class="k">def</span><span class="w"> </span><span class="nf">markdown_html</span><span class="p">(</span>
-</span><span data-line="218">    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="219">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="220">    <span class="n">rewrite_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="221">    <span class="n">render</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="222"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="223"><span class="w">    </span><span class="sd">"""``text`` (markdown) as html; every link and image through ``rewrite_url``.</span>
-</span><span data-line="224">
-</span><span data-line="225"><span class="sd">    ``render(text, rewrite_url)`` overrides the default renderer. Without one (no</span>
-</span><span data-line="226"><span class="sd">    ``markdown-it-py``) the text is escaped in a ``&lt;pre&gt;``: no markup, so no link.</span>
-</span><span data-line="227"><span class="sd">    """</span>
-</span><span data-line="228">    <span class="n">render</span> <span class="o">=</span> <span class="n">render</span> <span class="ow">or</span> <span class="n">_default_markdown_renderer</span><span class="p">()</span>
-</span><span data-line="229">    <span class="k">if</span> <span class="n">render</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="230">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"&lt;pre&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/pre&gt;"</span>
-</span><span data-line="231">    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">)</span></div>
+</span><span data-line="228"><span class="k">def</span><span class="w"> </span><span class="nf">markdown_html</span><span class="p">(</span>
+</span><span data-line="229">    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="230">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="231">    <span class="n">rewrite_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="232">    <span class="n">render</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="233"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="234"><span class="w">    </span><span class="sd">"""``text`` (markdown) as html; every link and image through ``rewrite_url``.</span>
+</span><span data-line="235">
+</span><span data-line="236"><span class="sd">    ``render(text, rewrite_url)`` overrides the default renderer. Without one (no</span>
+</span><span data-line="237"><span class="sd">    ``markdown-it-py``) the text is escaped in a ``&lt;pre&gt;``: no markup, so no link.</span>
+</span><span data-line="238"><span class="sd">    """</span>
+</span><span data-line="239">    <span class="n">render</span> <span class="o">=</span> <span class="n">render</span> <span class="ow">or</span> <span class="n">_default_markdown_renderer</span><span class="p">()</span>
+</span><span data-line="240">    <span class="k">if</span> <span class="n">render</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="241">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"&lt;pre&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/pre&gt;"</span>
+</span><span data-line="242">    <span class="k">return</span> <span class="n">render</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="p">)</span></div>
 
-</span><span data-line="232">
-</span><span data-line="233">
+</span><span data-line="243">
+</span><span data-line="244">
 <div class="viewcode-block" id="source_link_rewriter">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.source_link_rewriter">[docs]</a>
-</span><span data-line="234"><span class="k">def</span><span class="w"> </span><span class="nf">source_link_rewriter</span><span class="p">(</span>
-</span><span data-line="235">    <span class="n">decide</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span>
-</span><span data-line="236">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="237">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="238">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="239">    <span class="n">from_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="240">    <span class="n">sources</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-</span><span data-line="241"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-</span><span data-line="242"><span class="w">    </span><span class="sd">"""``url -&gt; url | None`` for a source page, which has no ``&lt;base&gt;``.</span>
-</span><span data-line="243">
-</span><span data-line="244"><span class="sd">    ``decide`` (:func:`annals.share.ref_decider`) says what may stay; a relative file it</span>
-</span><span data-line="245"><span class="sd">    keeps becomes absolute here: another source page of the document links to that</span>
-</span><span data-line="246"><span class="sd">    page, any other file to the share's raw file. Anchors and web links stay as they are.</span>
-</span><span data-line="247"><span class="sd">    """</span>
-</span><span data-line="248">    <span class="n">sources</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
-</span><span data-line="249">    <span class="n">raw</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span><span class="si">}</span><span class="s2">/raw/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">/"</span>
-</span><span data-line="250">
-</span><span data-line="251">    <span class="k">def</span><span class="w"> </span><span class="nf">rewrite</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="252">        <span class="n">new</span> <span class="o">=</span> <span class="n">decide</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-</span><span data-line="253">        <span class="k">if</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="254">            <span class="k">return</span> <span class="kc">None</span>
-</span><span data-line="255">        <span class="n">rel</span> <span class="o">=</span> <span class="n">resolve_rel</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">from_dir</span><span class="p">)</span>
-</span><span data-line="256">        <span class="k">if</span> <span class="n">rel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="257">            <span class="k">return</span> <span class="n">new</span>
-</span><span data-line="258">        <span class="n">frag</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="n">new</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"#"</span><span class="p">):]</span> <span class="k">if</span> <span class="s2">"#"</span> <span class="ow">in</span> <span class="n">new</span> <span class="k">else</span> <span class="s2">""</span>
-</span><span data-line="259">        <span class="k">if</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
-</span><span data-line="260">            <span class="k">return</span> <span class="n">source_url</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">rel</span><span class="p">)</span> <span class="o">+</span> <span class="n">frag</span>
-</span><span data-line="261">        <span class="k">return</span> <span class="n">raw</span> <span class="o">+</span> <span class="s2">"/"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">quote</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">))</span> <span class="o">+</span> <span class="n">frag</span>
-</span><span data-line="262">
-</span><span data-line="263">    <span class="k">return</span> <span class="n">rewrite</span></div>
+</span><span data-line="245"><span class="k">def</span><span class="w"> </span><span class="nf">source_link_rewriter</span><span class="p">(</span>
+</span><span data-line="246">    <span class="n">decide</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span>
+</span><span data-line="247">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="248">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="249">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="250">    <span class="n">from_dir</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="251">    <span class="n">sources</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="252"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span data-line="253"><span class="w">    </span><span class="sd">"""``url -&gt; url | None`` for a source page, which has no ``&lt;base&gt;``.</span>
+</span><span data-line="254">
+</span><span data-line="255"><span class="sd">    ``decide`` (:func:`annals.share.ref_decider`) says what may stay; a relative file it</span>
+</span><span data-line="256"><span class="sd">    keeps becomes absolute here: another source page of the document links to that</span>
+</span><span data-line="257"><span class="sd">    page, any other file to the share's raw file. Anchors and web links stay as they are.</span>
+</span><span data-line="258"><span class="sd">    """</span>
+</span><span data-line="259">    <span class="n">sources</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span>
+</span><span data-line="260">    <span class="n">raw</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span><span class="si">}</span><span class="s2">/raw/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">/"</span>
+</span><span data-line="261">
+</span><span data-line="262">    <span class="k">def</span><span class="w"> </span><span class="nf">rewrite</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="263">        <span class="n">new</span> <span class="o">=</span> <span class="n">decide</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</span><span data-line="264">        <span class="k">if</span> <span class="n">new</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="265">            <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="266">        <span class="n">rel</span> <span class="o">=</span> <span class="n">resolve_rel</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="n">from_dir</span><span class="p">)</span>
+</span><span data-line="267">        <span class="k">if</span> <span class="n">rel</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="268">            <span class="k">return</span> <span class="n">new</span>
+</span><span data-line="269">        <span class="n">frag</span> <span class="o">=</span> <span class="n">new</span><span class="p">[</span><span class="n">new</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s2">"#"</span><span class="p">)</span> <span class="p">:]</span> <span class="k">if</span> <span class="s2">"#"</span> <span class="ow">in</span> <span class="n">new</span> <span class="k">else</span> <span class="s2">""</span>
+</span><span data-line="270">        <span class="k">if</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+</span><span data-line="271">            <span class="k">return</span> <span class="n">source_url</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">rel</span><span class="p">)</span> <span class="o">+</span> <span class="n">frag</span>
+</span><span data-line="272">        <span class="k">return</span> <span class="n">raw</span> <span class="o">+</span> <span class="s2">"/"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">quote</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">))</span> <span class="o">+</span> <span class="n">frag</span>
+</span><span data-line="273">
+</span><span data-line="274">    <span class="k">return</span> <span class="n">rewrite</span></div>
 
-</span><span data-line="264">
-</span><span data-line="265">
+</span><span data-line="275">
+</span><span data-line="276">
 <div class="viewcode-block" id="render_source">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.render_source">[docs]</a>
-</span><span data-line="266"><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">SOURCE_CACHE_SIZE</span><span class="p">)</span>
-</span><span data-line="267"><span class="k">def</span><span class="w"> </span><span class="nf">render_source</span><span class="p">(</span>
-</span><span data-line="268">    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="269">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="270">    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="271">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="272">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="273">    <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="274">    <span class="n">files</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-</span><span data-line="275">    <span class="n">sources</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-</span><span data-line="276">    <span class="n">shared_ids</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
-</span><span data-line="277">    <span class="n">root_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-</span><span data-line="278">    <span class="n">private_hosts</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
-</span><span data-line="279"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="280"><span class="w">    </span><span class="sd">"""One markdown file of a share as its source page (see the module docstring).</span>
-</span><span data-line="281">
-</span><span data-line="282"><span class="sd">    Every argument is hashable, so a page is rendered once per text and scope.</span>
-</span><span data-line="283"><span class="sd">    ``shared_ids`` are the annals ids the share includes (opened at ``&lt;link&gt;/d/&lt;id&gt;``),</span>
-</span><span data-line="284"><span class="sd">    ``root_id`` the shared group's (opened at ``&lt;link&gt;/``).</span>
-</span><span data-line="285"><span class="sd">    """</span>
-</span><span data-line="286">    <span class="n">link</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
-</span><span data-line="287">
-</span><span data-line="288">    <span class="k">def</span><span class="w"> </span><span class="nf">shared</span><span class="p">(</span><span class="n">annals_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="289">        <span class="k">if</span> <span class="n">annals_id</span> <span class="ow">in</span> <span class="n">shared_ids</span><span class="p">:</span>
-</span><span data-line="290">            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/d/</span><span class="si">{</span><span class="n">annals_id</span><span class="si">}</span><span class="s2">"</span>
-</span><span data-line="291">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/"</span> <span class="k">if</span> <span class="n">root_id</span> <span class="ow">and</span> <span class="n">annals_id</span> <span class="o">==</span> <span class="n">root_id</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span data-line="277"><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="n">SOURCE_CACHE_SIZE</span><span class="p">)</span>
+</span><span data-line="278"><span class="k">def</span><span class="w"> </span><span class="nf">render_source</span><span class="p">(</span>
+</span><span data-line="279">    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="280">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="281">    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="282">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="283">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="284">    <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="285">    <span class="n">files</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+</span><span data-line="286">    <span class="n">sources</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+</span><span data-line="287">    <span class="n">shared_ids</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">],</span>
+</span><span data-line="288">    <span class="n">root_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="289">    <span class="n">private_hosts</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+</span><span data-line="290"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="291"><span class="w">    </span><span class="sd">"""One markdown file of a share as its source page (see the module docstring).</span>
 </span><span data-line="292">
-</span><span data-line="293">    <span class="n">from_dir</span> <span class="o">=</span> <span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">)</span>
-</span><span data-line="294">    <span class="n">text</span> <span class="o">=</span> <span class="n">filter_refs</span><span class="p">(</span>
-</span><span data-line="295">        <span class="n">text</span><span class="p">,</span>
-</span><span data-line="296">        <span class="s2">"md"</span><span class="p">,</span>
-</span><span data-line="297">        <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span>
-</span><span data-line="298">        <span class="n">shared</span><span class="o">=</span><span class="n">shared</span><span class="p">,</span>
-</span><span data-line="299">        <span class="n">from_dir</span><span class="o">=</span><span class="n">from_dir</span><span class="p">,</span>
-</span><span data-line="300">        <span class="n">private_hosts</span><span class="o">=</span><span class="n">private_hosts</span><span class="p">,</span>
-</span><span data-line="301">    <span class="p">)</span>
-</span><span data-line="302">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">RENDER_MAX_BYTES</span><span class="p">:</span>
-</span><span data-line="303">        <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"&lt;pre&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/pre&gt;"</span>
-</span><span data-line="304">    <span class="k">else</span><span class="p">:</span>
-</span><span data-line="305">        <span class="n">decide</span> <span class="o">=</span> <span class="n">ref_decider</span><span class="p">(</span>
-</span><span data-line="306">            <span class="n">from_dir</span><span class="o">=</span><span class="n">from_dir</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">files</span><span class="p">),</span> <span class="n">shared</span><span class="o">=</span><span class="n">shared</span><span class="p">,</span> <span class="n">private_hosts</span><span class="o">=</span><span class="n">private_hosts</span>
-</span><span data-line="307">        <span class="p">)</span>
-</span><span data-line="308">        <span class="n">rewrite</span> <span class="o">=</span> <span class="n">source_link_rewriter</span><span class="p">(</span>
-</span><span data-line="309">            <span class="n">decide</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">link</span><span class="p">,</span> <span class="n">doc_id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">from_dir</span><span class="o">=</span><span class="n">from_dir</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span>
-</span><span data-line="310">        <span class="p">)</span>
-</span><span data-line="311">        <span class="n">body</span> <span class="o">=</span> <span class="n">markdown_html</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="o">=</span><span class="n">rewrite</span><span class="p">)</span>
-</span><span data-line="312">    <span class="k">return</span> <span class="n">source_page</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">remove_unshared_ids</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">shared</span><span class="p">))</span></div>
+</span><span data-line="293"><span class="sd">    Every argument is hashable, so a page is rendered once per text and scope.</span>
+</span><span data-line="294"><span class="sd">    ``shared_ids`` are the annals ids the share includes (opened at ``&lt;link&gt;/d/&lt;id&gt;``),</span>
+</span><span data-line="295"><span class="sd">    ``root_id`` the shared group's (opened at ``&lt;link&gt;/``).</span>
+</span><span data-line="296"><span class="sd">    """</span>
+</span><span data-line="297">    <span class="n">link</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+</span><span data-line="298">
+</span><span data-line="299">    <span class="k">def</span><span class="w"> </span><span class="nf">shared</span><span class="p">(</span><span class="n">annals_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="300">        <span class="k">if</span> <span class="n">annals_id</span> <span class="ow">in</span> <span class="n">shared_ids</span><span class="p">:</span>
+</span><span data-line="301">            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/d/</span><span class="si">{</span><span class="n">annals_id</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="302">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/"</span> <span class="k">if</span> <span class="n">root_id</span> <span class="ow">and</span> <span class="n">annals_id</span> <span class="o">==</span> <span class="n">root_id</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span data-line="303">
+</span><span data-line="304">    <span class="n">from_dir</span> <span class="o">=</span> <span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">)</span>
+</span><span data-line="305">    <span class="n">text</span> <span class="o">=</span> <span class="n">filter_refs</span><span class="p">(</span>
+</span><span data-line="306">        <span class="n">text</span><span class="p">,</span>
+</span><span data-line="307">        <span class="s2">"md"</span><span class="p">,</span>
+</span><span data-line="308">        <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span>
+</span><span data-line="309">        <span class="n">shared</span><span class="o">=</span><span class="n">shared</span><span class="p">,</span>
+</span><span data-line="310">        <span class="n">from_dir</span><span class="o">=</span><span class="n">from_dir</span><span class="p">,</span>
+</span><span data-line="311">        <span class="n">private_hosts</span><span class="o">=</span><span class="n">private_hosts</span><span class="p">,</span>
+</span><span data-line="312">    <span class="p">)</span>
+</span><span data-line="313">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">RENDER_MAX_BYTES</span><span class="p">:</span>
+</span><span data-line="314">        <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"&lt;pre&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">text</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/pre&gt;"</span>
+</span><span data-line="315">    <span class="k">else</span><span class="p">:</span>
+</span><span data-line="316">        <span class="n">decide</span> <span class="o">=</span> <span class="n">ref_decider</span><span class="p">(</span>
+</span><span data-line="317">            <span class="n">from_dir</span><span class="o">=</span><span class="n">from_dir</span><span class="p">,</span>
+</span><span data-line="318">            <span class="n">files</span><span class="o">=</span><span class="nb">set</span><span class="p">(</span><span class="n">files</span><span class="p">),</span>
+</span><span data-line="319">            <span class="n">shared</span><span class="o">=</span><span class="n">shared</span><span class="p">,</span>
+</span><span data-line="320">            <span class="n">private_hosts</span><span class="o">=</span><span class="n">private_hosts</span><span class="p">,</span>
+</span><span data-line="321">        <span class="p">)</span>
+</span><span data-line="322">        <span class="n">rewrite</span> <span class="o">=</span> <span class="n">source_link_rewriter</span><span class="p">(</span>
+</span><span data-line="323">            <span class="n">decide</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">link</span><span class="p">,</span> <span class="n">doc_id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">from_dir</span><span class="o">=</span><span class="n">from_dir</span><span class="p">,</span> <span class="n">sources</span><span class="o">=</span><span class="n">sources</span>
+</span><span data-line="324">        <span class="p">)</span>
+</span><span data-line="325">        <span class="n">body</span> <span class="o">=</span> <span class="n">markdown_html</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">rewrite_url</span><span class="o">=</span><span class="n">rewrite</span><span class="p">)</span>
+</span><span data-line="326">    <span class="k">return</span> <span class="n">source_page</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">remove_unshared_ids</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">shared</span><span class="p">))</span></div>
 
-</span><span data-line="313">
-</span><span data-line="314">
+</span><span data-line="327">
+</span><span data-line="328">
 <div class="viewcode-block" id="source_page">
 <a class="viewcode-back" href="../../_autosummary/annals.notebook.html#annals.notebook.source_page">[docs]</a>
-</span><span data-line="315"><span class="k">def</span><span class="w"> </span><span class="nf">source_page</span><span class="p">(</span><span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">body_html</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="316"><span class="w">    </span><span class="sd">"""The page a notebook reads: a ``&lt;title&gt;``, the body, plain style, no script."""</span>
-</span><span data-line="317">    <span class="k">return</span> <span class="p">(</span>
-</span><span data-line="318">        <span class="s1">'&lt;!doctype html&gt;</span><span class="se">\n</span><span class="s1">&lt;html lang="en"&gt;</span><span class="se">\n</span><span class="s1">&lt;head&gt;</span><span class="se">\n</span><span class="s1">&lt;meta charset="utf-8"&gt;</span><span class="se">\n</span><span class="s1">'</span>
-</span><span data-line="319">        <span class="s1">'&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</span><span class="se">\n</span><span class="s1">'</span>
-</span><span data-line="320">        <span class="s1">'&lt;meta name="robots" content="noindex, nofollow"&gt;</span><span class="se">\n</span><span class="s1">'</span>
-</span><span data-line="321">        <span class="s1">'&lt;meta name="referrer" content="no-referrer"&gt;</span><span class="se">\n</span><span class="s1">'</span>
-</span><span data-line="322">        <span class="sa">f</span><span class="s2">"&lt;title&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">title</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/title&gt;</span><span class="se">\n</span><span class="s2">"</span>
-</span><span data-line="323">        <span class="sa">f</span><span class="s2">"&lt;style&gt;</span><span class="si">{</span><span class="n">SOURCE_CSS</span><span class="si">}</span><span class="s2">&lt;/style&gt;</span><span class="se">\n</span><span class="s2">&lt;/head&gt;</span><span class="se">\n</span><span class="s2">&lt;body&gt;</span><span class="se">\n</span><span class="s2">&lt;main&gt;</span><span class="se">\n</span><span class="si">{</span><span class="n">body_html</span><span class="si">}</span><span class="se">\n</span><span class="s2">&lt;/main&gt;</span><span class="se">\n</span><span class="s2">"</span>
-</span><span data-line="324">        <span class="s2">"&lt;/body&gt;</span><span class="se">\n</span><span class="s2">&lt;/html&gt;</span><span class="se">\n</span><span class="s2">"</span>
-</span><span data-line="325">    <span class="p">)</span></div>
+</span><span data-line="329"><span class="k">def</span><span class="w"> </span><span class="nf">source_page</span><span class="p">(</span><span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">body_html</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="330"><span class="w">    </span><span class="sd">"""The page a notebook reads: a ``&lt;title&gt;``, the body, plain style, no script."""</span>
+</span><span data-line="331">    <span class="k">return</span> <span class="p">(</span>
+</span><span data-line="332">        <span class="s1">'&lt;!doctype html&gt;</span><span class="se">\n</span><span class="s1">&lt;html lang="en"&gt;</span><span class="se">\n</span><span class="s1">&lt;head&gt;</span><span class="se">\n</span><span class="s1">&lt;meta charset="utf-8"&gt;</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="333">        <span class="s1">'&lt;meta name="viewport" content="width=device-width, initial-scale=1"&gt;</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="334">        <span class="s1">'&lt;meta name="robots" content="noindex, nofollow"&gt;</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="335">        <span class="s1">'&lt;meta name="referrer" content="no-referrer"&gt;</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="336">        <span class="sa">f</span><span class="s2">"&lt;title&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">title</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/title&gt;</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="337">        <span class="sa">f</span><span class="s2">"&lt;style&gt;</span><span class="si">{</span><span class="n">SOURCE_CSS</span><span class="si">}</span><span class="s2">&lt;/style&gt;</span><span class="se">\n</span><span class="s2">&lt;/head&gt;</span><span class="se">\n</span><span class="s2">&lt;body&gt;</span><span class="se">\n</span><span class="s2">&lt;main&gt;</span><span class="se">\n</span><span class="si">{</span><span class="n">body_html</span><span class="si">}</span><span class="se">\n</span><span class="s2">&lt;/main&gt;</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="338">        <span class="s2">"&lt;/body&gt;</span><span class="se">\n</span><span class="s2">&lt;/html&gt;</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="339">    <span class="p">)</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -506,7 +520,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=26ffa1e9"></script>
+      <script src="../../_static/documentation_options.js?v=828725f0"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
