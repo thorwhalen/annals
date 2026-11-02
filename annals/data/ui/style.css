@@ -240,3 +240,8 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .notebook-panel .combine-text { white-space: pre; overflow-x: auto; }
 .source-titles { margin: 8px 0 0; padding-left: 1.4em; font-size: .9rem; }
 @media (pointer: coarse) { .check, .share-panel .btn, .share-panel .btn.link, .share-opts select { min-height: 44px; } .share-panel .btn.link { min-width: 44px; } }
+
+/* the page's own Back: where you came from, as you left it */
+nav.back { margin: 2px 0 0; }
+nav.back a { display: inline-flex; align-items: center; min-height: 32px; font-size: .95rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (pointer: coarse) { nav.back a { min-height: 44px; } }
