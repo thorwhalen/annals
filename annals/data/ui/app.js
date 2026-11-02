@@ -1108,14 +1108,18 @@
     var combine = h("button", { class: "btn", type: "button", onclick: combineChosen }, [icon("file"), h("span", { class: "lbl" }, ["Combine these"])]);
     var result = h("div", { class: "notebook-result", "aria-live": "polite" });
     var combined = h("div");
+    var existing = h("div");
+    var current = null;   /* this panel's live share: a new press replaces it, never piles up */
     wrap.appendChild(h("div", { class: "toolbar combine-actions" }, [make, combine]));
     wrap.appendChild(result);
     wrap.appendChild(combined);
+    wrap.appendChild(existing);
+    var redraw = existingShares(g.id, existing);   /* every live link of this group, revocable */
     function chosen() { return picks.filter(function (p) { return p.input.checked; }).map(function (p) { return p.value; }); }
     function count() {
       var n = chosen().length;
       make.lastChild.textContent = n ? "Make links for " + n : "Make links";
-      combine.lastChild.textContent = n === usable.length ? "Combine these" : "Combine " + n;
+      combine.lastChild.textContent = n === usable.length || !n ? "Combine these" : "Combine " + n;
     }
     count();
     function makeLinks() {
@@ -1125,14 +1129,22 @@
       pending(make, true);
       result.innerHTML = "";
       result.appendChild(h("p", { class: "muted", role: "status" }, ["Making the links…"]));
-      var body = { ref: g.id, include: ids, expires: expires, title: (g.title || g.id) + " (notebook sources)" };
-      api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(function (s) { return api("/shares/" + encodeURIComponent(s.token) + "/sources").then(function (out) { drawLinks(s, out); }); })
+      /* only each document's pages and what they show; no password (a notebook cannot type one) */
+      var body = { ref: g.id, include: ids, expires: expires, files: "sources", title: (g.title || g.id) + " (notebook sources)" };
+      var made = null;
+      revoke(current)
+        .then(function () { current = null; return api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); })
+        .then(function (s) { made = s; return api("/shares/" + encodeURIComponent(s.token) + "/sources"); })
+        .then(function (out) { current = made.token; drawLinks(made, out); })
         .catch(function (e) {
+          if (made) revoke(made.token).catch(function () {});   /* never leave a link nobody was shown */
           result.innerHTML = "";
           result.appendChild(h("p", { class: "err", role: "alert" }, ["Could not make the links: " + (e.message || e)]));
         })
-        .then(function () { pending(make, false); });
+        .then(function () { pending(make, false); redraw(); });
+    }
+    function revoke(token) {
+      return token ? api("/shares/" + encodeURIComponent(token), { method: "DELETE" }) : Promise.resolve();
     }
     function drawLinks(s, out) {
       result.innerHTML = "";
@@ -1152,12 +1164,14 @@
       var off = h("button", { class: "btn danger", type: "button", onclick: function () {
         if (isPending(off)) return;
         pending(off, true);
-        api("/shares/" + encodeURIComponent(s.token), { method: "DELETE" }).then(function () {
+        revoke(s.token).then(function () {
+          current = null;
           result.innerHTML = "";
           result.appendChild(h("p", { role: "status" }, ["Links turned off. Sources already in a notebook stay there."]));
+          redraw();
         }).catch(function (e) { pending(off, false); toast(String(e.message || e)); });
       } }, ["Turn these links off"]);
-      result.appendChild(h("p", { class: "muted" }, ["Anyone with these links can read these pages until " + until(s.expires) +
+      result.appendChild(h("p", { class: "muted" }, ["Anyone with these links can read these pages" + (s.expires ? " until " + until(s.expires) : "") +
         ". The notebook keeps its own copy once they are added, so you can turn them off then (here, or under Shares)."]));
       result.appendChild(h("div", { class: "toolbar" }, [off]));
     }

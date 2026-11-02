@@ -66,11 +66,11 @@ from annals.export import (
 )
 from annals.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
 from annals.notebook import (
+    HTML_SOURCE_CSP,
     SOURCE_CSP,
-    markdown_html,
     notebook_sources,
+    render_source,
     source_files,
-    source_page,
     source_title,
 )
 from annals.share import Shares, dir_of, filter_refs
@@ -262,18 +262,22 @@ def mk_share_api(
     def _filtered(
         rec: dict, request: Request, doc_id: str, rel: str, files: list[str], text: str
     ) -> str:
-        hosts = {request.headers.get("host", "")}
-        hosts |= {
-            h.strip() for h in request.headers.get("x-forwarded-host", "").split(",")
-        }
         return filter_refs(
             text,
             kind_of(rel),
             files=files,
             shared=_shared_to(rec, request),
             from_dir=dir_of(rel),
-            private_hosts=(hosts | set(private_hosts)) - {""},
+            private_hosts=_private_hosts(request),
         )
+
+    def _private_hosts(request: Request) -> set[str]:
+        """The owner's hosts: the one this request came to, and those configured."""
+        hosts = {request.headers.get("host", "")}
+        hosts |= {
+            h.strip() for h in request.headers.get("x-forwarded-host", "").split(",")
+        }
+        return (hosts | set(private_hosts)) - {""}
 
     # -- the page --------------------------------------------------------------------
 
@@ -467,28 +471,29 @@ def mk_share_api(
         """A text file as a plain web page for a notebook: its title, its filtered text, no script."""
         rec, files, path = _shared_path(token, doc_id, rel, request)
         meta = store.meta(doc_id)
-        if rel not in source_files(meta, files):
+        sources = source_files(meta, files)
+        if rel not in sources:
             raise HTTPException(404, "this file is not a notebook source")
         if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
             raise HTTPException(413, "this page is too large to share")
-        text = _filtered(
-            rec,
-            request,
-            doc_id,
-            rel,
-            files,
-            path.read_text(encoding="utf-8", errors="replace"),
-        )
+        text = path.read_text(encoding="utf-8", errors="replace")
         if kind_of(rel) == "html":
-            body = doctype_guard(text.encode("utf-8"))
-            csp = RAW_SANDBOX_CSP
+            filtered = _filtered(rec, request, doc_id, rel, files, text)
+            body = doctype_guard(filtered.encode("utf-8"))
+            csp = HTML_SOURCE_CSP
         else:
-            several = len(source_files(meta, files)) > 1
-            base = f"{_link(request, token)}/raw/{doc_id}/{dir_of(rel)}"
-            body = source_page(
-                source_title(meta, rel, several=several),
-                markdown_html(text),
-                base_href=base,
+            root = rec["root"]
+            body = render_source(
+                text,
+                title=source_title(meta, rel, several=len(sources) > 1),
+                link=_link(request, token),
+                doc_id=doc_id,
+                rel=rel,
+                files=tuple(files),
+                sources=tuple(sources),
+                shared_ids=tuple(rec["docs"]),
+                root_id=root.get("id", "") if root.get("kind") == "group" else "",
+                private_hosts=tuple(sorted(_private_hosts(request))),
             ).encode("utf-8")
             csp = SOURCE_CSP
         headers = {"Cache-Control": SHARED_FILE_CACHE, "Content-Security-Policy": csp}
