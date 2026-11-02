@@ -89,7 +89,9 @@ def source_files(meta: Mapping, files: Iterable[str]) -> list[str]:
     return list(numbered_first([f for f in files if kind_of(f) in SOURCE_KINDS]))
 
 
-def source_scope(read_text: Callable[[str, str], str]) -> Callable[[Mapping], list[str]]:
+def source_scope(
+    read_text: Callable[[str, str], str],
+) -> Callable[[Mapping], list[str]]:
     """``meta -> files``: a document's source pages and the files they show, for a share.
 
     ``read_text(doc_id, rel)`` reads one file. A notebook share made with this (the
@@ -137,7 +139,9 @@ def notebook_sources(
         rels = source_files(meta, files)
         if not rels:
             kinds = sorted({kind_of(f) for f in files})
-            skipped.append({"doc": meta["id"], "title": meta.get("title"), "kinds": kinds})
+            skipped.append(
+                {"doc": meta["id"], "title": meta.get("title"), "kinds": kinds}
+            )
             continue
         for rel in rels:
             sources.append(
@@ -168,7 +172,9 @@ def _default_markdown_renderer() -> Callable[..., str] | None:
     if md is None:
         return None
 
-    def render(text: str, rewrite_url: Callable[[str], str | None] | None = None) -> str:
+    def render(
+        text: str, rewrite_url: Callable[[str], str | None] | None = None
+    ) -> str:
         tokens = md.parse(text)
         if rewrite_url:
             for tok in tokens:
@@ -199,7 +205,12 @@ def _rewritten(children: list, rewrite_url: Callable[[str], str | None]) -> list
         elif tok.type == "link_close":
             if dropped and dropped.pop():
                 if hiding:
-                    tok.type, tok.tag, tok.nesting, tok.content = "text", "", 0, REMOVED_LINK
+                    tok.type, tok.tag, tok.nesting, tok.content = (
+                        "text",
+                        "",
+                        0,
+                        REMOVED_LINK,
+                    )
                     hiding = False
                     out.append(tok)
                 continue
@@ -255,7 +266,7 @@ def source_link_rewriter(
         rel = resolve_rel(new, from_dir)
         if rel is None:
             return new
-        frag = new[new.index("#"):] if "#" in new else ""
+        frag = new[new.index("#") :] if "#" in new else ""
         if rel in sources:
             return source_url(link, doc_id, rel) + frag
         return raw + "/".join(quote(p, safe="") for p in rel.split("/")) + frag
@@ -303,7 +314,10 @@ def render_source(
         body = f"<pre>{html.escape(text)}</pre>"
     else:
         decide = ref_decider(
-            from_dir=from_dir, files=set(files), shared=shared, private_hosts=private_hosts
+            from_dir=from_dir,
+            files=set(files),
+            shared=shared,
+            private_hosts=private_hosts,
         )
         rewrite = source_link_rewriter(
             decide, link=link, doc_id=doc_id, from_dir=from_dir, sources=sources
