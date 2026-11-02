@@ -167,6 +167,14 @@ aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundl
 
 `aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The API is `GET /groups/<gid>/aggregate` (`?download=1` to save it, `&demote=`), and `GET /<token>/aggregate` on the share server.
 
+## A group’s documents as separate notebook sources
+
+To take a group into a notebook (NotebookLM, now Gemini Notebook) with each document as its own source, open the group and tap **Notebook**. Tick the documents (all are ticked), choose how long the links work (1 day by default), and tap **Make links**. You get one link per page; tap **Copy N links**, then in the notebook choose Add source → Website and paste: the notebook makes one source of each link, named after the document. The same panel’s **Combine these** makes one Markdown file of only the ticked documents.
+
+The links are an ordinary share of just those documents (no password, since the notebook cannot type one): unguessable, filtered like every shared text, and revocable with **Turn these links off** or under Shares. The notebook keeps its own copy once a link is added, so turning the links off afterwards does not remove the sources. Each link is a plain web page with no script (`<share link>/source/<doc id>/<file>`); markdown is rendered on the server, images, audio and PDFs get no link (a notebook takes those only as uploads). Why links and not a zip or a download: `misc/docs/notebook-sources.md`.
+
+The API: `GET /shares/<token>/sources` (the owner’s) or `GET <share link>/sources` (the recipient’s) lists `{title, url}` per page; `GET /groups/<gid>/aggregate?doc=<id>&doc=<id>` combines only those documents.
+
 ## Other folders, search, filters and tags
 
 Name extra folders when you mount the API, and they appear beside the published documents, each in its own section (`/annals/s/<name>`) and in `/annals/all`:

@@ -1,0 +1,32 @@
+annals.notebook
+===============
+
+.. automodule:: annals.notebook
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      SOURCE_KINDS
+      SOURCE_SEGMENT
+      SOURCE_CSS
+      SOURCE_CSP
+      HTML_SOURCE_CSP
+      RENDER_MAX_BYTES
+      SOURCE_CACHE_SIZE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      markdown_html
+      notebook_sources
+      render_source
+      source_files
+      source_link_rewriter
+      source_page
+      source_scope
+      source_title
+      source_url
+   

@@ -41,6 +41,7 @@
    config
    export
    mcp
+   notebook
    overview
    share
    share_api

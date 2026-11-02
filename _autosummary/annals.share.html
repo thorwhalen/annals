@@ -71,6 +71,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
@@ -100,6 +101,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.share.Shares"><code class="docutils literal notranslate"><span class="pre">Shares</span></code></a><ul>
 <li><a class="reference internal" href="#annals.share.Shares.check_password"><code class="docutils literal notranslate"><span class="pre">Shares.check_password()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.Shares.create"><code class="docutils literal notranslate"><span class="pre">Shares.create()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share.Shares.included"><code class="docutils literal notranslate"><span class="pre">Shares.included()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.Shares.list"><code class="docutils literal notranslate"><span class="pre">Shares.list()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.Shares.record"><code class="docutils literal notranslate"><span class="pre">Shares.record()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.Shares.resources"><code class="docutils literal notranslate"><span class="pre">Shares.resources()</span></code></a></li>
@@ -111,7 +113,9 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#annals.share.dir_of"><code class="docutils literal notranslate"><span class="pre">dir_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.filter_refs"><code class="docutils literal notranslate"><span class="pre">filter_refs()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share.ref_decider"><code class="docutils literal notranslate"><span class="pre">ref_decider()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.references"><code class="docutils literal notranslate"><span class="pre">references()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share.remove_unshared_ids"><code class="docutils literal notranslate"><span class="pre">remove_unshared_ids()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.resolve_rel"><code class="docutils literal notranslate"><span class="pre">resolve_rel()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.share_url"><code class="docutils literal notranslate"><span class="pre">share_url()</span></code></a></li>
 </ul>
@@ -202,8 +206,14 @@ password or revoking the link ends every open session.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_refs</span></code></a>(text, kind, *, files, shared[, ...])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every reference outside the share removed (or rewritten).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.references" title="annals.share.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a>(text, kind, *[, from_dir])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.ref_decider" title="annals.share.ref_decider"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ref_decider</span></code></a>(*, from_dir, files, shared[, ...])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">url</span> <span class="pre">-&gt;</span> <span class="pre">new</span> <span class="pre">url</span></code> (often the same) or <code class="docutils literal notranslate"><span class="pre">None</span></code> (remove it).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.references" title="annals.share.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a>(text, kind, *[, from_dir])</p></td>
 <td><p>What a page points at: files of its document, and annals pages (by id).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.remove_unshared_ids" title="annals.share.remove_unshared_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_unshared_ids</span></code></a>(text, shared)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every annals id that <code class="docutils literal notranslate"><span class="pre">shared</span></code> does not map replaced by a marker.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.share.resolve_rel" title="annals.share.resolve_rel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_rel</span></code></a>(url[, from_dir])</p></td>
 <td><p>A relative url as a file path inside the document, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if it is not one.</p></td>
@@ -254,7 +264,7 @@ hashes link passwords (stdlib scrypt by default); <code class="docutils literal 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.share.Shares.create">
-<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'7d'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#Shares.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.Shares.create" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">create</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'7d'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files_of</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#Shares.create"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.Shares.create" title="Link to this definition">#</a></dt>
 <dd><p>Share a document or a group (<code class="docutils literal notranslate"><span class="pre">ref</span></code> is its id); return the record (no hash).</p>
 <p>A document is shared with all its files unless <code class="docutils literal notranslate"><span class="pre">include</span></code> names some (the page
 itself always goes); <code class="docutils literal notranslate"><span class="pre">include</span></code> may also name annals pages the document links
@@ -262,10 +272,26 @@ to, which then open inside the share. A group is shared with all its documents
 unless <code class="docutils literal notranslate"><span class="pre">include</span></code> names some. <code class="docutils literal notranslate"><span class="pre">exclude</span></code> removes files (or a group’s documents).
 A linked page goes with the files it shows. <code class="docutils literal notranslate"><span class="pre">expires</span></code> is anything
 <code class="xref py py-func docutils literal notranslate"><span class="pre">parse_expires()</span></code> reads, 7 days by default (<code class="docutils literal notranslate"><span class="pre">&quot;never&quot;</span></code> for none); <code class="docutils literal notranslate"><span class="pre">password</span></code>
-gates the link (at least <code class="docutils literal notranslate"><span class="pre">caplinks.MIN_PASSWORD_LEN</span></code> characters).</p>
+gates the link (at least <code class="docutils literal notranslate"><span class="pre">caplinks.MIN_PASSWORD_LEN</span></code> characters).
+<code class="docutils literal notranslate"><span class="pre">files_of(meta)</span></code> narrows which files of each of a group’s documents go (all of
+them by default; <a class="reference internal" href="annals.notebook.html#annals.notebook.source_scope" title="annals.notebook.source_scope"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.notebook.source_scope()</span></code></a> keeps only the pages and
+what they show).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.share.Shares.included">
+<span class="sig-name descname"><span class="pre">included</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#Shares.included"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.Shares.included" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> for each document of a share still there, in the share’s order.</p>
+<p><code class="docutils literal notranslate"><span class="pre">files</span></code> are the document’s files the share includes; a document deleted or in
+the bin since the link was made is left out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.share.Shares.list" title="annals.share.Shares.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>, <a class="reference internal" href="#annals.share.Shares.list" title="annals.share.Shares.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -384,6 +410,19 @@ for anything outside the share however the text names it.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.share.ref_decider">
+<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">ref_decider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private_hosts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#ref_decider"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.ref_decider" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">url</span> <span class="pre">-&gt;</span> <span class="pre">new</span> <span class="pre">url</span></code> (often the same) or <code class="docutils literal notranslate"><span class="pre">None</span></code> (remove it).</p>
+<p>The one rule of what a shared text may point at; <a class="reference internal" href="#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-func docutils literal notranslate"><span class="pre">filter_refs()</span></code></a> applies it to
+the references it finds in text, <a class="reference internal" href="annals.notebook.html#module-annals.notebook" title="annals.notebook"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.notebook</span></code></a> to a rendered page’s links.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.share.references">
 <span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">references</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">from_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#references"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.references" title="Link to this definition">#</a></dt>
 <dd><p>What a page points at: files of its document, and annals pages (by id).</p>
@@ -392,6 +431,17 @@ feeds the Share dialog, which offers them to the owner.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.share.remove_unshared_ids">
+<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">remove_unshared_ids</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#remove_unshared_ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.remove_unshared_ids" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every annals id that <code class="docutils literal notranslate"><span class="pre">shared</span></code> does not map replaced by a marker.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -466,7 +516,7 @@ feeds the Share dialog, which offers them to the owner.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=cee5022b"></script>
+      <script src="../_static/documentation_options.js?v=26ffa1e9"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

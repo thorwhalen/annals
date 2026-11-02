@@ -16,7 +16,9 @@ annals.share
    
       dir_of
       filter_refs
+      ref_decider
       references
+      remove_unshared_ids
       resolve_rel
       share_url
    

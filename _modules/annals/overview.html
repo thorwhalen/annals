@@ -68,6 +68,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.sources.html">annals.sources</a></li>
@@ -612,69 +613,70 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="454">            <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span>
 </span><span data-line="455">            <span class="n">command</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span>
 </span><span data-line="456">            <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
-</span><span data-line="457">            <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"force"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">,</span>
-</span><span data-line="458">        <span class="p">)</span>
-</span><span data-line="459">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># recorded for the page; the next request must still run</span>
-</span><span data-line="460">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span data-line="461">    <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
-</span><span data-line="462">        <span class="n">doc_id</span><span class="p">,</span>
-</span><span data-line="463">        <span class="p">{</span>
-</span><span data-line="464">            <span class="o">**</span><span class="n">record</span><span class="p">,</span>
-</span><span data-line="465">            <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span>
-</span><span data-line="466">            <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">,</span>
-</span><span data-line="467">            <span class="s2">"version"</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
-</span><span data-line="468">            <span class="s2">"finished"</span><span class="p">:</span> <span class="n">_now</span><span class="p">(),</span>
-</span><span data-line="469">        <span class="p">},</span>
-</span><span data-line="470">    <span class="p">)</span>
-</span><span data-line="471">    <span class="k">return</span> <span class="p">{</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span> <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">}</span>
-</span><span data-line="472">
+</span><span data-line="457">            <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span><span class="p">,</span>
+</span><span data-line="458">            <span class="n">force</span><span class="o">=</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"force"</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">True</span><span class="p">,</span>
+</span><span data-line="459">        <span class="p">)</span>
+</span><span data-line="460">    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># recorded for the page; the next request must still run</span>
+</span><span data-line="461">        <span class="k">return</span> <span class="n">fail</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</span><span data-line="462">    <span class="n">requests</span><span class="o">.</span><span class="n">put</span><span class="p">(</span>
+</span><span data-line="463">        <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="464">        <span class="p">{</span>
+</span><span data-line="465">            <span class="o">**</span><span class="n">record</span><span class="p">,</span>
+</span><span data-line="466">            <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span>
+</span><span data-line="467">            <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">,</span>
+</span><span data-line="468">            <span class="s2">"version"</span><span class="p">:</span> <span class="n">version</span><span class="p">,</span>
+</span><span data-line="469">            <span class="s2">"finished"</span><span class="p">:</span> <span class="n">_now</span><span class="p">(),</span>
+</span><span data-line="470">        <span class="p">},</span>
+</span><span data-line="471">    <span class="p">)</span>
+</span><span data-line="472">    <span class="k">return</span> <span class="p">{</span><span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span> <span class="s2">"state"</span><span class="p">:</span> <span class="n">DONE</span><span class="p">,</span> <span class="s2">"overview"</span><span class="p">:</span> <span class="n">made</span><span class="p">}</span>
 </span><span data-line="473">
+</span><span data-line="474">
 <div class="viewcode-block" id="work">
 <a class="viewcode-back" href="../../_autosummary/annals.overview.html#annals.overview.work">[docs]</a>
-</span><span data-line="474"><span class="k">def</span><span class="w"> </span><span class="nf">work</span><span class="p">(</span>
-</span><span data-line="475">    <span class="n">store</span><span class="p">,</span>
-</span><span data-line="476">    <span class="n">requests</span><span class="p">:</span> <span class="n">Requests</span><span class="p">,</span>
-</span><span data-line="477">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="478">    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="479">    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DFLT_TIMEOUT_S</span><span class="p">,</span>
-</span><span data-line="480">    <span class="n">daily_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="481">    <span class="n">doc_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="482"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="483"><span class="w">    </span><span class="sd">"""Fulfil every queued request, one at a time, until none is left; return what happened.</span>
-</span><span data-line="484">
-</span><span data-line="485"><span class="sd">    A failure is recorded on its request, for the page to show, and the next one still runs.</span>
-</span><span data-line="486"><span class="sd">    A request made while this runs is picked up before it exits. ``doc_url`` turns a document</span>
-</span><span data-line="487"><span class="sd">    id into its page, for ``{url}``.</span>
-</span><span data-line="488"><span class="sd">    """</span>
-</span><span data-line="489">    <span class="n">argv</span> <span class="o">=</span> <span class="n">_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
-</span><span data-line="490">    <span class="n">limit</span> <span class="o">=</span> <span class="n">_daily_limit</span><span class="p">(</span><span class="n">daily_limit</span><span class="p">)</span>
-</span><span data-line="491">    <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="492">    <span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-</span><span data-line="493">    <span class="k">with</span> <span class="n">_only_one_worker</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">folder</span><span class="p">)</span> <span class="k">as</span> <span class="n">mine</span><span class="p">:</span>
-</span><span data-line="494">        <span class="k">if</span> <span class="ow">not</span> <span class="n">mine</span><span class="p">:</span>
-</span><span data-line="495">            <span class="k">return</span> <span class="n">results</span>
-</span><span data-line="496">        <span class="k">while</span> <span class="n">fresh</span> <span class="o">:=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">requests</span><span class="o">.</span><span class="n">ids</span><span class="p">()</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">]:</span>
-</span><span data-line="497">            <span class="k">for</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">fresh</span><span class="p">:</span>
-</span><span data-line="498">                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
-</span><span data-line="499">                <span class="k">try</span><span class="p">:</span>
-</span><span data-line="500">                    <span class="n">happened</span> <span class="o">=</span> <span class="n">_step</span><span class="p">(</span>
-</span><span data-line="501">                        <span class="n">store</span><span class="p">,</span>
-</span><span data-line="502">                        <span class="n">requests</span><span class="p">,</span>
-</span><span data-line="503">                        <span class="n">doc_id</span><span class="p">,</span>
-</span><span data-line="504">                        <span class="n">argv</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span>
-</span><span data-line="505">                        <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
-</span><span data-line="506">                        <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
-</span><span data-line="507">                        <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span><span class="p">,</span>
-</span><span data-line="508">                    <span class="p">)</span>
-</span><span data-line="509">                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># one damaged request must not stop the others</span>
-</span><span data-line="510">                    <span class="n">happened</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="511">                        <span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span>
-</span><span data-line="512">                        <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span>
-</span><span data-line="513">                        <span class="s2">"error"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)[:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">],</span>
-</span><span data-line="514">                    <span class="p">}</span>
-</span><span data-line="515">                <span class="k">if</span> <span class="n">happened</span><span class="p">:</span>
-</span><span data-line="516">                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">happened</span><span class="p">)</span>
-</span><span data-line="517">    <span class="k">return</span> <span class="n">results</span></div>
+</span><span data-line="475"><span class="k">def</span><span class="w"> </span><span class="nf">work</span><span class="p">(</span>
+</span><span data-line="476">    <span class="n">store</span><span class="p">,</span>
+</span><span data-line="477">    <span class="n">requests</span><span class="p">:</span> <span class="n">Requests</span><span class="p">,</span>
+</span><span data-line="478">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="479">    <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="480">    <span class="n">timeout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">DFLT_TIMEOUT_S</span><span class="p">,</span>
+</span><span data-line="481">    <span class="n">daily_limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="482">    <span class="n">doc_url</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="483"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="484"><span class="w">    </span><span class="sd">"""Fulfil every queued request, one at a time, until none is left; return what happened.</span>
+</span><span data-line="485">
+</span><span data-line="486"><span class="sd">    A failure is recorded on its request, for the page to show, and the next one still runs.</span>
+</span><span data-line="487"><span class="sd">    A request made while this runs is picked up before it exits. ``doc_url`` turns a document</span>
+</span><span data-line="488"><span class="sd">    id into its page, for ``{url}``.</span>
+</span><span data-line="489"><span class="sd">    """</span>
+</span><span data-line="490">    <span class="n">argv</span> <span class="o">=</span> <span class="n">_command</span><span class="p">(</span><span class="n">command</span><span class="p">)</span>
+</span><span data-line="491">    <span class="n">limit</span> <span class="o">=</span> <span class="n">_daily_limit</span><span class="p">(</span><span class="n">daily_limit</span><span class="p">)</span>
+</span><span data-line="492">    <span class="n">results</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="493">    <span class="n">seen</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+</span><span data-line="494">    <span class="k">with</span> <span class="n">_only_one_worker</span><span class="p">(</span><span class="n">requests</span><span class="o">.</span><span class="n">folder</span><span class="p">)</span> <span class="k">as</span> <span class="n">mine</span><span class="p">:</span>
+</span><span data-line="495">        <span class="k">if</span> <span class="ow">not</span> <span class="n">mine</span><span class="p">:</span>
+</span><span data-line="496">            <span class="k">return</span> <span class="n">results</span>
+</span><span data-line="497">        <span class="k">while</span> <span class="n">fresh</span> <span class="o">:=</span> <span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">requests</span><span class="o">.</span><span class="n">ids</span><span class="p">()</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">]:</span>
+</span><span data-line="498">            <span class="k">for</span> <span class="n">doc_id</span> <span class="ow">in</span> <span class="n">fresh</span><span class="p">:</span>
+</span><span data-line="499">                <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="500">                <span class="k">try</span><span class="p">:</span>
+</span><span data-line="501">                    <span class="n">happened</span> <span class="o">=</span> <span class="n">_step</span><span class="p">(</span>
+</span><span data-line="502">                        <span class="n">store</span><span class="p">,</span>
+</span><span data-line="503">                        <span class="n">requests</span><span class="p">,</span>
+</span><span data-line="504">                        <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="505">                        <span class="n">argv</span><span class="o">=</span><span class="n">argv</span><span class="p">,</span>
+</span><span data-line="506">                        <span class="n">timeout</span><span class="o">=</span><span class="n">timeout</span><span class="p">,</span>
+</span><span data-line="507">                        <span class="n">limit</span><span class="o">=</span><span class="n">limit</span><span class="p">,</span>
+</span><span data-line="508">                        <span class="n">doc_url</span><span class="o">=</span><span class="n">doc_url</span><span class="p">,</span>
+</span><span data-line="509">                    <span class="p">)</span>
+</span><span data-line="510">                <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># one damaged request must not stop the others</span>
+</span><span data-line="511">                    <span class="n">happened</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="512">                        <span class="s2">"doc"</span><span class="p">:</span> <span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="513">                        <span class="s2">"state"</span><span class="p">:</span> <span class="n">FAILED</span><span class="p">,</span>
+</span><span data-line="514">                        <span class="s2">"error"</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)[:</span><span class="n">MAX_ERROR_CHARS</span><span class="p">],</span>
+</span><span data-line="515">                    <span class="p">}</span>
+</span><span data-line="516">                <span class="k">if</span> <span class="n">happened</span><span class="p">:</span>
+</span><span data-line="517">                    <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">happened</span><span class="p">)</span>
+</span><span data-line="518">    <span class="k">return</span> <span class="n">results</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -703,7 +705,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=cee5022b"></script>
+      <script src="../../_static/documentation_options.js?v=26ffa1e9"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

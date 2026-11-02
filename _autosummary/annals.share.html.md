@@ -43,7 +43,9 @@ password or revoking the link ends every open session.
 | [`dir_of`](#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).   |
 |----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | [`filter_refs`](#annals.share.filter_refs)(text, kind, \*, files, shared[, ...]) | `text` with every reference outside the share removed (or rewritten).               |
+| [`ref_decider`](#annals.share.ref_decider)(\*, from_dir, files, shared[, ...])   | `url -> new url` (often the same) or `None` (remove it).                            |
 | [`references`](#annals.share.references)(text, kind, \*[, from_dir])            | What a page points at: files of its document, and annals pages (by id).             |
+| [`remove_unshared_ids`](#annals.share.remove_unshared_ids)(text, shared)                 | `text` with every annals id that `shared` does not map replaced by a marker.        |
 | [`resolve_rel`](#annals.share.resolve_rel)(url[, from_dir])                      | A relative url as a file path inside the document, or `None` if it is not one.      |
 | [`share_url`](#annals.share.share_url)(base, token)                            | The link a recipient opens, or `None` when no share server is configured.           |
 
@@ -74,7 +76,7 @@ Whether `password` opens `record`.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-#### create(ref, , include=None, exclude=(), password=None, expires='7d', title=None)
+#### create(ref, , include=None, exclude=(), password=None, expires='7d', title=None, files_of=None)
 
 Share a document or a group (`ref` is its id); return the record (no hash).
 
@@ -85,9 +87,22 @@ unless `include` names some. `exclude` removes files (or a group’s documents).
 A linked page goes with the files it shows. `expires` is anything
 `parse_expires()` reads, 7 days by default (`"never"` for none); `password`
 gates the link (at least `caplinks.MIN_PASSWORD_LEN` characters).
+`files_of(meta)` narrows which files of each of a group’s documents go (all of
+them by default; [`annals.notebook.source_scope()`](annals.notebook.html.md#annals.notebook.source_scope) keeps only the pages and
+what they show).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### included(record)
+
+`(meta, files)` for each document of a share still there, in the share’s order.
+
+`files` are the document’s files the share includes; a document deleted or in
+the bin since the link was made is left out.
+
+* **Return type:**
+  [`list`](#annals.share.Shares.list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](#annals.share.Shares.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]]
 
 #### list(, all=False)
 
@@ -166,6 +181,16 @@ for anything outside the share however the text names it.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.share.ref_decider(, from_dir, files, shared, private_hosts=())
+
+`url -> new url` (often the same) or `None` (remove it).
+
+The one rule of what a shared text may point at; [`filter_refs()`](#annals.share.filter_refs) applies it to
+the references it finds in text, [`annals.notebook`](annals.notebook.html.md#module-annals.notebook) to a rendered page’s links.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
+
 ### annals.share.references(text, kind, , from_dir='')
 
 What a page points at: files of its document, and annals pages (by id).
@@ -175,6 +200,13 @@ feeds the Share dialog, which offers them to the owner.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.share.remove_unshared_ids(text, shared)
+
+`text` with every annals id that `shared` does not map replaced by a marker.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### annals.share.resolve_rel(url, from_dir='')
 

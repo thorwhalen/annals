@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-10-31T09:57:17Z",
+  "built_at": "2026-11-02T10:35:50Z",
   "package": {
     "name": "annals",
-    "version": "0.0.27",
+    "version": "0.0.28",
     "display_name": "annals",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "0ef7c4e7989bd41d938d0c983540408d002a2277",
-    "short_commit": "0ef7c4e",
+    "commit": "20eb4bb6a0c3933db3c716b3d03e132c35777cbe",
+    "short_commit": "20eb4bb",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/annals",
-    "commit_url": "https://github.com/thorwhalen/annals/commit/0ef7c4e7989bd41d938d0c983540408d002a2277",
+    "commit_url": "https://github.com/thorwhalen/annals/commit/20eb4bb6a0c3933db3c716b3d03e132c35777cbe",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/annals",
-    "sha": "0ef7c4e7989bd41d938d0c983540408d002a2277",
+    "sha": "20eb4bb6a0c3933db3c716b3d03e132c35777cbe",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "41190643788",
-    "run_url": "https://github.com/thorwhalen/annals/actions/runs/41190643788",
+    "run_id": "41429803277",
+    "run_url": "https://github.com/thorwhalen/annals/actions/runs/41429803277",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -55,16 +55,16 @@
     "docs_dir": "docsrc"
   },
   "site": {
-    "modules_documented": 14,
-    "objects_documented": 195
+    "modules_documented": 15,
+    "objects_documented": 214
   },
   "pypi": {
     "checked": true,
-    "latest": "0.0.27",
+    "latest": "0.0.28",
     "relation": "same",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout 0ef7c4e7989bd41d938d0c983540408d002a2277\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout 20eb4bb6a0c3933db3c716b3d03e132c35777cbe\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
     "aligned": true,

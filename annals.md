@@ -1,4 +1,4 @@
-> built 2026-10-31 09:57 UTC from 0ef7c4e (main) · annals 0.0.27. Details: build_info.json
+> built 2026-11-02 10:35 UTC from 20eb4bb (main) · annals 0.0.28. Details: build_info.json
 
 # index.html.md
 
@@ -170,6 +170,14 @@ aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundl
 ```
 
 `aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The API is `GET /groups/<gid>/aggregate` (`?download=1` to save it, `&demote=`), and `GET /<token>/aggregate` on the share server.
+
+## A group’s documents as separate notebook sources
+
+To take a group into a notebook (NotebookLM, now Gemini Notebook) with each document as its own source, open the group and tap **Notebook**. Tick the documents (all are ticked), choose how long the links work (1 day by default), and tap **Make links**. You get one link per page; tap **Copy N links**, then in the notebook choose Add source → Website and paste: the notebook makes one source of each link, named after the document. The same panel’s **Combine these** makes one Markdown file of only the ticked documents.
+
+The links are an ordinary share of just those documents (no password, since the notebook cannot type one): unguessable, filtered like every shared text, and revocable with **Turn these links off** or under Shares. The notebook keeps its own copy once a link is added, so turning the links off afterwards does not remove the sources. Each link is a plain web page with no script (`<share link>/source/<doc id>/<file>`); markdown is rendered on the server, images, audio and PDFs get no link (a notebook takes those only as uploads). Why links and not a zip or a download: `misc/docs/notebook-sources.md`.
+
+The API: `GET /shares/<token>/sources` (the owner’s) or `GET <share link>/sources` (the recipient’s) lists `{title, url}` per page; `GET /groups/<gid>/aggregate?doc=<id>&doc=<id>` combines only those documents.
 
 ## Other folders, search, filters and tags
 
@@ -1037,6 +1045,7 @@ Move documents to the recycle bin (restorable).
 | [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog)       | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
 | [`config`](_autosummary/annals.config.html.md#module-annals.config)         | Settings: where documents are published and what link to print.                                                                                    |
 | [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)               | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook)     | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
 | [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)     | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
 | [`share`](_autosummary/annals.share.html.md#module-annals.share)           | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](_autosummary/annals.sources.html.md#module-annals.sources)       | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
@@ -1064,6 +1073,194 @@ core free of any MCP import; the function list is the one the CLI dispatches.
 ### annals.mcp.mk_server()
 
 Build the MCP server over [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools).
+
+
+# _autosummary/annals.notebook.html.md
+
+# annals.notebook
+
+A share’s documents as separate notebook sources: one plain web page per text file.
+
+A notebook product (NotebookLM, and Gemini’s notebooks, which share its sources) takes a
+web page by its link, one source per link, and several links pasted at once; it reads
+the page’s text and keeps its own copy. It does not unpack a zip, and its upload picker
+needs the files on the device first. So the fewest taps from an iPad is: tick the
+documents, copy one list of links, paste it into the notebook (see
+`misc/docs/notebook-sources.md` for the research behind this).
+
+The links are a share’s ([`annals.share`](_autosummary/annals.share.html.md#module-annals.share)): unguessable, scoped to the documents
+ticked, expiring, revocable, and filtered like every shared text. This module only
+decides what becomes a source and how one looks:
+
+```default
+GET <share link>/source/<doc id>/<file>   a script-free html page: <title>, the text
+```
+
+- [`source_files()`](_autosummary/annals.notebook.html.md#annals.notebook.source_files): which files of a document are sources (markdown and html pages,
+  numbered files first, as [`annals.aggregate.numbered_first()`](_autosummary/annals.aggregate.html.md#annals.aggregate.numbered_first) orders them).
+- [`notebook_sources()`](_autosummary/annals.notebook.html.md#annals.notebook.notebook_sources): the `{doc, file, title, url}` rows of a share, in its order.
+- [`source_scope()`](_autosummary/annals.notebook.html.md#annals.notebook.source_scope): what a notebook share includes of a document: its source pages
+  and the files they show, never the rest of a folder.
+- [`render_source()`](_autosummary/annals.notebook.html.md#annals.notebook.render_source): one markdown file as its source page, shared-text rules applied
+  twice: to the text ([`annals.share.filter_refs()`](_autosummary/annals.share.html.md#annals.share.filter_refs)), then to every link and image of
+  the rendered page ([`annals.share.ref_decider()`](_autosummary/annals.share.html.md#annals.share.ref_decider) over markdown-it’s tokens), and
+  any annals id left in it removed. Cached, and rendered only up to
+  [`RENDER_MAX_BYTES`](_autosummary/annals.notebook.html.md#annals.notebook.RENDER_MAX_BYTES) (a larger file is sent as escaped text): it is a public route.
+- [`source_page()`](_autosummary/annals.notebook.html.md#annals.notebook.source_page): the page a notebook reads. Its `<title>` is the document’s title,
+  which the notebook shows as the source’s name, so the sources can be told apart.
+- [`markdown_html()`](_autosummary/annals.notebook.html.md#annals.notebook.markdown_html): markdown to html; `markdown-it-py` when installed (the
+  `pdf` extra), else the text escaped in a `<pre>`, which a notebook reads as well.
+
+### Module Attributes
+
+| [`SOURCE_KINDS`](_autosummary/annals.notebook.html.md#annals.notebook.SOURCE_KINDS)      | the kinds of file a notebook can take from a link (images, audio, video and pdf it takes only as uploads)         |
+|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| [`SOURCE_SEGMENT`](_autosummary/annals.notebook.html.md#annals.notebook.SOURCE_SEGMENT)    | the path segment of a source page under a share link                                                              |
+| [`SOURCE_CSS`](_autosummary/annals.notebook.html.md#annals.notebook.SOURCE_CSS)        | plain, readable, light or dark, no script and nothing loaded from elsewhere                                       |
+| [`SOURCE_CSP`](_autosummary/annals.notebook.html.md#annals.notebook.SOURCE_CSP)        | ones), nothing else; a sandbox (no origin, no script, no form) even so, since it is served beside the owner's app |
+| [`HTML_SOURCE_CSP`](_autosummary/annals.notebook.html.md#annals.notebook.HTML_SOURCE_CSP)   | its own styles and images, no script, no request elsewhere                                                        |
+| [`RENDER_MAX_BYTES`](_autosummary/annals.notebook.html.md#annals.notebook.RENDER_MAX_BYTES)  | rendering is superlinear on hostile input, and the route is public                                                |
+| [`SOURCE_CACHE_SIZE`](_autosummary/annals.notebook.html.md#annals.notebook.SOURCE_CACHE_SIZE) | rendered source pages kept in memory (each at most a few times RENDER_MAX_BYTES)                                  |
+
+### Functions
+
+| [`markdown_html`](_autosummary/annals.notebook.html.md#annals.notebook.markdown_html)(text, \*[, rewrite_url, render])    | `text` (markdown) as html; every link and image through `rewrite_url`.                    |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| [`notebook_sources`](_autosummary/annals.notebook.html.md#annals.notebook.notebook_sources)(scope, \*, link)                 | One row per source file of `scope` (`(meta, files)` pairs, in the share's order).         |
+| [`render_source`](_autosummary/annals.notebook.html.md#annals.notebook.render_source)(text, \*, title, link, doc_id, ...) | One markdown file of a share as its source page (see the module docstring).               |
+| [`source_files`](_autosummary/annals.notebook.html.md#annals.notebook.source_files)(meta, files)                         | The files of a document (`files`: those a caller may serve) that are sources.             |
+| [`source_link_rewriter`](_autosummary/annals.notebook.html.md#annals.notebook.source_link_rewriter)(decide, \*, link, ...)       | `url -> url | None` for a source page, which has no `<base>`.                             |
+| [`source_page`](_autosummary/annals.notebook.html.md#annals.notebook.source_page)(title, body_html)                     | The page a notebook reads: a `<title>`, the body, plain style, no script.                 |
+| [`source_scope`](_autosummary/annals.notebook.html.md#annals.notebook.source_scope)(read_text)                           | `meta -> files`: a document's source pages and the files they show, for a share.          |
+| [`source_title`](_autosummary/annals.notebook.html.md#annals.notebook.source_title)(meta, rel, \*, several)              | The source's name in the notebook: the document's title, plus the file if it has several. |
+| [`source_url`](_autosummary/annals.notebook.html.md#annals.notebook.source_url)(link, doc_id, rel)                     | `<link>/source/<doc id>/<file>` (`link`: the share's, with or without a slash).           |
+
+### annals.notebook.HTML_SOURCE_CSP *= "sandbox; default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"*
+
+its own styles and images, no script, no request elsewhere
+
+* **Type:**
+  an html source
+
+### annals.notebook.RENDER_MAX_BYTES *= 300000*
+
+rendering is
+superlinear on hostile input, and the route is public
+
+* **Type:**
+  markdown past this size is sent as escaped text, not rendered
+
+### annals.notebook.SOURCE_CACHE_SIZE *= 32*
+
+rendered source pages kept in memory (each at most a few times RENDER_MAX_BYTES)
+
+### annals.notebook.SOURCE_CSP *= "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"*
+
+ones), nothing else; a
+sandbox (no origin, no script, no form) even so, since it is served beside the owner’s app
+
+* **Type:**
+  what a source page may do
+* **Type:**
+  show its own images (and data
+
+### annals.notebook.SOURCE_CSS *= ":root{color-scheme:light dark}body{font:17px/1.6 system-ui,-apple-system,'Segoe UI',sans-serif;max-width:46rem;margin:0 auto;padding:1.5rem 1rem 4rem}pre,code{font-family:ui-monospace,Menlo,monospace;font-size:.9em}pre{white-space:pre-wrap;overflow-wrap:anywhere}table{border-collapse:collapse}th,td{border:1px solid #8884;padding:.3em .6em}img{max-width:100%;height:auto}"*
+
+plain, readable,
+light or dark, no script and nothing loaded from elsewhere
+
+* **Type:**
+  a source page is read by a fetcher and, now and then, by a person
+
+### annals.notebook.SOURCE_KINDS *= ('md', 'html')*
+
+the kinds of file a notebook can take from a link (images, audio, video and pdf it
+takes only as uploads)
+
+### annals.notebook.SOURCE_SEGMENT *= 'source'*
+
+the path segment of a source page under a share link
+
+### annals.notebook.markdown_html(text, , rewrite_url=None, render=None)
+
+`text` (markdown) as html; every link and image through `rewrite_url`.
+
+`render(text, rewrite_url)` overrides the default renderer. Without one (no
+`markdown-it-py`) the text is escaped in a `<pre>`: no markup, so no link.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.notebook.notebook_sources(scope, , link)
+
+One row per source file of `scope` (`(meta, files)` pairs, in the share’s order).
+
+`{"sources": [{"doc", "file", "title", "url"}], "skipped": [{"doc", "title",
+"kinds"}]}`; `skipped` names the documents with nothing a notebook can take from a
+link (only images, audio, pdf…), so the page can say why they are missing.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.notebook.render_source(text, , title, link, doc_id, rel, files, sources, shared_ids, root_id='', private_hosts=())
+
+One markdown file of a share as its source page (see the module docstring).
+
+Every argument is hashable, so a page is rendered once per text and scope.
+`shared_ids` are the annals ids the share includes (opened at `<link>/d/<id>`),
+`root_id` the shared group’s (opened at `<link>/`).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.notebook.source_files(meta, files)
+
+The files of a document (`files`: those a caller may serve) that are sources.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.notebook.source_link_rewriter(decide, , link, doc_id, from_dir, sources)
+
+`url -> url | None` for a source page, which has no `<base>`.
+
+`decide` ([`annals.share.ref_decider()`](_autosummary/annals.share.html.md#annals.share.ref_decider)) says what may stay; a relative file it
+keeps becomes absolute here: another source page of the document links to that
+page, any other file to the share’s raw file. Anchors and web links stay as they are.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
+
+### annals.notebook.source_page(title, body_html)
+
+The page a notebook reads: a `<title>`, the body, plain style, no script.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.notebook.source_scope(read_text)
+
+`meta -> files`: a document’s source pages and the files they show, for a share.
+
+`read_text(doc_id, rel)` reads one file. A notebook share made with this (the
+`files_of` of [`annals.share.Shares.create()`](_autosummary/annals.share.html.md#annals.share.Shares.create)) reaches nothing else of a folder.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Mapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Mapping)], [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
+### annals.notebook.source_title(meta, rel, , several)
+
+The source’s name in the notebook: the document’s title, plus the file if it has several.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.notebook.source_url(link, doc_id, rel)
+
+`<link>/source/<doc id>/<file>` (`link`: the share’s, with or without a slash).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/annals.overview.html.md
@@ -1285,7 +1482,9 @@ password or revoking the link ends every open session.
 | [`dir_of`](_autosummary/annals.share.html.md#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).   |
 |----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | [`filter_refs`](_autosummary/annals.share.html.md#annals.share.filter_refs)(text, kind, \*, files, shared[, ...]) | `text` with every reference outside the share removed (or rewritten).               |
+| [`ref_decider`](_autosummary/annals.share.html.md#annals.share.ref_decider)(\*, from_dir, files, shared[, ...])   | `url -> new url` (often the same) or `None` (remove it).                            |
 | [`references`](_autosummary/annals.share.html.md#annals.share.references)(text, kind, \*[, from_dir])            | What a page points at: files of its document, and annals pages (by id).             |
+| [`remove_unshared_ids`](_autosummary/annals.share.html.md#annals.share.remove_unshared_ids)(text, shared)                 | `text` with every annals id that `shared` does not map replaced by a marker.        |
 | [`resolve_rel`](_autosummary/annals.share.html.md#annals.share.resolve_rel)(url[, from_dir])                      | A relative url as a file path inside the document, or `None` if it is not one.      |
 | [`share_url`](_autosummary/annals.share.html.md#annals.share.share_url)(base, token)                            | The link a recipient opens, or `None` when no share server is configured.           |
 
@@ -1316,7 +1515,7 @@ Whether `password` opens `record`.
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
-#### create(ref, , include=None, exclude=(), password=None, expires='7d', title=None)
+#### create(ref, , include=None, exclude=(), password=None, expires='7d', title=None, files_of=None)
 
 Share a document or a group (`ref` is its id); return the record (no hash).
 
@@ -1327,9 +1526,22 @@ unless `include` names some. `exclude` removes files (or a group’s documents).
 A linked page goes with the files it shows. `expires` is anything
 `parse_expires()` reads, 7 days by default (`"never"` for none); `password`
 gates the link (at least `caplinks.MIN_PASSWORD_LEN` characters).
+`files_of(meta)` narrows which files of each of a group’s documents go (all of
+them by default; [`annals.notebook.source_scope()`](_autosummary/annals.notebook.html.md#annals.notebook.source_scope) keeps only the pages and
+what they show).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### included(record)
+
+`(meta, files)` for each document of a share still there, in the share’s order.
+
+`files` are the document’s files the share includes; a document deleted or in
+the bin since the link was made is left out.
+
+* **Return type:**
+  [`list`](_autosummary/annals.share.html.md#annals.share.Shares.list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](_autosummary/annals.share.html.md#annals.share.Shares.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]]
 
 #### list(, all=False)
 
@@ -1408,6 +1620,16 @@ for anything outside the share however the text names it.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.share.ref_decider(, from_dir, files, shared, private_hosts=())
+
+`url -> new url` (often the same) or `None` (remove it).
+
+The one rule of what a shared text may point at; [`filter_refs()`](_autosummary/annals.share.html.md#annals.share.filter_refs) applies it to
+the references it finds in text, [`annals.notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook) to a rendered page’s links.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
+
 ### annals.share.references(text, kind, , from_dir='')
 
 What a page points at: files of its document, and annals pages (by id).
@@ -1417,6 +1639,13 @@ feeds the Share dialog, which offers them to the owner.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.share.remove_unshared_ids(text, shared)
+
+`text` with every annals id that `shared` does not map replaced by a marker.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 ### annals.share.resolve_rel(url, from_dir='')
 
@@ -2412,7 +2641,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-10-31 09:57 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/0ef7c4e7989bd41d938d0c983540408d002a2277"><code>0ef7c4e</code></a> on branch <code>main</code>, for **annals 0.0.27** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-02 10:35 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/20eb4bb6a0c3933db3c716b3d03e132c35777cbe"><code>20eb4bb</code></a> on branch <code>main</code>, for **annals 0.0.28** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -2421,7 +2650,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/0ef7c4e7989bd41d938d0c983540408d002a2277"><code>0ef7c4e7989bd41d938d0c983540408d002a2277</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/20eb4bb6a0c3933db3c716b3d03e132c35777cbe"><code>20eb4bb6a0c3933db3c716b3d03e132c35777cbe</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -2432,9 +2661,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41190643788">41190643788</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41429803277">41429803277</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>0ef7c4e7989bd41d938d0c983540408d002a2277</code> (in the history of the built commit) |
+| Event commit | <code>20eb4bb6a0c3933db3c716b3d03e132c35777cbe</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2459,13 +2688,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.27/">0.0.27</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.28/">0.0.28</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 0ef7c4e7989bd41d938d0c983540408d002a2277
+git checkout 20eb4bb6a0c3933db3c716b3d03e132c35777cbe
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
