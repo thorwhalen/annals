@@ -66,6 +66,7 @@ from annals.config import (
 from annals.catalog import Catalog, mk_catalog
 from annals.export import (
     aggregate_response,
+    markdown_response,
     file_url_builder,
     run_export,
     trusted_base,
@@ -81,6 +82,14 @@ from annals.sources import (
     with_thumb,
 )
 from annals.notebook import notebook_sources, source_scope
+from annals.references import (
+    DFLT_FORM as DFLT_REFERENCE_FORM,
+    FORMS as REFERENCE_FORMS,
+    combine_references,
+    doc_reference_texts,
+    reference_entries,
+    reference_sections,
+)
 from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
     DocStore,
@@ -419,6 +428,96 @@ def mk_api(
                 continue
         return {**group, "items": docs}
 
+    def _group_selection(gid: str, doc: list[str]) -> tuple[dict, list[dict]]:
+        """A group and its documents, only the ``doc`` ids among them when any are given."""
+        try:
+            group, docs = store.group_docs(gid)
+        except (KeyError, ValueError):
+            raise HTTPException(404, "no such group")
+        chosen = {d for d in doc if d}
+        if chosen:
+            unknown = chosen - set(group["docs"])
+            if unknown:
+                raise HTTPException(
+                    422, f"not documents of this group: {sorted(unknown)[:5]}"
+                )
+            docs = [m for m in docs if m["id"] in chosen]
+        return group, docs
+
+    def _selection(doc: list[str], group: str) -> tuple[str, list[dict]]:
+        """What an action works on: a group (or some of its documents), or documents by id.
+
+        Returns a title for the result and the documents' meta; binned ones are left out.
+        """
+        if group:
+            g, docs = _group_selection(group, doc)
+            return g.get("title") or group, docs
+        ids = list(dict.fromkeys(d for d in doc if d))
+        if not ids:
+            raise HTTPException(422, "name a group or at least one document")
+        docs = [_meta_or_404(store, i) for i in ids]
+        docs = [m for m in docs if not m.get("in_trash")]
+        if len(docs) == 1:
+            return docs[0].get("title") or docs[0]["id"], docs
+        return f"{len(docs)} documents", docs
+
+    @api.get("/references")
+    async def references(
+        doc: list[str] = Query(default=[]),
+        group: str = "",
+        form: str = DFLT_REFERENCE_FORM,
+        download: bool = False,
+    ) -> Response:
+        """The references of a document, a group, or a selection, in one of three forms.
+
+        ``group`` (with ``doc`` repeated to keep only some of its documents) or ``doc``
+        repeated alone. ``form``: ``grouped`` (each document's references section as it
+        is), ``deduped`` (every entry once, numbers removed) or ``urls`` (one address per
+        line, nothing else: what a notebook takes as pasted sources). See
+        :mod:`annals.references`. ``X-Annals-Items`` says how many documents had
+        references, ``X-Annals-Without`` how many had none, ``X-Annals-Count`` how many
+        lines of references (or addresses) came out.
+        """
+        if form not in REFERENCE_FORMS:
+            raise HTTPException(422, f"form must be one of {list(REFERENCE_FORMS)}")
+
+        def make() -> Response:
+            title, docs = _selection(doc, group)
+            items = list(
+                doc_reference_texts(
+                    ((m, m.get("files", [])) for m in docs), read=store.read_text
+                )
+            )
+            text = combine_references(items, title=title, form=form)
+            if not text:
+                raise HTTPException(404, "no references section in these documents")
+            sections = [
+                [s for t in texts for s in reference_sections(t)] for _, texts in items
+            ]
+            with_refs = sum(1 for secs in sections if secs)
+            if form == "grouped":
+                count = sum(
+                    len(reference_entries(s)) for secs in sections for s in secs
+                )
+            else:  # one line per entry (deduped, after its heading) or per address
+                count = sum(
+                    1
+                    for ln in text.splitlines()
+                    if ln.strip() and not ln.startswith("#")
+                )
+            response = markdown_response(
+                text,
+                title=f"{title} references",
+                download=download,
+                ext="txt" if form == "urls" else "md",
+            )
+            response.headers["X-Annals-Items"] = str(with_refs)
+            response.headers["X-Annals-Without"] = str(len(docs) - with_refs)
+            response.headers["X-Annals-Count"] = str(count)
+            return response
+
+        return await anyio.to_thread.run_sync(make)
+
     @api.get("/groups/{gid}/aggregate")
     async def aggregate_group(
         gid: str,
@@ -434,18 +533,7 @@ def mk_api(
         """
 
         def make() -> Response:
-            try:
-                group, docs = store.group_docs(gid)
-            except (KeyError, ValueError):
-                raise HTTPException(404, "no such group")
-            chosen = {d for d in doc if d}
-            if chosen:
-                unknown = chosen - set(group["docs"])
-                if unknown:
-                    raise HTTPException(
-                        422, f"not documents of this group: {sorted(unknown)[:5]}"
-                    )
-                docs = [m for m in docs if m["id"] in chosen]
+            group, docs = _group_selection(gid, doc)
             return aggregate_response(
                 ((m, m.get("files", [])) for m in docs),
                 read=store.read_text,
