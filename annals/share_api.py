@@ -57,6 +57,7 @@ from annals.api import (
     raw_response,
     doc_file_path,
     doctype_guard,
+    serve_html,
 )
 from annals.export import (
     aggregate_response,
@@ -75,7 +76,6 @@ from annals.notebook import (
 )
 from annals.share import Shares, dir_of, filter_refs
 from annals.sources import with_thumb
-from annals.tables import add_table_tools
 from annals.store import PAGE_KINDS, TEXT_KINDS, DocStore, kind_of
 
 #: on every response: never indexed, never leak the url onward (heed.review's set)
@@ -441,7 +441,7 @@ def mk_share_api(
             text = path.read_text(encoding="utf-8", errors="replace")
             body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
             if kind_of(rel) == "html":
-                body = add_table_tools(doctype_guard(body))
+                body = serve_html(body)
             media_type = media_type_of(rel)
             if "charset" not in media_type:
                 media_type += "; charset=utf-8"
