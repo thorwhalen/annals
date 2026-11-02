@@ -11,6 +11,9 @@ so a revoke, an expiry or a changed password takes effect on the next request::
     GET  /{token}/share             the share: title, root, its documents
     GET  /{token}/docs/{id}         one shared document: its included files, its text
     GET  /{token}/raw/{id}/{path}   an included file (byte ranges); a page's text filtered
+    GET  /{token}/sources           the text files as notebook sources: a title and a link each
+    GET  /{token}/source/{id}/{path} one of them as a plain, script-free web page (a notebook
+                                    takes one source per link: annals.notebook)
     GET  /{token}/thumb/{id}/{path} an included image, small
     GET  /ui/{name}                 the page's script and style (an allowlist)
 
@@ -62,6 +65,14 @@ from annals.export import (
     trusted_base,
 )
 from annals.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
+from annals.notebook import (
+    SOURCE_CSP,
+    markdown_html,
+    notebook_sources,
+    source_files,
+    source_page,
+    source_title,
+)
 from annals.share import Shares, dir_of, filter_refs
 from annals.sources import with_thumb
 from annals.tables import add_table_tools
@@ -438,6 +449,51 @@ def mk_share_api(
             return Response(body, media_type=media_type, headers=headers)
         return raw_response(path, rel, cache=SHARED_FILE_CACHE)
 
+    @app.get("/{token}/sources")
+    def shared_sources(token: str, request: Request) -> JSONResponse:
+        """The share's text files as notebook sources: one link each (:mod:`annals.notebook`).
+
+        The links are root-relative (this server cannot know its public scheme behind a
+        proxy); the page makes them absolute.
+        """
+        rec = _open(token, request)
+        return JSONResponse(
+            notebook_sources(shares.included(rec), link=_link(request, token)),
+            headers=NO_STORE,
+        )
+
+    @app.get("/{token}/source/{doc_id}/{rel:path}")
+    def shared_source(token: str, doc_id: str, rel: str, request: Request) -> Response:
+        """A text file as a plain web page for a notebook: its title, its filtered text, no script."""
+        rec, files, path = _shared_path(token, doc_id, rel, request)
+        meta = store.meta(doc_id)
+        if rel not in source_files(meta, files):
+            raise HTTPException(404, "this file is not a notebook source")
+        if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
+            raise HTTPException(413, "this page is too large to share")
+        text = _filtered(
+            rec,
+            request,
+            doc_id,
+            rel,
+            files,
+            path.read_text(encoding="utf-8", errors="replace"),
+        )
+        if kind_of(rel) == "html":
+            body = doctype_guard(text.encode("utf-8"))
+            csp = RAW_SANDBOX_CSP
+        else:
+            several = len(source_files(meta, files)) > 1
+            base = f"{_link(request, token)}/raw/{doc_id}/{dir_of(rel)}"
+            body = source_page(
+                source_title(meta, rel, several=several),
+                markdown_html(text),
+                base_href=base,
+            ).encode("utf-8")
+            csp = SOURCE_CSP
+        headers = {"Cache-Control": SHARED_FILE_CACHE, "Content-Security-Policy": csp}
+        return Response(body, media_type="text/html; charset=utf-8", headers=headers)
+
     @app.get("/{token}/export/{doc_id}")
     async def shared_export(
         token: str,
@@ -490,12 +546,7 @@ def mk_share_api(
         rec = _open(token, request)
 
         def make() -> Response:
-            docs = []
-            for doc_id in rec["docs"]:
-                try:
-                    docs.append(_shared_files(rec, doc_id))
-                except HTTPException:
-                    continue  # trashed or deleted since
+            docs = shares.included(rec)
             allowed = {meta["id"]: files for meta, files in docs}
 
             def read(doc_id: str, rel: str) -> str:

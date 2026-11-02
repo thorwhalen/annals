@@ -508,6 +508,24 @@ class Shares:
             expires=expires,
         )
 
+    def included(self, record: dict) -> list[tuple[dict, list[str]]]:
+        """``(meta, files)`` for each document of a share still there, in the share's order.
+
+        ``files`` are the document's files the share includes; a document deleted or in
+        the bin since the link was made is left out.
+        """
+        out = []
+        for doc_id, files in record["docs"].items():
+            try:
+                meta = self.store.meta(doc_id)
+            except (KeyError, ValueError):
+                continue
+            if meta.get("in_trash"):
+                continue
+            allowed = set(files or [])
+            out.append((meta, [f for f in meta.get("files", []) if f in allowed]))
+        return out
+
     # -- the link itself, delegated to caplinks --
 
     def record(self, token: str) -> dict | None:

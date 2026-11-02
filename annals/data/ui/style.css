@@ -235,3 +235,8 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .inline-item .media.audio audio { width: 100%; }
 .inline-item .media.image img { height: auto; max-height: 60vh; object-fit: contain; }
 .inline-item:hover { border-color: var(--line); }
+/* the Notebook panel: busy buttons look it, rows are thumb-sized on touch */
+.btn[aria-busy=true] { opacity: .6; cursor: progress; }
+.notebook-panel .combine-text { white-space: pre; overflow-x: auto; }
+.source-titles { margin: 8px 0 0; padding-left: 1.4em; font-size: .9rem; }
+@media (pointer: coarse) { .check, .share-panel .btn, .share-panel .btn.link, .share-opts select { min-height: 44px; } .share-panel .btn.link { min-width: 44px; } }
