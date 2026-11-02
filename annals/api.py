@@ -39,7 +39,7 @@ from urllib.parse import quote, urlsplit
 
 import anyio
 import anyio.to_thread
-from fastapi import Body, Depends, FastAPI, Header, HTTPException, Request
+from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query, Request
 from fastapi.responses import (
     FileResponse,
     HTMLResponse,
@@ -79,6 +79,7 @@ from annals.sources import (
     parse_sources_spec,
     with_thumb,
 )
+from annals.notebook import notebook_sources, source_scope
 from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
     DocStore,
@@ -401,12 +402,16 @@ def mk_api(
 
     @api.get("/groups/{gid}/aggregate")
     async def aggregate_group(
-        gid: str, download: bool = False, demote: int = 1
+        gid: str,
+        download: bool = False,
+        demote: int = 1,
+        doc: list[str] = Query(default=[]),
     ) -> Response:
         """Every markdown file of a group's documents as one ``.md``, made per request.
 
-        Shown as plain text, or saved as ``<title>.md`` with ``?download=1``. Documents in
-        the bin are left out. See :mod:`annals.aggregate` for the layout.
+        Shown as plain text, or saved as ``<title>.md`` with ``?download=1``. ``doc``
+        (repeated) keeps only those documents of the group, in the group's order. Documents
+        in the bin are left out. See :mod:`annals.aggregate` for the layout.
         """
 
         def make() -> Response:
@@ -414,6 +419,14 @@ def mk_api(
                 group, docs = store.group_docs(gid)
             except (KeyError, ValueError):
                 raise HTTPException(404, "no such group")
+            chosen = {d for d in doc if d}
+            if chosen:
+                unknown = chosen - set(group["docs"])
+                if unknown:
+                    raise HTTPException(
+                        422, f"not documents of this group: {sorted(unknown)[:5]}"
+                    )
+                docs = [m for m in docs if m["id"] in chosen]
             return aggregate_response(
                 ((m, m.get("files", [])) for m in docs),
                 read=store.read_text,
@@ -443,11 +456,13 @@ def mk_api(
 
     @api.post("/shares", dependencies=[Depends(_require_same_origin)])
     def create_share(body: dict = Body(...)) -> dict:
-        """Share ``{"ref": id, "include"?, "exclude"?, "password"?, "expires"?, "title"?}``.
+        """Share ``{"ref": id, "include"?, "exclude"?, "password"?, "expires"?, "title"?, "files"?}``.
 
         ``expires`` defaults to 7 days; ``"never"`` (or ``null``) makes a lasting link.
+        ``"files": "sources"`` shares only each document's pages and what they show
+        (:func:`annals.notebook.source_scope`), for a notebook; ``"all"`` is the default.
         """
-        known = {"ref", "include", "exclude", "password", "expires", "title"}
+        known = {"ref", "include", "exclude", "password", "expires", "title", "files"}
         if set(body) - known or not isinstance(body.get("ref"), str):
             raise HTTPException(
                 422,
@@ -461,6 +476,8 @@ def mk_api(
         for k in ("password", "expires", "title"):
             if body.get(k) is not None and not isinstance(body[k], str):
                 raise HTTPException(422, f"{k} must be a string")
+        if body.get("files", "all") not in ("all", "sources"):
+            raise HTTPException(422, "files must be 'all' or 'sources'")
         try:
             rec = shares.create(
                 body["ref"],
@@ -469,12 +486,37 @@ def mk_api(
                 password=body.get("password") or None,
                 expires=body["expires"] if "expires" in body else DFLT_EXPIRES,
                 title=body.get("title") or None,
+                files_of=(
+                    source_scope(store.read_text)
+                    if body.get("files") == "sources"
+                    else None
+                ),
             )
         except KeyError:
             raise HTTPException(404, "no such document or group")
         except ValueError as e:
             raise HTTPException(422, str(e))
         return _with_link(rec)
+
+    @api.get("/shares/{token}/sources")
+    def share_sources(token: str) -> dict:
+        """A share's text files as notebook sources: a title and a public link each.
+
+        One link per markdown or html file of the documents the share includes, in its
+        order (:mod:`annals.notebook`); a notebook makes one source of each link pasted.
+        """
+        state, rec = shares.status(token)  # a revoked link reads as missing
+        if state != "ok":
+            raise HTTPException(404 if state == "missing" else 410, f"share {state}")
+        link = share_url(share_base, token)
+        if not link:
+            raise HTTPException(409, "no public share address (ANNALS_SHARE_BASE_URL)")
+        return {
+            "token": token,
+            "protected": bool(rec.get("password")),
+            "expires": rec.get("expires"),
+            **notebook_sources(shares.included(rec), link=link),
+        }
 
     @api.delete("/shares/{token}", dependencies=[Depends(_require_same_origin)])
     def revoke_share(token: str) -> dict:

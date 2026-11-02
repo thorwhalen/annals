@@ -15,6 +15,9 @@
    then shows only what the share includes, without the owner's controls.
    A group (the owner's, or a share's) has a Combine button: its markdown files as one .md,
    made by the server on each request (annals.aggregate), to copy, save or read raw.
+   The owner's group also has a Notebook button: tick documents, get one public link per
+   page (a share of just those, annals.notebook), copy them all and paste them into the
+   notebook, which makes one source of each link; or combine just the ticked ones.
    The API lives at window.ANNALS.api (standalone: BASE/api; on enlace: /api/<app>). Items
    (every source's rows, and their tags) are read and patched through @zodal/store-http's
    provider, vendored at API/ui/vendor/, so the storage behind them can change without
@@ -611,7 +614,8 @@
     open: "M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5",
     trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13",
     restore: "M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5",
-    more: "M5 12h.01M12 12h.01M19 12h.01"
+    more: "M5 12h.01M12 12h.01M19 12h.01",
+    notebook: "M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3v18M10 8h5M10 12h5M3 7h3M3 12h3M3 17h3"
   };
   function icon(name) {
     return h("span", { class: "ico", "aria-hidden": "true", html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (ICONS[name] || ICONS.file) + '"/></svg>' });
@@ -930,7 +934,8 @@
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
         actionBar({
           primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } },
-            hasMarkdown(items) ? combineAction(groupPanel, API + "/groups/" + encodeURIComponent(g.id) + "/aggregate") : null],
+            hasMarkdown(items) ? combineAction(groupPanel, API + "/groups/" + encodeURIComponent(g.id) + "/aggregate") : null,
+            items.some(isSourceable) ? notebookAction(groupPanel, g, items) : null],
           actions: [COPY_LINK()]
         }),
         groupPanel,
@@ -1046,6 +1051,136 @@
         h("a", { class: "btn", href: url, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open as text"])])
       ]));
       wrap.appendChild(raw);
+    }
+    return wrap;
+  }
+
+  /* -------- a group's documents as separate notebook sources (annals.notebook) ------- */
+  /* A notebook (NotebookLM / Gemini Notebook) takes a web page by its link, one source per
+     link, and several links pasted at once; it does not unpack a zip. So: tick documents,
+     make a share of just those (no password: the notebook cannot type one; short expiry:
+     the notebook keeps its own copy once added), list one link per page, Copy them all
+     inside the tap, paste. The share is an ordinary one: revocable here or on Shares. */
+  var NOTEBOOK_URL = "https://notebooklm.google.com/";
+  var NOTEBOOK_EXPIRY = [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"]];
+  function isSourceable(m) { return m.kind === "md" || m.kind === "html" || m.kind === "folder"; }
+  function pending(btn, on) {
+    btn.setAttribute("aria-busy", String(on));
+    if (on) btn.setAttribute("aria-disabled", "true"); else btn.removeAttribute("aria-disabled");
+  }
+  function isPending(btn) { return btn.getAttribute("aria-busy") === "true"; }
+  function notebookAction(panel, g, items) {
+    return { label: "Notebook", hint: "Each page as its own source in a notebook (NotebookLM), or just these combined", icon: "notebook", expanded: true,
+      run: function (e) {
+        var btn = e.currentTarget, open = btn.getAttribute("aria-expanded") === "true";
+        btn.setAttribute("aria-expanded", String(!open));
+        panel.innerHTML = "";
+        if (!open) panel.appendChild(notebookPanel(g, items));
+      } };
+  }
+  function notebookPanel(g, items) {
+    var wrap = h("section", { class: "share-panel notebook-panel", "aria-label": "Notebook sources" }, [
+      h("h3", null, ["Add to a notebook, one source each"]),
+      h("p", { class: "muted" }, ["Tick the documents. You get one link per page; paste them all at once into the notebook's Website source, and each becomes its own source."])]);
+    var picks = [];
+    var usable = items.filter(isSourceable), others = items.filter(function (m) { return !isSourceable(m); });
+    function selectAll(on) { picks.forEach(function (p) { p.input.checked = on; }); count(); }
+    wrap.appendChild(h("div", { class: "toolbar" }, [h("span", { class: "muted" }, ["Select:"]),
+      h("button", { class: "btn link", type: "button", onclick: function () { selectAll(true); } }, ["All"]),
+      h("button", { class: "btn link", type: "button", onclick: function () { selectAll(false); } }, ["None"])]));
+    usable.forEach(function (m) {
+      var row = checkRow([kindBadge(m.kind), " " + (m.title || m.id)], true, { value: m.id });
+      row.input.addEventListener("change", count);
+      picks.push({ input: row.input, value: m.id });
+      wrap.appendChild(row.el);
+    });
+    if (others.length) wrap.appendChild(h("p", { class: "muted" }, [others.length + (others.length === 1 ? " document is" : " documents are") +
+      " not a page (" + others.map(function (m) { return m.kind; }).filter(function (k, i, a) { return a.indexOf(k) === i; }).join(", ") + "): a notebook cannot take " + (others.length === 1 ? "it" : "them") + " from a link."]));
+    var expires = NOTEBOOK_EXPIRY[0][0];
+    var expSeg = h("div", { class: "seg", role: "group", "aria-label": "Links work for" }, NOTEBOOK_EXPIRY.map(function (c) {
+      return h("button", { class: "btn", type: "button", "aria-pressed": String(c[0] === expires), onclick: function () {
+        expires = c[0];
+        [].forEach.call(expSeg.children, function (b, i) { b.setAttribute("aria-pressed", String(NOTEBOOK_EXPIRY[i][0] === expires)); });
+      } }, [c[1]]);
+    }));
+    wrap.appendChild(h("div", { class: "share-opts" }, [h("div", null, [h("span", { class: "muted" }, ["Links work for "]), expSeg])]));
+    var make = h("button", { class: "btn primary", type: "button", onclick: makeLinks }, [h("span", { class: "lbl" }, ["Make links"])]);
+    var combine = h("button", { class: "btn", type: "button", onclick: combineChosen }, [icon("file"), h("span", { class: "lbl" }, ["Combine these"])]);
+    var result = h("div", { class: "notebook-result", "aria-live": "polite" });
+    var combined = h("div");
+    var existing = h("div");
+    var current = null;   /* this panel's live share: a new press replaces it, never piles up */
+    wrap.appendChild(h("div", { class: "toolbar combine-actions" }, [make, combine]));
+    wrap.appendChild(result);
+    wrap.appendChild(combined);
+    wrap.appendChild(existing);
+    var redraw = existingShares(g.id, existing);   /* every live link of this group, revocable */
+    function chosen() { return picks.filter(function (p) { return p.input.checked; }).map(function (p) { return p.value; }); }
+    function count() {
+      var n = chosen().length;
+      make.lastChild.textContent = n ? "Make links for " + n : "Make links";
+      combine.lastChild.textContent = n === usable.length || !n ? "Combine these" : "Combine " + n;
+    }
+    count();
+    function makeLinks() {
+      if (isPending(make)) return;
+      var ids = chosen();
+      if (!ids.length) { toast("Tick at least one document"); return; }
+      pending(make, true);
+      result.innerHTML = "";
+      result.appendChild(h("p", { class: "muted", role: "status" }, ["Making the links…"]));
+      /* only each document's pages and what they show; no password (a notebook cannot type one) */
+      var body = { ref: g.id, include: ids, expires: expires, files: "sources", title: (g.title || g.id) + " (notebook sources)" };
+      var made = null;
+      revoke(current)
+        .then(function () { current = null; return api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); })
+        .then(function (s) { made = s; return api("/shares/" + encodeURIComponent(s.token) + "/sources"); })
+        .then(function (out) { current = made.token; drawLinks(made, out); })
+        .catch(function (e) {
+          if (made) revoke(made.token).catch(function () {});   /* never leave a link nobody was shown */
+          result.innerHTML = "";
+          result.appendChild(h("p", { class: "err", role: "alert" }, ["Could not make the links: " + (e.message || e)]));
+        })
+        .then(function () { pending(make, false); redraw(); });
+    }
+    function revoke(token) {
+      return token ? api("/shares/" + encodeURIComponent(token), { method: "DELETE" }) : Promise.resolve();
+    }
+    function drawLinks(s, out) {
+      result.innerHTML = "";
+      var urls = out.sources.map(function (x) { return absUrl(x.url); });
+      if (!urls.length) { result.appendChild(h("p", { class: "err", role: "alert" }, ["None of these documents has a page a notebook can read."])); return; }
+      var text = urls.join("\n");
+      var raw = h("textarea", { class: "combine-text", readonly: "", rows: String(Math.min(urls.length, 8)), spellcheck: "false", "aria-label": "One link per source" }, [text]);
+      var n = urls.length;
+      result.appendChild(h("p", { role: "status" }, [n + (n === 1 ? " link" : " links") + ", one per source. Copy, then in the notebook: Add source → Website → paste."]));
+      result.appendChild(h("div", { class: "toolbar combine-actions" }, [
+        h("button", { class: "btn primary", type: "button", onclick: function () { copyText(text, raw); } }, [icon("copy"), h("span", { class: "lbl" }, ["Copy " + n + (n === 1 ? " link" : " links")])]),
+        h("a", { class: "btn", href: NOTEBOOK_URL, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open the notebook app"])])
+      ]));
+      result.appendChild(raw);
+      result.appendChild(h("ol", { class: "source-titles muted" }, out.sources.map(function (x) { return h("li", null, [x.title]); })));
+      (out.skipped || []).forEach(function (x) { result.appendChild(h("p", { class: "muted" }, ["“" + (x.title || x.doc) + "” has no page (only " + x.kinds.join(", ") + "), so it has no link."])); });
+      var off = h("button", { class: "btn danger", type: "button", onclick: function () {
+        if (isPending(off)) return;
+        pending(off, true);
+        revoke(s.token).then(function () {
+          current = null;
+          result.innerHTML = "";
+          result.appendChild(h("p", { role: "status" }, ["Links turned off. Sources already in a notebook stay there."]));
+          redraw();
+        }).catch(function (e) { pending(off, false); toast(String(e.message || e)); });
+      } }, ["Turn these links off"]);
+      result.appendChild(h("p", { class: "muted" }, ["Anyone with these links can read these pages" + (s.expires ? " until " + until(s.expires) : "") +
+        ". The notebook keeps its own copy once they are added, so you can turn them off then (here, or under Shares)."]));
+      result.appendChild(h("div", { class: "toolbar" }, [off]));
+    }
+    function combineChosen() {
+      var ids = chosen();
+      if (!ids.length) { toast("Tick at least one document"); return; }
+      var q = ids.map(function (i) { return "doc=" + encodeURIComponent(i); }).join("&");
+      combined.innerHTML = "";
+      combined.appendChild(combinePanel(API + "/groups/" + encodeURIComponent(g.id) + "/aggregate?" + q));
     }
     return wrap;
   }

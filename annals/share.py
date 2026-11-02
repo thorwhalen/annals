@@ -75,7 +75,7 @@ _MD_REFDEF_RE = re.compile(
     r"(?P<url><[^>\n]*>|\S+)(?P<rest>.*)$",
     re.M,
 )
-_MD_AUTOLINK_RE = re.compile(r"<(?P<url>(?:https?:)?/[^>\s]*)>")
+_MD_AUTOLINK_RE = re.compile(r"<(?P<url>(?:https?:)?/[^>\s]*)>", re.I)
 _HTML_ATTR_RE = re.compile(
     r"(?P<attr>\b(?:src|href|poster|data|action|formaction|srcset|xlink:href|ping|background"
     r"|cite|longdesc|usemap|manifest|codebase|archive|content)\s*=\s*)"
@@ -115,14 +115,18 @@ def resolve_rel(url: str, from_dir: str = "") -> str | None:
     return "/".join(out) or None
 
 
-def _decider(
+def ref_decider(
     *,
     from_dir: str,
     files: set[str],
     shared: Callable[[str], str | None],
     private_hosts: Iterable[str] = (),
 ) -> Callable[[str], str | None]:
-    """``url -> new url`` (often the same) or ``None`` (remove it)."""
+    """``url -> new url`` (often the same) or ``None`` (remove it).
+
+    The one rule of what a shared text may point at; :func:`filter_refs` applies it to
+    the references it finds in text, :mod:`annals.notebook` to a rendered page's links.
+    """
     from html import unescape
     from urllib.parse import urlsplit
 
@@ -221,7 +225,7 @@ def filter_refs(
     Best effort by design, and the second line of defence: the share server answers 404
     for anything outside the share however the text names it.
     """
-    decide = _decider(
+    decide = ref_decider(
         from_dir=from_dir, files=set(files), shared=shared, private_hosts=private_hosts
     )
 
@@ -263,6 +267,11 @@ def filter_refs(
         lambda m: m.group(0) if decide(m.group("url")) is not None else "url()", text
     )
     text = _BARE_URL_RE.sub(lambda m: decide(m.group(0)) or REMOVED_LINK, text)
+    return remove_unshared_ids(text, shared)
+
+
+def remove_unshared_ids(text: str, shared: Callable[[str], str | None]) -> str:
+    """``text`` with every annals id that ``shared`` does not map replaced by a marker."""
     return _ANNALS_ID_RE.sub(
         lambda m: m.group(0) if shared(m.group("id")) else REMOVED_ID, text
     )
@@ -440,7 +449,11 @@ class Shares:
         return [f for f in meta.get("files", []) if f in shown]
 
     def _group_scope(
-        self, gid: str, include: list[str] | None, exclude: list[str]
+        self,
+        gid: str,
+        include: list[str] | None,
+        exclude: list[str],
+        files_of: Callable[[dict], list[str]] | None = None,
     ) -> dict[str, list[str]]:
         group = self.store.group(gid)
         docs: dict[str, list[str]] = {}
@@ -454,7 +467,7 @@ class Shares:
             except (KeyError, ValueError):
                 continue
             if not m.get("in_trash"):
-                docs[i] = list(m.get("files", []))
+                docs[i] = list(files_of(m) if files_of else m.get("files", []))
         unknown = [i for i in (include or []) if i not in group["docs"]]
         if unknown:
             raise ValueError(f"not documents of group {gid}: {unknown[:5]}")
@@ -473,6 +486,7 @@ class Shares:
         password: str | None = None,
         expires=DFLT_EXPIRES,
         title: str | None = None,
+        files_of: Callable[[dict], list[str]] | None = None,
     ) -> dict:
         """Share a document or a group (``ref`` is its id); return the record (no hash).
 
@@ -483,6 +497,9 @@ class Shares:
         A linked page goes with the files it shows. ``expires`` is anything
         :func:`parse_expires` reads, 7 days by default (``"never"`` for none); ``password``
         gates the link (at least ``caplinks.MIN_PASSWORD_LEN`` characters).
+        ``files_of(meta)`` narrows which files of each of a group's documents go (all of
+        them by default; :func:`annals.notebook.source_scope` keeps only the pages and
+        what they show).
         """
         check_id(ref)
         include = None if include is None else [x for x in include if x]
@@ -496,7 +513,7 @@ class Shares:
             docs = self._doc_scope(ref, include, exclude)
             default_title = self.store.meta(ref).get("title")
         else:
-            docs = self._group_scope(ref, include, exclude)
+            docs = self._group_scope(ref, include, exclude, files_of)
             default_title = self.store.group(ref).get("title")
         return self.links.create(
             {
@@ -507,6 +524,24 @@ class Shares:
             password=password,
             expires=expires,
         )
+
+    def included(self, record: dict) -> list[tuple[dict, list[str]]]:
+        """``(meta, files)`` for each document of a share still there, in the share's order.
+
+        ``files`` are the document's files the share includes; a document deleted or in
+        the bin since the link was made is left out.
+        """
+        out = []
+        for doc_id, files in record["docs"].items():
+            try:
+                meta = self.store.meta(doc_id)
+            except (KeyError, ValueError):
+                continue
+            if meta.get("in_trash"):
+                continue
+            allowed = set(files or [])
+            out.append((meta, [f for f in meta.get("files", []) if f in allowed]))
+        return out
 
     # -- the link itself, delegated to caplinks --
 
