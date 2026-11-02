@@ -34,6 +34,7 @@ import tempfile
 import warnings
 from pathlib import Path
 from collections.abc import Mapping, MutableMapping
+from html.parser import HTMLParser
 from typing import Callable
 from urllib.parse import quote, urlsplit
 
@@ -113,9 +114,27 @@ _DOCTYPE_RE = re.compile(rb"^(\xef\xbb\xbf)?\s*(<!--.*?-->\s*)*<!doctype", re.I 
 # platform's cookies or call any app's API on this shared origin. Harmless for media used
 # by <img>/<video>. PDF alone is exempt: its built-in viewer refuses a sandboxed document.
 NO_SANDBOX_TYPES = frozenset({"application/pdf"})
-RAW_SANDBOX_CSP = (
-    "sandbox allow-scripts allow-popups allow-forms allow-modals allow-downloads"
+#: What a sandboxed document may still do; the page's frame (``app.js``) uses the same list.
+#: ``allow-popups-to-escape-sandbox``: a tab a link opens is an ordinary page. Without it the
+#: tab inherits this sandbox, and a site sending ``Cross-Origin-Opener-Policy`` (claude.ai,
+#: most sign-in pages) is refused in it (Chrome: ERR_BLOCKED_BY_RESPONSE). The tab is never
+#: the document's own origin, so it gains nothing over the person following the link.
+#: ``allow-top-navigation-by-user-activation``: a tapped ``target="_top"`` link leaves the frame.
+RAW_SANDBOX_FLAGS = (
+    "allow-scripts",
+    "allow-popups",
+    "allow-popups-to-escape-sandbox",
+    "allow-top-navigation-by-user-activation",
+    "allow-forms",
+    "allow-modals",
+    "allow-downloads",
 )
+RAW_SANDBOX_CSP = "sandbox " + " ".join(RAW_SANDBOX_FLAGS)
+#: Bumped whenever what an html file is served with changes (its ETag carries it), so a
+#: browser holding the old body and headers does not get a 304 for them.
+HTML_SERVING_VERSION = "2"
+#: Above this an html file is served without its links rewritten (it is parsed to find them).
+LINK_REWRITE_MAX_BYTES = 5_000_000
 # Types a browser would otherwise download or mis-render; served as text so a viewer can
 # show them (markdown and friends are text to a reader).
 #: thumbnail widths served; a request snaps up to the nearest, so the cache stays bounded
@@ -782,6 +801,71 @@ def doctype_guard(html: bytes) -> bytes:
     return ("\n".join(missing) + "\n").encode("utf-8") + body
 
 
+_OTHER_SITE_RE = re.compile(r"^\s*(?:https?:)?//", re.I)
+
+
+def _other_site_link_offsets(text: str) -> list[int]:
+    """Where to write ``target`` in each ``<a>``/``<area>`` to another site that names none.
+
+    The offset is just after the tag's name. None when a ``<base target>`` decides it.
+    """
+
+    class _Links(HTMLParser):
+        def __init__(self):
+            super().__init__(convert_charrefs=True)
+            self.at, self.base_target = [], False
+
+        def handle_starttag(self, tag, attrs):
+            names = {k for k, _ in attrs}
+            if tag == "base" and "target" in names:
+                self.base_target = True
+            elif tag in ("a", "area") and "target" not in names:
+                href = dict(attrs).get("href") or ""
+                if _OTHER_SITE_RE.match(href):
+                    line, col = self.getpos()
+                    self.at.append((line, col + 1 + len(tag)))
+
+        handle_startendtag = handle_starttag
+
+    parser = _Links()
+    parser.feed(text)
+    parser.close()
+    if parser.base_target:
+        return []
+    starts = [0]
+    for line in text.splitlines(keepends=True):
+        starts.append(starts[-1] + len(line))
+    return [starts[line - 1] + col for line, col in parser.at]
+
+
+def links_open_apart(html: bytes, *, max_bytes: int = LINK_REWRITE_MAX_BYTES) -> bytes:
+    """``html`` with ``target="_blank"`` on each link to another site that names no target.
+
+    A document is shown in a sandboxed frame, where a plain link loads the site *in the
+    frame*, and most sites refuse to be framed ("refused to connect"). A new tab always
+    works. Links within the document (relative, ``#anchor``) keep loading in the frame, an
+    author's own ``target`` is kept, and so is a page whose ``<base target>`` decides. Bytes
+    that are not utf-8 pass through unchanged (``surrogateescape``).
+    """
+    if len(html) > max_bytes or b"//" not in html:
+        return html
+    text = html.decode("utf-8", "surrogateescape")
+    offsets = _other_site_link_offsets(text)
+    if not offsets:
+        return html
+    parts, prev = [], 0
+    for at in offsets:
+        parts += [text[prev:at], ' target="_blank"']
+        prev = at
+    parts.append(text[prev:])
+    return "".join(parts).encode("utf-8", "surrogateescape")
+
+
+def serve_html(html: bytes) -> bytes:
+    """An html file as it is served: standards mode, links that leave open apart, table tools."""
+    return add_table_tools(links_open_apart(doctype_guard(html)))
+
+
 def _html_response(
     path: Path, rel: str, *, cache: str, request_etag: str | None = None
 ) -> Response:
@@ -790,7 +874,7 @@ def _html_response(
     Carries an ETag from the file's size and mtime, so a revalidation is a 304.
     """
     st = path.stat()
-    etag = f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}"'
+    etag = f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}-{HTML_SERVING_VERSION}"'
     headers = {
         "Cache-Control": cache,
         "ETag": etag,
@@ -800,7 +884,7 @@ def _html_response(
     if request_etag and etag in {t.strip() for t in request_etag.split(",")}:
         return Response(status_code=304, headers=headers)
     return Response(
-        add_table_tools(doctype_guard(path.read_bytes())),
+        serve_html(path.read_bytes()),
         media_type=media_type_of(rel),
         headers=headers,
     )

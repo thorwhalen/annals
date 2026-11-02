@@ -27,6 +27,10 @@
   var CFG = window.ANNALS || {};
   var BASE = (CFG.base || "/" + (location.pathname.split("/")[1] || "annals")).replace(/\/$/, "");
   var API = (CFG.api || BASE + "/api").replace(/\/$/, "");
+  /* A document's frame: the same flags as the server's RAW_SANDBOX_FLAGS (annals/api.py; a
+     test holds them equal). Escaping popups is what lets a link open a site that refuses
+     sandboxed tabs (claude.ai). */
+  var FRAME_SANDBOX = "allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-forms allow-modals allow-downloads";
   var NAME = CFG.title || "annals";
   var SHARE = CFG.share || null;   /* set when this page is a share link's, for a recipient */
   var UI = (CFG.ui || API + "/ui").replace(/\/$/, "");
@@ -733,7 +737,7 @@
       textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; }).catch(function (e) { pre.textContent = String(e.message || e); });
       actions.push({ section: "copy", label: "Copy text", hint: "Copy the file's text", icon: "copy", run: function () { return copyText(t2); } });
     } else if (kind === "html") {
-      container.appendChild(h("iframe", { class: "frame", src: ctx.raw(rel), sandbox: "allow-scripts allow-popups allow-forms allow-modals allow-downloads", title: ctx.title }));
+      container.appendChild(h("iframe", { class: "frame", src: ctx.raw(rel), sandbox: FRAME_SANDBOX, title: ctx.title }));
     } else if (kind === "image" || kind === "video" || kind === "audio" || kind === "pdf") {
       container.appendChild(mediaBox(kind, ctx.raw(rel), { name: rel, cls: "full" }));
     } else {
