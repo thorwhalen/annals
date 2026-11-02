@@ -874,7 +874,9 @@ def _html_response(
     Carries an ETag from the file's size and mtime, so a revalidation is a 304.
     """
     st = path.stat()
-    etag = f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}-{HTML_SERVING_VERSION}"'
+    etag = (
+        f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}-{HTML_SERVING_VERSION}"'
+    )
     headers = {
         "Cache-Control": cache,
         "ETag": etag,
