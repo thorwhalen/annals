@@ -1,0 +1,24 @@
+annals.references
+=================
+
+.. automodule:: annals.references
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      REFERENCE_HEADINGS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      combine_references
+      doc_reference_texts
+      reference_entries
+      reference_sections
+      strip_citation_number
+      url_key
+      urls_of
+   

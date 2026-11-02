@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.references - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.share" href="annals.share.html" /><link rel="prev" title="annals.overview" href="annals.overview.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.references"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.references.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.references.REFERENCE_HEADINGS"><code class="docutils literal notranslate"><span class="pre">REFERENCE_HEADINGS</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.combine_references"><code class="docutils literal notranslate"><span class="pre">combine_references()</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.doc_reference_texts"><code class="docutils literal notranslate"><span class="pre">doc_reference_texts()</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.reference_entries"><code class="docutils literal notranslate"><span class="pre">reference_entries()</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.reference_sections"><code class="docutils literal notranslate"><span class="pre">reference_sections()</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.strip_citation_number"><code class="docutils literal notranslate"><span class="pre">strip_citation_number()</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.url_key"><code class="docutils literal notranslate"><span class="pre">url_key()</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.urls_of"><code class="docutils literal notranslate"><span class="pre">urls_of()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.references</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.references">
+<span id="annals-references"></span><h1>annals.references<a class="headerlink" href="#module-annals.references" title="Link to this heading">#</a></h1>
+<p>The references of documents, extracted and combined, in three forms.</p>
+<p>A document’s references are the body of its references section: a markdown heading named
+“References”, “Sources”, “Bibliography”, “Works cited” or “Citations” (any level, any case),
+down to the next heading of the same or a higher level. Three forms, each text in, text out:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">grouped</span></code> (the default): one <code class="docutils literal notranslate"><span class="pre">###</span></code> section per document holding its references as
+they are, under <code class="docutils literal notranslate"><span class="pre">##</span> <span class="pre">References</span> <span class="pre">for</span> <span class="pre">&lt;title&gt;</span></code>;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">deduped</span></code>: every entry once, its citation number removed, as one bulleted list;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">urls</span></code>: every web address once, one per line and nothing else, the form a notebook
+(Gemini Notebook, formerly NotebookLM) accepts as pasted website sources.</p></li>
+</ul>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">doc</span> <span class="o">=</span> <span class="s1">'''# Bees</span>
+</span><span data-line="2"><span class="gp">... </span><span class="s1">Text [1].</span>
+</span><span data-line="3"><span class="gp">... </span><span class="s1">## REFERENCES</span>
+</span><span data-line="4"><span class="gp">... </span><span class="s1">1. [Hive life](https://bees.org/hive). 2024.</span>
+</span><span data-line="5"><span class="gp">... </span><span class="s1">[2] Smith J. Pollen, &lt;https://pollen.net/a&gt;</span>
+</span><span data-line="6"><span class="gp">... </span><span class="s1">## Appendix</span>
+</span><span data-line="7"><span class="gp">... </span><span class="s1">not a reference https://no.org</span>
+</span><span data-line="8"><span class="gp">... </span><span class="s1">'''</span>
+</span><span data-line="9"><span class="gp">&gt;&gt;&gt; </span><span class="n">reference_sections</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+</span><span data-line="10"><span class="go">['1. [Hive life](https://bees.org/hive). 2024.\n[2] Smith J. Pollen, &lt;https://pollen.net/a&gt;']</span>
+</span><span data-line="11"><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">strip_citation_number</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">reference_entries</span><span class="p">(</span><span class="n">reference_sections</span><span class="p">(</span><span class="n">doc</span><span class="p">)[</span><span class="mi">0</span><span class="p">])]</span>
+</span><span data-line="12"><span class="go">['[Hive life](https://bees.org/hive). 2024.', 'Smith J. Pollen, &lt;https://pollen.net/a&gt;']</span>
+</span><span data-line="13"><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">combine_references</span><span class="p">([(</span><span class="s2">"Bees"</span><span class="p">,</span> <span class="p">[</span><span class="n">doc</span><span class="p">]),</span> <span class="p">(</span><span class="s2">"Wasps"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"no references here"</span><span class="p">])],</span>
+</span><span data-line="14"><span class="gp">... </span>                         <span class="n">title</span><span class="o">=</span><span class="s2">"Insects"</span><span class="p">,</span> <span class="n">form</span><span class="o">=</span><span class="s2">"urls"</span><span class="p">),</span> <span class="n">end</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span>
+</span><span data-line="15"><span class="go">https://bees.org/hive</span>
+</span><span data-line="16"><span class="go">https://pollen.net/a</span>
+</span></pre></div>
+</div>
+<p>The mechanism knows nothing of the store: <a class="reference internal" href="#annals.references.doc_reference_texts" title="annals.references.doc_reference_texts"><code class="xref py py-func docutils literal notranslate"><span class="pre">doc_reference_texts()</span></code></a> is the bridge that
+reads a set of documents through a <code class="docutils literal notranslate"><span class="pre">read(doc_id,</span> <span class="pre">rel)</span></code> callable, so the owner’s API and,
+later, a share can use it alike.</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.REFERENCE_HEADINGS" title="annals.references.REFERENCE_HEADINGS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REFERENCE_HEADINGS</span></code></a></p></td>
+<td><p>section names that hold references (a heading's text starts with one of them)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.combine_references" title="annals.references.combine_references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_references</span></code></a>(items, *, title[, form])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">items</span></code> (a title and the texts of its pages) as their references in <code class="docutils literal notranslate"><span class="pre">form</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.doc_reference_texts" title="annals.references.doc_reference_texts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">doc_reference_texts</span></code></a>(docs, *, read[, skip])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(title,</span> <span class="pre">texts)</span></code> for each of <code class="docutils literal notranslate"><span class="pre">docs</span></code> (<code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> pairs): its markdown pages' text.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.reference_entries" title="annals.references.reference_entries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reference_entries</span></code></a>(section)</p></td>
+<td><p>The entries of a references section: each numbered or bulleted item, with its wrapped lines.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.reference_sections" title="annals.references.reference_sections"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reference_sections</span></code></a>(text)</p></td>
+<td><p>The body of each references section of a markdown text, as written (blank edges trimmed).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.strip_citation_number" title="annals.references.strip_citation_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_citation_number</span></code></a>(entry)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">entry</span></code> without its leading number or bullet (<code class="docutils literal notranslate"><span class="pre">1.</span></code>, <code class="docutils literal notranslate"><span class="pre">[1]</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.url_key" title="annals.references.url_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">url_key</span></code></a>(url)</p></td>
+<td><p>What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.urls_of" title="annals.references.urls_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">urls_of</span></code></a>(text)</p></td>
+<td><p>The web addresses in <code class="docutils literal notranslate"><span class="pre">text</span></code>, in order of appearance, each once as written.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.references.REFERENCE_HEADINGS">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">REFERENCE_HEADINGS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('references',</span> <span class="pre">'sources',</span> <span class="pre">'bibliography',</span> <span class="pre">'works</span> <span class="pre">cited',</span> <span class="pre">'citations')</span></span><a class="headerlink" href="#annals.references.REFERENCE_HEADINGS" title="Link to this definition">#</a></dt>
+<dd><p>section names that hold references (a heading’s text starts with one of them)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.combine_references">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">combine_references</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">items</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'grouped'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#combine_references"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.combine_references" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">items</span></code> (a title and the texts of its pages) as their references in <code class="docutils literal notranslate"><span class="pre">form</span></code>.</p>
+<p>Items with no references section are left out. An empty string means none had any.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.doc_reference_texts">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">doc_reference_texts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">docs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(&lt;class</span> <span class="pre">'KeyError'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'OSError'&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">&lt;class</span> <span class="pre">'ValueError'&gt;)</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#doc_reference_texts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.doc_reference_texts" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(title,</span> <span class="pre">texts)</span></code> for each of <code class="docutils literal notranslate"><span class="pre">docs</span></code> (<code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> pairs): its markdown pages’ text.</p>
+<p>Pages come in <a class="reference internal" href="annals.aggregate.html#annals.aggregate.numbered_first" title="annals.aggregate.numbered_first"><code class="xref py py-func docutils literal notranslate"><span class="pre">numbered_first()</span></code></a> order; a page <code class="docutils literal notranslate"><span class="pre">read</span></code> cannot read
+(one of <code class="docutils literal notranslate"><span class="pre">skip</span></code>) is left out.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Iterator" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.reference_entries">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">reference_entries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">section</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#reference_entries"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.reference_entries" title="Link to this definition">#</a></dt>
+<dd><p>The entries of a references section: each numbered or bulleted item, with its wrapped lines.</p>
+<p>Prose that is not an item (an “Accessed on …” note) is not an entry. A section with no
+list markers at all is one entry per non-blank line.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.reference_sections">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">reference_sections</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#reference_sections"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.reference_sections" title="Link to this definition">#</a></dt>
+<dd><p>The body of each references section of a markdown text, as written (blank edges trimmed).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.strip_citation_number">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">strip_citation_number</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entry</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#strip_citation_number"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.strip_citation_number" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">entry</span></code> without its leading number or bullet (<code class="docutils literal notranslate"><span class="pre">1.</span></code>, <code class="docutils literal notranslate"><span class="pre">[1]</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.url_key">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">url_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#url_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.url_key" title="Link to this definition">#</a></dt>
+<dd><p>What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.urls_of">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">urls_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#urls_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.urls_of" title="Link to this definition">#</a></dt>
+<dd><p>The web addresses in <code class="docutils literal notranslate"><span class="pre">text</span></code>, in order of appearance, each once as written.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.overview.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.overview</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.share.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.share</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=61a342a2"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

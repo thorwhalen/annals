@@ -1,4 +1,4 @@
-> built 2026-11-02 14:21 UTC from 0bd553d (main) · annals 0.0.29. Details: build_info.json
+> built 2026-11-02 15:28 UTC from d049e34 (main) · annals 0.0.30. Details: build_info.json
 
 # index.html.md
 
@@ -1047,6 +1047,7 @@ Move documents to the recycle bin (restorable).
 | [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)               | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
 | [`notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook)     | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
 | [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)     | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
+| [`references`](_autosummary/annals.references.html.md#module-annals.references) | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`share`](_autosummary/annals.share.html.md#module-annals.share)           | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`sources`](_autosummary/annals.sources.html.md#module-annals.sources)       | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
 | [`store`](_autosummary/annals.store.html.md#module-annals.store)           | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
@@ -1433,6 +1434,123 @@ id into its page, for `{url}`.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+
+# _autosummary/annals.references.html.md
+
+# annals.references
+
+The references of documents, extracted and combined, in three forms.
+
+A document’s references are the body of its references section: a markdown heading named
+“References”, “Sources”, “Bibliography”, “Works cited” or “Citations” (any level, any case),
+down to the next heading of the same or a higher level. Three forms, each text in, text out:
+
+- `grouped` (the default): one `###` section per document holding its references as
+  they are, under `## References for <title>`;
+- `deduped`: every entry once, its citation number removed, as one bulleted list;
+- `urls`: every web address once, one per line and nothing else, the form a notebook
+  (Gemini Notebook, formerly NotebookLM) accepts as pasted website sources.
+
+```pycon
+>>> doc = '''# Bees
+... Text [1].
+... ## REFERENCES
+... 1. [Hive life](https://bees.org/hive). 2024.
+... [2] Smith J. Pollen, <https://pollen.net/a>
+... ## Appendix
+... not a reference https://no.org
+... '''
+>>> reference_sections(doc)
+['1. [Hive life](https://bees.org/hive). 2024.\n[2] Smith J. Pollen, <https://pollen.net/a>']
+>>> [strip_citation_number(e) for e in reference_entries(reference_sections(doc)[0])]
+['[Hive life](https://bees.org/hive). 2024.', 'Smith J. Pollen, <https://pollen.net/a>']
+>>> print(combine_references([("Bees", [doc]), ("Wasps", ["no references here"])],
+...                          title="Insects", form="urls"), end="")
+https://bees.org/hive
+https://pollen.net/a
+```
+
+The mechanism knows nothing of the store: [`doc_reference_texts()`](_autosummary/annals.references.html.md#annals.references.doc_reference_texts) is the bridge that
+reads a set of documents through a `read(doc_id, rel)` callable, so the owner’s API and,
+later, a share can use it alike.
+
+### Module Attributes
+
+| [`REFERENCE_HEADINGS`](_autosummary/annals.references.html.md#annals.references.REFERENCE_HEADINGS)   | section names that hold references (a heading's text starts with one of them)   |
+|-----------------------------------------------------------------------|---------------------------------------------------------------------------------|
+
+### Functions
+
+| [`combine_references`](_autosummary/annals.references.html.md#annals.references.combine_references)(items, \*, title[, form])   | `items` (a title and the texts of its pages) as their references in `form`.                  |
+|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| [`doc_reference_texts`](_autosummary/annals.references.html.md#annals.references.doc_reference_texts)(docs, \*, read[, skip])    | `(title, texts)` for each of `docs` (`(meta, files)` pairs): its markdown pages' text.       |
+| [`reference_entries`](_autosummary/annals.references.html.md#annals.references.reference_entries)(section)                     | The entries of a references section: each numbered or bulleted item, with its wrapped lines. |
+| [`reference_sections`](_autosummary/annals.references.html.md#annals.references.reference_sections)(text)                       | The body of each references section of a markdown text, as written (blank edges trimmed).    |
+| [`strip_citation_number`](_autosummary/annals.references.html.md#annals.references.strip_citation_number)(entry)                   | `entry` without its leading number or bullet (`1.`, `[1]`, `-`).                             |
+| [`url_key`](_autosummary/annals.references.html.md#annals.references.url_key)(url)                                   | What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.   |
+| [`urls_of`](_autosummary/annals.references.html.md#annals.references.urls_of)(text)                                  | The web addresses in `text`, in order of appearance, each once as written.                   |
+
+### annals.references.REFERENCE_HEADINGS *= ('references', 'sources', 'bibliography', 'works cited', 'citations')*
+
+section names that hold references (a heading’s text starts with one of them)
+
+### annals.references.combine_references(items, , title, form='grouped')
+
+`items` (a title and the texts of its pages) as their references in `form`.
+
+Items with no references section are left out. An empty string means none had any.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.references.doc_reference_texts(docs, \*, read, skip=(<class 'KeyError'>, <class 'OSError'>, <class 'ValueError'>))
+
+`(title, texts)` for each of `docs` (`(meta, files)` pairs): its markdown pages’ text.
+
+Pages come in [`numbered_first()`](_autosummary/annals.aggregate.html.md#annals.aggregate.numbered_first) order; a page `read` cannot read
+(one of `skip`) is left out.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/typing.html#typing.Iterator)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]]
+
+### annals.references.reference_entries(section)
+
+The entries of a references section: each numbered or bulleted item, with its wrapped lines.
+
+Prose that is not an item (an “Accessed on …” note) is not an entry. A section with no
+list markers at all is one entry per non-blank line.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.references.reference_sections(text)
+
+The body of each references section of a markdown text, as written (blank edges trimmed).
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.references.strip_citation_number(entry)
+
+`entry` without its leading number or bullet (`1.`, `[1]`, `-`).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.references.url_key(url)
+
+What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.references.urls_of(text)
+
+The web addresses in `text`, in order of appearance, each once as written.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
 # _autosummary/annals.share.html.md
@@ -2641,18 +2759,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-02 14:21 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/0bd553d77667eb8143f644d3598ffff210be2509"><code>0bd553d</code></a> on branch <code>main</code>, for **annals 0.0.29** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-02 15:28 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/d049e3442875e31dd3f52e453a2a1f65b6099611"><code>d049e34</code></a> on branch <code>main</code>, for **annals 0.0.30** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.29) is behind the latest release on PyPI (0.0.30): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.30) is behind the latest release on PyPI (0.0.31): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/0bd553d77667eb8143f644d3598ffff210be2509"><code>0bd553d77667eb8143f644d3598ffff210be2509</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/d049e3442875e31dd3f52e453a2a1f65b6099611"><code>d049e3442875e31dd3f52e453a2a1f65b6099611</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -2663,9 +2781,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41460866983">41460866983</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41471691503">41471691503</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>0bd553d77667eb8143f644d3598ffff210be2509</code> (in the history of the built commit) |
+| Event commit | <code>d049e3442875e31dd3f52e453a2a1f65b6099611</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2690,13 +2808,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.30/">0.0.30</a>, newer than the documented version (0.0.29).
+Latest release: <a href="https://pypi.org/project/annals/0.0.31/">0.0.31</a>, newer than the documented version (0.0.30).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 0bd553d77667eb8143f644d3598ffff210be2509
+git checkout d049e3442875e31dd3f52e453a2a1f65b6099611
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -43,6 +43,7 @@
    mcp
    notebook
    overview
+   references
    share
    share_api
    sources
