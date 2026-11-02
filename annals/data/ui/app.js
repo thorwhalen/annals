@@ -83,14 +83,41 @@
   function downloadUrl(url) { return url + (url.indexOf("?") < 0 ? "?" : "&") + "download=1"; }
   function downloadLink(url, name, cls) { return h("a", { class: cls || "btn", href: downloadUrl(url), download: basename(name) }, ["Download"]); }
   function fileUrl(id, rel) { return BASE + "/d/" + id + "?f=" + encodeURIComponent(rel); }
-  /* Going somewhere is a new history entry; refining the current view replaces it. */
+  /* Going somewhere is a new history entry; refining the current view replaces it.
+     Each entry remembers the view it was reached from (`from`, and `fromLabel` to name it)
+     so the page can offer its own Back: a home-screen app or a tab opened from a link has
+     no browser Back button. A replaced entry keeps the origin of the one it replaces. */
+  var viewLabel = "";
   function go(path, replace) {
     if (path === location.pathname + location.search) return route();
     /* Back to a list returns to the same place in it: remember the scroll and how many
        rows were shown on the entry being left */
-    if (!replace) history.replaceState(Object.assign({}, history.state, { scrollY: window.scrollY, shown: listShown }), "");
-    history[replace ? "replaceState" : "pushState"]({ from: location.pathname + location.search }, "", path);
+    var st = history.state || {};
+    if (!replace) history.replaceState(Object.assign({}, st, { scrollY: window.scrollY, shown: listShown }), "");
+    var origin = replace ? { from: st.from, fromLabel: st.fromLabel } : { from: location.pathname + location.search, fromLabel: typeof viewLabel === "function" ? viewLabel() : viewLabel };
+    history[replace ? "replaceState" : "pushState"](origin, "", path);
     route();
+  }
+  /* A link up to `path` that steps back when `path` is the entry underneath, so that page's
+     own Back still leads where it led before (a file viewer up to its document). */
+  function upTo(path, text, cls) {
+    return h("a", { href: path, class: cls || null, onclick: function (e) {
+      if (e.metaKey || e.ctrlKey) return;
+      e.preventDefault();
+      if ((history.state || {}).from === path) history.back(); else go(path);
+    } }, [text]);
+  }
+  /* "‹ <where you were>": the previous view exactly as it was left (its filters, search and
+     scroll), through history.back(); reached from outside annals (a pasted link), the
+     view's parent instead. */
+  function backLink(parentHref, parentLabel) {
+    var st = history.state || {}, inApp = !!st.from;
+    var href = inApp ? st.from : parentHref, label = (inApp ? st.fromLabel : parentLabel) || "Back";
+    return h("nav", { class: "back", "aria-label": "Back" }, [h("a", { href: href, onclick: function (e) {
+      if (e.metaKey || e.ctrlKey) return;
+      e.preventDefault();
+      if (inApp) history.back(); else go(href);
+    } }, ["‹ " + label])]);
   }
   function link(path, text, cls) {
     return h("a", { href: path, class: cls || null, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(path); } }, [text]);
@@ -251,6 +278,7 @@
   function page(title, nav, body) {
     app.innerHTML = ""; listShown = 0;
     document.title = title ? title + " · " + NAME : NAME;
+    viewLabel = title || NAME;
     var wrap = h("div", { class: "wrap" });
     wrap.appendChild(h("header", { class: "bar" }, [h("div", { class: "row" }, [
       h("h1", { class: "grow" }, [link(BASE + "/", NAME)]),
@@ -544,6 +572,8 @@
       h("div", { class: "row", style: "margin-bottom:8px" }, [countEl]),
       listEl
     ]);
+    /* named when it is left, so it says whether a search or filters were on */
+    viewLabel = function () { return (title || sourceTitle(scope)) + (location.search ? ", filtered" : ""); };
     load();
   }
 
@@ -888,7 +918,7 @@
         var files = ["image", "video", "audio", "pdf"].indexOf(k) >= 0 ? same : m.files, i = files.indexOf(rel);
         var prev = files[i - 1], next = files[i + 1];
         fileNav = h("div", { class: "toolbar filenav" }, [
-          link(BASE + "/d/" + m.id, "← " + (m.title || "Document"), "btn"),
+          upTo(BASE + "/d/" + m.id, "← " + (m.title || "Document"), "btn"),
           h("span", { class: "grow muted" }, [(i + 1) + " / " + files.length + " · " + rel]),
           h("button", { class: "btn", disabled: prev ? null : "", onclick: function () { go(fileUrl(m.id, prev), true); } }, ["Prev"]),
           h("button", { class: "btn", disabled: next ? null : "", onclick: function () { go(fileUrl(m.id, next), true); } }, ["Next"])
@@ -917,6 +947,7 @@
       ]);
       var showFiles = !rel && m.files && m.files.length > 1;
       page(rel ? basename(rel) : m.title, mainNav(m.in_trash ? "trash" : "published"), [
+        rel ? null : backLink(SHARE ? BASE + "/" : scopeHref("published"), SHARE ? "Shared documents" : sourceTitle("published")),
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
@@ -935,6 +966,7 @@
       var items = (g.items || []).filter(function (m) { return !m.in_trash; });
       var groupPanel = h("div");
       page(g.title, mainNav("published"), [
+        backLink(BASE + "/", sourceTitle("published")),
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
         actionBar({
           primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } },
@@ -1392,6 +1424,7 @@
         it.id.indexOf("/") >= 0 ? h("span", { class: "muted" }, [it.id]) : null
       ]);
       page(it.title || basename(id), mainNav(source), [
+        backLink(back, sourceTitle(source)),
         h("div", { class: "doc-head" }, [h("h2", null, [it.title || it.id]), meta, tagEditor(key, it.tags, back)]),
         actionBar({ view: tools.view, actions: [COPY_LINK()].concat(tools.actions) }),
         body
