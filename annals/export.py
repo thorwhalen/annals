@@ -94,15 +94,21 @@ def _attachment(title: str, ext: str) -> str:
     return f"attachment; filename=\"{ascii_name}\"; filename*=UTF-8''{quote(utf8)}"
 
 
-def markdown_response(text: str, *, title: str, download: bool = True) -> Response:
+def markdown_response(
+    text: str, *, title: str, download: bool = True, ext: str = "md"
+) -> Response:
     """``text`` as a ``.md`` download named after ``title``, or (``download=False``) shown
-    as plain text in the browser, which every phone can display, select and copy."""
-    disposition = _attachment(title, "md")
+    as plain text in the browser, which every phone can display, select and copy.
+
+    ``ext="txt"`` saves it as plain text instead (a list of addresses is not markdown).
+    """
+    disposition = _attachment(title, ext)
     if not download:
         disposition = "inline" + disposition[len("attachment") :]
+    markdown = download and ext == "md"
     return Response(
         text.encode("utf-8"),
-        media_type=f"text/{'markdown' if download else 'plain'}; charset=utf-8",
+        media_type=f"text/{'markdown' if markdown else 'plain'}; charset=utf-8",
         headers={
             "Content-Disposition": disposition,
             "Cache-Control": "private, no-store",
