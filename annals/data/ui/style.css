@@ -190,7 +190,7 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .check { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 4px 0; word-break: break-all; }
 .check input { flex: 0 0 auto; width: 20px; height: 20px; }
 .share-opts { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
-.share-opts input, .share-opts select, .share-link input, .share-gate input[type=password] { font-size: 16px; padding: 8px 10px; border: 1px solid var(--line);
+.share-opts input, .share-opts select, .share-gate input[type=password] { font-size: 16px; padding: 8px 10px; border: 1px solid var(--line);
   border-radius: 10px; background: var(--bg); color: var(--fg); max-width: 100%; }
 .share-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .share-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); }
@@ -264,11 +264,13 @@ nav.back a { display: inline-flex; align-items: center; min-height: 32px; font-s
   font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; }
 @media (pointer: coarse) { .copy-value { font-size: 16px; min-height: 44px; } }
 .code-wrap { position: relative; }
-.code-wrap > pre { padding-right: 56px; min-height: 50px; }
-@media (pointer: coarse) { .code-wrap > pre { min-height: 58px; } }
-.code-wrap > .code-copy { position: absolute; top: 6px; right: 6px; background: var(--card); box-shadow: -8px 0 8px var(--code); }
+.code-wrap:not(.whole) > pre { padding-right: 56px; min-height: 50px; }
+@media (pointer: coarse) { .code-wrap:not(.whole) > pre { min-height: 58px; } }
+.code-wrap.whole > .code-copy { position: sticky; top: 72px; float: right; z-index: 1; margin: 6px 6px -56px 0; }
+.code-wrap:not(.whole) > .code-copy { position: absolute; top: 6px; right: 6px; background: var(--card); box-shadow: -8px 0 8px var(--code); }
 .link-list { list-style: none; margin: 10px 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .link-list .link-title { font-size: .92rem; overflow-wrap: anywhere; }
 .links-as-text { margin: 8px 0; }
-.links-as-text summary { cursor: pointer; color: var(--muted); min-height: 32px; display: flex; align-items: center; }
-@media (pointer: coarse) { .links-as-text summary { min-height: 44px; } }
+.links-as-text summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
+@media (pointer: coarse) { .links-as-text summary { padding: 11px 0; } }
+.share-row .row-link { flex: 1 1 100%; margin: 2px 0 0; }

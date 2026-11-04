@@ -160,6 +160,18 @@
     ta.remove();
     return ok;
   }
+  /* Selects all of a field's text so the device's own Copy can take it. iOS selects nothing
+     in a read-only field, so the flag is lifted until the field loses focus (inputmode none
+     keeps the keyboard down). True only when something really is selected. */
+  function selectAll(el) {
+    if (el.readOnly) {
+      var mode = el.getAttribute("inputmode");
+      el.readOnly = false; el.setAttribute("inputmode", "none");
+      el.addEventListener("blur", function () { el.readOnly = true; if (mode === null) el.removeAttribute("inputmode"); else el.setAttribute("inputmode", mode); }, { once: true });
+    }
+    try { el.focus(); el.select(); el.setSelectionRange(0, el.value.length); } catch (e) { return false; }
+    return el.selectionEnd - el.selectionStart > 0;
+  }
   /* Copies inside the tap that asked for it (iOS Safari refuses a clipboard write that
      waited on the network, so the text must already be here): the clipboard API, else
      the old way. When both fail, `selectEl` (a textarea on the page holding the same
@@ -172,9 +184,8 @@
     function done(how) { if (!quiet) toast(COPY_SAYS[how], how === "copied" ? 1600 : 4000); return how; }
     function byHand() {
       if (copyByCommand(text)) return done("copied");
-      if (!selectEl) return done("failed");
-      selectEl.focus(); selectEl.select(); selectEl.setSelectionRange(0, text.length);
-      return done("selected");
+      var el = typeof selectEl === "function" ? selectEl() : selectEl;
+      return done(el && selectAll(el) ? "selected" : "failed");
     }
     if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext !== false) {
       return navigator.clipboard.writeText(text).then(function () { return done("copied"); }, byHand);
@@ -214,8 +225,7 @@
     btn.addEventListener("click", function () {
       var value = typeof text === "function" ? text() : text;
       if (value === null || value === undefined || value === "") return toast("Nothing to copy yet");
-      var field = typeof opts.field === "function" ? opts.field() : opts.field;
-      return copyText(String(value), field, { quiet: true }).then(function (how) {
+      return copyText(String(value), opts.field, { quiet: true }).then(function (how) {
         set(how);
         if (how === "copied") {
           announce(opts.copied || "Copied");
@@ -226,20 +236,24 @@
     return btn;
   }
   /* A value shown in full, selectable by hand, with its copy button beside it. */
+  /* copyField(value, {name: what the field holds, copyName: the button's label, copied}) */
   function copyField(value, opts) {
     opts = opts || {};
     var field = h("input", { type: "text", readonly: "", value: value, class: "copy-value", spellcheck: "false", autocomplete: "off",
       "aria-label": opts.name || "Value", onfocus: function (e) { e.target.select(); } });
-    return h("div", { class: "copy-field" }, [field, copyButton(value, { name: "Copy " + (opts.name || "").toLowerCase(), field: field, copied: opts.copied })]);
+    return h("div", { class: "copy-field" + (opts.cls ? " " + opts.cls : "") }, [field, copyButton(value, { name: opts.copyName || "Copy", field: field, copied: opts.copied })]);
   }
   /* Every code block in `root` (a rendered page, a source view) gets a copy button. */
   function withCodeCopy(root) {
     [].forEach.call(root.querySelectorAll("pre"), function (pre) {
-      if (pre.parentNode && pre.parentNode.classList && pre.parentNode.classList.contains("code-wrap")) return;
-      var wrap = h("div", { class: "code-wrap" });
-      pre.parentNode.insertBefore(wrap, pre);
-      wrap.appendChild(pre);
-      wrap.appendChild(copyButton(function () { return pre.textContent; }, { name: "Copy code", cls: "code-copy" }));
+      var up = pre.parentElement;
+      if (!up || up.classList.contains("code-wrap") || up.closest("pre")) return;
+      /* a whole document in one block (the source view): the button stays in sight as it scrolls */
+      var whole = pre.classList.contains("source");
+      var wrap = h("div", { class: "code-wrap" + (whole ? " whole" : "") });
+      up.insertBefore(wrap, pre);
+      var btn = copyButton(function () { return pre.getAttribute("data-loading") === null ? pre.textContent : ""; }, { name: whole ? "Copy all the text" : "Copy code", cls: "code-copy" });
+      if (whole) { wrap.appendChild(btn); wrap.appendChild(pre); } else { wrap.appendChild(pre); wrap.appendChild(btn); }
     });
     return root;
   }
@@ -251,8 +265,9 @@
     var el = e.target.closest && e.target.closest(PRESSABLE);
     if (el && el.getAttribute("aria-disabled") !== "true" && !el.disabled) el.setAttribute("data-pressed", "");
   }, true);
-  ["pointerup", "pointercancel", "dragstart"].forEach(function (t) { document.addEventListener(t, unpress, true); });
+  ["pointerup", "pointercancel", "lostpointercapture", "dragstart", "visibilitychange"].forEach(function (t) { document.addEventListener(t, unpress, true); });
   window.addEventListener("pageshow", unpress);
+  window.addEventListener("blur", unpress);
   function kindBadge(kind) { return h("span", { class: "kind " + kind }, [kind]); }
   function sourceText(src) { return src ? [src.session, src.host].filter(Boolean).join(" @ ") : ""; }
   function basename(rel) { return rel.split("/").pop(); }
@@ -860,10 +875,10 @@
       view.push(seg);
       actions.push({ section: "copy", label: "Copy source", hint: "Copy the markdown text", icon: "copy", run: function () { return copyText(text); } });
     } else if (kind === "text") {
-      var pre = h("pre", { class: "source" }, ["Loading…"]), t2 = "";
+      var pre = h("pre", { class: "source", "data-loading": "" }, ["Loading…"]), t2 = "";
       container.appendChild(pre);
       withCodeCopy(container);
-      textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; }).catch(function (e) { pre.textContent = String(e.message || e); });
+      textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; pre.removeAttribute("data-loading"); }).catch(function (e) { pre.textContent = String(e.message || e); });
       actions.push({ section: "copy", label: "Copy text", hint: "Copy the file's text", icon: "copy", run: function () { return copyText(t2); } });
     } else if (kind === "html") {
       container.appendChild(h("iframe", { class: "frame", src: ctx.raw(rel), sandbox: FRAME_SANDBOX, title: ctx.title }));
@@ -1295,7 +1310,7 @@
         h("a", { class: "btn", href: NOTEBOOK_URL, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open the notebook app"])])
       ]));
       result.appendChild(h("ol", { class: "link-list" }, out.sources.map(function (x, i) {
-        return h("li", null, [h("div", { class: "link-title" }, [x.title]), copyField(urls[i], { name: "Link to " + x.title, copied: "Link copied" })]);
+        return h("li", null, [h("div", { class: "link-title" }, [x.title]), copyField(urls[i], { name: "Link to " + x.title, copyName: "Copy the link to " + x.title, copied: "Link copied" })]);
       })));
       result.appendChild(asText);
       (out.skipped || []).forEach(function (x) { result.appendChild(h("p", { class: "muted" }, ["“" + (x.title || x.doc) + "” has no page (only " + x.kinds.join(", ") + "), so it has no link."])); });
@@ -1356,7 +1371,7 @@
     var live = !s.revoked && s.active !== false;
     return h("li", { class: "share-row" + (live ? "" : " dead") }, [
       h("div", { class: "grow" }, [h("div", null, [s.title || s.token]), h("div", { class: "meta" }, [ageEl(s.created), h("span", null, [shareSummary(s)])])]),
-      live && s.url ? copyButton(absUrl(s.url), { label: "Copy link", name: "Copy the link to " + (s.title || "this share"), copied: "Link copied" }) : null,
+      live && s.url ? copyField(absUrl(s.url), { name: "Link to " + (s.title || "this share"), copyName: "Copy the link to " + (s.title || "this share"), copied: "Link copied", cls: "row-link" }) : null,
       live ? h("button", { class: "btn danger", onclick: function () {
         if (!window.confirm("Turn off this link? Whoever has it loses access at once.")) return;
         api("/shares/" + encodeURIComponent(s.token), { method: "DELETE" }).then(function () { toast("Link turned off"); onChange(); })
@@ -1451,7 +1466,8 @@
       var exp = expSel.value === "date" ? expDate.value : expSel.value;
       if (expSel.value === "date" && !exp) { toast("Pick a date"); return; }
       body.expires = exp;
-      if (pw.value) body.password = pw.value;
+      var sentPw = pw.value;   /* what the share is locked with, whatever the field holds later */
+      if (sentPw) body.password = sentPw;
       if (isPending(make)) return;
       pending(make, true);
       api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function (s) {
@@ -1462,13 +1478,13 @@
           result.appendChild(h("p", { class: "err" }, ["The link is made, but this server has no public share address (ANNALS_SHARE_BASE_URL), so nobody can open it yet."]));
         } else {
           /* no copy here on its own: it would run after the network wait, which iOS refuses */
-          result.appendChild(copyField(url, { name: "Share link", copied: "Link copied" }));
+          result.appendChild(copyField(url, { name: "Share link", copyName: "Copy the share link", copied: "Link copied" }));
           result.querySelector(".copy-btn").focus();
         }
         result.appendChild(h("p", { class: "muted" }, [shareSummary(s)]));
-        if (pw.value) {
+        if (sentPw) {
           result.appendChild(h("p", { class: "muted" }, ["Send the password separately:"]));
-          result.appendChild(copyField(pw.value, { name: "Password", copied: "Password copied" }));
+          result.appendChild(copyField(sentPw, { name: "Password", copyName: "Copy the password", copied: "Password copied" }));
         }
         redraw();
       }).catch(function (e) { pending(make, false); toast(String(e.message || e)); });
