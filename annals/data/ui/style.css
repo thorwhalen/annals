@@ -190,10 +190,8 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .check { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 4px 0; word-break: break-all; }
 .check input { flex: 0 0 auto; width: 20px; height: 20px; }
 .share-opts { display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
-.share-opts input, .share-opts select, .share-link input, .share-gate input[type=password] { font-size: 16px; padding: 8px 10px; border: 1px solid var(--line);
+.share-opts input, .share-opts select, .share-gate input[type=password] { font-size: 16px; padding: 8px 10px; border: 1px solid var(--line);
   border-radius: 10px; background: var(--bg); color: var(--fg); max-width: 100%; }
-.share-link { display: flex; gap: 8px; margin: 10px 0 4px; }
-.share-link input { flex: 1 1 auto; min-width: 0; }
 .share-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .share-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; background: var(--card); }
 .share-row.dead { opacity: .6; }
@@ -245,3 +243,34 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 nav.back { margin: 2px 0 0; }
 nav.back a { display: inline-flex; align-items: center; min-height: 32px; font-size: .95rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (pointer: coarse) { nav.back a { min-height: 44px; } }
+
+/* pressed at once: set on pointerdown by app.js, on every button and menu row */
+.btn, .menuitem { touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 80ms ease-out, background-color 80ms; }
+.btn[data-pressed], .menuitem[data-pressed] { transform: scale(.96); }
+@media (prefers-reduced-motion: reduce) { .btn, .menuitem { transition: none; } .btn[data-pressed], .menuitem[data-pressed] { transform: none; filter: brightness(.92); } }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* the copy control: one icon button, the same everywhere; it answers on itself */
+.copy-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; flex: 0 0 auto; cursor: pointer; }
+.copy-btn.icon-only { padding: 6px; min-width: 36px; min-height: 36px; }
+.copy-btn[data-state="copied"] { color: var(--md); border-color: var(--md); }
+.copy-btn.primary[data-state="copied"] { background: var(--md); color: var(--accent-fg); border-color: var(--md); }
+.copy-btn[data-state="copied"] .ico { animation: copy-pop 220ms ease-out; }
+@keyframes copy-pop { from { transform: scale(.6); } to { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .copy-btn[data-state="copied"] .ico { animation: none; } }
+@media (pointer: coarse) { .copy-btn, .copy-btn.icon-only { min-width: 44px; min-height: 44px; } }
+.copy-field { display: flex; gap: 8px; align-items: center; margin: 6px 0; }
+.copy-value { flex: 1 1 auto; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--code); color: var(--fg);
+  font: 13px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; text-overflow: ellipsis; }
+@media (pointer: coarse) { .copy-value { font-size: 16px; min-height: 44px; } }
+.code-wrap { position: relative; }
+.code-wrap:not(.whole) > pre { padding-right: 56px; min-height: 50px; }
+@media (pointer: coarse) { .code-wrap:not(.whole) > pre { min-height: 58px; } }
+.code-wrap.whole > .code-copy { position: sticky; top: 72px; float: right; z-index: 1; margin: 6px 6px -56px 0; }
+.code-wrap:not(.whole) > .code-copy { position: absolute; top: 6px; right: 6px; background: var(--card); box-shadow: -8px 0 8px var(--code); }
+.link-list { list-style: none; margin: 10px 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.link-list .link-title { font-size: .92rem; overflow-wrap: anywhere; }
+.links-as-text { margin: 8px 0; }
+.links-as-text summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
+@media (pointer: coarse) { .links-as-text summary { padding: 11px 0; } }
+.share-row .row-link { flex: 1 1 100%; margin: 2px 0 0; }

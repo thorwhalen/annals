@@ -160,23 +160,114 @@
     ta.remove();
     return ok;
   }
+  /* Selects all of a field's text so the device's own Copy can take it. iOS selects nothing
+     in a read-only field, so the flag is lifted until the field loses focus (inputmode none
+     keeps the keyboard down). True only when something really is selected. */
+  function selectAll(el) {
+    if (el.readOnly) {
+      var mode = el.getAttribute("inputmode");
+      el.readOnly = false; el.setAttribute("inputmode", "none");
+      el.addEventListener("blur", function () { el.readOnly = true; if (mode === null) el.removeAttribute("inputmode"); else el.setAttribute("inputmode", mode); }, { once: true });
+    }
+    try { el.focus(); el.select(); el.setSelectionRange(0, el.value.length); } catch (e) { return false; }
+    return el.selectionEnd - el.selectionStart > 0;
+  }
   /* Copies inside the tap that asked for it (iOS Safari refuses a clipboard write that
      waited on the network, so the text must already be here): the clipboard API, else
      the old way. When both fail, `selectEl` (a textarea on the page holding the same
      text) is selected, so the device's own Copy finishes the job. */
-  function copyText(text, selectEl) {
+  /* Resolves to how it went: "copied", "selected" (the device's Copy must finish it) or
+     "failed"; says so in a toast unless `opts.quiet` (the copy button answers on itself). */
+  var COPY_SAYS = { copied: "Copied", selected: "Selected: use Copy from your device's menu", failed: "Could not copy" };
+  function copyText(text, selectEl, opts) {
+    var quiet = opts && opts.quiet;
+    function done(how) { if (!quiet) toast(COPY_SAYS[how], how === "copied" ? 1600 : 4000); return how; }
     function byHand() {
-      if (copyByCommand(text)) return toast("Copied");
-      if (!selectEl) return toast("Could not copy", 3000);
-      selectEl.focus(); selectEl.select(); selectEl.setSelectionRange(0, text.length);
-      toast("Selected: use Copy from your device's menu", 4000);
+      if (copyByCommand(text)) return done("copied");
+      var el = typeof selectEl === "function" ? selectEl() : selectEl;
+      return done(el && selectAll(el) ? "selected" : "failed");
     }
     if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext !== false) {
-      return navigator.clipboard.writeText(text).then(function () { toast("Copied"); }, byHand);
+      return navigator.clipboard.writeText(text).then(function () { return done("copied"); }, byHand);
     }
-    byHand();
-    return Promise.resolve();
+    return Promise.resolve(byHand());
   }
+
+  /* -------- the copy control: one button for every value worth copying -------------- */
+  /* A link, a list of links, a password, a code block, combined text: each gets the same
+     control. It copies inside the tap (see copyText) and answers on itself (tw-frontend-ux
+     principle 1): pressed at once, then a check and "Copied" for COPIED_MS, announced to
+     screen readers, a short buzz where the device has one. When the device refuses, the
+     value's own field is selected so the device's Copy finishes it, and the button says
+     "Selected". Icon-only beside a value that is shown (`name` is its accessible label);
+     with `label` where the value is not on screen. Waiting to move to @zodal/ui-vanilla as
+     the renderer of zodal's `copyable` affordance. */
+  var COPIED_MS = 1600, HAPTIC_MS = 12, srStatus;
+  function announce(msg) {
+    if (!srStatus) { srStatus = h("div", { class: "sr-only", role: "status", "aria-live": "polite" }); document.body.appendChild(srStatus); }
+    srStatus.textContent = ""; setTimeout(function () { srStatus.textContent = msg; }, 30);
+  }
+  /* copyButton(text | () => text, {name, label, primary, field: el | () => el, cls}) */
+  function copyButton(text, opts) {
+    opts = opts || {};
+    var name = opts.name || "Copy", ico = icon("copy"), timer;
+    var lbl = opts.label ? h("span", { class: "lbl" }, [opts.label]) : null;
+    var btn = h("button", { type: "button", class: "btn copy-btn " + (lbl ? "with-label" : "icon-only") + (opts.primary ? " primary" : "") + (opts.cls ? " " + opts.cls : ""),
+      "aria-label": lbl ? null : name, title: name, "data-state": "idle" }, [ico, lbl]);
+    function set(state) {
+      clearTimeout(timer);
+      btn.setAttribute("data-state", state);
+      ico.innerHTML = svgPath(state === "copied" ? "check" : "copy");
+      var said = state === "copied" ? "Copied" : state === "selected" ? "Selected" : null;
+      if (lbl) lbl.textContent = said || opts.label; else btn.setAttribute("aria-label", said || name);
+      if (state !== "idle") timer = setTimeout(function () { set("idle"); }, state === "copied" ? COPIED_MS : 2 * COPIED_MS);
+    }
+    btn.addEventListener("click", function () {
+      var value = typeof text === "function" ? text() : text;
+      if (value === null || value === undefined || value === "") return toast("Nothing to copy yet");
+      return copyText(String(value), opts.field, { quiet: true }).then(function (how) {
+        set(how);
+        if (how === "copied") {
+          announce(opts.copied || "Copied");
+          try { if (navigator.vibrate) navigator.vibrate(HAPTIC_MS); } catch (e) { /* no buzz: the button already said it */ }
+        } else toast(COPY_SAYS[how], 4000);
+      });
+    });
+    return btn;
+  }
+  /* A value shown in full, selectable by hand, with its copy button beside it. */
+  /* copyField(value, {name: what the field holds, copyName: the button's label, copied}) */
+  function copyField(value, opts) {
+    opts = opts || {};
+    var field = h("input", { type: "text", readonly: "", value: value, class: "copy-value", spellcheck: "false", autocomplete: "off",
+      "aria-label": opts.name || "Value", onfocus: function (e) { e.target.select(); } });
+    return h("div", { class: "copy-field" + (opts.cls ? " " + opts.cls : "") }, [field, copyButton(value, { name: opts.copyName || "Copy", field: field, copied: opts.copied })]);
+  }
+  /* Every code block in `root` (a rendered page, a source view) gets a copy button. */
+  function withCodeCopy(root) {
+    [].forEach.call(root.querySelectorAll("pre"), function (pre) {
+      var up = pre.parentElement;
+      if (!up || up.classList.contains("code-wrap") || up.closest("pre")) return;
+      /* a whole document in one block (the source view): the button stays in sight as it scrolls */
+      var whole = pre.classList.contains("source");
+      var wrap = h("div", { class: "code-wrap" + (whole ? " whole" : "") });
+      up.insertBefore(wrap, pre);
+      var btn = copyButton(function () { return pre.getAttribute("data-loading") === null ? pre.textContent : ""; }, { name: whole ? "Copy all the text" : "Copy code", cls: "code-copy" });
+      if (whole) { wrap.appendChild(btn); wrap.appendChild(pre); } else { wrap.appendChild(pre); wrap.appendChild(btn); }
+    });
+    return root;
+  }
+  /* Pressed at once, on every button and menu row (principle 1): the state is set on
+     pointerdown, before any work, and cleared when the finger lifts or slides off. */
+  var PRESSABLE = "button, .btn, .menuitem, [role=menuitem]";
+  function unpress() { [].forEach.call(document.querySelectorAll("[data-pressed]"), function (el) { el.removeAttribute("data-pressed"); }); }
+  document.addEventListener("pointerdown", function (e) {
+    var el = e.target.closest && e.target.closest(PRESSABLE);
+    if (el && el.getAttribute("aria-disabled") !== "true" && !el.disabled) el.setAttribute("data-pressed", "");
+  }, true);
+  ["pointerup", "pointercancel", "lostpointercapture", "dragstart", "visibilitychange"].forEach(function (t) { document.addEventListener(t, unpress, true); });
+  window.addEventListener("pageshow", unpress);
+  window.addEventListener("blur", unpress);
   function kindBadge(kind) { return h("span", { class: "kind " + kind }, [kind]); }
   function sourceText(src) { return src ? [src.session, src.host].filter(Boolean).join(" @ ") : ""; }
   function basename(rel) { return rel.split("/").pop(); }
@@ -669,11 +760,13 @@
     trash: "M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13",
     restore: "M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5",
     more: "M5 12h.01M12 12h.01M19 12h.01",
+    check: "M5 12.5l4.5 4.5L19 7.5",
     notebook: "M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3v18M10 8h5M10 12h5M3 7h3M3 12h3M3 17h3"
   };
-  function icon(name) {
-    return h("span", { class: "ico", "aria-hidden": "true", html: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (ICONS[name] || ICONS.file) + '"/></svg>' });
+  function svgPath(name) {
+    return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (ICONS[name] || ICONS.file) + '"/></svg>';
   }
+  function icon(name) { return h("span", { class: "ico", "aria-hidden": "true", html: svgPath(name) }); }
   /* Saves what the server makes for `url` (a PDF takes a few seconds, so say so); a failure
      says why and leaves the page as it was. */
   var downloading = {};   /* one at a time per url: a second tap would start a second PDF job */
@@ -770,10 +863,10 @@
         seg.children[0].setAttribute("aria-pressed", String(mode === "rendered"));
         seg.children[1].setAttribute("aria-pressed", String(mode === "source"));
         container.innerHTML = "";
-        if (mode === "source") { container.appendChild(h("pre", { class: "source" }, [text])); return; }
+        if (mode === "source") { container.appendChild(h("pre", { class: "source" }, [text])); withCodeCopy(container); return; }
         withMarked().then(function (mk) {
           var art = h("article", { class: "rendered", html: safeHtml(mk.parse(text, { gfm: true, breaks: false })) });
-          rebase(art, ctx, rel); container.innerHTML = ""; container.appendChild(art);
+          rebase(art, ctx, rel); withCodeCopy(art); container.innerHTML = ""; container.appendChild(art);
           if (window.annalsTables) window.annalsTables.enhance(art);
         }).catch(function (e) { container.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
       }
@@ -782,9 +875,10 @@
       view.push(seg);
       actions.push({ section: "copy", label: "Copy source", hint: "Copy the markdown text", icon: "copy", run: function () { return copyText(text); } });
     } else if (kind === "text") {
-      var pre = h("pre", { class: "source" }, ["Loading…"]), t2 = "";
+      var pre = h("pre", { class: "source", "data-loading": "" }, ["Loading…"]), t2 = "";
       container.appendChild(pre);
-      textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; }).catch(function (e) { pre.textContent = String(e.message || e); });
+      withCodeCopy(container);
+      textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; pre.removeAttribute("data-loading"); }).catch(function (e) { pre.textContent = String(e.message || e); });
       actions.push({ section: "copy", label: "Copy text", hint: "Copy the file's text", icon: "copy", run: function () { return copyText(t2); } });
     } else if (kind === "html") {
       container.appendChild(h("iframe", { class: "frame", src: ctx.raw(rel), sandbox: FRAME_SANDBOX, title: ctx.title }));
@@ -1102,7 +1196,7 @@
       wrap.removeAttribute("aria-busy");
       status.textContent = n + (n === 1 ? " file, " : " files, ") + size(bytes) + ", with a table of contents. Made just now, not saved anywhere.";
       wrap.appendChild(h("div", { class: "toolbar combine-actions" }, [
-        h("button", { class: "btn primary", type: "button", onclick: function () { copyText(text, raw); } }, [icon("copy"), h("span", { class: "lbl" }, ["Copy Markdown"])]),
+        copyButton(text, { label: "Copy Markdown", primary: true, field: raw, copied: "Markdown copied" }),
         h("a", { class: "btn", href: downloadUrl(url), download: name }, [icon("download"), h("span", { class: "lbl" }, ["Download .md"])]),
         h("a", { class: "btn", href: url, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open as text"])])
       ]));
@@ -1208,14 +1302,17 @@
       if (!urls.length) { result.appendChild(h("p", { class: "err", role: "alert" }, ["None of these documents has a page a notebook can read."])); return; }
       var text = urls.join("\n");
       var raw = h("textarea", { class: "combine-text", readonly: "", rows: String(Math.min(urls.length, 8)), spellcheck: "false", "aria-label": "One link per source" }, [text]);
-      var n = urls.length;
-      result.appendChild(h("p", { role: "status" }, [n + (n === 1 ? " link" : " links") + ", one per source. Copy, then in the notebook: Add source → Website → paste."]));
+      var asText = h("details", { class: "links-as-text" }, [h("summary", null, ["All links as text"]), raw]);
+      var n = urls.length, nLinks = n + (n === 1 ? " link" : " links");
+      result.appendChild(h("p", { role: "status" }, [nLinks + ", one per source. Copy, then in the notebook: Add source → Website → paste."]));
       result.appendChild(h("div", { class: "toolbar combine-actions" }, [
-        h("button", { class: "btn primary", type: "button", onclick: function () { copyText(text, raw); } }, [icon("copy"), h("span", { class: "lbl" }, ["Copy " + n + (n === 1 ? " link" : " links")])]),
+        copyButton(text, { label: n === 1 ? "Copy the link" : "Copy all " + n + " links", primary: true, copied: nLinks + " copied", field: function () { asText.open = true; return raw; } }),
         h("a", { class: "btn", href: NOTEBOOK_URL, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open the notebook app"])])
       ]));
-      result.appendChild(raw);
-      result.appendChild(h("ol", { class: "source-titles muted" }, out.sources.map(function (x) { return h("li", null, [x.title]); })));
+      result.appendChild(h("ol", { class: "link-list" }, out.sources.map(function (x, i) {
+        return h("li", null, [h("div", { class: "link-title" }, [x.title]), copyField(urls[i], { name: "Link to " + x.title, copyName: "Copy the link to " + x.title, copied: "Link copied" })]);
+      })));
+      result.appendChild(asText);
       (out.skipped || []).forEach(function (x) { result.appendChild(h("p", { class: "muted" }, ["“" + (x.title || x.doc) + "” has no page (only " + x.kinds.join(", ") + "), so it has no link."])); });
       var off = h("button", { class: "btn danger", type: "button", onclick: function () {
         if (isPending(off)) return;
@@ -1274,7 +1371,7 @@
     var live = !s.revoked && s.active !== false;
     return h("li", { class: "share-row" + (live ? "" : " dead") }, [
       h("div", { class: "grow" }, [h("div", null, [s.title || s.token]), h("div", { class: "meta" }, [ageEl(s.created), h("span", null, [shareSummary(s)])])]),
-      live && s.url ? h("button", { class: "btn", onclick: function () { copyText(absUrl(s.url)); } }, ["Copy link"]) : null,
+      live && s.url ? copyField(absUrl(s.url), { name: "Link to " + (s.title || "this share"), copyName: "Copy the link to " + (s.title || "this share"), copied: "Link copied", cls: "row-link" }) : null,
       live ? h("button", { class: "btn danger", onclick: function () {
         if (!window.confirm("Turn off this link? Whoever has it loses access at once.")) return;
         api("/shares/" + encodeURIComponent(s.token), { method: "DELETE" }).then(function () { toast("Link turned off"); onChange(); })
@@ -1369,22 +1466,28 @@
       var exp = expSel.value === "date" ? expDate.value : expSel.value;
       if (expSel.value === "date" && !exp) { toast("Pick a date"); return; }
       body.expires = exp;
-      if (pw.value) body.password = pw.value;
-      make.disabled = true;
+      var sentPw = pw.value;   /* what the share is locked with, whatever the field holds later */
+      if (sentPw) body.password = sentPw;
+      if (isPending(make)) return;
+      pending(make, true);
       api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function (s) {
-        make.disabled = false;
+        pending(make, false);
         result.innerHTML = "";
         var url = absUrl(s.url);
         if (!url) {
           result.appendChild(h("p", { class: "err" }, ["The link is made, but this server has no public share address (ANNALS_SHARE_BASE_URL), so nobody can open it yet."]));
         } else {
-          var field = h("input", { type: "text", readonly: "", value: url, "aria-label": "Share link", onfocus: function (e) { e.target.select(); } });
-          result.appendChild(h("div", { class: "share-link" }, [field, h("button", { class: "btn primary", type: "button", onclick: function () { copyText(url); } }, ["Copy"])]));
-          copyText(url);
+          /* no copy here on its own: it would run after the network wait, which iOS refuses */
+          result.appendChild(copyField(url, { name: "Share link", copyName: "Copy the share link", copied: "Link copied" }));
+          result.querySelector(".copy-btn").focus();
         }
-        result.appendChild(h("p", { class: "muted" }, [shareSummary(s) + (pw.value ? " — send the password separately: " + pw.value : "")]));
+        result.appendChild(h("p", { class: "muted" }, [shareSummary(s)]));
+        if (sentPw) {
+          result.appendChild(h("p", { class: "muted" }, ["Send the password separately:"]));
+          result.appendChild(copyField(sentPw, { name: "Password", copyName: "Copy the password", copied: "Password copied" }));
+        }
         redraw();
-      }).catch(function (e) { make.disabled = false; toast(String(e.message || e)); });
+      }).catch(function (e) { pending(make, false); toast(String(e.message || e)); });
     } }, ["Create link"]);
     wrap.appendChild(h("div", { class: "toolbar" }, [make]));
     wrap.appendChild(result);
