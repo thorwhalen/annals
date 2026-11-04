@@ -161,9 +161,15 @@ class LocalTarget:
     def write_text(self, rel: str, text: str) -> None:
         path = self._abs(rel)
         path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(path.suffix + ".tmp")
-        tmp.write_text(text, encoding="utf-8")
-        os.replace(tmp, path)
+        # a temp name of its own, so two writers of one file never share (and lose) it
+        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
+                f.write(text)
+            os.replace(tmp, path)
+        except BaseException:
+            Path(tmp).unlink(missing_ok=True)
+            raise
 
     def list_dirs(self, rel: str) -> list[str]:
         base = self._abs(rel)
