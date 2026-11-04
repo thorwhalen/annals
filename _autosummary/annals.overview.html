@@ -99,6 +99,7 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#annals.overview.CHARS_PER_MINUTE"><code class="docutils literal notranslate"><span class="pre">CHARS_PER_MINUTE</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.COMBINED_TAG"><code class="docutils literal notranslate"><span class="pre">COMBINED_TAG</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.DFLT_DAILY_LIMIT"><code class="docutils literal notranslate"><span class="pre">DFLT_DAILY_LIMIT</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.MINUTES"><code class="docutils literal notranslate"><span class="pre">MINUTES</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.QUEUED_EXPIRY_S"><code class="docutils literal notranslate"><span class="pre">QUEUED_EXPIRY_S</span></code></a></li>
@@ -111,9 +112,12 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#annals.overview.TAG"><code class="docutils literal notranslate"><span class="pre">TAG</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.choices"><code class="docutils literal notranslate"><span class="pre">choices()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.combined_document"><code class="docutils literal notranslate"><span class="pre">combined_document()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.combined_key"><code class="docutils literal notranslate"><span class="pre">combined_key()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.eligible"><code class="docutils literal notranslate"><span class="pre">eligible()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.html_to_text"><code class="docutils literal notranslate"><span class="pre">html_to_text()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.request"><code class="docutils literal notranslate"><span class="pre">request()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.request_combined"><code class="docutils literal notranslate"><span class="pre">request_combined()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.state_of"><code class="docutils literal notranslate"><span class="pre">state_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.valid_minutes"><code class="docutils literal notranslate"><span class="pre">valid_minutes()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.work"><code class="docutils literal notranslate"><span class="pre">work()</span></code></a></li>
@@ -203,6 +207,9 @@ there, so a watcher on the folder would keep waking it.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.TAG" title="annals.overview.TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TAG</span></code></a></p></td>
 <td><p>marks a document that is itself an overview, so nobody makes an overview of an overview</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.COMBINED_TAG" title="annals.overview.COMBINED_TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMBINED_TAG</span></code></a></p></td>
+<td><p>marks a document made by putting several documents' text in one, for one review of them all</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -213,6 +220,12 @@ there, so a watcher on the folder would keep waking it.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.choices" title="annals.overview.choices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">choices</span></code></a>()</p></td>
 <td><p>Each length on offer and what it would cost in voice characters.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.combined_document" title="annals.overview.combined_document"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combined_document</span></code></a>(store, docs, *, title[, ...])</p></td>
+<td><p>One document holding the text of <code class="docutils literal notranslate"><span class="pre">docs</span></code>, so a review of it covers them all.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.combined_key" title="annals.overview.combined_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combined_key</span></code></a>(docs)</p></td>
+<td><p>Names a set of documents at their current versions, in any order.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.eligible" title="annals.overview.eligible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eligible</span></code></a>(meta)</p></td>
 <td><p>Whether a document can be spoken: readable text, current, and not itself an overview.</p></td>
 </tr>
@@ -222,13 +235,16 @@ there, so a watcher on the folder would keep waking it.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.request" title="annals.overview.request"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request</span></code></a>(store, requests, doc_id, *[, ...])</p></td>
 <td><p>Ask for an overview of a document.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.state_of" title="annals.overview.state_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state_of</span></code></a>(store, requests, meta)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.request_combined" title="annals.overview.request_combined"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request_combined</span></code></a>(store, requests, docs, *, title)</p></td>
+<td><p>Ask for ONE overview of several documents: of the document combining their text.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.state_of" title="annals.overview.state_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state_of</span></code></a>(store, requests, meta)</p></td>
 <td><p>What a page shows for a document: its request's state and what it can start.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.valid_minutes" title="annals.overview.valid_minutes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">valid_minutes</span></code></a>(minutes)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.valid_minutes" title="annals.overview.valid_minutes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">valid_minutes</span></code></a>(minutes)</p></td>
 <td><p>Whether this is a length on offer.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.work" title="annals.overview.work"><code class="xref py py-obj docutils literal notranslate"><span class="pre">work</span></code></a>(store, requests, *[, command, timeout, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.work" title="annals.overview.work"><code class="xref py py-obj docutils literal notranslate"><span class="pre">work</span></code></a>(store, requests, *[, command, timeout, ...])</p></td>
 <td><p>Fulfil every queued request, one at a time, until none is left; return what happened.</p></td>
 </tr>
 </tbody>
@@ -248,6 +264,12 @@ there, so a watcher on the folder would keep waking it.</p>
 <dt class="sig sig-object py" id="annals.overview.CHARS_PER_MINUTE">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">CHARS_PER_MINUTE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">900</span></span><a class="headerlink" href="#annals.overview.CHARS_PER_MINUTE" title="Link to this definition">#</a></dt>
 <dd><p>spoken English at about 150 words a minute and 6 characters a word; shown as an estimate</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.COMBINED_TAG">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">COMBINED_TAG</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'combined'</span></span><a class="headerlink" href="#annals.overview.COMBINED_TAG" title="Link to this definition">#</a></dt>
+<dd><p>marks a document made by putting several documents’ text in one, for one review of them all</p>
 </dd></dl>
 
 <dl class="py data">
@@ -339,6 +361,36 @@ there, so a watcher on the folder would keep waking it.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.combined_document">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">combined_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docs</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#combined_document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.combined_document" title="Link to this definition">#</a></dt>
+<dd><p>One document holding the text of <code class="docutils literal notranslate"><span class="pre">docs</span></code>, so a review of it covers them all.</p>
+<p>A combined document among <code class="docutils literal notranslate"><span class="pre">docs</span></code> counts as the documents it combines. The same
+documents at the same versions give the same document back, so asking twice makes one.
+A new one is added to <code class="docutils literal notranslate"><span class="pre">group</span></code> when given. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when none of <code class="docutils literal notranslate"><span class="pre">docs</span></code>
+has text to speak, or past <code class="docutils literal notranslate"><span class="pre">max_bytes</span></code> of text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.combined_key">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">combined_key</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">docs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#combined_key"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.combined_key" title="Link to this definition">#</a></dt>
+<dd><p>Names a set of documents at their current versions, in any order.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">combined_key</span><span class="p">([{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"a"</span><span class="p">}])</span> <span class="o">==</span> <span class="n">combined_key</span><span class="p">([{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"a"</span><span class="p">},</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"b"</span><span class="p">,</span> <span class="s2">"version"</span><span class="p">:</span> <span class="mi">2</span><span class="p">}])</span>
+</span><span data-line="2"><span class="go">True</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.overview.eligible">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">eligible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#eligible"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.eligible" title="Link to this definition">#</a></dt>
 <dd><p>Whether a document can be spoken: readable text, current, and not itself an overview.</p>
@@ -366,6 +418,19 @@ there, so a watcher on the folder would keep waking it.</p>
 <dd><p>Ask for an overview of a document. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> if it cannot be asked for.</p>
 <p>Asking again while one is being made changes nothing, and neither does asking for one
 that exists and is current unless <code class="docutils literal notranslate"><span class="pre">force</span></code>, so a repeat costs nothing.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.request_combined">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">request_combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requests</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docs</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#request_combined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.request_combined" title="Link to this definition">#</a></dt>
+<dd><p>Ask for ONE overview of several documents: of the document combining their text.</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">{&quot;doc&quot;:</span> <span class="pre">&lt;combined</span> <span class="pre">document</span> <span class="pre">id&gt;,</span> <span class="pre">&quot;listen&quot;:</span> <span class="pre">&lt;its</span> <span class="pre">overview</span> <span class="pre">state&gt;}</span></code>. Raises
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> as <a class="reference internal" href="#annals.overview.request" title="annals.overview.request"><code class="xref py py-func docutils literal notranslate"><span class="pre">request()</span></code></a> does, or when there is nothing to speak.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -451,7 +516,7 @@ id into its page, for <code class="docutils literal notranslate"><span class="pr
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=565bc8c8"></script>
+      <script src="../_static/documentation_options.js?v=9dd25805"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

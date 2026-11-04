@@ -1,4 +1,4 @@
-> built 2026-11-04 12:10 UTC from 9fdd0af (main) · annals 0.0.33. Details: build_info.json
+> built 2026-11-04 12:41 UTC from 5b0a6ef (main) · annals 0.0.34. Details: build_info.json
 
 # index.html.md
 
@@ -106,6 +106,16 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
 | Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
 
+## Acting on documents: pick, then choose what you want back
+
+On a group’s page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):
+
+- **Links**: **One link** for a person (expiry, optional password, and on a document “What’s included”) or **A link per document** for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus **Copy all**.
+- **One file**: the picked documents’ Markdown as one file, to copy, download or open as text.
+- **Listen**: a spoken review (when the host offers them, see below). For several documents, **One review of all** (their text is put in one document, tagged `combined` and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or **One each** (makes only the missing or out-of-date ones).
+
+A document’s page has the same three buttons, acting on that document, and both pages keep the rest (copy the text, downloads, open raw, move to bin) under **⋯ More**. Every link, password and code block on the page has the same copy button: it copies inside the tap and answers on itself with a check and “Copied”.
+
 ## Spoken overviews
 
 A document’s page can offer a Listen button: a few minutes of speech about the document, played with its script in sync. It is off unless the host turns it on, because making one spends money.
@@ -126,7 +136,7 @@ Run `annals listen-work` from a timer, not from a watcher on the folder: finishe
 
 ## Sharing one page
 
-The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, the Share button on a document lists its files and the annals pages it links to, so you choose what goes; from a shell:
+The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, **Links › One link** on a document lists its files and the annals pages it links to under “What’s included”, so you choose what goes; from a shell:
 
 ```bash
 annals share <id-or-link> --password -                       # 7 days by default; password from stdin
@@ -153,11 +163,11 @@ then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or
 
 ## Downloads
 
-Every markdown page has an **Actions** menu (Share, Copy, Download, View) with two downloads made by the server: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
+Every markdown page offers two downloads made by the server, under **One file** and under **⋯ More**: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
 
 ## One Markdown file from a group
 
-A group’s page has a **Combine** button: it makes one Markdown file from every `.md` in the group, folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same button, built from the share’s filtered text and only the files it includes.
+A group’s **One file** makes one Markdown file from every `.md` of the picked documents (all of them when none is ticked), folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same **One file** button, built from the share’s filtered text and only the files it includes.
 
 ```bash
 annals aggregate <group-id-or-link> > all.md          # the same file, from a shell
@@ -173,9 +183,9 @@ aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundl
 
 ## A group’s documents as separate notebook sources
 
-To take a group into a notebook (NotebookLM, now Gemini Notebook) with each document as its own source, open the group and tap **Notebook**. Tick the documents (all are ticked), choose how long the links work (1 day by default), and tap **Make links**. You get one link per page; tap **Copy N links**, then in the notebook choose Add source → Website and paste: the notebook makes one source of each link, named after the document. The same panel’s **Combine these** makes one Markdown file of only the ticked documents.
+To take a group into a notebook (NotebookLM, now Gemini Notebook) with each document as its own source, open the group, tick the documents (none ticked means all), tap **Links**, choose **A link per document** and how long the links work (1 day by default), and tap **Make N links**. You get one link per page, each with its own copy button; tap **Copy all N links**, then in the notebook choose Add source → Website and paste: the notebook makes one source of each link, named after the document.
 
-The links are an ordinary share of just those documents (no password, since the notebook cannot type one): unguessable, filtered like every shared text, and revocable with **Turn these links off** or under Shares. The notebook keeps its own copy once a link is added, so turning the links off afterwards does not remove the sources. Each link is a plain web page with no script (`<share link>/source/<doc id>/<file>`); markdown is rendered on the server, images, audio and PDFs get no link (a notebook takes those only as uploads). Why links and not a zip or a download: `misc/docs/notebook-sources.md`.
+The links are an ordinary share of just those documents (no password, since the notebook cannot type one): unguessable, filtered like every shared text, and revocable with **Turn these links off** or under the **Links** tab. The notebook keeps its own copy once a link is added, so turning the links off afterwards does not remove the sources. Each link is a plain web page with no script (`<share link>/source/<doc id>/<file>`); markdown is rendered on the server, images, audio and PDFs get no link (a notebook takes those only as uploads). Why links and not a zip or a download: `misc/docs/notebook-sources.md`.
 
 The API: `GET /shares/<token>/sources` (the owner’s) or `GET <share link>/sources` (the recipient’s) lists `{title, url}` per page; `GET /groups/<gid>/aggregate?doc=<id>&doc=<id>` combines only those documents.
 
@@ -1308,14 +1318,18 @@ there, so a watcher on the folder would keep waking it.
 | [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed |
 | [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate     |
 | [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview      |
+| [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all  |
 
 ### Functions
 
 | [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
 |-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.           |
+| [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                     |
 | [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
 | [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
 | [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
+| [`request_combined`](_autosummary/annals.overview.html.md#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.      |
 | [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
 | [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
 | [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
@@ -1328,6 +1342,10 @@ there, so a watcher on the folder would keep waking it.
 ### annals.overview.CHARS_PER_MINUTE *= 900*
 
 spoken English at about 150 words a minute and 6 characters a word; shown as an estimate
+
+### annals.overview.COMBINED_TAG *= 'combined'*
+
+marks a document made by putting several documents’ text in one, for one review of them all
 
 ### annals.overview.DFLT_DAILY_LIMIT *= 20*
 
@@ -1386,6 +1404,30 @@ Each length on offer and what it would cost in voice characters.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+### annals.overview.combined_document(store, docs, , title, group=None, max_bytes=None)
+
+One document holding the text of `docs`, so a review of it covers them all.
+
+A combined document among `docs` counts as the documents it combines. The same
+documents at the same versions give the same document back, so asking twice makes one.
+A new one is added to `group` when given. Raises `ValueError` when none of `docs`
+has text to speak, or past `max_bytes` of text.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.combined_key(docs)
+
+Names a set of documents at their current versions, in any order.
+
+```pycon
+>>> combined_key([{"id": "b", "version": 2}, {"id": "a"}]) == combined_key([{"id": "a"}, {"id": "b", "version": 2}])
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### annals.overview.eligible(meta)
 
 Whether a document can be spoken: readable text, current, and not itself an overview.
@@ -1406,6 +1448,16 @@ Ask for an overview of a document. Raises `ValueError` if it cannot be asked for
 
 Asking again while one is being made changes nothing, and neither does asking for one
 that exists and is current unless `force`, so a repeat costs nothing.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.request_combined(store, requests, docs, , title, group=None, minutes=5, max_bytes=None)
+
+Ask for ONE overview of several documents: of the document combining their text.
+
+Returns `{"doc": <combined document id>, "listen": <its overview state>}`. Raises
+`ValueError` as [`request()`](_autosummary/annals.overview.html.md#annals.overview.request) does, or when there is nothing to speak.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2759,16 +2811,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-04 12:10 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/9fdd0af070b0d513c12e90485a148512c1620551"><code>9fdd0af</code></a> on branch <code>main</code>, for **annals 0.0.33** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-04 12:41 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff"><code>5b0a6ef</code></a> on branch <code>main</code>, for **annals 0.0.34** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.34) is behind the latest release on PyPI (0.0.35): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/9fdd0af070b0d513c12e90485a148512c1620551"><code>9fdd0af070b0d513c12e90485a148512c1620551</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff"><code>5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -2779,9 +2833,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41826549755">41826549755</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41831089847">41831089847</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>9fdd0af070b0d513c12e90485a148512c1620551</code> (in the history of the built commit) |
+| Event commit | <code>5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2790,7 +2844,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | epythet  | 0.2.22  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
-| Python   | 3.12.15 |
+| Python   | 3.12.16 |
 
 ## Configuration as resolved
 
@@ -2806,13 +2860,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.33/">0.0.33</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.35/">0.0.35</a>, newer than the documented version (0.0.34).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 9fdd0af070b0d513c12e90485a148512c1620551
+git checkout 5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

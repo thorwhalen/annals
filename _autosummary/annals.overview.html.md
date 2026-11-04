@@ -40,14 +40,18 @@ there, so a watcher on the folder would keep waking it.
 | [`MINUTES`](#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed |
 | [`CHARS_PER_MINUTE`](#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate     |
 | [`TAG`](#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview      |
+| [`COMBINED_TAG`](#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all  |
 
 ### Functions
 
 | [`choices`](#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
 |-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| [`combined_document`](#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.           |
+| [`combined_key`](#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                     |
 | [`eligible`](#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
 | [`html_to_text`](#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
 | [`request`](#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
+| [`request_combined`](#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.      |
 | [`state_of`](#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
 | [`valid_minutes`](#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
 | [`work`](#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
@@ -60,6 +64,10 @@ there, so a watcher on the folder would keep waking it.
 ### annals.overview.CHARS_PER_MINUTE *= 900*
 
 spoken English at about 150 words a minute and 6 characters a word; shown as an estimate
+
+### annals.overview.COMBINED_TAG *= 'combined'*
+
+marks a document made by putting several documents’ text in one, for one review of them all
 
 ### annals.overview.DFLT_DAILY_LIMIT *= 20*
 
@@ -118,6 +126,30 @@ Each length on offer and what it would cost in voice characters.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+### annals.overview.combined_document(store, docs, , title, group=None, max_bytes=None)
+
+One document holding the text of `docs`, so a review of it covers them all.
+
+A combined document among `docs` counts as the documents it combines. The same
+documents at the same versions give the same document back, so asking twice makes one.
+A new one is added to `group` when given. Raises `ValueError` when none of `docs`
+has text to speak, or past `max_bytes` of text.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.combined_key(docs)
+
+Names a set of documents at their current versions, in any order.
+
+```pycon
+>>> combined_key([{"id": "b", "version": 2}, {"id": "a"}]) == combined_key([{"id": "a"}, {"id": "b", "version": 2}])
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### annals.overview.eligible(meta)
 
 Whether a document can be spoken: readable text, current, and not itself an overview.
@@ -138,6 +170,16 @@ Ask for an overview of a document. Raises `ValueError` if it cannot be asked for
 
 Asking again while one is being made changes nothing, and neither does asking for one
 that exists and is current unless `force`, so a repeat costs nothing.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.request_combined(store, requests, docs, , title, group=None, minutes=5, max_bytes=None)
+
+Ask for ONE overview of several documents: of the document combining their text.
+
+Returns `{"doc": <combined document id>, "listen": <its overview state>}`. Raises
+`ValueError` as [`request()`](#annals.overview.request) does, or when there is nothing to speak.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

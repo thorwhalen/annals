@@ -14,15 +14,19 @@ annals.overview
       MINUTES
       CHARS_PER_MINUTE
       TAG
+      COMBINED_TAG
    
    .. rubric:: Functions
 
    .. autosummary::
    
       choices
+      combined_document
+      combined_key
       eligible
       html_to_text
       request
+      request_combined
       state_of
       valid_minutes
       work

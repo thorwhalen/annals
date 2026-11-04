@@ -102,6 +102,16 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 | No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
 | Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
 
+## Acting on documents: pick, then choose what you want back
+
+On a group’s page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):
+
+- **Links**: **One link** for a person (expiry, optional password, and on a document “What’s included”) or **A link per document** for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus **Copy all**.
+- **One file**: the picked documents’ Markdown as one file, to copy, download or open as text.
+- **Listen**: a spoken review (when the host offers them, see below). For several documents, **One review of all** (their text is put in one document, tagged `combined` and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or **One each** (makes only the missing or out-of-date ones).
+
+A document’s page has the same three buttons, acting on that document, and both pages keep the rest (copy the text, downloads, open raw, move to bin) under **⋯ More**. Every link, password and code block on the page has the same copy button: it copies inside the tap and answers on itself with a check and “Copied”.
+
 ## Spoken overviews
 
 A document’s page can offer a Listen button: a few minutes of speech about the document, played with its script in sync. It is off unless the host turns it on, because making one spends money.
@@ -122,7 +132,7 @@ Run `annals listen-work` from a timer, not from a watcher on the folder: finishe
 
 ## Sharing one page
 
-The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, the Share button on a document lists its files and the annals pages it links to, so you choose what goes; from a shell:
+The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, **Links › One link** on a document lists its files and the annals pages it links to under “What’s included”, so you choose what goes; from a shell:
 
 ```bash
 annals share <id-or-link> --password -                       # 7 days by default; password from stdin
@@ -149,11 +159,11 @@ then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or
 
 ## Downloads
 
-Every markdown page has an **Actions** menu (Share, Copy, Download, View) with two downloads made by the server: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
+Every markdown page offers two downloads made by the server, under **One file** and under **⋯ More**: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
 
 ## One Markdown file from a group
 
-A group’s page has a **Combine** button: it makes one Markdown file from every `.md` in the group, folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same button, built from the share’s filtered text and only the files it includes.
+A group’s **One file** makes one Markdown file from every `.md` of the picked documents (all of them when none is ticked), folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same **One file** button, built from the share’s filtered text and only the files it includes.
 
 ```bash
 annals aggregate <group-id-or-link> > all.md          # the same file, from a shell
@@ -169,9 +179,9 @@ aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundl
 
 ## A group’s documents as separate notebook sources
 
-To take a group into a notebook (NotebookLM, now Gemini Notebook) with each document as its own source, open the group and tap **Notebook**. Tick the documents (all are ticked), choose how long the links work (1 day by default), and tap **Make links**. You get one link per page; tap **Copy N links**, then in the notebook choose Add source → Website and paste: the notebook makes one source of each link, named after the document. The same panel’s **Combine these** makes one Markdown file of only the ticked documents.
+To take a group into a notebook (NotebookLM, now Gemini Notebook) with each document as its own source, open the group, tick the documents (none ticked means all), tap **Links**, choose **A link per document** and how long the links work (1 day by default), and tap **Make N links**. You get one link per page, each with its own copy button; tap **Copy all N links**, then in the notebook choose Add source → Website and paste: the notebook makes one source of each link, named after the document.
 
-The links are an ordinary share of just those documents (no password, since the notebook cannot type one): unguessable, filtered like every shared text, and revocable with **Turn these links off** or under Shares. The notebook keeps its own copy once a link is added, so turning the links off afterwards does not remove the sources. Each link is a plain web page with no script (`<share link>/source/<doc id>/<file>`); markdown is rendered on the server, images, audio and PDFs get no link (a notebook takes those only as uploads). Why links and not a zip or a download: `misc/docs/notebook-sources.md`.
+The links are an ordinary share of just those documents (no password, since the notebook cannot type one): unguessable, filtered like every shared text, and revocable with **Turn these links off** or under the **Links** tab. The notebook keeps its own copy once a link is added, so turning the links off afterwards does not remove the sources. Each link is a plain web page with no script (`<share link>/source/<doc id>/<file>`); markdown is rendered on the server, images, audio and PDFs get no link (a notebook takes those only as uploads). Why links and not a zip or a download: `misc/docs/notebook-sources.md`.
 
 The API: `GET /shares/<token>/sources` (the owner’s) or `GET <share link>/sources` (the recipient’s) lists `{title, url}` per page; `GET /groups/<gid>/aggregate?doc=<id>&doc=<id>` combines only those documents.
 
