@@ -1054,7 +1054,7 @@
       }
       var owner = !(rel || SHARE || m.in_trash);
       /* the document is the pick: the same result buttons as a group's, acting on it */
-      var docScope = function () { return { kind: "doc", doc: m, ctx: docCtx(m), items: [m], total: 1, listen: m.listen ? { choices: m.listen.choices } : null }; };
+      var docScope = function () { return { kind: "doc", doc: m, ref: m.id, ctx: docCtx(m), items: [m], total: 1, listen: m.listen ? { choices: m.listen.choices } : null }; };
       var docTools = actionBar({
         lead: SHARE ? null : artifactLink(m), view: tools.view,
         results: owner ? resultButtons(docScope) : null,
@@ -1130,7 +1130,7 @@
   /* One sheet at a time, over the page: from the bottom on a phone, a drawer on a wide
      screen. Opening it is a history entry on the same address, so Back closes it (and
      only it); Esc, the scrim and its own Back do the same. */
-  var openSheet = null;
+  var openSheet = null, skipNextPop = false;
   function dropSheet() {
     var s = openSheet;
     if (!s) return null;
@@ -1138,21 +1138,32 @@
     s.el.remove(); s.scrim.remove();
     document.removeEventListener("keydown", s.onKey, true);
     document.documentElement.classList.remove("sheet-open");
+    app.inert = false;
     return s;
   }
-  /* closes the sheet; `fromHistory` when Back already left its entry */
+  /* closes the sheet; `fromHistory` when Back already left its entry. Closed any other way,
+     the sheet's entry is stepped back over without drawing the page again, so its ticks,
+     scroll and focus stay as they were. */
   function closeSheet(fromHistory) {
     var s = dropSheet();
     if (!s) return false;
-    if (!fromHistory && (history.state || {}).sheet) history.back();
+    if (!fromHistory && (history.state || {}).sheet) { skipNextPop = true; history.back(); }
     if (s.returnTo && s.returnTo.isConnected) s.returnTo.focus();
     return true;
   }
+  /* An entry left marked as a sheet's with no sheet on screen (a reload, or Forward into
+     it) sits on top of the same page's own entry: step back onto that one, quietly, so the
+     next Back leaves the page instead of drawing it again. */
+  function forgetStaleSheet() {
+    if ((history.state || {}).sheet && !openSheet) { skipNextPop = true; history.back(); }
+  }
   /* leaves the sheet for another view, in place of the sheet's entry: Back then returns
-     to the page the sheet was opened over */
+     to the page the sheet was opened over, and the new view's own Back names that page */
   function leaveSheetTo(path) {
     var had = !!dropSheet() && (history.state || {}).sheet;
-    go(path, had);
+    if (!had) return go(path);
+    history.replaceState({ from: location.pathname + location.search, fromLabel: typeof viewLabel === "function" ? viewLabel() : viewLabel }, "", path);
+    route();
   }
   function sheetLink(path, text, cls) {
     return h("a", { href: path, class: cls || null, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); leaveSheetTo(path); } }, [text]);
@@ -1173,6 +1184,7 @@
     openSheet = { el: el, scrim: scrim, onKey: onKey, returnTo: o.returnTo };
     document.body.appendChild(scrim); document.body.appendChild(el);
     document.documentElement.classList.add("sheet-open");
+    app.inert = true;   /* aria-modal means it: focus and taps stay in the sheet */
     document.addEventListener("keydown", onKey, true);
     if (!replacing) history.pushState(Object.assign({}, history.state, { sheet: true }), "");
     el.querySelector(".sheet-back").focus();
@@ -1188,7 +1200,7 @@
       function pickedItems() { return items.filter(function (m) { return picked[m.id]; }); }
       function scope() {
         var p = pickedItems();
-        return { kind: "group", group: g, items: p.length ? p : items, total: items.length, listen: g.listen || null };
+        return { kind: "group", group: g, ref: g.id, items: p.length ? p : items, total: items.length, listen: g.listen || null };
       }
       var boxes = [];
       var allBox = h("input", { type: "checkbox", "aria-label": "Pick all documents", onchange: function () {
@@ -1254,7 +1266,9 @@
     return seg;
   }
   function linksBody(sc) {
-    var ref = sc.kind === "doc" ? sc.doc.id : sc.group.id;
+    /* a share has one root, a document or a group (a pick from the whole list will get its
+       group first, through "Add to group…") */
+    var ref = sc.ref;
     var mode = readPref("linkmode:" + sc.kind, sc.kind === "doc" ? "one" : "each");
     if (mode !== "one" && mode !== "each") mode = "one";
     var wrap = h("div", { class: "links-body" });
@@ -1408,11 +1422,15 @@
 
   /* -------- One file: the text as one Markdown file -------------------------------- */
   function fileBody(sc) {
-    if (sc.kind === "doc") return docFileBody(sc.doc, sc.ctx);
+    if (sc.kind === "doc" && sc.doc.kind === "md") return docFileBody(sc.doc, sc.ctx);
     var withText = sc.items.filter(hasText), without = sc.items.length - withText.length;
-    var url = sc.kind === "shared" ? API + "/aggregate" : API + "/groups/" + encodeURIComponent(sc.group.id) + "/aggregate" +
-      (withText.length === sc.total ? "" : "?" + withText.map(function (m) { return "doc=" + encodeURIComponent(m.id); }).join("&"));
+    var url = sc.kind === "shared" ? API + "/aggregate" : aggregateUrl(sc, withText);
     return h("div", null, [combinePanel(url), without ? h("p", { class: "muted" }, [without + (without === 1 ? " has" : " have") + " no Markdown text and " + (without === 1 ? "is" : "are") + " left out."]) : null]);
+  }
+  /* The owner's one-file url for a pick: GET /aggregate takes a group and/or documents. */
+  function aggregateUrl(sc, docs) {
+    var q = (sc.group ? ["group=" + encodeURIComponent(sc.group.id)] : []).concat(docs.map(function (m) { return "doc=" + encodeURIComponent(m.id); }));
+    return API + "/aggregate?" + q.join("&");
   }
   function docFileBody(m, ctx) {
     var wrap = h("section", { class: "combine-panel" });
@@ -1434,10 +1452,13 @@
 
   /* -------- Listen: a review of one document, or of several ------------------------ */
   function listenBody(sc) {
-    var spoken = sc.items.filter(function (m) { return !!m.listen; });
+    var spoken = sc.items.filter(function (m) { return !!m.listen && !isCombined(m); });
+    if (!spoken.length) spoken = sc.items.filter(function (m) { return !!m.listen; });
     if (sc.kind === "doc" || spoken.length === 1) return listenPanel(spoken[0], spoken[0].listen);
     return groupListen(sc, spoken);
   }
+  /* a document made by putting several together for one review: it counts as those */
+  function isCombined(m) { return (m.tags || []).indexOf("combined") >= 0; }
   function isCurrent(m) { return m.listen.state === "done" && !m.listen.stale; }
   function groupListen(sc, spoken) {
     var wrap = h("section", { class: "listen-panel" });
@@ -1477,10 +1498,17 @@
       status.appendChild(h("p", { class: "muted", role: "status" }, ["Asking…"]));
       var done;
       if (mode === "all") {
-        done = api("/groups/" + encodeURIComponent(sc.group.id) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ docs: spoken.map(function (m) { return m.id; }), minutes: minutes }) })
+        var body = { docs: spoken.map(function (m) { return m.id; }), minutes: minutes };
+        if (sc.group) body.group = sc.group.id;
+        done = api("/overviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
           .then(function (out) {
+            var s = out.listen || {}, where = sheetLink(BASE + "/d/" + out.doc, "their combined document");
             status.innerHTML = "";
-            status.appendChild(h("p", { role: "status" }, ["Preparing one " + minutes + " minute review of all " + n + ". It takes about 2 minutes, and you can leave. It will be on ", sheetLink(BASE + "/d/" + out.doc, "their combined document"), ", now in this group."]));
+            if (s.state === "done" && s.overview) {
+              status.appendChild(h("p", { role: "status" }, ["One review of all " + n + " already exists (" + s.minutes + " min). ", sheetLink(BASE + "/d/" + s.overview, "▶ Play it", "btn primary")]));
+            } else {
+              status.appendChild(h("p", { role: "status" }, ["Preparing one " + (s.minutes || minutes) + " minute review of all " + n + ". It takes about 2 minutes, and you can leave. It will be on ", where, sc.group ? ", now in this group." : "."]));
+            }
             start.hidden = true; modeSeg.hidden = true; lenSeg.hidden = true; cost.hidden = true;
           });
       } else {
@@ -1681,7 +1709,7 @@
     api("/share").then(function (s) {
       page(s.title, [], [shareNotice(),
         h("div", { class: "doc-head" }, [h("h2", null, [s.title]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["shared"]), h("span", null, [s.docs.length + (s.docs.length === 1 ? " document" : " documents")])])]),
-        actionBar({ results: resultButtons(function () { return { kind: "shared", items: s.docs, total: s.docs.length }; }) }),
+        (function () { var r = resultButtons(function () { return { kind: "shared", items: s.docs, total: s.docs.length }; }); return r.length ? actionBar({ results: r }) : null; })(),
         h("div", { class: "list" }, s.docs.length ? s.docs.map(inlineItem) : [h("div", { class: "empty" }, ["Nothing here any more."])])
       ]);
     }).catch(function (e) { page(NAME, [], [h("div", { class: "empty" }, [String(e.message || e)])]); });
@@ -1734,8 +1762,11 @@
   }
   // Back closes an expanded table (tables.js) before it changes the view.
   window.addEventListener("popstate", function () {
+    if (skipNextPop) { skipNextPop = false; return; }
     if (closeSheet(true)) return;
+    forgetStaleSheet();
     if (!(window.annalsTables && window.annalsTables.closeOnBack())) route();
   });
+  forgetStaleSheet();
   route();
 })();

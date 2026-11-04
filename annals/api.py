@@ -60,6 +60,7 @@ from annals.config import (
     ENV_DATA_DIR,
     ENV_SHARE_BASE_URL,
     ENV_SOURCES,
+    MAX_AGGREGATE_BYTES,
     MAX_INLINE_TEXT_BYTES,
     default_data_dir,
 )
@@ -437,28 +438,30 @@ def mk_api(
             out["listen"] = {"choices": overview.choices()}
         return out
 
-    @api.post("/groups/{gid}/overview", dependencies=[Depends(_require_same_origin)])
-    def request_group_overview(gid: str, body: dict = Body(default={})) -> dict:
-        """ONE spoken overview of some of a group's documents ``{"docs": [...], "minutes"}``.
+    @api.post("/overviews", dependencies=[Depends(_require_same_origin)])
+    def request_combined_overview(body: dict = Body(default={})) -> dict:
+        """ONE spoken overview of several documents ``{"docs": [...], "group"?, "minutes"?}``.
 
-        Their text is put in one document, added to the group, and that document gets an
-        ordinary overview; the same documents at the same versions reuse it. This spends
-        money. Returns ``{"doc": <id>, "listen": <state>}``.
+        Their text is put in one document (added to ``group`` when given; the documents must
+        then be in it), and that document gets an ordinary overview; the same documents at
+        the same versions reuse it, and a combined document among them counts as what it
+        combines. This spends money. Returns ``{"doc": <id>, "listen": <state>}``.
         """
         if not requests:
             raise HTTPException(404, "overviews are not offered here")
-        ids = body.get("docs")
-        if not (isinstance(ids, list) and ids and all(isinstance(x, str) for x in ids)):
-            raise HTTPException(422, "send {'docs': [<document ids of this group>]}")
-        group, docs = _group_selection(gid, ids)
+        ids, group = body.get("docs"), body.get("group") or ""
+        if not (isinstance(ids, list) and ids and all(isinstance(x, str) and x for x in ids)):
+            raise HTTPException(422, "send {'docs': [<document ids>], 'group'?: <group id>}")
+        if not isinstance(group, str):
+            raise HTTPException(422, "group must be a group id")
+        title, docs = _selection(ids, group)
         if not docs:
-            raise HTTPException(422, "none of these documents is in this group")
-        n = len(docs)
-        title = f"{group.get('title') or gid}: {n} documents together"
+            raise HTTPException(422, "none of these documents can be read")
         try:
             return overview.request_combined(
-                store, requests, docs, title=title, group=gid,
-                minutes=body.get("minutes", overview.DFLT_MINUTES),
+                store, requests, docs, title=f"{title}: {len(docs)} documents together",
+                group=group or None, minutes=body.get("minutes", overview.DFLT_MINUTES),
+                max_bytes=MAX_AGGREGATE_BYTES,
             )  # fmt: skip
         except ValueError as e:
             raise HTTPException(400, str(e))
@@ -550,6 +553,31 @@ def mk_api(
             response.headers["X-Annals-Without"] = str(len(docs) - with_refs)
             response.headers["X-Annals-Count"] = str(count)
             return response
+
+        return await anyio.to_thread.run_sync(make)
+
+    @api.get("/aggregate")
+    async def aggregate_selection(
+        doc: list[str] = Query(default=[]),
+        group: str = "",
+        download: bool = False,
+        demote: int = 1,
+    ) -> Response:
+        """The markdown of some documents as one ``.md`` (``doc`` repeated, and/or ``group``).
+
+        The same file as ``/groups/{gid}/aggregate``, for any pick of documents: a group's,
+        one document's (a folder's markdown), or documents from anywhere.
+        """
+
+        def make() -> Response:
+            title, docs = _selection(doc, group)
+            return aggregate_response(
+                ((m, m.get("files", [])) for m in docs),
+                read=store.read_text,
+                title=title,
+                download=download,
+                demote=demote,
+            )
 
         return await anyio.to_thread.run_sync(make)
 

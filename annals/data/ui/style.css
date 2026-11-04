@@ -324,10 +324,10 @@ html.sheet-open { overflow: hidden; }
 .view-toggle { display: inline-flex; align-items: center; gap: 8px; }
 @media (max-width: 640px) {
   .sel-actions { flex-wrap: nowrap; justify-content: space-between; }
-  .actionbar { flex-wrap: nowrap; gap: 6px; }
+  .actionbar { flex-wrap: wrap; gap: 6px; }
+  .actionbar > a.btn.primary { flex: 1 1 100%; justify-content: center; }   /* the interactive version: a row of its own */
   .actionbar .btn.result, .actionbar .menu-btn, .actionbar .view-toggle,
   .sel-actions .btn.result, .sel-actions .menu-btn { flex: 1 1 0; min-width: 0; display: flex; align-items: center; flex-direction: column; gap: 2px; padding: 5px 4px; font-size: .78rem; line-height: 1.1; }
-  .actionbar > .btn.primary { flex: 0 1 auto; }
   .actionbar > .menu-wrap, .sel-actions > .menu-wrap { flex: 1 1 0; min-width: 0; display: flex; }
   .actionbar > .menu-wrap > .menu-btn, .sel-actions > .menu-wrap > .menu-btn { width: 100%; }
 }

@@ -130,3 +130,52 @@ def test_pick_targets_are_thumb_sized(phone, site):
     ):
         box = el.bounding_box()
         assert box["width"] >= 44 and box["height"] >= 44
+
+
+@pytest.mark.parametrize("close", ["back button", "escape", "scrim"])
+def test_closing_a_sheet_keeps_the_picks(phone, site, close):
+    _group(phone, site)
+    phone.get_by_label("Pick “Bees”").check()
+    phone.get_by_role("button", name="One file").click()
+    phone.locator(".sheet").wait_for()
+    phone.evaluate("window.__samePage = true")  # gone if the page is drawn again from scratch
+    if close == "back button":
+        phone.locator(".sheet-back").click()
+    elif close == "escape":
+        phone.keyboard.press("Escape")
+    else:
+        phone.locator(".sheet-scrim").click(position={"x": 10, "y": 10})
+    phone.wait_for_function("!document.querySelector('.sheet')")
+    phone.wait_for_timeout(300)  # a stray popstate would redraw the group by now
+    assert phone.get_by_label("Pick “Bees”").is_checked()
+    assert phone.locator(".sel-count").inner_text().startswith("1 of ")
+    assert phone.url.endswith(f"/g/{site['group']['id']}")
+
+
+def test_a_reload_with_a_sheet_open_leaves_no_dead_back(phone, site):
+    phone.goto(f"{site['base']}/")
+    phone.locator(f"a.card[href$='/g/{site['group']['id']}']").click()
+    phone.locator(".selbar").wait_for()
+    phone.get_by_role("button", name="Links").click()
+    phone.locator(".sheet").wait_for()
+    phone.reload()
+    phone.locator(".selbar").wait_for()
+    phone.go_back()
+    phone.wait_for_function("location.pathname.endsWith('/annals/')", timeout=5000)
+
+
+def test_the_interactive_version_leaves_room_for_the_buttons(chromium, site):
+    store = site["store"]
+    doc = store.publish(
+        text="# Page\n\nx",
+        title="With artifact",
+        filename="p.md",
+        artifact="https://claude.ai/public/artifacts/abc",
+    )
+    ctx = chromium.new_context(viewport={"width": 360, "height": 780}, has_touch=True, is_mobile=True)
+    page = ctx.new_page()
+    page.goto(f"{site['base']}/d/{doc['id']}")
+    page.locator(".actionbar button.result").first.wait_for()
+    for el in page.locator(".actionbar button.result, .actionbar .menu-btn, .actionbar .view-toggle").all():
+        assert el.bounding_box()["width"] >= 44
+    ctx.close()

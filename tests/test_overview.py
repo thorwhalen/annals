@@ -362,12 +362,12 @@ def test_a_group_says_nothing_of_reviews_when_they_are_off(store, trio):
     off = TestClient(_app(store, overviews=False))
     g = off.get(f"/groups/{group['id']}").json()
     assert "listen" not in g and all("listen" not in m for m in g["items"])
-    assert off.post(f"/groups/{group['id']}/overview", json={"docs": ["x"]}).status_code == 404
+    assert off.post("/overviews", json={"docs": ["x"]}).status_code == 404
 
 
 def test_one_review_of_several_combines_them_into_one_document(client, store, trio, requests):
     group, ids = trio
-    r = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[:2], "minutes": 3})
+    r = client.post("/overviews", json={"docs": ids[:2], "group": group["id"], "minutes": 3})
     assert r.status_code == 200, r.text
     out = r.json()
     assert out["listen"]["state"] == "queued" and out["listen"]["minutes"] == 3
@@ -379,28 +379,73 @@ def test_one_review_of_several_combines_them_into_one_document(client, store, tr
     # it joins the group, so it is found where it was asked for
     assert out["doc"] in store.group(group["id"])["docs"]
     # asking again for the same documents reuses it: one document, one request
-    again = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[1::-1], "minutes": 3}).json()
+    again = client.post("/overviews", json={"docs": ids[1::-1], "group": group["id"], "minutes": 3}).json()
     assert again["doc"] == out["doc"]
 
 
 def test_a_changed_document_makes_a_new_combination(client, store, trio):
     group, ids = trio
-    first = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[:2]}).json()["doc"]
+    first = client.post("/overviews", json={"docs": ids[:2], "group": group["id"]}).json()["doc"]
     store.publish(text="# Bees\n\nNow about wasps too.", replace=ids[0])
-    second = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[:2]}).json()["doc"]
+    second = client.post("/overviews", json={"docs": ids[:2], "group": group["id"]}).json()["doc"]
     assert second != first
 
 
 def test_a_selection_must_belong_to_the_group(client, store, trio):
     group, _ = trio
     other = store.publish(text="# Else", title="Else")["id"]
-    assert client.post(f"/groups/{group['id']}/overview", json={"docs": [other]}).status_code == 422
-    assert client.post(f"/groups/{group['id']}/overview", json={"docs": []}).status_code == 422
-    assert client.post(f"/groups/{group['id']}/overview", json={"docs": "x"}).status_code == 422
+    for docs in ([other], [], "x", [""]):
+        r = client.post("/overviews", json={"docs": docs, "group": group["id"]})
+        assert r.status_code == 422, docs
 
 
 def test_another_site_cannot_spend_on_a_group(client, trio, store):
     group, ids = trio
-    r = client.post(f"/groups/{group['id']}/overview", json={"docs": ids}, headers={"sec-fetch-site": "cross-site"})
+    r = client.post("/overviews", json={"docs": ids, "group": group["id"]}, headers={"sec-fetch-site": "cross-site"})
     assert r.status_code == 403
     assert not any(overview.COMBINED_TAG in (m.get("tags") or []) for m in store.list())
+
+
+def test_a_combined_document_counts_as_what_it_combines(client, store, trio):
+    group, ids = trio
+    first = client.post("/overviews", json={"docs": ids, "group": group["id"]}).json()["doc"]
+    # the group's "all" now includes the combined document: still the same three, reused
+    everything = store.group(group["id"])["docs"]
+    assert first in everything
+    again = client.post("/overviews", json={"docs": everything, "group": group["id"]}).json()
+    assert again["doc"] == first
+    assert store.read_text(first).count("About bees.") == 1
+
+
+def test_documents_from_anywhere_can_be_reviewed_together(client, store, trio):
+    _, ids = trio
+    out = client.post("/overviews", json={"docs": [ids[0], ids[2]]}).json()
+    assert out["listen"]["state"] == "queued"
+    assert not any(out["doc"] in g["docs"] for g in store.list_groups())
+
+
+def test_presses_at_once_make_one_combined_document(client, store, trio):
+    from concurrent.futures import ThreadPoolExecutor
+
+    group, ids = trio
+    body = {"docs": ids, "group": group["id"]}
+    with ThreadPoolExecutor(6) as pool:
+        outs = list(pool.map(lambda _: client.post("/overviews", json=body), range(6)))
+    assert {r.status_code for r in outs} == {200}
+    assert len({r.json()["doc"] for r in outs}) == 1
+    combined = [m for m in store.list() if overview.COMBINED_TAG in (m.get("tags") or [])]
+    assert len(combined) == 1
+    assert store.group(group["id"])["docs"].count(combined[0]["id"]) == 1
+
+
+def test_too_much_text_is_refused_before_anything_is_made(store, trio):
+    group, ids = trio
+    with pytest.raises(ValueError, match="bytes of text"):
+        overview.combined_document(store, [store.meta(i) for i in ids], title="T", max_bytes=10)
+    assert not any(overview.COMBINED_TAG in (m.get("tags") or []) for m in store.list())
+
+
+def test_any_pick_of_documents_as_one_markdown_file(client, trio):
+    _, ids = trio
+    text = client.get("/aggregate", params={"doc": [ids[0], ids[2]]}).text
+    assert "About bees." in text and "About bridges." in text and "tides" not in text
