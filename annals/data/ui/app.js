@@ -333,12 +333,27 @@
       mediaBox(m.kind, m.kind === "image" ? thumbUrl(m.id, m.main, INLINE_IMAGE_W) : rawUrl(m.id, m.main), { name: m.main, preload: "none", lazy: true })
     ]);
   }
-  function groupCard(g) {
+  /* `time`: the date it is listed by (its newest member's, see byDate), shown so its place makes sense */
+  function groupCard(g, time) {
     var href = BASE + "/g/" + g.id;
     return h("a", { class: "card", href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [
       h("div", { class: "card-body" }, [h("p", { class: "title" }, [g.title || g.id]),
-        h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [g.docs.length + " documents"]), h("span", null, [when(g.created)])])])
+        h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [g.docs.length + " documents"]), h("span", { title: when(time || g.created) }, [age(time || g.created)])])])
     ]);
+  }
+  /* Documents and groups as one list by date. A group dates from its newest member, or from
+     its own creation or last addition when that is later, so it rises when something is added to it, and a
+     new document is never pushed below the groups (they once all came first, whatever their
+     dates). `all` is every loaded row, so a member that a search hides still dates its group. */
+  function byDate(docs, groups, all, newestFirst) {
+    var t = {};
+    all.forEach(function (r) { t[r.id] = r.time || ""; });
+    var entries = docs.map(function (r) { return { time: r.time || "", doc: r }; }).concat(groups.map(function (g) {
+      var own = (g.updated || "") > (g.created || "") ? g.updated : g.created || "";
+      var latest = (g.docs || []).reduce(function (m, id) { return t[id] && t[id] > m ? t[id] : m; }, own);
+      return { time: latest, group: g };
+    }));
+    return entries.sort(function (a, b) { return newestFirst ? b.time.localeCompare(a.time) : a.time.localeCompare(b.time); });
   }
 
   /* -------- facets: OR within a family, AND across families ------------------------ */
@@ -509,11 +524,16 @@
       var gs = scope === "published" && !anySelected() ? groups.filter(function (g) { return !state.q || (g.title || "").toLowerCase().indexOf(state.q.toLowerCase()) >= 0; }) : [];
       countEl.textContent = shown.length + (shown.length === 1 ? " item" : " items") + (gs.length ? ", " + gs.length + (gs.length === 1 ? " group" : " groups") : "");
       if (!shown.length && !gs.length) { listEl.appendChild(emptyState()); return; }
-      if (state.sort === "newest" || state.sort === "oldest") gs.forEach(function (g) { listEl.appendChild(groupCard(g)); });
-      shown.slice(0, state.shown).forEach(function (r) { listEl.appendChild(trash ? card(r, trashActions(r)) : card(r, null, { showSource: scope === "all" })); });
-      if (shown.length > state.shown) {
+      var byTime = state.sort === "newest" || state.sort === "oldest";
+      var entries = byTime ? byDate(shown, gs, rows, state.sort === "newest") : shown.map(function (r) { return { doc: r }; });
+      entries.slice(0, state.shown).forEach(function (e) {
+        if (e.group) return listEl.appendChild(groupCard(e.group, e.time));
+        var r = e.doc;
+        listEl.appendChild(trash ? card(r, trashActions(r)) : card(r, null, { showSource: scope === "all" }));
+      });
+      if (entries.length > state.shown) {
         listEl.appendChild(h("button", { class: "btn more", onclick: function () { state.shown += LIST_PAGE; listShown = state.shown; render(); } },
-          ["Show " + Math.min(LIST_PAGE, shown.length - state.shown) + " more of " + (shown.length - state.shown)]));
+          ["Show " + Math.min(LIST_PAGE, entries.length - state.shown) + " more of " + (entries.length - state.shown)]));
       }
       listShown = state.shown;
       if (restoreY) { window.scrollTo(0, restoreY); restoreY = 0; }

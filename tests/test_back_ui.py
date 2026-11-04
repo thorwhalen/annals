@@ -7,16 +7,10 @@ missing (``ANNALS_TEST_BROWSER`` names an executable Playwright did not download
 """
 
 import base64
-import os
 import re
-import socket
-import threading
-import time
 
 import pytest
 
-from annals.api import mk_app
-from annals.auth import no_auth
 from annals.store import DocStore
 
 TABLET = {"width": 810, "height": 1080}
@@ -25,15 +19,8 @@ PNG = base64.b64decode(
 )
 
 
-def _free_port():
-    with socket.socket() as s:
-        s.bind(("127.0.0.1", 0))
-        return s.getsockname()[1]
-
-
 @pytest.fixture(scope="module")
-def site(tmp_path_factory):
-    uvicorn = pytest.importorskip("uvicorn")
+def site(tmp_path_factory, serve):
     tmp = tmp_path_factory.mktemp("back")
     store = DocStore(tmp / "data")
     bees = store.publish(
@@ -48,37 +35,19 @@ def site(tmp_path_factory):
         text="# Wasps\n\nnests", title="Wasps alone", filename="wasps.md"
     )
     group = store.make_group("Pollinators", [bees["id"], renders["id"]])
-    port = _free_port()
-    server = uvicorn.Server(
-        uvicorn.Config(
-            mk_app(store=store, authorizer=no_auth), port=port, log_level="error"
-        )
-    )
-    threading.Thread(target=server.run, daemon=True).start()
-    for _ in range(100):
-        if server.started:
-            break
-        time.sleep(0.05)
-    yield {"base": f"http://127.0.0.1:{port}/annals", "group": group, "bees": bees,
-           "renders": renders, "wasps": wasps}  # fmt: skip
-    server.should_exit = True
-
-
-@pytest.fixture(scope="module")
-def browser():
-    sync_api = pytest.importorskip("playwright.sync_api")
-    with sync_api.sync_playwright() as p:
-        try:
-            b = p.chromium.launch(executable_path=os.environ.get("ANNALS_TEST_BROWSER"))
-        except sync_api.Error as e:
-            pytest.skip(f"no browser to run: {e}")
-        yield b
-        b.close()
+    base = serve(store)
+    return {
+        "base": base,
+        "group": group,
+        "bees": bees,
+        "renders": renders,
+        "wasps": wasps,
+    }
 
 
 @pytest.fixture
-def tablet(browser):
-    ctx = browser.new_context(viewport=TABLET, has_touch=True, is_mobile=True)
+def tablet(chromium):
+    ctx = chromium.new_context(viewport=TABLET, has_touch=True, is_mobile=True)
     yield ctx.new_page()
     ctx.close()
 
