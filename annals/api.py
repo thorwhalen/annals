@@ -423,10 +423,45 @@ def mk_api(
         docs = []
         for i in group["docs"]:
             try:
-                docs.append(_owner_tags(list_meta(store.meta(i))))
+                meta = store.meta(i)
             except (KeyError, ValueError):
                 continue
-        return {**group, "items": docs}
+            row = _owner_tags(list_meta(meta))
+            # what the page offers on a selection: text to combine, and each review's state
+            row["has_markdown"] = any(kind_of(f) == "md" for f in meta.get("files", []))
+            if requests and overview.eligible(meta):
+                row["listen"] = overview.state_of(store, requests, meta)
+            docs.append(row)
+        out = {**group, "items": docs}
+        if requests:
+            out["listen"] = {"choices": overview.choices()}
+        return out
+
+    @api.post("/groups/{gid}/overview", dependencies=[Depends(_require_same_origin)])
+    def request_group_overview(gid: str, body: dict = Body(default={})) -> dict:
+        """ONE spoken overview of some of a group's documents ``{"docs": [...], "minutes"}``.
+
+        Their text is put in one document, added to the group, and that document gets an
+        ordinary overview; the same documents at the same versions reuse it. This spends
+        money. Returns ``{"doc": <id>, "listen": <state>}``.
+        """
+        if not requests:
+            raise HTTPException(404, "overviews are not offered here")
+        ids = body.get("docs")
+        if not (isinstance(ids, list) and ids and all(isinstance(x, str) for x in ids)):
+            raise HTTPException(422, "send {'docs': [<document ids of this group>]}")
+        group, docs = _group_selection(gid, ids)
+        if not docs:
+            raise HTTPException(422, "none of these documents is in this group")
+        n = len(docs)
+        title = f"{group.get('title') or gid}: {n} documents together"
+        try:
+            return overview.request_combined(
+                store, requests, docs, title=title, group=gid,
+                minutes=body.get("minutes", overview.DFLT_MINUTES),
+            )  # fmt: skip
+        except ValueError as e:
+            raise HTTPException(400, str(e))
 
     def _group_selection(gid: str, doc: list[str]) -> tuple[dict, list[dict]]:
         """A group and its documents, only the ``doc`` ids among them when any are given."""

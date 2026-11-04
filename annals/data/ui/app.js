@@ -8,16 +8,16 @@
    BASE/d/<id>?f=<p>   one file of a document, shown by its kind, with prev/next
    BASE/g/<gid>        a group: one URL for a set of documents
    BASE/trash          the recycle bin: restore, or delete forever
-   BASE/shares         the owner's share links: copy, or revoke
-   A document or a group has a Share button: a public link to it and the files chosen,
-   with an optional password and expiry (annals.share). The same file is the recipient's
-   page: the share server sets window.ANNALS.share, BASE and API to the link, and the page
-   then shows only what the share includes, without the owner's controls.
-   A group (the owner's, or a share's) has a Combine button: its markdown files as one .md,
-   made by the server on each request (annals.aggregate), to copy, save or read raw.
-   The owner's group also has a Notebook button: tick documents, get one public link per
-   page (a share of just those, annals.notebook), copy them all and paste them into the
-   notebook, which makes one source of each link; or combine just the ticked ones.
+   BASE/shares         the links the owner made ("Links"): copy, or revoke
+   Acting on documents is one model on a group and on a document: pick documents (a group's
+   ticked cards, all of them when none is ticked; a document page is a pick of one), then
+   one of three results, each in one sheet: Links (one link for a person, with expiry and
+   password, or a link per document for a notebook or an agent; annals.share,
+   annals.notebook), One file (the Markdown as one file; annals.aggregate) and Listen (a
+   spoken review of one, of all together, or one each; annals.overview). Actions that need
+   no choosing are under More. The same file is the recipient's page: the share server sets
+   window.ANNALS.share, BASE and API to the link, and the page then shows only what the
+   share includes, without the owner's controls (its group keeps One file).
    The API lives at window.ANNALS.api (standalone: BASE/api; on enlace: /api/<app>). Items
    (every source's rows, and their tags) are read and patched through @zodal/store-http's
    provider, vendored at API/ui/vendor/, so the storage behind them can change without
@@ -367,6 +367,7 @@
 
   /* -------- layout -------------------------------------------------------------- */
   function page(title, nav, body) {
+    dropSheet();
     app.innerHTML = ""; listShown = 0;
     document.title = title ? title + " · " + NAME : NAME;
     viewLabel = title || NAME;
@@ -384,7 +385,7 @@
     if (SHARE) return [];
     var items = knownSources.map(function (s) { return [scopeHref(s.name), s.title, s.name]; });
     if (knownSources.length > 1) items.push([BASE + "/all", "All", "all"]);
-    items.push([BASE + "/shares", "Shares", "shares"]);
+    items.push([BASE + "/shares", "Links", "shares"]);
     items.push([BASE + "/trash", "Bin", "trash"]);
     return items.map(function (x) { var a = link(x[0], x[1]); if (x[2] === current) a.setAttribute("aria-current", "page"); return a; });
   }
@@ -404,7 +405,8 @@
       m.updated ? h("span", { class: "updated" }, ["updated"]) : null,
       (isRow ? sourceText({ session: m.session, host: m.host }) : sourceText(m.source)) ? h("span", null, [isRow ? sourceText({ session: m.session, host: m.host }) : sourceText(m.source)]) : null,
       m.size ? h("span", null, [size(m.size)]) : null,
-      m.n_files > 1 ? h("span", null, [m.n_files + " files"]) : null
+      m.n_files > 1 ? h("span", null, [m.n_files + " files"]) : null,
+      m.listen && m.listen.state === "done" ? h("span", { class: "tag review" }, [m.listen.stale ? "review (older)" : "▶ review"]) : null
     ].concat((m.tags || []).map(function (t) { return h("span", { class: "tag" }, [t]); })));
     var text = m.snippet || m.excerpt;
     var c = h("a", { class: "card" + (m.thumb ? " has-thumb" : ""), href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [
@@ -748,7 +750,7 @@
      tooltip, and the keyboard (arrows, Home/End, Esc, type to open). On a phone the menu is
      a bottom sheet with 44px rows. A recipient of a share link gets the same bar without
      the owner's sections. */
-  var ACTION_SECTIONS = [["share", "Share"], ["copy", "Copy"], ["download", "Download"], ["view", "View"], ["manage", "Manage"]];
+  var ACTION_SECTIONS = [["copy", "Copy"], ["download", "Download"], ["view", "View"], ["manage", "Manage"]];
   var ICONS = {
     share: "M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14",
     listen: "M4 14v-2a8 8 0 0 1 16 0v2M4 14a2 2 0 0 1 2-2h1v7H6a2 2 0 0 1-2-2zM20 14a2 2 0 0 0-2-2h-1v7h1a2 2 0 0 0 2-2z",
@@ -761,6 +763,7 @@
     restore: "M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5",
     more: "M5 12h.01M12 12h.01M19 12h.01",
     check: "M5 12.5l4.5 4.5L19 7.5",
+    code: "M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16",
     notebook: "M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3v18M10 8h5M10 12h5M3 7h3M3 12h3M3 17h3"
   };
   function svgPath(name) {
@@ -798,7 +801,7 @@
     return [{ section: "download", label: kind === "file" ? "File" : "Original file", hint: "Save the file as it is", icon: "download", href: downloadUrl(ctx.raw(rel)), download: basename(rel) }];
   }
   function actionItem(a, close) {
-    var inner = [icon(a.icon), h("span", { class: "lbl" }, [a.label])];
+    var inner = [icon(a.icon), h("span", { class: "lbl" }, [a.label, a.hint ? h("span", { class: "menuhint" }, [a.hint]) : null])];
     var attrs = { role: "menuitem", class: "menuitem" + (a.danger ? " danger" : ""), title: a.hint || null, tabindex: "-1" };
     if (a.href) {
       Object.assign(attrs, { href: a.href, download: a.download || null, target: a.newTab ? "_blank" : null, rel: a.newTab ? "noopener" : null, onclick: close });
@@ -810,8 +813,8 @@
   function actionMenu(actions) {
     if (!actions.length) return null;
     var open = false, root = h("div", { class: "menu-wrap" });
-    var btn = h("button", { class: "btn menu-btn", type: "button", "aria-haspopup": "menu", "aria-expanded": "false", title: "Share, copy, download, view" }, [icon("more"), h("span", { class: "lbl" }, ["Actions"])]);
-    var menu = h("div", { class: "menu", role: "menu", "aria-label": "Actions", hidden: "" });
+    var btn = h("button", { class: "btn menu-btn", type: "button", "aria-haspopup": "menu", "aria-expanded": "false", "aria-label": "More actions" }, [icon("more"), h("span", { class: "lbl" }, ["More"])]);
+    var menu = h("div", { class: "menu", role: "menu", "aria-label": "More actions", hidden: "" });
     var scrim = h("div", { class: "menu-scrim", hidden: "", onclick: function () { setOpen(false); } });
     ACTION_SECTIONS.forEach(function (sec) {
       var rows = actions.filter(function (a) { return a.section === sec[0]; });
@@ -840,28 +843,39 @@
     root.appendChild(btn); root.appendChild(scrim); root.appendChild(menu);
     return root;
   }
+  /* A bin action that ignores a second press while the first runs, and says why it failed. */
+  function binOnce(work) {
+    var busy = false;
+    return function () {
+      if (busy) return;
+      busy = true;
+      return work().catch(function (e) { if (e.message !== "login") toast("That did not work: " + (e.message || e), 4000); }).then(function () { busy = false; });
+    };
+  }
   /* view: controls that change how it is shown (Rendered | Source); primary: buttons that
      stay on the bar; actions: the menu. Any may be empty. */
   function actionBar(parts) {
     var primary = (parts.primary || []).filter(Boolean).map(function (a) {
       return h("button", { class: "btn", type: "button", "aria-expanded": a.expanded ? (a.expanded === "open" ? "true" : "false") : null, title: a.hint || null, onclick: a.run }, [icon(a.icon), h("span", { class: "lbl" }, [a.label])]);
     });
-    var kids = [parts.lead || null].concat(parts.view || [], primary, [actionMenu((parts.actions || []).filter(Boolean))]);
+    var kids = [parts.lead || null].concat(parts.view || [], parts.results || [], primary, [actionMenu((parts.actions || []).filter(Boolean))]);
     return h("div", { class: "toolbar actionbar", role: "toolbar", "aria-label": "Page actions" }, kids);
   }
-  var COPY_LINK = function () { return { section: "share", label: "Copy link", hint: "Copy this page's link", icon: "link", run: function () { return copyText(location.href); } }; };
+  /* This page's own address: it needs the owner's login, so it is for the owner's use, never
+     for sending (Links makes those). */
+  var COPY_ADDRESS = function () { return { section: "copy", label: "Copy my private address", hint: "Opens only with your login: for you, not for sending", icon: "link", run: function () { return copyText(location.href); } }; };
 
   /* Renders `rel` into a container; returns {view, actions} for the page's action bar. */
   function renderFile(ctx, rel, kind, container) {
     var view = [], actions = [];
     if (kind === "md") {
       var mode = readPref("mdmode", "rendered"), text = "";
-      var seg = h("div", { class: "seg" }, ["rendered", "source"].map(function (v) {
-        return h("button", { class: "btn", "aria-pressed": String(mode === v), onclick: function () { mode = v; writePref("mdmode", v); draw(); } }, [v === "rendered" ? "Rendered" : "Source"]);
-      }));
+      /* one toggle, pressed while the markdown source shows (one row of controls on a phone) */
+      var seg = h("button", { class: "btn view-toggle", type: "button", "aria-pressed": String(mode === "source"), title: "Show the Markdown source", onclick: function () {
+        mode = mode === "source" ? "rendered" : "source"; writePref("mdmode", mode); draw();
+      } }, [icon("code"), h("span", { class: "lbl" }, ["Source"])]);
       function draw() {
-        seg.children[0].setAttribute("aria-pressed", String(mode === "rendered"));
-        seg.children[1].setAttribute("aria-pressed", String(mode === "source"));
+        seg.setAttribute("aria-pressed", String(mode === "source"));
         container.innerHTML = "";
         if (mode === "source") { container.appendChild(h("pre", { class: "source" }, [text])); withCodeCopy(container); return; }
         withMarked().then(function (mk) {
@@ -1038,15 +1052,16 @@
           h("button", { class: "btn", disabled: next ? null : "", onclick: function () { go(fileUrl(m.id, next), true); } }, ["Next"])
         ]);
       }
-      var sharePanel = h("div"), listenPanel = h("div");
       var owner = !(rel || SHARE || m.in_trash);
+      /* the document is the pick: the same result buttons as a group's, acting on it */
+      var docScope = function () { return { kind: "doc", doc: m, ctx: docCtx(m), items: [m], total: 1, listen: m.listen ? { choices: m.listen.choices } : null }; };
       var docTools = actionBar({
         lead: SHARE ? null : artifactLink(m), view: tools.view,
-        primary: [owner && m.listen ? listenAction(m, listenPanel) : null, owner ? { label: "Share", hint: "Make a link anyone can open, with the files you choose", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, sharePanel, { kind: "doc", id: m.id, title: m.title }); } } : null],
-        actions: [COPY_LINK()].concat(tools.actions, [
+        results: owner ? resultButtons(docScope) : null,
+        actions: [COPY_ADDRESS()].concat(tools.actions, [
           rel || SHARE ? null : (m.in_trash
-            ? { section: "manage", label: "Restore", hint: "Take it out of the recycle bin", icon: "restore", run: function () { api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); } }
-            : { section: "manage", label: "Move to bin", hint: "Move it to the recycle bin (you can restore it)", icon: "trash", danger: true, run: function () { api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); } })
+            ? { section: "manage", label: "Restore", hint: "Take it out of the recycle bin", icon: "restore", run: binOnce(function () { return api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); }) }
+            : { section: "manage", label: "Move to bin", hint: "You can restore it from the bin", icon: "trash", danger: true, run: binOnce(function () { return api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); }) })
         ])
       });
       var isVersion = !!m.version_of;
@@ -1057,6 +1072,7 @@
         m.size ? h("span", null, [size(m.size)]) : null,
         sourceText(m.source) ? h("span", null, [sourceText(m.source)]) : null,
         m.source && /^[\w.-]+$/.test(m.source.of || "") ? h("span", null, ["Overview of ", link(BASE + "/d/" + m.source.of, "this document")]) : null,
+        m.listen && m.listen.state === "done" && m.listen.overview ? h("span", null, [link(BASE + "/d/" + m.listen.overview, m.listen.stale ? "▶ review (older)" : "▶ review")]) : null,
         m.files && m.files.length > 1 ? h("span", null, [m.files.length + " files"]) : null
       ]);
       var showFiles = !rel && m.files && m.files.length > 1;
@@ -1066,64 +1082,441 @@
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
         h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
-        fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_LINK()].concat(tools.actions) }) : docTools, listenPanel, sharePanel, body,
+        fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools, body,
         rel || SHARE ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
       ]);
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
 
-  /* -------- a group ----------------------------------------------------------------- */
+  /* -------- pick, then choose what you want back ------------------------------------ */
+  /* One way to act on documents, the same on a group and on a document: the documents
+     picked (a group's ticked cards, or all of them when none is ticked; a document page is
+     a pick of one), then one of three results, each in one sheet: Links, One file, Listen.
+     Actions that need no choosing stay in the ⋯ More menu. A scope is
+     {kind: "doc" | "group" | "shared", doc?, group?, items: [meta], total, listen?}. */
+  var RESULTS = [
+    { id: "links", label: "Links", icon: "link", title: "Links", body: linksBody,
+      hint: function (sc) { return "Links to open in a browser, or to give a notebook or an agent"; },
+      when: function (sc) { return sc.kind !== "shared"; } },
+    { id: "file", label: "One file", icon: "file", title: "One file", body: fileBody,
+      hint: function (sc) { return sc.items.length > 1 ? "All their text as one Markdown file, to copy, paste or save" : "Its text as a Markdown file, to copy, paste or save"; },
+      when: function (sc) { return sc.items.some(hasText); } },
+    { id: "listen", label: "Listen", icon: "listen", title: "Listen", body: listenBody,
+      hint: function (sc) { return "A few spoken minutes on " + (sc.items.length > 1 ? "these" : "this") + ". The cost is shown before anything is made"; },
+      when: function (sc) { return !!sc.listen && sc.items.some(function (m) { return !!m.listen; }); } }
+  ];
+  /* Text a Markdown file can be made of: a markdown page, or a folder holding markdown. */
+  function hasText(m) { return m.kind === "md" || (m.has_markdown === undefined ? m.kind === "folder" : !!m.has_markdown); }
+  function scopeLabel(sc) {
+    if (sc.kind === "doc") return sc.doc.title || sc.doc.id;
+    var n = sc.items.length, of = sc.total;
+    return n === of ? (of === 1 ? "1 document" : "all " + of + " documents") : n + " of " + of + " documents";
+  }
+  /* The result buttons for a scope that may change (a group's picks): each opens its sheet
+     on the scope as it is when pressed. `getScope` is called again at every press. */
+  function resultButtons(getScope) {
+    var sc0 = getScope();
+    return RESULTS.filter(function (r) { return r.when(sc0); }).map(function (r) {
+      return h("button", { class: "btn result", type: "button", "data-result": r.id, "aria-haspopup": "dialog", onclick: function (e) {
+        var sc = getScope();
+        if (!sc.items.length) return toast("Pick at least one document");
+        if (!r.when(sc)) return toast(r.id === "file" ? "None of these has text to put in one file" : "None of these can be spoken");
+        taskSheet({ title: r.title, scope: scopeLabel(sc), hint: r.hint(sc), body: r.body(sc), returnTo: e.currentTarget });
+      } }, [icon(r.icon), h("span", { class: "lbl" }, [r.label])]);
+    });
+  }
+
+  /* One sheet at a time, over the page: from the bottom on a phone, a drawer on a wide
+     screen. Opening it is a history entry on the same address, so Back closes it (and
+     only it); Esc, the scrim and its own Back do the same. */
+  var openSheet = null;
+  function dropSheet() {
+    var s = openSheet;
+    if (!s) return null;
+    openSheet = null;
+    s.el.remove(); s.scrim.remove();
+    document.removeEventListener("keydown", s.onKey, true);
+    document.documentElement.classList.remove("sheet-open");
+    return s;
+  }
+  /* closes the sheet; `fromHistory` when Back already left its entry */
+  function closeSheet(fromHistory) {
+    var s = dropSheet();
+    if (!s) return false;
+    if (!fromHistory && (history.state || {}).sheet) history.back();
+    if (s.returnTo && s.returnTo.isConnected) s.returnTo.focus();
+    return true;
+  }
+  /* leaves the sheet for another view, in place of the sheet's entry: Back then returns
+     to the page the sheet was opened over */
+  function leaveSheetTo(path) {
+    var had = !!dropSheet() && (history.state || {}).sheet;
+    go(path, had);
+  }
+  function sheetLink(path, text, cls) {
+    return h("a", { href: path, class: cls || null, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); leaveSheetTo(path); } }, [text]);
+  }
+  function taskSheet(o) {
+    var replacing = !!dropSheet();
+    var id = "sheet-" + Math.random().toString(36).slice(2);
+    var el = h("section", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-labelledby": id }, [
+      h("div", { class: "sheet-head" }, [
+        h("button", { class: "btn link sheet-back", type: "button", onclick: function () { closeSheet(); } }, ["‹ Back"]),
+        h("h3", { id: id }, [o.title, h("span", { class: "sheet-scope" }, [" · " + o.scope])])
+      ]),
+      o.hint ? h("p", { class: "muted sheet-hint" }, [o.hint]) : null,
+      h("div", { class: "sheet-body" }, [o.body])
+    ]);
+    var scrim = h("div", { class: "sheet-scrim", onclick: function () { closeSheet(); } });
+    function onKey(e) { if (e.key === "Escape") { e.preventDefault(); closeSheet(); } }
+    openSheet = { el: el, scrim: scrim, onKey: onKey, returnTo: o.returnTo };
+    document.body.appendChild(scrim); document.body.appendChild(el);
+    document.documentElement.classList.add("sheet-open");
+    document.addEventListener("keydown", onKey, true);
+    if (!replacing) history.pushState(Object.assign({}, history.state, { sheet: true }), "");
+    el.querySelector(".sheet-back").focus();
+    return el;
+  }
+
+  /* -------- a group: tick documents, then act on them ------------------------------- */
   function groupView(gid) {
     page("Group", mainNav("published"), [h("p", { class: "muted" }, ["Loading…"])]);
     api("/groups/" + gid).then(function (g) {
       var items = (g.items || []).filter(function (m) { return !m.in_trash; });
-      var groupPanel = h("div");
+      var picked = {};   /* id -> true */
+      function pickedItems() { return items.filter(function (m) { return picked[m.id]; }); }
+      function scope() {
+        var p = pickedItems();
+        return { kind: "group", group: g, items: p.length ? p : items, total: items.length, listen: g.listen || null };
+      }
+      var boxes = [];
+      var allBox = h("input", { type: "checkbox", "aria-label": "Pick all documents", onchange: function () {
+        var on = allBox.checked; picked = {};
+        if (on) items.forEach(function (m) { picked[m.id] = true; });
+        update();
+      } });
+      var count = h("span", { class: "sel-count", role: "status" });
+      var clear = h("button", { class: "btn link", type: "button", onclick: function () { picked = {}; update(); } }, ["Clear"]);
+      function update() {
+        var n = pickedItems().length;
+        boxes.forEach(function (b) { b.input.checked = !!picked[b.id]; b.row.classList.toggle("picked", !!picked[b.id]); });
+        allBox.checked = n === items.length && n > 0;
+        allBox.indeterminate = n > 0 && n < items.length;
+        count.textContent = n ? n + " of " + items.length + " picked" : "All " + items.length + (items.length === 1 ? " document" : " documents");
+        clear.hidden = !n;
+      }
+      var rows = items.map(function (m) {
+        var input = h("input", { type: "checkbox", "aria-label": "Pick “" + (m.title || m.id) + "”", onchange: function () { if (input.checked) picked[m.id] = true; else delete picked[m.id]; update(); } });
+        var row = h("div", { class: "pick-row" }, [h("label", { class: "pick" }, [input]), h("div", { class: "pick-body" }, [inlineItem(m)])]);
+        boxes.push({ id: m.id, input: input, row: row });
+        return row;
+      });
+      var more = actionMenu([
+        COPY_ADDRESS()
+        /* the seam for groups made by hand: "Add to group…" goes here, once the main list can pick too */
+      ]);
+      var bar = items.length ? h("div", { class: "selbar", role: "toolbar", "aria-label": "Act on the picked documents" }, [
+        h("div", { class: "sel-row" }, [h("label", { class: "sel-all" }, [allBox, " All"]), count, clear]),
+        h("div", { class: "sel-actions" }, resultButtons(scope).concat([more]))
+      ]) : null;
       page(g.title, mainNav("published"), [
         backLink(BASE + "/", sourceTitle("published")),
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
-        actionBar({
-          primary: [{ label: "Share", hint: "Make a link anyone can open to these documents", icon: "share", expanded: true, run: function (e) { toggleShare(e.currentTarget, groupPanel, { kind: "group", id: g.id, title: g.title, items: items }); } },
-            hasMarkdown(items) ? combineAction(groupPanel, API + "/groups/" + encodeURIComponent(g.id) + "/aggregate") : null,
-            items.some(isSourceable) ? notebookAction(groupPanel, g, items) : null],
-          actions: [COPY_LINK()]
-        }),
-        groupPanel,
-        h("div", { class: "list" }, items.length ? items.map(inlineItem) : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])])
+        items.length ? h("p", { class: "muted pick-help" }, ["Tick documents to act on some of them; with none ticked, the buttons below act on all of them."]) : null,
+        h("div", { class: "list picklist" }, items.length ? rows : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])]),
+        bar
       ]);
+      update();
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
 
-  /* -------- a group's markdown as one file (annals.aggregate) ---------------------- */
-  /* The server makes it on each request and keeps nothing. The text is fetched when the
-     panel opens, so Copy runs inside the tap (see copyText), and it is shown raw below
-     the buttons: on a phone where copying or saving fails, it can be selected by hand. */
-  function hasMarkdown(docs) { return docs.some(function (m) { return m.kind === "md" || m.kind === "folder"; }); }
-  /* The Listen button: a spoken overview of this document, made on the server (annals.overview).
-     A finished one just plays. Anything else opens a panel, because starting one spends money
-     and so names its cost first. */
-  var LISTEN_POLL_MS = 5000, LISTEN_MAX_MISSES = 5;
-  function listenAction(m, panel) {
-    var ready = m.listen.state === "done" && !m.listen.stale;
-    var active = m.listen.state === "queued" || m.listen.state === "running";
-    if (active) panel.appendChild(listenPanel(m, m.listen));
-    return { label: ready ? "Play overview" : "Listen", hint: "Hear a few minutes on this document, with its script in sync", icon: "listen", expanded: ready ? false : (active ? "open" : true), run: function (e) {
-      if (m.listen.state === "done" && !m.listen.stale) return go(BASE + "/d/" + m.listen.overview);
-      var btn = e.currentTarget, open = btn.getAttribute("aria-expanded") === "true";
-      btn.setAttribute("aria-expanded", String(!open));
-      panel.innerHTML = "";
-      if (!open) panel.appendChild(listenPanel(m, m.listen));
-    } };
+  /* -------- Links: one link for a person, or a link per document ------------------- */
+  /* Both are one share (POST /shares) of what is picked; "a link per document" is a share
+     of each document's pages only, listed one link each (annals.notebook), with no
+     password since a notebook cannot type one. Nothing is revoked behind the owner's back:
+     each press makes a new share, and the ones made before stay listed, each revocable. */
+  var NOTEBOOK_URL = "https://notebooklm.google.com/";
+  var LINK_MODES = [["one", "One link", "for a person"], ["each", "A link per document", "for a notebook or an agent"]];
+  var LINK_EXPIRY = {
+    one: [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"], ["never", "Never"], ["date", "On a date…"]],
+    each: [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"]]
+  };
+  var LINK_DFLT_EXPIRY = { one: "7d", each: "1d" };
+  function isSourceable(m) { return m.kind === "md" || m.kind === "html" || m.kind === "folder"; }
+  function segmented(choices, value, onPick, label) {
+    var seg = h("div", { class: "seg seg-wide", role: "group", "aria-label": label || null }, choices.map(function (c) {
+      return h("button", { class: "btn", type: "button", "aria-pressed": String(String(c[0]) === String(value)), "data-value": String(c[0]), onclick: function () {
+        [].forEach.call(seg.children, function (b) { b.setAttribute("aria-pressed", String(b.getAttribute("data-value") === String(c[0]))); });
+        onPick(c[0]);
+      } }, [h("span", { class: "seg-main" }, [c[1]]), c[2] ? h("span", { class: "seg-sub" }, [c[2]]) : null]);
+    }));
+    return seg;
   }
+  function linksBody(sc) {
+    var ref = sc.kind === "doc" ? sc.doc.id : sc.group.id;
+    var mode = readPref("linkmode:" + sc.kind, sc.kind === "doc" ? "one" : "each");
+    if (mode !== "one" && mode !== "each") mode = "one";
+    var wrap = h("div", { class: "links-body" });
+    var opts = h("div", { class: "share-opts" });
+    var result = h("div", { class: "share-result", "aria-live": "polite" });
+    var made = h("details", { class: "made-links" }, [h("summary", null, ["Links you made for " + (sc.kind === "doc" ? "this" : "this group")])]);
+    var madeList = h("div");
+    made.appendChild(madeList);
+    var redraw = existingShares(ref, madeList, made);
+    var picks = [];   /* a document's files and linked pages, when it has a choice of them */
+    var expSel, expDate, pw;
+    var make = h("button", { class: "btn primary", type: "button", onclick: makeLinks }, [h("span", { class: "lbl" }, [""])]);
+    function usable() { return mode === "each" ? sc.items.filter(isSourceable) : sc.items; }
+    function drawOpts() {
+      opts.innerHTML = ""; result.innerHTML = ""; picks = [];
+      var choices = LINK_EXPIRY[mode];
+      expSel = h("select", { "aria-label": "Links work for" }, choices.map(function (c) { var o = h("option", { value: c[0] }, [c[1]]); if (c[0] === LINK_DFLT_EXPIRY[mode]) o.selected = true; return o; }));
+      expDate = h("input", { type: "date", "aria-label": "Until", hidden: "" });
+      expSel.addEventListener("change", function () { expDate.hidden = expSel.value !== "date"; });
+      opts.appendChild(h("label", null, [mode === "one" ? "Works for " : "Links work for ", expSel, " ", expDate]));
+      if (mode === "one") {
+        /* a password the owner hands on, not one of theirs: plain text, kept out of managers */
+        pw = h("input", { type: "text", placeholder: "No password", autocomplete: "off", spellcheck: "false", "data-1p-ignore": "", "data-lpignore": "true", "aria-label": "Password (optional)" });
+        opts.appendChild(h("label", null, ["Password ", pw, " ", h("button", { class: "btn link", type: "button", onclick: function () { pw.value = newPassword(); } }, ["Generate"])]));
+        if (sc.kind === "doc") opts.appendChild(docIncludes(sc.doc.id, picks));
+      } else {
+        pw = null;
+        opts.appendChild(h("p", { class: "muted" }, ["No password: a notebook cannot type one. Paste the links into the notebook's Website source, and each becomes its own source."]));
+        var others = sc.items.filter(function (m) { return !isSourceable(m); });
+        if (others.length) opts.appendChild(h("p", { class: "muted" }, [others.length + (others.length === 1 ? " is" : " are") + " not a page (" +
+          others.map(function (m) { return m.kind; }).filter(function (k, i, a) { return a.indexOf(k) === i; }).join(", ") + ") and get" + (others.length === 1 ? "s" : "") + " no link: a notebook takes those only as uploads."]));
+      }
+      var n = usable().length;
+      make.lastChild.textContent = mode === "one" ? "Make the link" : "Make " + n + (n === 1 ? " link" : " links");
+    }
+    function makeLinks() {
+      if (isPending(make)) return;
+      if (!usable().length) return toast("None of these is a page a notebook can read");
+      var exp = expSel.value === "date" ? expDate.value : expSel.value;
+      if (expSel.value === "date" && !exp) return toast("Pick a date");
+      var body = { ref: ref, expires: exp };
+      if (sc.kind === "group") body.include = usable().map(function (m) { return m.id; });
+      else if (picks.length) body.include = picks.filter(function (p) { return p.input.checked; }).map(function (p) { return p.value; });
+      var sentPw = pw ? pw.value : "";   /* what the share is locked with, whatever the field holds later */
+      if (sentPw) body.password = sentPw;
+      var forNotebook = mode === "each";
+      if (forNotebook) { body.files = "sources"; body.title = (sc.kind === "doc" ? sc.doc.title : sc.group.title) + " (a link per document)"; }
+      pending(make, true);
+      result.innerHTML = "";
+      result.appendChild(h("p", { class: "muted", role: "status" }, [forNotebook ? "Making the links…" : "Making the link…"]));
+      var share = null;
+      api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(function (s) { share = s; return forNotebook ? api("/shares/" + encodeURIComponent(s.token) + "/sources") : null; })
+        .then(function (out) { result.innerHTML = ""; if (forNotebook) drawEach(share, out); else drawOne(share, sentPw); redraw(); })
+        .catch(function (e) {
+          if (share) api("/shares/" + encodeURIComponent(share.token), { method: "DELETE" }).catch(function () {});   /* never leave a link nobody was shown */
+          result.innerHTML = "";
+          result.appendChild(h("p", { class: "err", role: "alert" }, ["Could not make " + (forNotebook ? "the links" : "the link") + ": " + (e.message || e)]));
+        })
+        .then(function () { pending(make, false); });
+    }
+    function drawOne(s, sentPw) {
+      var url = absUrl(s.url);
+      if (!url) return result.appendChild(h("p", { class: "err" }, ["The link is made, but this server has no public share address (ANNALS_SHARE_BASE_URL), so nobody can open it yet."]));
+      /* no copy here on its own: it would run after the network wait, which iOS refuses */
+      result.appendChild(copyField(url, { name: "Share link", copyName: "Copy the share link", copied: "Link copied" }));
+      result.appendChild(h("p", { class: "muted" }, ["Anyone with it can open " + (sc.kind === "doc" ? "this document" : "these documents") + " without an account · " + shareSummary(s)]));
+      if (sentPw) {
+        result.appendChild(h("p", { class: "muted" }, ["Send the password separately:"]));
+        result.appendChild(copyField(sentPw, { name: "Password", copyName: "Copy the password", copied: "Password copied" }));
+      }
+      result.appendChild(turnOff(s, "Turn this link off", "Link turned off."));
+      result.querySelector(".copy-btn").focus();
+    }
+    function drawEach(s, out) {
+      var urls = out.sources.map(function (x) { return absUrl(x.url); });
+      if (!urls.length) return result.appendChild(h("p", { class: "err", role: "alert" }, ["None of these has a page a notebook can read."]));
+      var text = urls.join("\n");
+      var raw = h("textarea", { class: "combine-text", readonly: "", rows: String(Math.min(urls.length, 8)), spellcheck: "false", "aria-label": "One link per line" }, [text]);
+      var asText = h("details", { class: "links-as-text" }, [h("summary", null, ["All links as text"]), raw]);
+      var n = urls.length, nLinks = n + (n === 1 ? " link" : " links");
+      result.appendChild(h("p", { role: "status" }, [nLinks + ", one per document" + (s.expires ? ", until " + until(s.expires) : "") + "."]));
+      result.appendChild(h("div", { class: "toolbar combine-actions" }, [
+        copyButton(text, { label: n === 1 ? "Copy the link" : "Copy all " + n + " links", primary: true, copied: nLinks + " copied", field: function () { asText.open = true; return raw; } }),
+        h("a", { class: "btn", href: NOTEBOOK_URL, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open NotebookLM"])])
+      ]));
+      result.appendChild(h("ol", { class: "link-list" }, out.sources.map(function (x, i) {
+        return h("li", null, [h("div", { class: "link-title" }, [x.title]), copyField(urls[i], { name: "Link to " + x.title, copyName: "Copy the link to " + x.title, copied: "Link copied" })]);
+      })));
+      result.appendChild(asText);
+      (out.skipped || []).forEach(function (x) { result.appendChild(h("p", { class: "muted" }, ["“" + (x.title || x.doc) + "” has no page (only " + x.kinds.join(", ") + "), so it has no link."])); });
+      result.appendChild(h("p", { class: "muted" }, ["A notebook keeps its own copy once a link is added, so turning the links off afterwards does not remove its sources."]));
+      result.appendChild(turnOff(s, "Turn these links off", "Links turned off. Sources already in a notebook stay there."));
+    }
+    function turnOff(s, label, done) {
+      var off = h("button", { class: "btn danger", type: "button", onclick: function () {
+        if (isPending(off)) return;
+        pending(off, true);
+        api("/shares/" + encodeURIComponent(s.token), { method: "DELETE" }).then(function () {
+          result.innerHTML = "";
+          result.appendChild(h("p", { role: "status" }, [done]));
+          redraw();
+        }).catch(function (e) { pending(off, false); toast(String(e.message || e)); });
+      } }, [label]);
+      return h("div", { class: "toolbar" }, [off]);
+    }
+    wrap.appendChild(segmented(LINK_MODES, mode, function (v) { mode = v; writePref("linkmode:" + sc.kind, v); drawOpts(); }, "What kind of links"));
+    wrap.appendChild(opts);
+    wrap.appendChild(h("div", { class: "toolbar" }, [make]));
+    wrap.appendChild(result);
+    wrap.appendChild(made);
+    drawOpts();
+    return wrap;
+  }
+  /* "What's included": a document's files and the annals pages it links to, folded; by
+     default every file the page shows goes, and no linked page. */
+  function docIncludes(id, picks) {
+    var box = h("details", { class: "includes" }, [h("summary", null, ["What's included"])]);
+    var inner = h("div", { class: "share-picks" }, [h("p", { class: "muted" }, ["Loading…"])]);
+    box.appendChild(inner);
+    function selectBy(test) { picks.forEach(function (p) { if (!p.input.disabled) p.input.checked = test(p); }); }
+    api("/docs/" + id + "/shareable").then(function (r) {
+      inner.innerHTML = "";
+      var files = r.files || [];
+      if (files.length > 1) {
+        inner.appendChild(h("h4", null, ["Files"]));
+        inner.appendChild(h("div", { class: "toolbar" }, [h("span", { class: "muted" }, ["Select:"]),
+          h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function (p) { return p.file; }); } }, ["All files"]),
+          h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function (p) { return p.referenced; }); } }, ["What the page shows"]),
+          h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function () { return false; }); } }, ["None"])]));
+        files.forEach(function (f) {
+          var row = checkRow([kindBadge(f.kind), " " + f.rel, f.main ? h("span", { class: "muted" }, [" (the page)"]) : f.referenced ? h("span", { class: "tag" }, ["on the page"]) : null,
+            f.size ? h("span", { class: "muted" }, [" " + size(f.size)]) : null], true, { disabled: f.main, value: f.rel });
+          picks.push({ input: row.input, value: f.rel, referenced: f.referenced || f.main, file: true });
+          inner.appendChild(row.el);
+        });
+      }
+      if ((r.pages || []).length) {
+        inner.appendChild(h("h4", null, ["Pages it links to (each with what it shows)"]));
+        inner.appendChild(h("p", { class: "muted" }, ["Unchecked, a link to one of these shows as “link not shared”."]));
+        r.pages.forEach(function (pg) {
+          var row = checkRow([kindBadge(pg.kind), " " + (pg.title || pg.id)], false, { value: pg.id });
+          picks.push({ input: row.input, value: pg.id, referenced: false, file: false });
+          inner.appendChild(row.el);
+        });
+      }
+      if (!inner.children.length) inner.appendChild(h("p", { class: "muted" }, ["Just the page: it has no other files."]));
+    }).catch(function (e) { inner.innerHTML = ""; inner.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
+    return box;
+  }
+
+  /* -------- One file: the text as one Markdown file -------------------------------- */
+  function fileBody(sc) {
+    if (sc.kind === "doc") return docFileBody(sc.doc, sc.ctx);
+    var withText = sc.items.filter(hasText), without = sc.items.length - withText.length;
+    var url = sc.kind === "shared" ? API + "/aggregate" : API + "/groups/" + encodeURIComponent(sc.group.id) + "/aggregate" +
+      (withText.length === sc.total ? "" : "?" + withText.map(function (m) { return "doc=" + encodeURIComponent(m.id); }).join("&"));
+    return h("div", null, [combinePanel(url), without ? h("p", { class: "muted" }, [without + (without === 1 ? " has" : " have") + " no Markdown text and " + (without === 1 ? "is" : "are") + " left out."]) : null]);
+  }
+  function docFileBody(m, ctx) {
+    var wrap = h("section", { class: "combine-panel" });
+    var raw = h("textarea", { class: "combine-text", readonly: "", rows: "10", spellcheck: "false", "aria-label": "The Markdown text" }, [""]);
+    var text = typeof m.text === "string" ? m.text : null;
+    var copy = copyButton(function () { return text; }, { label: "Copy Markdown", primary: true, field: raw, copied: "Markdown copied" });
+    var acts = [copy];
+    if (ctx && ctx.exportUrl) {
+      acts.push(h("button", { class: "btn", type: "button", onclick: function () { return saveDownload(ctx.exportUrl("md", m.main), "Markdown"); } }, [icon("file"), h("span", { class: "lbl" }, ["Download .md"])]));
+      acts.push(h("button", { class: "btn", type: "button", onclick: function () { return saveDownload(ctx.exportUrl("pdf", m.main), "PDF"); } }, [icon("download"), h("span", { class: "lbl" }, ["Download PDF"])]));
+    }
+    wrap.appendChild(h("div", { class: "toolbar combine-actions" }, acts));
+    wrap.appendChild(raw);
+    function show(t) { text = t; raw.value = t; }
+    if (text !== null) show(text);
+    else { raw.value = "Loading…"; fetch(rawUrl(m.id, m.main), { credentials: "same-origin" }).then(function (r) { if (!r.ok) throw new Error(r.statusText); return r.text(); }).then(show).catch(function (e) { raw.value = "Could not read it: " + (e.message || e); }); }
+    return wrap;
+  }
+
+  /* -------- Listen: a review of one document, or of several ------------------------ */
+  function listenBody(sc) {
+    var spoken = sc.items.filter(function (m) { return !!m.listen; });
+    if (sc.kind === "doc" || spoken.length === 1) return listenPanel(spoken[0], spoken[0].listen);
+    return groupListen(sc, spoken);
+  }
+  function isCurrent(m) { return m.listen.state === "done" && !m.listen.stale; }
+  function groupListen(sc, spoken) {
+    var wrap = h("section", { class: "listen-panel" });
+    var current = spoken.filter(isCurrent), missing = spoken.filter(function (m) { return !isCurrent(m) && ["queued", "running"].indexOf(m.listen.state) < 0; });
+    var n = spoken.length, choices = (sc.listen && sc.listen.choices) || spoken[0].listen.choices;
+    var mode = missing.length ? "all" : "each", minutes = choices[1] ? choices[1].minutes : choices[0].minutes;
+    var skipped = sc.items.length - n;
+    wrap.appendChild(h("p", null, [current.length ? current.length + " of " + n + (current.length === 1 ? " has" : " have") + " a current review." : "None of these " + n + " has a review yet.",
+      skipped ? " " + skipped + " cannot be spoken and " + (skipped === 1 ? "is" : "are") + " left out." : ""]));
+    var modeSeg = segmented([["all", "One review of all " + n, "covers them together"], ["each", "One each", missing.length ? "makes " + missing.length + ", reuses " + (n - missing.length) : "all made already"]], mode, function (v) { mode = v; draw(); }, "What kind of review");
+    var lenSeg = segmented(choices.map(function (c) { return [c.minutes, c.minutes + " min"]; }), minutes, function (v) { minutes = +v; draw(); }, "Length");
+    var cost = h("p", { class: "muted" });
+    var start = h("button", { class: "btn primary", type: "button", onclick: ask }, [""]);
+    var status = h("div", { "aria-live": "polite" });
+    var rows = h("ul", { class: "review-rows" });
+    function charsFor(m) { var c = choices.filter(function (x) { return x.minutes === minutes; })[0]; return c ? c.characters : 0; }
+    function draw() {
+      var spend = mode === "all" ? 1 : missing.length;
+      var chars = spend * charsFor();
+      cost.textContent = spend ? "About " + chars.toLocaleString() + " characters of voice, plus " + (spend === 1 ? "one Claude call" : spend + " Claude calls") + ". Nothing is spent until you press Make it." : "Every one already has a current review: play them below.";
+      start.textContent = mode === "all" ? "Make it" : spend ? "Make " + spend + (spend === 1 ? " review" : " reviews") : "Nothing to make";
+      start.hidden = !spend;
+      lenSeg.hidden = !spend;
+    }
+    function drawRows() {
+      rows.innerHTML = "";
+      spoken.forEach(function (m) {
+        var s = m.listen, state = isCurrent(m) ? sheetLink(BASE + "/d/" + s.overview, "▶ Play its review") : s.state === "done" ? h("span", { class: "muted" }, ["its review is older than the document"]) :
+          s.state === "queued" || s.state === "running" ? h("span", { class: "muted" }, ["being made"]) : s.state === "failed" ? h("span", { class: "err" }, ["the last try failed"]) : h("span", { class: "muted" }, ["no review"]);
+        rows.appendChild(h("li", null, [h("span", { class: "grow" }, [m.title || m.id]), " ", state]));
+      });
+    }
+    function ask() {
+      if (isPending(start)) return;
+      pending(start, true);
+      status.innerHTML = "";
+      status.appendChild(h("p", { class: "muted", role: "status" }, ["Asking…"]));
+      var done;
+      if (mode === "all") {
+        done = api("/groups/" + encodeURIComponent(sc.group.id) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ docs: spoken.map(function (m) { return m.id; }), minutes: minutes }) })
+          .then(function (out) {
+            status.innerHTML = "";
+            status.appendChild(h("p", { role: "status" }, ["Preparing one " + minutes + " minute review of all " + n + ". It takes about 2 minutes, and you can leave. It will be on ", sheetLink(BASE + "/d/" + out.doc, "their combined document"), ", now in this group."]));
+            start.hidden = true; modeSeg.hidden = true; lenSeg.hidden = true; cost.hidden = true;
+          });
+      } else {
+        var queue = missing.slice(), asked = 0;
+        done = (function next() {
+          var m = queue.shift();
+          if (!m) return Promise.resolve();
+          return api("/docs/" + encodeURIComponent(m.id) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: minutes }) })
+            .then(function (s) { m.listen = s; asked += 1; drawRows(); return next(); });
+        })().then(function () {
+          status.innerHTML = "";
+          status.appendChild(h("p", { role: "status" }, [asked + (asked === 1 ? " review" : " reviews") + " asked for. Each takes about 2 minutes; the documents show ▶ review when theirs is ready."]));
+          missing = []; start.hidden = true; lenSeg.hidden = true; cost.hidden = true;
+        });
+      }
+      done.catch(function (e) {
+        status.innerHTML = "";
+        status.appendChild(h("p", { class: "err", role: "alert" }, ["Could not ask for it: " + (e.message || e)]));
+        drawRows();
+      }).then(function () { pending(start, false); });
+    }
+    wrap.appendChild(modeSeg); wrap.appendChild(lenSeg); wrap.appendChild(cost); wrap.appendChild(h("div", { class: "toolbar" }, [start])); wrap.appendChild(status); wrap.appendChild(rows);
+    draw(); drawRows();
+    return wrap;
+  }
+
+  /* -------- a spoken review of one document (annals.overview) ------------------- */
+  var LISTEN_POLL_MS = 5000, LISTEN_MAX_MISSES = 5;
   function listenPanel(m, first) {
-    var wrap = h("section", { class: "share-panel listen-panel", "aria-label": "Spoken overview" });
+    var wrap = h("section", { class: "listen-panel", "aria-label": "Spoken review" });
     var url = "/docs/" + encodeURIComponent(m.id) + "/overview";
     var picked = first.minutes, misses = 0;
     function show(s, note) {
       m.listen = s;  /* so reopening the panel shows this, not what the page loaded with */
       wrap.innerHTML = "";
       wrap.setAttribute("aria-busy", String(s.state === "queued" || s.state === "running"));
-      wrap.appendChild(h("h3", null, ["Listen to this document"]));
       if (s.state === "queued" || s.state === "running") {
         wrap.appendChild(h("p", { role: "status" }, ["Preparing your " + s.minutes + " minute overview. This takes about 2 minutes, and you can leave this page."]));
         setTimeout(function () {
@@ -1139,7 +1532,7 @@
         if (note) wrap.appendChild(h("p", { class: "muted" }, [note]));
         return;
       }
-      if (s.state === "done") wrap.appendChild(h("p", null, [link(BASE + "/d/" + s.overview, "Play overview", "btn"), s.stale ? " This document has changed since it was made." : ""]));
+      if (s.state === "done") wrap.appendChild(h("p", null, [sheetLink(BASE + "/d/" + s.overview, "▶ Play the review", "btn primary"), s.stale ? " This document has changed since it was made." : ""]));
       if (s.state === "done" && !s.stale) return;  /* current, so there is nothing to pay for */
       if (s.state === "failed") wrap.appendChild(h("p", { class: "err", role: "alert" }, ["That did not work: " + (s.error || "no reason given")]));
       if (note) wrap.appendChild(h("p", { class: "err", role: "alert" }, [note]));
@@ -1156,8 +1549,9 @@
         } }, [c.minutes + " min"]);
       }));
       drawCost();
-      var start = h("button", { class: "btn", type: "button", onclick: function () {
-        start.disabled = true; start.textContent = "Asking…";
+      var start = h("button", { class: "btn" + (s.state === "done" ? "" : " primary"), type: "button", onclick: function () {
+        if (isPending(start)) return;
+        pending(start, true); start.textContent = "Asking…";
         api(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: picked }) })
           .then(function (next) { show(next); })
           .catch(function (e) { show(s, "Could not ask for it: " + (e.message || e)); });
@@ -1167,18 +1561,9 @@
     show(first);
     return wrap;
   }
-  function combineAction(panel, url) {
-    return { label: "Combine", hint: "All the markdown files as one .md: copy it or save it", icon: "file", expanded: true,
-      run: function (e) {
-        var btn = e.currentTarget, open = btn.getAttribute("aria-expanded") === "true";
-        btn.setAttribute("aria-expanded", String(!open));
-        panel.innerHTML = "";
-        if (!open) panel.appendChild(combinePanel(url));
-      } };
-  }
   function combinePanel(url) {
     var status = h("p", { class: "muted" }, ["Combining the markdown files…"]);
-    var wrap = h("section", { class: "share-panel combine-panel", "aria-label": "Combined Markdown", "aria-busy": "true" }, [h("h3", null, ["One Markdown file"]), status]);
+    var wrap = h("section", { class: "combine-panel", "aria-label": "Combined Markdown", "aria-busy": "true" }, [status]);
     fetch(url, { credentials: "same-origin" }).then(function (r) {
       if (r.status === 401) { if (SHARE) location.reload(); else toLogin(); throw new Error("login"); }
       if (!r.ok) return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.detail || r.statusText); });
@@ -1205,145 +1590,15 @@
     return wrap;
   }
 
-  /* -------- a group's documents as separate notebook sources (annals.notebook) ------- */
-  /* A notebook (NotebookLM / Gemini Notebook) takes a web page by its link, one source per
-     link, and several links pasted at once; it does not unpack a zip. So: tick documents,
-     make a share of just those (no password: the notebook cannot type one; short expiry:
-     the notebook keeps its own copy once added), list one link per page, Copy them all
-     inside the tap, paste. The share is an ordinary one: revocable here or on Shares. */
-  var NOTEBOOK_URL = "https://notebooklm.google.com/";
-  var NOTEBOOK_EXPIRY = [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"]];
-  function isSourceable(m) { return m.kind === "md" || m.kind === "html" || m.kind === "folder"; }
+  /* -------- share links: the owner's list, and the recipient's root ------------------ */
   function pending(btn, on) {
     btn.setAttribute("aria-busy", String(on));
     if (on) btn.setAttribute("aria-disabled", "true"); else btn.removeAttribute("aria-disabled");
   }
   function isPending(btn) { return btn.getAttribute("aria-busy") === "true"; }
-  function notebookAction(panel, g, items) {
-    return { label: "Notebook", hint: "Each page as its own source in a notebook (NotebookLM), or just these combined", icon: "notebook", expanded: true,
-      run: function (e) {
-        var btn = e.currentTarget, open = btn.getAttribute("aria-expanded") === "true";
-        btn.setAttribute("aria-expanded", String(!open));
-        panel.innerHTML = "";
-        if (!open) panel.appendChild(notebookPanel(g, items));
-      } };
-  }
-  function notebookPanel(g, items) {
-    var wrap = h("section", { class: "share-panel notebook-panel", "aria-label": "Notebook sources" }, [
-      h("h3", null, ["Add to a notebook, one source each"]),
-      h("p", { class: "muted" }, ["Tick the documents. You get one link per page; paste them all at once into the notebook's Website source, and each becomes its own source."])]);
-    var picks = [];
-    var usable = items.filter(isSourceable), others = items.filter(function (m) { return !isSourceable(m); });
-    function selectAll(on) { picks.forEach(function (p) { p.input.checked = on; }); count(); }
-    wrap.appendChild(h("div", { class: "toolbar" }, [h("span", { class: "muted" }, ["Select:"]),
-      h("button", { class: "btn link", type: "button", onclick: function () { selectAll(true); } }, ["All"]),
-      h("button", { class: "btn link", type: "button", onclick: function () { selectAll(false); } }, ["None"])]));
-    usable.forEach(function (m) {
-      var row = checkRow([kindBadge(m.kind), " " + (m.title || m.id)], true, { value: m.id });
-      row.input.addEventListener("change", count);
-      picks.push({ input: row.input, value: m.id });
-      wrap.appendChild(row.el);
-    });
-    if (others.length) wrap.appendChild(h("p", { class: "muted" }, [others.length + (others.length === 1 ? " document is" : " documents are") +
-      " not a page (" + others.map(function (m) { return m.kind; }).filter(function (k, i, a) { return a.indexOf(k) === i; }).join(", ") + "): a notebook cannot take " + (others.length === 1 ? "it" : "them") + " from a link."]));
-    var expires = NOTEBOOK_EXPIRY[0][0];
-    var expSeg = h("div", { class: "seg", role: "group", "aria-label": "Links work for" }, NOTEBOOK_EXPIRY.map(function (c) {
-      return h("button", { class: "btn", type: "button", "aria-pressed": String(c[0] === expires), onclick: function () {
-        expires = c[0];
-        [].forEach.call(expSeg.children, function (b, i) { b.setAttribute("aria-pressed", String(NOTEBOOK_EXPIRY[i][0] === expires)); });
-      } }, [c[1]]);
-    }));
-    wrap.appendChild(h("div", { class: "share-opts" }, [h("div", null, [h("span", { class: "muted" }, ["Links work for "]), expSeg])]));
-    var make = h("button", { class: "btn primary", type: "button", onclick: makeLinks }, [h("span", { class: "lbl" }, ["Make links"])]);
-    var combine = h("button", { class: "btn", type: "button", onclick: combineChosen }, [icon("file"), h("span", { class: "lbl" }, ["Combine these"])]);
-    var result = h("div", { class: "notebook-result", "aria-live": "polite" });
-    var combined = h("div");
-    var existing = h("div");
-    var current = null;   /* this panel's live share: a new press replaces it, never piles up */
-    wrap.appendChild(h("div", { class: "toolbar combine-actions" }, [make, combine]));
-    wrap.appendChild(result);
-    wrap.appendChild(combined);
-    wrap.appendChild(existing);
-    var redraw = existingShares(g.id, existing);   /* every live link of this group, revocable */
-    function chosen() { return picks.filter(function (p) { return p.input.checked; }).map(function (p) { return p.value; }); }
-    function count() {
-      var n = chosen().length;
-      make.lastChild.textContent = n ? "Make links for " + n : "Make links";
-      combine.lastChild.textContent = n === usable.length || !n ? "Combine these" : "Combine " + n;
-    }
-    count();
-    function makeLinks() {
-      if (isPending(make)) return;
-      var ids = chosen();
-      if (!ids.length) { toast("Tick at least one document"); return; }
-      pending(make, true);
-      result.innerHTML = "";
-      result.appendChild(h("p", { class: "muted", role: "status" }, ["Making the links…"]));
-      /* only each document's pages and what they show; no password (a notebook cannot type one) */
-      var body = { ref: g.id, include: ids, expires: expires, files: "sources", title: (g.title || g.id) + " (notebook sources)" };
-      var made = null;
-      revoke(current)
-        .then(function () { current = null; return api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); })
-        .then(function (s) { made = s; return api("/shares/" + encodeURIComponent(s.token) + "/sources"); })
-        .then(function (out) { current = made.token; drawLinks(made, out); })
-        .catch(function (e) {
-          if (made) revoke(made.token).catch(function () {});   /* never leave a link nobody was shown */
-          result.innerHTML = "";
-          result.appendChild(h("p", { class: "err", role: "alert" }, ["Could not make the links: " + (e.message || e)]));
-        })
-        .then(function () { pending(make, false); redraw(); });
-    }
-    function revoke(token) {
-      return token ? api("/shares/" + encodeURIComponent(token), { method: "DELETE" }) : Promise.resolve();
-    }
-    function drawLinks(s, out) {
-      result.innerHTML = "";
-      var urls = out.sources.map(function (x) { return absUrl(x.url); });
-      if (!urls.length) { result.appendChild(h("p", { class: "err", role: "alert" }, ["None of these documents has a page a notebook can read."])); return; }
-      var text = urls.join("\n");
-      var raw = h("textarea", { class: "combine-text", readonly: "", rows: String(Math.min(urls.length, 8)), spellcheck: "false", "aria-label": "One link per source" }, [text]);
-      var asText = h("details", { class: "links-as-text" }, [h("summary", null, ["All links as text"]), raw]);
-      var n = urls.length, nLinks = n + (n === 1 ? " link" : " links");
-      result.appendChild(h("p", { role: "status" }, [nLinks + ", one per source. Copy, then in the notebook: Add source → Website → paste."]));
-      result.appendChild(h("div", { class: "toolbar combine-actions" }, [
-        copyButton(text, { label: n === 1 ? "Copy the link" : "Copy all " + n + " links", primary: true, copied: nLinks + " copied", field: function () { asText.open = true; return raw; } }),
-        h("a", { class: "btn", href: NOTEBOOK_URL, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open the notebook app"])])
-      ]));
-      result.appendChild(h("ol", { class: "link-list" }, out.sources.map(function (x, i) {
-        return h("li", null, [h("div", { class: "link-title" }, [x.title]), copyField(urls[i], { name: "Link to " + x.title, copyName: "Copy the link to " + x.title, copied: "Link copied" })]);
-      })));
-      result.appendChild(asText);
-      (out.skipped || []).forEach(function (x) { result.appendChild(h("p", { class: "muted" }, ["“" + (x.title || x.doc) + "” has no page (only " + x.kinds.join(", ") + "), so it has no link."])); });
-      var off = h("button", { class: "btn danger", type: "button", onclick: function () {
-        if (isPending(off)) return;
-        pending(off, true);
-        revoke(s.token).then(function () {
-          current = null;
-          result.innerHTML = "";
-          result.appendChild(h("p", { role: "status" }, ["Links turned off. Sources already in a notebook stay there."]));
-          redraw();
-        }).catch(function (e) { pending(off, false); toast(String(e.message || e)); });
-      } }, ["Turn these links off"]);
-      result.appendChild(h("p", { class: "muted" }, ["Anyone with these links can read these pages" + (s.expires ? " until " + until(s.expires) : "") +
-        ". The notebook keeps its own copy once they are added, so you can turn them off then (here, or under Shares)."]));
-      result.appendChild(h("div", { class: "toolbar" }, [off]));
-    }
-    function combineChosen() {
-      var ids = chosen();
-      if (!ids.length) { toast("Tick at least one document"); return; }
-      var q = ids.map(function (i) { return "doc=" + encodeURIComponent(i); }).join("&");
-      combined.innerHTML = "";
-      combined.appendChild(combinePanel(API + "/groups/" + encodeURIComponent(g.id) + "/aggregate?" + q));
-    }
-    return wrap;
-  }
-
-  /* -------- share links: the owner's dialog, the owner's list, the recipient's root -- */
   /* A share is made by the owner's API (POST /shares) and served by annals.share_api;
      the dialog only chooses what goes in it. Defaults are the safe ones: every file the
      page shows, a link that ends in 7 days, no password unless one is typed. */
-  var EXPIRY_CHOICES = [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"], ["never", "Never"], ["date", "On a date…"]];
-  var FILES_UNFOLDED = 12;
   var PW_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
   function newPassword(n) {
     var a = new Uint32Array(n || 12), out = "";
@@ -1379,130 +1634,32 @@
       } }, ["Revoke"]) : null
     ]);
   }
-  function existingShares(ref, box) {
+  /* The live links made for `ref`, each revocable; `fold` (a <details>) is hidden while
+     there are none and counts them when there are. */
+  function existingShares(ref, box, fold) {
     function draw() {
       api("/shares?ref=" + encodeURIComponent(ref)).then(function (b) {
         box.innerHTML = "";
+        if (fold) { fold.hidden = !b.shares.length; var sum = fold.querySelector("summary"); sum.textContent = sum.textContent.replace(/ \(\d+\)$/, "") + " (" + b.shares.length + ")"; }
         if (!b.shares.length) return;
-        box.appendChild(h("h4", null, ["Links already made"]));
         box.appendChild(h("ul", { class: "share-list" }, b.shares.map(function (s) { return shareRow(s, draw); })));
-      }).catch(function () { box.innerHTML = ""; });
+      }).catch(function () { box.innerHTML = ""; if (fold) fold.hidden = true; });
     }
     draw();
     return draw;
-  }
-  function toggleShare(btn, panel, target) {
-    var open = btn.getAttribute("aria-expanded") === "true";
-    btn.setAttribute("aria-expanded", String(!open));
-    panel.innerHTML = "";
-    if (!open) panel.appendChild(shareDialog(target));
   }
   function checkRow(label, checked, opts) {
     opts = opts || {};
     var box = h("input", { type: "checkbox", checked: checked ? "" : null, disabled: opts.disabled ? "" : null, value: opts.value });
     return { input: box, el: h("label", { class: "check" }, [box, " "].concat(label)) };
   }
-  function shareDialog(target) {
-    var wrap = h("section", { class: "share-panel", "aria-label": "Share" }, [h("h3", null, ["Share “" + (target.title || target.id) + "”"]),
-      h("p", { class: "muted" }, ["Anyone with the link can open it without an account, and nothing else of your annals."])]);
-    var picks = [];      /* {input, value, referenced} */
-    var pickBox = h("div", { class: "share-picks" }, [h("p", { class: "muted" }, ["Loading…"])]);
-    wrap.appendChild(pickBox);
-    function selectBy(test) { picks.forEach(function (p) { if (!p.input.disabled) p.input.checked = test(p); }); }
-    if (target.kind === "doc") {
-      api("/docs/" + target.id + "/shareable").then(function (r) {
-        pickBox.innerHTML = "";
-        var files = r.files || [];
-        if (files.length > 1) {
-          pickBox.appendChild(h("h4", null, ["Files"]));
-          pickBox.appendChild(h("div", { class: "toolbar" }, [h("span", { class: "muted" }, ["Select:"]),
-            h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function (p) { return p.file; }); } }, ["All files"]),
-            h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function (p) { return p.referenced; }); } }, ["What the page shows"]),
-            h("button", { class: "btn link", type: "button", onclick: function () { selectBy(function () { return false; }); } }, ["None"])]));
-          /* a folder of renders can hold hundreds: past a screenful, the list folds */
-          var fileBox = files.length > FILES_UNFOLDED ? h("details", null, [h("summary", null, ["Choose among " + files.length + " files"])]) : pickBox;
-          if (fileBox !== pickBox) pickBox.appendChild(fileBox);
-          files.forEach(function (f) {
-            var row = checkRow([kindBadge(f.kind), " " + f.rel, f.main ? h("span", { class: "muted" }, [" (the page)"]) : f.referenced ? h("span", { class: "tag" }, ["on the page"]) : null,
-              f.size ? h("span", { class: "muted" }, [" " + size(f.size)]) : null], true, { disabled: f.main, value: f.rel });
-            picks.push({ input: row.input, value: f.rel, referenced: f.referenced || f.main, file: true });
-            fileBox.appendChild(row.el);
-          });
-        }
-        if ((r.pages || []).length) {
-          pickBox.appendChild(h("h4", null, ["Pages it links to (each with what it shows)"]));
-          pickBox.appendChild(h("p", { class: "muted" }, ["Unchecked, a link to one of these shows as “link not shared”."]));
-          r.pages.forEach(function (pg) {
-            var row = checkRow([kindBadge(pg.kind), " " + (pg.title || pg.id)], false, { value: pg.id });
-            picks.push({ input: row.input, value: pg.id, referenced: false, file: false });
-            pickBox.appendChild(row.el);
-          });
-        }
-      }).catch(function (e) { pickBox.innerHTML = ""; pickBox.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
-    } else {
-      pickBox.innerHTML = "";
-      pickBox.appendChild(h("h4", null, ["Documents"]));
-      (target.items || []).forEach(function (m) {
-        var row = checkRow([kindBadge(m.kind), " " + (m.title || m.id)], true, { value: m.id });
-        picks.push({ input: row.input, value: m.id, referenced: true, file: true });
-        pickBox.appendChild(row.el);
-      });
-    }
-    var expSel = h("select", { "aria-label": "Link expires" }, EXPIRY_CHOICES.map(function (c) { var o = h("option", { value: c[0] }, [c[1]]); if (c[0] === "7d") o.selected = true; return o; }));
-    var expDate = h("input", { type: "date", "aria-label": "Expiry date", hidden: "" });
-    expSel.addEventListener("change", function () { expDate.hidden = expSel.value !== "date"; });
-    /* a password the owner hands on, not one of theirs: plain text, kept out of managers */
-    var pw = h("input", { type: "text", placeholder: "No password", autocomplete: "off", spellcheck: "false", "data-1p-ignore": "", "data-lpignore": "true", "aria-label": "Password (optional)" });
-    wrap.appendChild(h("div", { class: "share-opts" }, [
-      h("label", null, ["Expires ", expSel, " ", expDate]),
-      h("label", null, ["Password ", pw, " ", h("button", { class: "btn link", type: "button", onclick: function () { pw.value = newPassword(); } }, ["Generate"])])
-    ]));
-    var result = h("div", { class: "share-result", "aria-live": "polite" });
-    var existing = h("div");
-    var make = h("button", { class: "btn primary", type: "button", onclick: function () {
-      var body = { ref: target.id };
-      if (picks.length) body.include = picks.filter(function (p) { return p.input.checked; }).map(function (p) { return p.value; });
-      if (target.kind === "group" && !(body.include || []).length) { toast("Choose at least one document"); return; }
-      var exp = expSel.value === "date" ? expDate.value : expSel.value;
-      if (expSel.value === "date" && !exp) { toast("Pick a date"); return; }
-      body.expires = exp;
-      var sentPw = pw.value;   /* what the share is locked with, whatever the field holds later */
-      if (sentPw) body.password = sentPw;
-      if (isPending(make)) return;
-      pending(make, true);
-      api("/shares", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(function (s) {
-        pending(make, false);
-        result.innerHTML = "";
-        var url = absUrl(s.url);
-        if (!url) {
-          result.appendChild(h("p", { class: "err" }, ["The link is made, but this server has no public share address (ANNALS_SHARE_BASE_URL), so nobody can open it yet."]));
-        } else {
-          /* no copy here on its own: it would run after the network wait, which iOS refuses */
-          result.appendChild(copyField(url, { name: "Share link", copyName: "Copy the share link", copied: "Link copied" }));
-          result.querySelector(".copy-btn").focus();
-        }
-        result.appendChild(h("p", { class: "muted" }, [shareSummary(s)]));
-        if (sentPw) {
-          result.appendChild(h("p", { class: "muted" }, ["Send the password separately:"]));
-          result.appendChild(copyField(sentPw, { name: "Password", copyName: "Copy the password", copied: "Password copied" }));
-        }
-        redraw();
-      }).catch(function (e) { pending(make, false); toast(String(e.message || e)); });
-    } }, ["Create link"]);
-    wrap.appendChild(h("div", { class: "toolbar" }, [make]));
-    wrap.appendChild(result);
-    wrap.appendChild(existing);
-    var redraw = existingShares(target.id, existing);
-    return wrap;
-  }
-
   function sharesView() {
     var all = new URLSearchParams(location.search).get("all") === "1";
-    page("Shares", mainNav("shares"), [h("p", { class: "muted" }, ["Loading…"])]);
+    page("Links", mainNav("shares"), [h("p", { class: "muted" }, ["Loading…"])]);
     api("/shares" + (all ? "?all=1" : "")).then(function (b) {
       var list = b.shares || [];
-      page("Shares", mainNav("shares"), [
-        h("div", { class: "doc-head" }, [h("h2", null, ["Share links"]), h("p", { class: "muted" }, ["Public links you made to one document or group. Open one to make another."])]),
+      page("Links", mainNav("shares"), [
+        h("div", { class: "doc-head" }, [h("h2", null, ["Links you made"]), h("p", { class: "muted" }, ["Public links to a document or to some of a group's documents. To make another, open it and press Links."])]),
         b.linkable ? null : h("div", { class: "notice" }, ["This server has no public share address (ANNALS_SHARE_BASE_URL): these links cannot be opened yet."]),
         h("div", { class: "toolbar" }, [link(BASE + "/shares" + (all ? "" : "?all=1"), all ? "Only live links" : "Show revoked and expired too", "btn")]),
         list.length ? h("ul", { class: "share-list" }, list.map(function (s) {
@@ -1510,9 +1667,9 @@
           var href = BASE + (s.root.kind === "group" ? "/g/" : "/d/") + s.root.id;
           row.firstChild.firstChild.replaceWith(h("div", null, [link(href, s.title || s.root.id)]));
           return row;
-        })) : h("div", { class: "empty" }, [all ? "No share links yet." : "No live share links. Use Share on a document to make one."])
+        })) : h("div", { class: "empty" }, [all ? "No links yet." : "No live links. Press Links on a document or a group to make one."])
       ]);
-    }).catch(function (e) { page("Shares", mainNav("shares"), [h("div", { class: "empty" }, [String(e.message || e)])]); });
+    }).catch(function (e) { page("Links", mainNav("shares"), [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
 
   /* The recipient: one line saying what this is, and the share's documents. */
@@ -1522,11 +1679,9 @@
   function shareRootView() {
     page(NAME, [], [h("p", { class: "muted" }, ["Loading…"])]);
     api("/share").then(function (s) {
-      var panel = h("div");
       page(s.title, [], [shareNotice(),
         h("div", { class: "doc-head" }, [h("h2", null, [s.title]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["shared"]), h("span", null, [s.docs.length + (s.docs.length === 1 ? " document" : " documents")])])]),
-        hasMarkdown(s.docs) ? actionBar({ primary: [combineAction(panel, API + "/aggregate")] }) : null,
-        panel,
+        actionBar({ results: resultButtons(function () { return { kind: "shared", items: s.docs, total: s.docs.length }; }) }),
         h("div", { class: "list" }, s.docs.length ? s.docs.map(inlineItem) : [h("div", { class: "empty" }, ["Nothing here any more."])])
       ]);
     }).catch(function (e) { page(NAME, [], [h("div", { class: "empty" }, [String(e.message || e)])]); });
@@ -1549,7 +1704,7 @@
       page(it.title || basename(id), mainNav(source), [
         backLink(back, sourceTitle(source)),
         h("div", { class: "doc-head" }, [h("h2", null, [it.title || it.id]), meta, tagEditor(key, it.tags, back)]),
-        actionBar({ view: tools.view, actions: [COPY_LINK()].concat(tools.actions) }),
+        actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }),
         body
       ]);
     }).catch(function (e) { page("Not found", mainNav(source), [h("div", { class: "empty" }, [String(e.message || e), h("p", null, [link(back, "Back to " + sourceTitle(source))])])]); });
@@ -1579,6 +1734,7 @@
   }
   // Back closes an expanded table (tables.js) before it changes the view.
   window.addEventListener("popstate", function () {
+    if (closeSheet(true)) return;
     if (!(window.annalsTables && window.annalsTables.closeOnBack())) route();
   });
   route();

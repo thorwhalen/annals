@@ -27,15 +27,18 @@ def _free_port():
 
 @pytest.fixture(scope="module")
 def serve():
-    """``serve(store)`` runs the whole app over ``store`` and returns its page's base url."""
+    """``serve(store, **app_options)`` runs the whole app over ``store`` (``mk_app`` options,
+    such as ``overviews=True``) and returns its page's base url."""
     uvicorn = pytest.importorskip("uvicorn")
     servers = []
 
-    def _serve(store):
+    def _serve(store, **app_options):
         port = _free_port()
         server = uvicorn.Server(
             uvicorn.Config(
-                mk_app(store=store, authorizer=no_auth), port=port, log_level="error"
+                mk_app(store=store, authorizer=no_auth, **app_options),
+                port=port,
+                log_level="error",
             )
         )
         threading.Thread(target=server.run, daemon=True).start()

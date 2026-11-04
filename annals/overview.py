@@ -261,6 +261,100 @@ def request(
     return state_of(store, requests, meta)
 
 
+#: marks a document made by putting several documents' text in one, for one review of them all
+COMBINED_TAG = "combined"
+COMBINED_SESSION = "annals combine"
+
+
+def combined_key(docs: Sequence[dict]) -> str:
+    """Names a set of documents at their current versions, in any order.
+
+    >>> combined_key([{"id": "b", "version": 2}, {"id": "a"}]) == combined_key([{"id": "a"}, {"id": "b", "version": 2}])
+    True
+    """
+    import hashlib
+
+    parts = sorted(f"{m['id']}@{m.get('version') or 1}" for m in docs)
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
+
+
+def _combined_pairs(store, docs: Sequence[dict]):
+    """``(path, text)`` for each document's speakable text: its page, or a folder's markdown."""
+    from annals.aggregate import doc_markdown_files
+
+    for meta in docs:
+        if meta.get("kind") == "folder":
+            yield from doc_markdown_files(
+                [(meta, meta.get("files", []))], read=store.read_text
+            )
+        elif eligible(meta):
+            label = (meta.get("title") or meta["id"]).replace("/", "-").strip()
+            try:
+                yield f"{label}.md", _source_text(store, meta)
+            except (KeyError, OSError, ValueError):
+                continue
+
+
+def combined_document(
+    store, docs: Sequence[dict], *, title: str, group: str | None = None
+) -> dict:
+    """One document holding the text of ``docs``, so a review of it covers them all.
+
+    The same documents at the same versions give the same document back, so asking twice
+    makes one. A new one is added to ``group`` when given. Raises ``ValueError`` when none
+    of ``docs`` has text to speak.
+    """
+    from annals.aggregate import aggregate_markdown
+
+    key = combined_key(docs)
+    for meta in store.list():
+        src = meta.get("source") or {}
+        if src.get("combines_key") == key and COMBINED_TAG in (meta.get("tags") or []):
+            return meta
+    pairs = list(_combined_pairs(store, docs))
+    if not pairs:
+        raise ValueError("none of these documents has text to speak")
+    text = aggregate_markdown(pairs, title=title, order=None)
+    meta = store.publish(
+        text=text,
+        title=title,
+        filename="combined.md",
+        tags=[COMBINED_TAG],
+        source={
+            "session": COMBINED_SESSION,
+            "combines": [m["id"] for m in docs],
+            "combines_key": key,
+            **({"group": group} if group else {}),
+        },
+    )
+    if group:
+        store.add_to_group(group, [meta["id"]])
+    return meta
+
+
+def request_combined(
+    store,
+    requests: Requests,
+    docs: Sequence[dict],
+    *,
+    title: str,
+    group: str | None = None,
+    minutes: int = DFLT_MINUTES,
+) -> dict:
+    """Ask for ONE overview of several documents: of the document combining their text.
+
+    Returns ``{"doc": <combined document id>, "listen": <its overview state>}``. Raises
+    ``ValueError`` as :func:`request` does, or when there is nothing to speak.
+    """
+    if not valid_minutes(minutes):
+        raise ValueError(f"minutes must be one of {list(MINUTES)}")
+    meta = combined_document(store, docs, title=title, group=group)
+    return {
+        "doc": meta["id"],
+        "listen": request(store, requests, meta["id"], minutes=minutes),
+    }
+
+
 def _last_line(text: str) -> str:
     lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
     return lines[-1][:MAX_ERROR_CHARS] if lines else ""

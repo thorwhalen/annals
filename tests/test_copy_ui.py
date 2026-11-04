@@ -6,6 +6,8 @@ the tap and turns into a check reading "Copied". These drive the real page in Ch
 phone size with clipboard access granted; they skip where Playwright or a browser is missing.
 """
 
+import re
+
 import pytest
 
 from annals.store import DocStore
@@ -69,6 +71,14 @@ def _tap_copy(page, btn, expect="copied"):
     return handle
 
 
+def _links_per_document(page, site):
+    """A group's Links sheet, a link per document, made for both documents."""
+    page.goto(f"{site['base']}/g/{site['group']['id']}")
+    page.get_by_role("button", name="Links").click()
+    page.get_by_role("button", name=re.compile("^A link per document")).click()
+    page.get_by_role("button", name="Make 2 links").click()
+
+
 def test_a_code_block_copies_its_text_and_says_so(phone, site):
     phone.goto(f"{site['base']}/d/{site['cmd']['id']}")
     btn = phone.locator(".rendered .code-wrap .copy-btn")
@@ -94,9 +104,7 @@ def test_copy_targets_are_thumb_sized(phone, site):
 
 
 def test_each_page_link_has_its_own_copy_button(phone, site):
-    phone.goto(f"{site['base']}/g/{site['group']['id']}")
-    phone.get_by_role("button", name="Notebook").click()
-    phone.get_by_role("button", name="Make links for 2").click()
+    _links_per_document(phone, site)
     rows = phone.locator(".link-list li")
     rows.first.wait_for()
     assert rows.count() == 2
@@ -111,9 +119,10 @@ def test_each_page_link_has_its_own_copy_button(phone, site):
 
 def test_a_share_link_and_its_password_each_copy(phone, site):
     phone.goto(f"{site['base']}/d/{site['cmd']['id']}")
-    phone.get_by_role("button", name="Share").click()
+    phone.get_by_role("button", name="Links").click()
+    phone.get_by_role("button", name=re.compile("^One link")).click()
     phone.get_by_label("Password (optional)").fill("tide-pool-2026")
-    phone.get_by_role("button", name="Create link").click()
+    phone.get_by_role("button", name="Make the link").click()
     fields = phone.locator(".share-result .copy-field")
     fields.nth(1).wait_for()
     url = fields.nth(0).locator("input").input_value()
@@ -125,9 +134,7 @@ def test_a_share_link_and_its_password_each_copy(phone, site):
 
 
 def test_when_the_device_refuses_the_links_are_selected_for_its_own_copy(phone, site):
-    phone.goto(f"{site['base']}/g/{site['group']['id']}")
-    phone.get_by_role("button", name="Notebook").click()
-    phone.get_by_role("button", name="Make links for 2").click()
+    _links_per_document(phone, site)
     phone.locator(".link-list li").first.wait_for()
     assert phone.locator("details.links-as-text").get_attribute("open") is None
     phone.evaluate("window.__refuse = true")
@@ -143,9 +150,7 @@ def test_when_the_device_refuses_the_links_are_selected_for_its_own_copy(phone, 
 
 
 def test_a_copy_that_succeeds_leaves_the_text_folded(phone, site):
-    phone.goto(f"{site['base']}/g/{site['group']['id']}")
-    phone.get_by_role("button", name="Notebook").click()
-    phone.get_by_role("button", name="Make links for 2").click()
+    _links_per_document(phone, site)
     phone.locator(".link-list li").first.wait_for()
     _tap_copy(phone, phone.get_by_role("button", name="Copy all 2 links"))
     assert phone.locator("details.links-as-text").get_attribute("open") is None

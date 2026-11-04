@@ -237,7 +237,7 @@ label.facet input { width: 18px; height: 18px; margin: 0; accent-color: var(--ac
 .btn[aria-busy=true] { opacity: .6; cursor: progress; }
 .notebook-panel .combine-text { white-space: pre; overflow-x: auto; }
 .source-titles { margin: 8px 0 0; padding-left: 1.4em; font-size: .9rem; }
-@media (pointer: coarse) { .check, .share-panel .btn, .share-panel .btn.link, .share-opts select { min-height: 44px; } .share-panel .btn.link { min-width: 44px; } }
+@media (pointer: coarse) { .check, .share-panel .btn, .share-panel .btn.link, .sheet .btn, .sheet .btn.link, .share-opts select, .share-opts input { min-height: 44px; } .share-panel .btn.link, .sheet .btn.link { min-width: 44px; } }
 
 /* the page's own Back: where you came from, as you left it */
 nav.back { margin: 2px 0 0; }
@@ -274,3 +274,60 @@ nav.back a { display: inline-flex; align-items: center; min-height: 32px; font-s
 .links-as-text summary { cursor: pointer; color: var(--muted); padding: 6px 0; }
 @media (pointer: coarse) { .links-as-text summary { padding: 11px 0; } }
 .share-row .row-link { flex: 1 1 100%; margin: 2px 0 0; }
+
+/* pick, then choose what you want back: tick rows, the bar, the result sheets */
+.pick-help { font-size: .9rem; margin: 4px 0 8px; }
+.picklist { padding-bottom: 8px; }
+.pick-row { display: flex; align-items: stretch; gap: 6px; }
+.pick-row > .pick { flex: 0 0 auto; display: flex; align-items: center; justify-content: center; min-width: 36px; cursor: pointer; }
+.pick-row > .pick input, .sel-all input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); cursor: pointer; }
+.pick-row > .pick-body { flex: 1 1 auto; min-width: 0; }
+.pick-row.picked .card { border-color: var(--accent); box-shadow: inset 3px 0 0 var(--accent); }
+@media (pointer: coarse) { .pick-row > .pick { min-width: 44px; min-height: 44px; } }
+.selbar { position: sticky; bottom: 0; z-index: 5; margin: 8px -16px 0; padding: 8px 16px calc(10px + env(safe-area-inset-bottom));
+  background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgb(0 0 0 / .06); }
+.sel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; font-size: .92rem; }
+.sel-row .sel-count { flex: 1 1 auto; font-weight: 600; }
+.sel-all { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.sel-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+@media (min-width: 641px) { .sel-actions .menu { top: auto; bottom: calc(100% + 6px); left: auto; right: 0; } }
+.btn.result { display: inline-flex; align-items: center; gap: 8px; }
+@media (pointer: coarse) { .sel-all, .sel-row .btn.link { min-height: 44px; } .btn.result { min-height: 44px; } }
+.tag.review { color: var(--md); }
+.menuhint { display: block; font-size: .78rem; color: var(--muted); line-height: 1.3; margin-top: 1px; }
+.menuitem .lbl { display: flex; flex-direction: column; }
+
+html.sheet-open { overflow: hidden; }
+.sheet-scrim { position: fixed; inset: 0; z-index: 40; background: rgb(0 0 0 / .4); }
+.sheet { position: fixed; z-index: 41; left: 0; right: 0; bottom: 0; top: max(6vh, 40px); background: var(--bg); color: var(--fg);
+  border-radius: 16px 16px 0 0; box-shadow: 0 -8px 28px rgb(0 0 0 / .2); overflow: auto; overscroll-behavior: contain;
+  padding: 10px 16px calc(24px + env(safe-area-inset-bottom)); }
+@media (min-width: 760px) { .sheet { left: auto; top: 0; width: 480px; border-radius: 16px 0 0 16px; } }
+.sheet-head { position: sticky; top: -10px; z-index: 1; background: var(--bg); display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.sheet-head h3 { margin: 0; font-size: 1.05rem; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sheet-scope { font-weight: 400; color: var(--muted); }
+.sheet-hint { margin: 10px 0 6px; font-size: .92rem; }
+.sheet-body { padding-top: 4px; }
+@media (pointer: coarse) { .sheet-back { min-height: 44px; min-width: 44px; } }
+.seg-wide { display: flex; width: 100%; margin: 8px 0; }
+.seg-wide .btn { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; padding: 8px 6px; min-height: 44px; }
+.seg-main { font-weight: 600; font-size: .95rem; }
+.seg-sub { font-size: .78rem; opacity: .85; }
+.links-body .share-opts { display: flex; flex-direction: column; gap: 10px; margin: 10px 0; }
+.made-links, .includes { margin: 12px 0; }
+.made-links summary, .includes summary { cursor: pointer; padding: 6px 0; color: var(--muted); }
+@media (pointer: coarse) { .made-links summary, .includes summary { padding: 11px 0; } }
+.review-rows { list-style: none; padding: 0; margin: 12px 0 0; display: flex; flex-direction: column; gap: 6px; font-size: .92rem; }
+.review-rows li { display: flex; gap: 8px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 6px; }
+
+/* a phone: the result buttons, More and the view toggle sit in one row, icon above label */
+.view-toggle { display: inline-flex; align-items: center; gap: 8px; }
+@media (max-width: 640px) {
+  .sel-actions { flex-wrap: nowrap; justify-content: space-between; }
+  .actionbar { flex-wrap: nowrap; gap: 6px; }
+  .actionbar .btn.result, .actionbar .menu-btn, .actionbar .view-toggle,
+  .sel-actions .btn.result, .sel-actions .menu-btn { flex: 1 1 0; min-width: 0; display: flex; align-items: center; flex-direction: column; gap: 2px; padding: 5px 4px; font-size: .78rem; line-height: 1.1; }
+  .actionbar > .btn.primary { flex: 0 1 auto; }
+  .actionbar > .menu-wrap, .sel-actions > .menu-wrap { flex: 1 1 0; min-width: 0; display: flex; }
+  .actionbar > .menu-wrap > .menu-btn, .sel-actions > .menu-wrap > .menu-btn { width: 100%; }
+}

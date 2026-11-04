@@ -335,3 +335,72 @@ def test_force_makes_a_new_one_rather_than_reusing_the_last(client, store, doc, 
     client.post(f"/docs/{doc}/overview", json={"minutes": 3, "force": True})
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
     assert requests.get(doc)["overview"] != first
+
+
+# -- one review of several documents: the page's Listen on a selection -----------------
+
+
+@pytest.fixture
+def trio(store):
+    ids = [
+        store.publish(text=f"# {t}\n\nAbout {t.lower()}.", title=t)["id"]
+        for t in ("Bees", "Tides", "Bridges")
+    ]
+    return store.make_group("Nature", ids), ids
+
+
+def test_a_group_tells_the_page_each_review_and_the_cost(client, trio):
+    group, ids = trio
+    g = client.get(f"/groups/{group['id']}").json()
+    assert {"minutes": 5, "characters": 4500} in g["listen"]["choices"]
+    assert all(m["listen"]["state"] == "none" for m in g["items"])
+    assert all(m["has_markdown"] for m in g["items"])
+
+
+def test_a_group_says_nothing_of_reviews_when_they_are_off(store, trio):
+    group, _ = trio
+    off = TestClient(_app(store, overviews=False))
+    g = off.get(f"/groups/{group['id']}").json()
+    assert "listen" not in g and all("listen" not in m for m in g["items"])
+    assert off.post(f"/groups/{group['id']}/overview", json={"docs": ["x"]}).status_code == 404
+
+
+def test_one_review_of_several_combines_them_into_one_document(client, store, trio, requests):
+    group, ids = trio
+    r = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[:2], "minutes": 3})
+    assert r.status_code == 200, r.text
+    out = r.json()
+    assert out["listen"]["state"] == "queued" and out["listen"]["minutes"] == 3
+    combined = store.meta(out["doc"])
+    assert overview.COMBINED_TAG in combined["tags"]
+    assert combined["source"]["combines"] == ids[:2]
+    text = store.read_text(out["doc"])
+    assert "About bees." in text and "About tides." in text and "bridges" not in text
+    # it joins the group, so it is found where it was asked for
+    assert out["doc"] in store.group(group["id"])["docs"]
+    # asking again for the same documents reuses it: one document, one request
+    again = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[1::-1], "minutes": 3}).json()
+    assert again["doc"] == out["doc"]
+
+
+def test_a_changed_document_makes_a_new_combination(client, store, trio):
+    group, ids = trio
+    first = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[:2]}).json()["doc"]
+    store.publish(text="# Bees\n\nNow about wasps too.", replace=ids[0])
+    second = client.post(f"/groups/{group['id']}/overview", json={"docs": ids[:2]}).json()["doc"]
+    assert second != first
+
+
+def test_a_selection_must_belong_to_the_group(client, store, trio):
+    group, _ = trio
+    other = store.publish(text="# Else", title="Else")["id"]
+    assert client.post(f"/groups/{group['id']}/overview", json={"docs": [other]}).status_code == 422
+    assert client.post(f"/groups/{group['id']}/overview", json={"docs": []}).status_code == 422
+    assert client.post(f"/groups/{group['id']}/overview", json={"docs": "x"}).status_code == 422
+
+
+def test_another_site_cannot_spend_on_a_group(client, trio, store):
+    group, ids = trio
+    r = client.post(f"/groups/{group['id']}/overview", json={"docs": ids}, headers={"sec-fetch-site": "cross-site"})
+    assert r.status_code == 403
+    assert not any(overview.COMBINED_TAG in (m.get("tags") or []) for m in store.list())
