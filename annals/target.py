@@ -162,7 +162,9 @@ class LocalTarget:
         path = self._abs(rel)
         path.parent.mkdir(parents=True, exist_ok=True)
         # a temp name of its own, so two writers of one file never share (and lose) it
-        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+        fd, tmp = tempfile.mkstemp(
+            dir=path.parent, prefix=path.name + ".", suffix=".tmp"
+        )
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as f:
                 f.write(text)

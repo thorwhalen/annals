@@ -450,8 +450,12 @@ def mk_api(
         if not requests:
             raise HTTPException(404, "overviews are not offered here")
         ids, group = body.get("docs"), body.get("group") or ""
-        if not (isinstance(ids, list) and ids and all(isinstance(x, str) and x for x in ids)):
-            raise HTTPException(422, "send {'docs': [<document ids>], 'group'?: <group id>}")
+        if not (
+            isinstance(ids, list) and ids and all(isinstance(x, str) and x for x in ids)
+        ):
+            raise HTTPException(
+                422, "send {'docs': [<document ids>], 'group'?: <group id>}"
+            )
         if not isinstance(group, str):
             raise HTTPException(422, "group must be a group id")
         title, docs = _selection(ids, group)

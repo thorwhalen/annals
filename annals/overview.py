@@ -294,7 +294,9 @@ def _members(store, docs: Sequence[dict]) -> list[dict]:
 
     for meta in docs:
         src = meta.get("source") or {}
-        if COMBINED_TAG in (meta.get("tags") or []) and isinstance(src.get("combines"), list):
+        if COMBINED_TAG in (meta.get("tags") or []) and isinstance(
+            src.get("combines"), list
+        ):
             for i in src["combines"]:
                 try:
                     add(store.meta(i))
@@ -315,7 +317,9 @@ def _combined_pairs(store, docs: Sequence[dict], *, max_bytes: int | None):
     total = 0
     for meta in docs:
         if meta.get("kind") == "folder":
-            pairs = doc_markdown_files([(meta, meta.get("files", []))], read=store.read_text)
+            pairs = doc_markdown_files(
+                [(meta, meta.get("files", []))], read=store.read_text
+            )
         elif eligible(meta):
             label = (meta.get("title") or meta["id"]).replace("/", "-").strip()
             try:
@@ -365,7 +369,9 @@ def combined_document(
     with _combine_lock(store):
         for meta in store.list():
             src = meta.get("source") or {}
-            if src.get("combines_key") == key and COMBINED_TAG in (meta.get("tags") or []):
+            if src.get("combines_key") == key and COMBINED_TAG in (
+                meta.get("tags") or []
+            ):
                 return meta
         try:
             pairs = list(_combined_pairs(store, docs, max_bytes=max_bytes))
