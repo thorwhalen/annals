@@ -1,4 +1,4 @@
-> built 2026-11-04 12:41 UTC from 5b0a6ef (main) · annals 0.0.34. Details: build_info.json
+> built 2026-11-06 09:11 UTC from 2b40b61 (main) · annals 0.0.35. Details: build_info.json
 
 # index.html.md
 
@@ -111,7 +111,7 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 On a group’s page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):
 
 - **Links**: **One link** for a person (expiry, optional password, and on a document “What’s included”) or **A link per document** for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus **Copy all**.
-- **One file**: the picked documents’ Markdown as one file, to copy, download or open as text.
+- **One file**: the picked documents’ files (Markdown, html, text, PDFs, images) as one Markdown, PDF or web page file, to copy, download or open.
 - **Listen**: a spoken review (when the host offers them, see below). For several documents, **One review of all** (their text is put in one document, tagged `combined` and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or **One each** (makes only the missing or out-of-date ones).
 
 A document’s page has the same three buttons, acting on that document, and both pages keep the rest (copy the text, downloads, open raw, move to bin) under **⋯ More**. Every link, password and code block on the page has the same copy button: it copies inside the tap and answers on itself with a check and “Copied”.
@@ -165,21 +165,45 @@ then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or
 
 Every markdown page offers two downloads made by the server, under **One file** and under **⋯ More**: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
 
-## One Markdown file from a group
+## One file from many: Markdown, PDF or a web page
 
-A group’s **One file** makes one Markdown file from every `.md` of the picked documents (all of them when none is ticked), folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same **One file** button, built from the share’s filtered text and only the files it includes.
+**One file** (on a group, a selection or one document) combines the picked documents’ files into a single file and lets you choose its format: **Markdown** (shown, with **Copy Markdown**, **Download .md** and **Open as text**), **PDF** (with a bookmark for each file) or a **Web page** (one self-contained `.html`). Audio and video cannot be part of a document; they are listed as left out, each with the reason, and so is a file that cannot be read (a damaged or password-protected PDF) while the others still go in. It is made on each request and never stored. A share link has the same button, built from the share’s filtered text and only the files it includes.
+
+| input                                 | to Markdown                     | to web page / to PDF                                                                  |
+|---------------------------------------|---------------------------------|---------------------------------------------------------------------------------------|
+| markdown                              | as it is                        | rendered, the document’s images inside                                                |
+| html                                  | converted (needs `markdownify`) | its structure and words; scripts, styles, frames, forms and remote images are dropped |
+| text (`.txt`, `.json`, `.csv`, code…) | a code block                    | a preformatted block                                                                  |
+| PDF                                   | its text (a scan has none)      | web page: its text; PDF: its pages, joined as they are                                |
+| image                                 | not supported                   | a figure / a page of its own                                                          |
+
+An image or a text file that sits in a document with pages (markdown, html, a PDF) belongs to that document, not a section of its own: a report and its figures combine as the report. Files are arranged with numbered names first, in numeric order, then the rest in the documents’ order.
 
 ```bash
-annals aggregate <group-id-or-link> > all.md          # the same file, from a shell
-annals aggregate <id> --order given --demote 0 --no-toc --keep-wraps
+annals aggregate <group-or-doc-id-or-link> > all.md                    # Markdown, from a shell
+annals aggregate <id> --format pdf --output all.pdf                     # a PDF needs --output
+annals aggregate <id> --format html --output all.html
+annals aggregate <id> --order given --demote 0 --no-toc --keep-wraps   # Markdown options
+```
+
+The libraries behind each pair load only when it is used: PDF pages need WeasyPrint (which uses Pango), joining and reading PDFs need `pypdf` and `pdfdol`, html to Markdown needs `markdownify`. `pip install "annals[pdf]"` installs them all; a missing one stops the job before it starts, naming the library and the command. The API is `GET /groups/<gid>/aggregate?format=md|html|pdf` and `GET /aggregate?doc=<id>&doc=<id>` (`&download=1` to save, `&demote=`), `GET /<token>/aggregate` on the share server, and `GET /combine/formats` for what can be made; the response carries `X-Annals-Sections` (files that went in) and `X-Annals-Skipped` (percent-encoded JSON: which were left out and why).
+
+A new pair (say docx to PDF) is one function in `annals/combine.py`, and every surface above learns it:
+
+```python
+from annals.combine import register
+
+@register("docx", "pdf", requires=("some_module",))
+def docx_to_pdf(item, ctx):          # item.text(), item.data(), item.rel; return the part for the format
+    ...
 ```
 
 ```python
-from annals.aggregate import aggregate_markdown
+from annals.aggregate import aggregate_markdown        # the text mechanism, no documents involved
 aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundle", demote=1)
 ```
 
-`aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The API is `GET /groups/<gid>/aggregate` (`?download=1` to save it, `&demote=`), and `GET /<token>/aggregate` on the share server.
+`aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The Markdown file has the title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined Markdown.
 
 ## A group’s documents as separate notebook sources
 
@@ -286,6 +310,7 @@ Nothing is stored: the document is made per request.
 | [`heading_anchor`](_autosummary/annals.aggregate.html.md#annals.aggregate.heading_anchor)(text[, seen])                         | The id GitHub (and most renderers) give a heading; `seen` numbers repeats.              |
 | [`numbered_first`](_autosummary/annals.aggregate.html.md#annals.aggregate.numbered_first)(paths)                                | `paths` with numbered ones first, compared part by part, the rest in their given order. |
 | [`strip_front_matter`](_autosummary/annals.aggregate.html.md#annals.aggregate.strip_front_matter)(text)                             | `text` without a leading YAML front-matter block (`---` .                               |
+| [`unique_paths`](_autosummary/annals.aggregate.html.md#annals.aggregate.unique_paths)(pairs)                                  | The pairs with repeated paths told apart: `a.md`, `a.md (2)`.                           |
 | [`unwrap_lines`](_autosummary/annals.aggregate.html.md#annals.aggregate.unwrap_lines)(text)                                   | `text` with hard-wrapped paragraphs and list items joined into one line each.           |
 
 ### Exceptions
@@ -387,6 +412,13 @@ keeps it.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.aggregate.unique_paths(pairs)
+
+The pairs with repeated paths told apart: `a.md`, `a.md (2)`.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
 ### annals.aggregate.unwrap_lines(text)
 
@@ -570,6 +602,314 @@ The API, and any CLI or agent tool that tags items, build their catalog here.
 
 * **Return type:**
   [`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog)
+
+
+# _autosummary/annals.combine.html.md
+
+# annals.combine
+
+Many files of many kinds as ONE document: a Markdown, html or PDF file.
+
+The mechanism is a registry. A *converter* turns one file of one kind into a *part* of the
+output format (markdown text, an html fragment, a PDF); a *joiner* puts the parts of a
+format together (a table of contents and a section each; bookmarks and pages). Which pairs
+exist is the table [`REGISTRY`](_autosummary/annals.combine.html.md#annals.combine.REGISTRY), filled by [`register()`](_autosummary/annals.combine.html.md#annals.combine.register):
+
+```default
+@register("pdf", "md", requires=("pdfdol",))
+def pdf_to_md(item, ctx): ...
+```
+
+so a new pair (docx to pdf, say) is one decorated function, and the web page, the API and
+the CLI all learn it from [`supported()`](_autosummary/annals.combine.html.md#annals.combine.supported) without a change.
+
+What goes in:
+
+```default
+=========  ===========  =======================================================
+input      to md        to html / to pdf
+=========  ===========  =======================================================
+md         as it is     rendered (images of the document inside)
+html       converted    its text and structure (scripts and styles dropped)
+text       a code block a preformatted block
+pdf        its text     html: its text; pdf: its pages, joined as they are
+image      -            a figure (html) / a page of its own (pdf)
+=========  ===========  =======================================================
+```
+
+Audio, video and other files have no place in a document: they are reported as left out,
+each with the reason, never silently dropped. A file that cannot be read (a damaged or
+password-protected PDF) is left out the same way, and the others still go in.
+
+An image or a text file that sits in a document with pages (markdown, html, a PDF) is part
+of that document, not a section of its own: a report and its figures combine as the report.
+
+Heavy libraries load only when a pair needs them (WeasyPrint for PDF pages, pypdf and pdfdol
+to join and read PDFs, markdownify for html to markdown); a missing one is a
+[`annals.requirements.MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency) that says what to install, raised before any
+work starts. Nothing is stored: the document is made per call.
+
+```pycon
+>>> combined = combine([_demo_source({"b.md": "# B\ntext", "a.md": "hello"})], "md", title="T")
+>>> combined.sections, combined.ext
+(2, 'md')
+>>> print(combined.data.decode().splitlines()[0])
+# T
+```
+
+### Module Attributes
+
+| [`PAGE_KINDS`](_autosummary/annals.combine.html.md#annals.combine.PAGE_KINDS)          | kinds whose file is a document in itself                                                                                                             |
+|----------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`COMPANION_KINDS`](_autosummary/annals.combine.html.md#annals.combine.COMPANION_KINDS)     | kinds that illustrate or accompany a document with pages, so are not sections of its own                                                             |
+| [`MAX_SKIPPED_LISTED`](_autosummary/annals.combine.html.md#annals.combine.MAX_SKIPPED_LISTED)  | skipped files listed in a result (and its headers); the rest are counted                                                                             |
+| [`MAX_TEXT_PAGES`](_autosummary/annals.combine.html.md#annals.combine.MAX_TEXT_PAGES)      | a PDF with more pages than this is not read for its text (about 0.2 s a page)                                                                        |
+| [`MAX_RENDERED_FILES`](_autosummary/annals.combine.html.md#annals.combine.MAX_RENDERED_FILES)  | files made into PDF pages by rendering (about 0.4 s each) in one output                                                                              |
+| [`MAX_TEXT_FILE_BYTES`](_autosummary/annals.combine.html.md#annals.combine.MAX_TEXT_FILE_BYTES) | a text or html file larger than this is left out, and the others still go in                                                                         |
+| [`MAX_HTML_DEPTH`](_autosummary/annals.combine.html.md#annals.combine.MAX_HTML_DEPTH)      | html nested deeper than this is flattened (very deep trees overflow the converters)                                                                  |
+| [`MAX_SPAN`](_autosummary/annals.combine.html.md#annals.combine.MAX_SPAN)            | a table cell may span this many columns or rows (a bigger number is a layout attack)                                                                 |
+| [`HTML_DEMOTE`](_autosummary/annals.combine.html.md#annals.combine.HTML_DEMOTE)         | headings of an embedded markdown or html file go this far down, under the section's own                                                              |
+| [`REGISTRY`](_autosummary/annals.combine.html.md#annals.combine.REGISTRY)            | (kind, format) -> [`Pair`](_autosummary/annals.combine.html.md#annals.combine.Pair); add a pair with [`register()`](_autosummary/annals.combine.html.md#annals.combine.register) |
+| [`HTML_CSP`](_autosummary/annals.combine.html.md#annals.combine.HTML_CSP)            | show itself, with its own styles and embedded images                                                                                                 |
+
+### Functions
+
+| [`combine`](_autosummary/annals.combine.html.md#annals.combine.combine)(sources[, fmt, title, demote, toc, ...])   | Every usable file of `sources` as one `fmt` ("md", "html" or "pdf") file.              |
+|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`explain`](_autosummary/annals.combine.html.md#annals.combine.explain)(fmt)                                       | One sentence on what a `fmt` output is made of (the 'supported' part of a message).    |
+| [`html_body`](_autosummary/annals.combine.html.md#annals.combine.html_body)(text, \*[, rewrite_src, demote])         | The content of an html page as a safe fragment: its structure and words, nothing live. |
+| [`items_of`](_autosummary/annals.combine.html.md#annals.combine.items_of)(sources, fmt)                             | The files to try for a `fmt` output, in the documents' order.                          |
+| [`kinds_for`](_autosummary/annals.combine.html.md#annals.combine.kinds_for)(fmt)                                     | The kinds of file that can be put in a `fmt` output, in a stable order.                |
+| [`register`](_autosummary/annals.combine.html.md#annals.combine.register)(kind, fmt, \*[, requires])                | Decorator: the function turns a file of `kind` into a part of the `fmt` output.        |
+| [`skipped_header`](_autosummary/annals.combine.html.md#annals.combine.skipped_header)(skipped)                            | The skipped files as compact JSON for a response header: few, short, ascii.            |
+| [`supported`](_autosummary/annals.combine.html.md#annals.combine.supported)()                                        | What can be made: `{format: {"label", "ext", "kinds"}}`, for a page or a message.      |
+
+### Classes
+
+| [`Combined`](_autosummary/annals.combine.html.md#annals.combine.Combined)(data, fmt, media_type, ext, sections)    | The result: the file's bytes, what it is, how many files went in and which did not.     |
+|----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+| [`Context`](_autosummary/annals.combine.html.md#annals.combine.Context)(fmt[, embedder])                          | What a converter may use besides the item: where images go, and the output's own needs. |
+| [`Format`](_autosummary/annals.combine.html.md#annals.combine.Format)(name, label, ext, media_type, join[, ...]) | An output format: how it is named, joined, and whether each file gets its own context.  |
+| [`Item`](_autosummary/annals.combine.html.md#annals.combine.Item)(source, rel, kind, label, title)             | One file to put in the output: a section, or a run of pages.                            |
+| [`Job`](_autosummary/annals.combine.html.md#annals.combine.Job)(title, demote, embedder[, toc, unwrap])       | What a joiner needs besides the parts.                                                  |
+| [`Pair`](_autosummary/annals.combine.html.md#annals.combine.Pair)(kind, fmt, fn[, requires])                   | One (kind, format) cell of the registry.                                                |
+| [`Skipped`](_autosummary/annals.combine.html.md#annals.combine.Skipped)(label, reason)                            | A file left out, and why.                                                               |
+| [`Source`](_autosummary/annals.combine.html.md#annals.combine.Source)(meta, files, read_text, open_path[, ...])  | One document, as a caller lets it be read: its files and how to get at them.            |
+
+### Exceptions
+
+| [`ConversionError`](_autosummary/annals.combine.html.md#annals.combine.ConversionError)   | One file could not be converted (damaged, protected, too large); the rest go on.   |
+|--------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`NothingToCombine`](_autosummary/annals.combine.html.md#annals.combine.NothingToCombine)  | No file could be put in the output (the message says which kinds could).           |
+
+### annals.combine.COMPANION_KINDS *= frozenset({'image', 'text'})*
+
+kinds that illustrate or accompany a document with pages, so are not sections of its own
+
+### *class* annals.combine.Combined(data, fmt, media_type, ext, sections, skipped=())
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+The result: the file’s bytes, what it is, how many files went in and which did not.
+
+### *class* annals.combine.Context(fmt, embedder=Embedder())
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What a converter may use besides the item: where images go, and the output’s own needs.
+
+### *exception* annals.combine.ConversionError
+
+Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueError)
+
+One file could not be converted (damaged, protected, too large); the rest go on.
+
+### *class* annals.combine.Format(name, label, ext, media_type, join, requires=(), context_per_item=False)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+An output format: how it is named, joined, and whether each file gets its own context.
+
+#### context_per_item *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= False*
+
+one context (images, budget) per file rather than one for the whole output
+
+### annals.combine.HTML_CSP *= "default-src 'none'; img-src data:; style-src 'unsafe-inline'"*
+
+show itself, with its own styles and embedded images
+
+* **Type:**
+  what a combined html page may do
+
+### annals.combine.HTML_DEMOTE *= 2*
+
+headings of an embedded markdown or html file go this far down, under the section’s own
+
+### *class* annals.combine.Item(source, rel, kind, label, title)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One file to put in the output: a section, or a run of pages.
+
+### *class* annals.combine.Job(title, demote, embedder, toc=True, unwrap=True)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What a joiner needs besides the parts.
+
+### annals.combine.MAX_HTML_DEPTH *= 100*
+
+html nested deeper than this is flattened (very deep trees overflow the converters)
+
+### annals.combine.MAX_RENDERED_FILES *= 60*
+
+files made into PDF pages by rendering (about 0.4 s each) in one output
+
+### annals.combine.MAX_SKIPPED_LISTED *= 4*
+
+skipped files listed in a result (and its headers); the rest are counted
+
+### annals.combine.MAX_SPAN *= 100*
+
+a table cell may span this many columns or rows (a bigger number is a layout attack)
+
+### annals.combine.MAX_TEXT_FILE_BYTES *= 2000000*
+
+a text or html file larger than this is left out, and the others still go in
+
+### annals.combine.MAX_TEXT_PAGES *= 300*
+
+a PDF with more pages than this is not read for its text (about 0.2 s a page)
+
+### *exception* annals.combine.NothingToCombine
+
+Bases: [`ValueError`](https://docs.python.org/3/builtins/exceptions.html#ValueError)
+
+No file could be put in the output (the message says which kinds could).
+
+### annals.combine.PAGE_KINDS *= frozenset({'html', 'md', 'pdf'})*
+
+kinds whose file is a document in itself
+
+### *class* annals.combine.Pair(kind, fmt, fn, requires=())
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One (kind, format) cell of the registry.
+
+### annals.combine.REGISTRY *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)], [Pair](_autosummary/annals.combine.html.md#annals.combine.Pair)]* *= {('html', 'html'): Pair(kind='html', fmt='html', fn=<function \_html_body_of>, requires=()), ('html', 'md'): Pair(kind='html', fmt='md', fn=<function \_html_to_md>, requires=('markdownify',)), ('html', 'pdf'): Pair(kind='html', fmt='pdf', fn=<function \_page_to_pdf.<locals>.convert>, requires=('weasyprint',)), ('image', 'html'): Pair(kind='image', fmt='html', fn=<function \_image_body>, requires=()), ('image', 'pdf'): Pair(kind='image', fmt='pdf', fn=<function \_page_to_pdf.<locals>.convert>, requires=('weasyprint',)), ('md', 'html'): Pair(kind='md', fmt='html', fn=<function \_md_body>, requires=('markdown_it',)), ('md', 'md'): Pair(kind='md', fmt='md', fn=<function \_md_to_md>, requires=()), ('md', 'pdf'): Pair(kind='md', fmt='pdf', fn=<function \_page_to_pdf.<locals>.convert>, requires=('markdown_it', 'weasyprint')), ('pdf', 'html'): Pair(kind='pdf', fmt='html', fn=<function \_pdf_body>, requires=('pdfdol', 'pypdf')), ('pdf', 'md'): Pair(kind='pdf', fmt='md', fn=<function \_pdf_to_md>, requires=('pdfdol', 'pypdf')), ('pdf', 'pdf'): Pair(kind='pdf', fmt='pdf', fn=<function \_pdf_to_pdf>, requires=('pypdf', 'pdfdol')), ('text', 'html'): Pair(kind='text', fmt='html', fn=<function \_text_body>, requires=()), ('text', 'md'): Pair(kind='text', fmt='md', fn=<function \_text_to_md>, requires=()), ('text', 'pdf'): Pair(kind='text', fmt='pdf', fn=<function \_page_to_pdf.<locals>.convert>, requires=('weasyprint',))}*
+
+(kind, format) -> [`Pair`](_autosummary/annals.combine.html.md#annals.combine.Pair); add a pair with [`register()`](_autosummary/annals.combine.html.md#annals.combine.register)
+
+### *class* annals.combine.Skipped(label, reason)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A file left out, and why.
+
+### *class* annals.combine.Source(meta, files, read_text, open_path, file_url=<function Source.<lambda>>, read_bytes=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One document, as a caller lets it be read: its files and how to get at them.
+
+`read_text(rel)` is the file’s text (a share gives the *filtered* text);
+`open_path(rel)` its path on disk, for bytes. Either may raise `OSError` or
+`KeyError` for a file that is gone, which leaves that file out.
+
+#### read_bytes *: [Callable](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[str](https://docs.python.org/3/builtins/stdtypes.html#str)], [bytes](https://docs.python.org/3/builtins/stdtypes.html#bytes)] | [None](https://docs.python.org/3/builtins/constants.html#None)* *= None*
+
+how bytes are read when not straight from `open_path` (a share filters svg text)
+
+### annals.combine.combine(sources, fmt='md', \*, title='', demote=1, toc=True, unwrap=True, order=<function numbered_first>, max_text_bytes=8000000, max_input_bytes=120000000, registry=None)
+
+Every usable file of `sources` as one `fmt` (“md”, “html” or “pdf”) file.
+
+`sources` are the documents ([`Source`](_autosummary/annals.combine.html.md#annals.combine.Source)), in their order; files are arranged by
+`order` ([`annals.aggregate.numbered_first()`](_autosummary/annals.aggregate.html.md#annals.aggregate.numbered_first): numbered names first, numerically;
+`None` keeps the documents’ order). `demote` is how far an embedded markdown file’s
+headings go down in a markdown output, which also takes `toc` (a table of contents)
+and `unwrap` (join hard-wrapped lines). `max_text_bytes` caps all the text read
+([`annals.aggregate.TooLarge`](_autosummary/annals.aggregate.html.md#annals.aggregate.TooLarge)), `max_input_bytes` all the files together.
+
+A file with no converter, or that cannot be read, is left out and listed in
+`Combined.skipped` with the reason. Raises [`NothingToCombine`](_autosummary/annals.combine.html.md#annals.combine.NothingToCombine) when nothing is
+left, [`annals.requirements.MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency) when a library the conversions need
+is not installed (before any work), and `ValueError` for an unknown `fmt`.
+
+* **Return type:**
+  [`Combined`](_autosummary/annals.combine.html.md#annals.combine.Combined)
+
+### annals.combine.explain(fmt)
+
+One sentence on what a `fmt` output is made of (the ‘supported’ part of a message).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.combine.html_body(text, \*, rewrite_src=<function <lambda>>, demote=0)
+
+The content of an html page as a safe fragment: its structure and words, nothing live.
+
+Only a fixed set of tags survives, with a few plain attributes: no script, style, frame,
+form, event handler, `class` or `id`; a link keeps only an `http(s)` or `mailto`
+address. `rewrite_src(src)` decides each image: the url to show it from, or `None`
+for its alt text instead (an image is never loaded from where the page says). `demote`
+pushes headings that many levels down. Unbalanced tags are closed, so a fragment can
+never swallow what is joined after it.
+
+```pycon
+>>> html_body('<body><script>x()</script><h1 onclick="x()">Hi</h1><a href="javascript:x()">y</a></body>')
+'<h1>Hi</h1><a>y</a>'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.combine.items_of(sources, fmt)
+
+The files to try for a `fmt` output, in the documents’ order.
+
+A document with pages (markdown, html, PDF) contributes those; its images and text
+files are its own parts. A document with none contributes whatever it holds, so what
+cannot be used (a video) is reported and not silently missing. A folder, or a document
+with several such files, names each by its title then the file (`Report/01-intro.md`).
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`Item`](_autosummary/annals.combine.html.md#annals.combine.Item)]
+
+### annals.combine.kinds_for(fmt)
+
+The kinds of file that can be put in a `fmt` output, in a stable order.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
+
+### annals.combine.register(kind, fmt, , requires=())
+
+Decorator: the function turns a file of `kind` into a part of the `fmt` output.
+
+`requires` are the (importable) modules it needs, checked before any work starts.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Item`](_autosummary/annals.combine.html.md#annals.combine.Item), [`Context`](_autosummary/annals.combine.html.md#annals.combine.Context)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]], [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Item`](_autosummary/annals.combine.html.md#annals.combine.Item), [`Context`](_autosummary/annals.combine.html.md#annals.combine.Context)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]]
+
+### annals.combine.skipped_header(skipped)
+
+The skipped files as compact JSON for a response header: few, short, ascii.
+
+At most [`MAX_SKIPPED_LISTED`](_autosummary/annals.combine.html.md#annals.combine.MAX_SKIPPED_LISTED) are listed (the count says how many there were) and
+names and reasons are cut, so the header stays far under what a proxy accepts.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.combine.supported()
+
+What can be made: `{format: {"label", "ext", "kinds"}}`, for a page or a message.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 
 # _autosummary/annals.config.html.md
@@ -1049,22 +1389,25 @@ Move documents to the recycle bin (restorable).
 
 ### Modules
 
-| [`aggregate`](_autosummary/annals.aggregate.html.md#module-annals.aggregate)   | Many markdown files as ONE markdown document: a title, a table of contents, a section per file.                                                    |
-|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`auth`](_autosummary/annals.auth.html.md#module-annals.auth)             | The auth seam: who may read the annals.                                                                                                            |
-| [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog)       | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
-| [`config`](_autosummary/annals.config.html.md#module-annals.config)         | Settings: where documents are published and what link to print.                                                                                    |
-| [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)               | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
-| [`notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook)     | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
-| [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)     | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
-| [`references`](_autosummary/annals.references.html.md#module-annals.references) | The references of documents, extracted and combined, in three forms.                                                                               |
-| [`share`](_autosummary/annals.share.html.md#module-annals.share)           | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
-| [`sources`](_autosummary/annals.sources.html.md#module-annals.sources)       | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
-| [`store`](_autosummary/annals.store.html.md#module-annals.store)           | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
-| [`tables`](_autosummary/annals.tables.html.md#module-annals.tables)         | Scrolling, zooming tables for published html pages.                                                                                                |
-| [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)             | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
-| [`target`](_autosummary/annals.target.html.md#module-annals.target)         | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
-| [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)           | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
+| [`aggregate`](_autosummary/annals.aggregate.html.md#module-annals.aggregate)       | Many markdown files as ONE markdown document: a title, a table of contents, a section per file.                                                    |
+|------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`auth`](_autosummary/annals.auth.html.md#module-annals.auth)                 | The auth seam: who may read the annals.                                                                                                            |
+| [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog)           | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
+| [`combine`](_autosummary/annals.combine.html.md#module-annals.combine)           | Many files of many kinds as ONE document: a Markdown, html or PDF file.                                                                            |
+| [`config`](_autosummary/annals.config.html.md#module-annals.config)             | Settings: where documents are published and what link to print.                                                                                    |
+| [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)                   | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook)         | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
+| [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)         | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
+| [`references`](_autosummary/annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
+| [`render`](_autosummary/annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
+| [`requirements`](_autosummary/annals.requirements.html.md#module-annals.requirements) | Optional dependencies, checked where they are needed and explained when they are missing.                                                          |
+| [`share`](_autosummary/annals.share.html.md#module-annals.share)               | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
+| [`sources`](_autosummary/annals.sources.html.md#module-annals.sources)           | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
+| [`store`](_autosummary/annals.store.html.md#module-annals.store)               | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`tables`](_autosummary/annals.tables.html.md#module-annals.tables)             | Scrolling, zooming tables for published html pages.                                                                                                |
+| [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)                 | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
+| [`target`](_autosummary/annals.target.html.md#module-annals.target)             | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)               | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
 
 
 # _autosummary/annals.mcp.html.md
@@ -1600,6 +1943,216 @@ What makes two addresses the same page: no fragment, no trailing slash, host in 
 ### annals.references.urls_of(text)
 
 The web addresses in `text`, in order of appearance, each once as written.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+
+# _autosummary/annals.render.html.md
+
+# annals.render
+
+Render markdown (and other page-like files) to html and PDF, with their images inside.
+
+No web framework in here, so the CLI can use it as the server does. The PDF is made by
+WeasyPrint from markdown-it’s HTML (raw html in the markdown is shown as text, never
+interpreted). Images are embedded; audio, video, other PDFs and files become a visible link
+to the resource, so the reader can open or play it. WeasyPrint is imported on first use; a
+missing one is a [`annals.requirements.MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency) with the install hint.
+
+Nothing is fetched from the network: an image outside the document is a link, never loaded.
+Everything WeasyPrint is allowed to load is a placeholder url (`annals-file:N`) for bytes
+this module already holds (`Embedded`).
+
+### Module Attributes
+
+| [`PDF_IMAGE_MAX_PX`](_autosummary/annals.render.html.md#annals.render.PDF_IMAGE_MAX_PX)       | longest side of an embedded image; a 6000 px render is shrunk, a phone screenshot is not              |
+|-------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|
+| [`PDF_IMAGE_MAX_BYTES`](_autosummary/annals.render.html.md#annals.render.PDF_IMAGE_MAX_BYTES)    | an image larger than this on disk is linked, not embedded                                             |
+| [`PDF_IMAGE_MAX_PIXELS`](_autosummary/annals.render.html.md#annals.render.PDF_IMAGE_MAX_PIXELS)   | an image with more pixels than this is not decoded to be shrunk (a small box would run out of memory) |
+| [`PDF_IMAGES_TOTAL_BYTES`](_autosummary/annals.render.html.md#annals.render.PDF_IMAGES_TOTAL_BYTES) | all embedded images of one PDF together                                                               |
+| [`PDF_MAX_TEXT_BYTES`](_autosummary/annals.render.html.md#annals.render.PDF_MAX_TEXT_BYTES)     | markdown larger than this is not made into a PDF (rendering cost grows faster than size)              |
+
+### Functions
+
+| [`html_to_pdf`](_autosummary/annals.render.html.md#annals.render.html_to_pdf)(doc, embedder)                         | A4 PDF of the html page `doc`; the only things it may load are `embedder`'s.        |
+|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`inline_embedded`](_autosummary/annals.render.html.md#annals.render.inline_embedded)(body, embedder)                    | `body` with each placeholder url replaced by a `data:` url of its bytes.            |
+| `kind_of_mime`(rel)                                                                                 |                                                                                     |
+| [`markdown_to_html`](_autosummary/annals.render.html.md#annals.render.markdown_to_html)(text, \*, rel, files, ...[, ...]) | The html body of the markdown `text` (the file `rel` of a document) and its images. |
+| [`markdown_to_pdf`](_autosummary/annals.render.html.md#annals.render.markdown_to_pdf)(text, \*, title, rel, files, ...)  | A titled A4 PDF of the markdown `text` with its images inside (see the module doc). |
+| [`page_html`](_autosummary/annals.render.html.md#annals.render.page_html)(title, body, \*[, created])              | A standalone html page: the `title` as the document title, then `body`.             |
+| [`resolve_ref`](_autosummary/annals.render.html.md#annals.render.resolve_ref)(href, \*, rel, files)                  | The document file a relative `href` of the markdown file `rel` names, or `None`.    |
+
+### Classes
+
+| [`Embedder`](_autosummary/annals.render.html.md#annals.render.Embedder)(\*[, max_total])   | The bytes a page may show, under placeholder urls, within a size budget.   |
+|------------------------------------------------------------------------------|----------------------------------------------------------------------------|
+
+### *class* annals.render.Embedder(, max_total=80000000)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+The bytes a page may show, under placeholder urls, within a size budget.
+
+WeasyPrint is only ever allowed to load these ([`html_to_pdf()`](_autosummary/annals.render.html.md#annals.render.html_to_pdf)), and an html output
+gets them as `data:` urls ([`inline_embedded()`](_autosummary/annals.render.html.md#annals.render.inline_embedded)), so no render reaches the network
+or the disk on its own.
+
+#### add_image(read, rel, size)
+
+A placeholder url for an image (shrunk), or `None` when it is too big to embed.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.render.PDF_IMAGES_TOTAL_BYTES *= 80000000*
+
+all embedded images of one PDF together
+
+### annals.render.PDF_IMAGE_MAX_BYTES *= 25000000*
+
+an image larger than this on disk is linked, not embedded
+
+### annals.render.PDF_IMAGE_MAX_PIXELS *= 40000000*
+
+an image with more pixels than this is not decoded to be shrunk (a small box would run out of memory)
+
+### annals.render.PDF_IMAGE_MAX_PX *= 1800*
+
+longest side of an embedded image; a 6000 px render is shrunk, a phone screenshot is not
+
+### annals.render.PDF_MAX_TEXT_BYTES *= 400000*
+
+markdown larger than this is not made into a PDF (rendering cost grows faster than size)
+
+### annals.render.html_to_pdf(doc, embedder)
+
+A4 PDF of the html page `doc`; the only things it may load are `embedder`’s.
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### annals.render.inline_embedded(body, embedder)
+
+`body` with each placeholder url replaced by a `data:` url of its bytes.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.render.markdown_to_html(text, , rel, files, open_file, file_url, embedder=None, read_bytes=None, list_unreferenced=True)
+
+The html body of the markdown `text` (the file `rel` of a document) and its images.
+
+Images the document holds are embedded (placeholder urls in the returned
+[`Embedder`](_autosummary/annals.render.html.md#annals.render.Embedder)); other files become links, shown as media rows; external images are
+never fetched. Raw html in the markdown is text, not markup. `read_bytes(rel)` reads
+an image the way the caller allows (a share filters svg text); `list_unreferenced=False`
+leaves out the “More in this document” rows (when the document’s other files are
+sections of a combined output of their own).
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Embedder`](_autosummary/annals.render.html.md#annals.render.Embedder)]
+
+### annals.render.markdown_to_pdf(text, , title, rel, files, open_file, file_url, created='')
+
+A titled A4 PDF of the markdown `text` with its images inside (see the module doc).
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### annals.render.page_html(title, body, , created='')
+
+A standalone html page: the `title` as the document title, then `body`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.render.resolve_ref(href, , rel, files)
+
+The document file a relative `href` of the markdown file `rel` names, or `None`.
+
+Absolute urls, paths that leave the document and files not in `files` are `None`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+
+# _autosummary/annals.requirements.html.md
+
+# annals.requirements
+
+Optional dependencies, checked where they are needed and explained when they are missing.
+
+annals installs light: a heavy library (WeasyPrint for PDFs, pypdf for joining them,
+markdownify for html to markdown) is imported only when the conversion that needs it runs,
+and a missing one is a [`MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency) that says which conversion needed it and
+the exact command that fixes it, never a bare `ImportError` from deep inside a library.
+
+```pycon
+>>> check_requirements("json", what="anything")        # present: returns quietly
+>>> try:
+...     check_requirements("no_such_module_xyz", what="Combining into PDF")
+... except MissingDependency as e:
+...     print(str(e).splitlines()[0])
+Combining into PDF needs no_such_module_xyz, which is not installed.
+```
+
+The pip name and the hint for a module are in [`PACKAGES`](_autosummary/annals.requirements.html.md#annals.requirements.PACKAGES), so a new optional library is
+one entry there.
+
+### Module Attributes
+
+| [`DFLT_EXTRA`](_autosummary/annals.requirements.html.md#annals.requirements.DFLT_EXTRA)   | the extra of annals that installs everything a conversion may need   |
+|---------------------------------------------------------------|----------------------------------------------------------------------|
+| [`PACKAGES`](_autosummary/annals.requirements.html.md#annals.requirements.PACKAGES)     | module name -> (pip name, system hint or `""`)                       |
+
+### Functions
+
+| [`check_requirements`](_autosummary/annals.requirements.html.md#annals.requirements.check_requirements)(\*modules, what[, extra])   | Raise [`MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency) unless every one of `modules` is installed.             |
+|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------|
+| [`import_lazily`](_autosummary/annals.requirements.html.md#annals.requirements.import_lazily)(name, \*, what[, extra])         | The module `name`, imported now; a failure to import it is a [`MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency). |
+| [`missing_modules`](_autosummary/annals.requirements.html.md#annals.requirements.missing_modules)(modules)                       | The `modules` that cannot be imported, found without importing them.                                                             |
+
+### Exceptions
+
+| [`MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency)(modules, \*, what[, extra])   | A library an operation needs is not installed (the message says how to install it).   |
+|--------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+
+### annals.requirements.DFLT_EXTRA *= 'pdf'*
+
+the extra of annals that installs everything a conversion may need
+
+### *exception* annals.requirements.MissingDependency(modules, , what, extra='pdf')
+
+Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#RuntimeError)
+
+A library an operation needs is not installed (the message says how to install it).
+
+### annals.requirements.PACKAGES *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]* *= {'PIL': ('pillow', ''), 'markdown_it': ('markdown-it-py', ''), 'markdownify': ('markdownify', ''), 'pdfdol': ('pdfdol', ''), 'pypdf': ('pypdf', ''), 'weasyprint': ('weasyprint', 'It also needs the Pango library (Debian/Ubuntu: apt install libpango-1.0-0).')}*
+
+module name -> (pip name, system hint or `""`)
+
+### annals.requirements.check_requirements(\*modules, what, extra='pdf')
+
+Raise [`MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency) unless every one of `modules` is installed.
+
+Cheap (nothing is imported), so a caller checks everything a job will use *before* it
+starts, and fails at once instead of half way.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.requirements.import_lazily(name, , what, extra='pdf')
+
+The module `name`, imported now; a failure to import it is a [`MissingDependency`](_autosummary/annals.requirements.html.md#annals.requirements.MissingDependency).
+
+A library that is installed but cannot load (WeasyPrint without Pango raises
+`OSError`) is reported the same way.
+
+### annals.requirements.missing_modules(modules)
+
+The `modules` that cannot be imported, found without importing them.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
@@ -2600,40 +3153,44 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Functions
 
-| [`aggregate`](_autosummary/annals.tools.html.md#annals.tools.aggregate)(group_id, \*[, demote, order, ...])      | Every markdown file of a group as ONE markdown document, printed (nothing is stored).   |
-|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
-| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.          |
-| [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.      |
-| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.               |
-| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                              |
-| [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.              |
-| [`listen_work`](_autosummary/annals.tools.html.md#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).   |
-| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.         |
-| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.             |
-| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.        |
-| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                              |
-| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                   |
-| [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.  |
-| [`shares`](_autosummary/annals.tools.html.md#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                   |
-| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata and link (`to`: on a named target).                               |
-| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                         |
-| [`unshare`](_autosummary/annals.tools.html.md#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.               |
+| [`aggregate`](_autosummary/annals.tools.html.md#annals.tools.aggregate)(group_id, \*[, format, output, ...])     | The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).   |
+|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------|
+| [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.                  |
+| [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.              |
+| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.                       |
+| [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                      |
+| [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                      |
+| [`listen_work`](_autosummary/annals.tools.html.md#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).           |
+| [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.                 |
+| [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                     |
+| [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                |
+| [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                      |
+| [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                           |
+| [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.          |
+| [`shares`](_autosummary/annals.tools.html.md#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                           |
+| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata and link (`to`: on a named target).                                       |
+| [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                                 |
+| [`unshare`](_autosummary/annals.tools.html.md#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.                       |
 
-### annals.tools.aggregate(group_id, , demote=1, order='numbered', no_toc=False, keep_wraps=False, target=None, to=None)
+### annals.tools.aggregate(group_id, , format='md', output=None, demote=1, order='numbered', no_toc=False, keep_wraps=False, target=None, to=None)
 
-Every markdown file of a group as ONE markdown document, printed (nothing is stored).
+The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).
 
-`group_id` is a group’s id or link. The document has the group’s title, a table of
-contents, then one `##` section per file named after its path (a folder document’s
-files under its title). `order`: `numbered` puts paths that start with a number
-first, numerically, the rest in the group’s order; `given` keeps the group’s order.
-`demote` pushes each file’s headings that many levels down (`0`: as written).
-Hard-wrapped lines are joined unless `keep_wraps`; `no_toc` leaves out the table
-of contents. Redirect
-to save it: `annals aggregate <id> > bundle.md`.
+`group_id` is a group’s or a document’s id or link. `format`: `md` (printed, or
+written to `output`), `html` (a web page, the same) or `pdf` (needs `output`).
+Markdown, html, text, PDF and image files go in; what cannot (audio, video, other
+files, a damaged PDF) is listed on stderr, with the reason, and left out. The markdown
+has the group’s title, a table of contents, then one `##` section per file named after
+its path (a folder document’s files under its title). `order`: `numbered` puts paths
+that start with a number first, numerically, the rest in the group’s order; `given`
+keeps the group’s order. `demote` pushes each file’s headings that many levels down
+(`0`: as written). Hard-wrapped lines are joined unless `keep_wraps`; `no_toc`
+leaves out the table of contents. Redirect to save text, or name the file:
+`annals aggregate <id> --format pdf --output bundle.pdf`. A PDF or html needs
+`pip install 'annals[pdf]'`; a missing library says so.
 
 * **Return type:**
-  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
 
@@ -2811,18 +3368,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-04 12:41 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff"><code>5b0a6ef</code></a> on branch <code>main</code>, for **annals 0.0.34** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-06 09:11 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/2b40b61192a8d5556410df2a63ca990049b6c7a1"><code>2b40b61</code></a> on branch <code>main</code>, for **annals 0.0.35** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.34) is behind the latest release on PyPI (0.0.35): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.35) is behind the latest release on PyPI (0.0.36): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff"><code>5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/2b40b61192a8d5556410df2a63ca990049b6c7a1"><code>2b40b61192a8d5556410df2a63ca990049b6c7a1</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -2833,9 +3390,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/41831089847">41831089847</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42192851393">42192851393</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff</code> (in the history of the built commit) |
+| Event commit | <code>2b40b61192a8d5556410df2a63ca990049b6c7a1</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -2860,13 +3417,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.35/">0.0.35</a>, newer than the documented version (0.0.34).
+Latest release: <a href="https://pypi.org/project/annals/0.0.36/">0.0.36</a>, newer than the documented version (0.0.35).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff
+git checkout 2b40b61192a8d5556410df2a63ca990049b6c7a1
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

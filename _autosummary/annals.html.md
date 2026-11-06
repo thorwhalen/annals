@@ -331,19 +331,22 @@ Move documents to the recycle bin (restorable).
 
 ### Modules
 
-| [`aggregate`](annals.aggregate.html.md#module-annals.aggregate)   | Many markdown files as ONE markdown document: a title, a table of contents, a section per file.                                                    |
-|--------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`auth`](annals.auth.html.md#module-annals.auth)             | The auth seam: who may read the annals.                                                                                                            |
-| [`catalog`](annals.catalog.html.md#module-annals.catalog)       | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
-| [`config`](annals.config.html.md#module-annals.config)         | Settings: where documents are published and what link to print.                                                                                    |
-| [`mcp`](annals.mcp.html.md#module-annals.mcp)               | MCP surface: the same operations as the CLI, from [`annals.tools`](annals.tools.html.md#module-annals.tools), via `py2mcp`. |
-| [`notebook`](annals.notebook.html.md#module-annals.notebook)     | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
-| [`overview`](annals.overview.html.md#module-annals.overview)     | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
-| [`references`](annals.references.html.md#module-annals.references) | The references of documents, extracted and combined, in three forms.                                                                               |
-| [`share`](annals.share.html.md#module-annals.share)           | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
-| [`sources`](annals.sources.html.md#module-annals.sources)       | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
-| [`store`](annals.store.html.md#module-annals.store)           | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
-| [`tables`](annals.tables.html.md#module-annals.tables)         | Scrolling, zooming tables for published html pages.                                                                                                |
-| [`tags`](annals.tags.html.md#module-annals.tags)             | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
-| [`target`](annals.target.html.md#module-annals.target)         | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
-| [`tools`](annals.tools.html.md#module-annals.tools)           | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
+| [`aggregate`](annals.aggregate.html.md#module-annals.aggregate)       | Many markdown files as ONE markdown document: a title, a table of contents, a section per file.                                                    |
+|------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`auth`](annals.auth.html.md#module-annals.auth)                 | The auth seam: who may read the annals.                                                                                                            |
+| [`catalog`](annals.catalog.html.md#module-annals.catalog)           | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
+| [`combine`](annals.combine.html.md#module-annals.combine)           | Many files of many kinds as ONE document: a Markdown, html or PDF file.                                                                            |
+| [`config`](annals.config.html.md#module-annals.config)             | Settings: where documents are published and what link to print.                                                                                    |
+| [`mcp`](annals.mcp.html.md#module-annals.mcp)                   | MCP surface: the same operations as the CLI, from [`annals.tools`](annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`notebook`](annals.notebook.html.md#module-annals.notebook)         | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
+| [`overview`](annals.overview.html.md#module-annals.overview)         | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
+| [`references`](annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
+| [`render`](annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
+| [`requirements`](annals.requirements.html.md#module-annals.requirements) | Optional dependencies, checked where they are needed and explained when they are missing.                                                          |
+| [`share`](annals.share.html.md#module-annals.share)               | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
+| [`sources`](annals.sources.html.md#module-annals.sources)           | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
+| [`store`](annals.store.html.md#module-annals.store)               | The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.                                                       |
+| [`tables`](annals.tables.html.md#module-annals.tables)             | Scrolling, zooming tables for published html pages.                                                                                                |
+| [`tags`](annals.tags.html.md#module-annals.tags)                 | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
+| [`target`](annals.target.html.md#module-annals.target)             | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`tools`](annals.tools.html.md#module-annals.tools)               | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |

@@ -38,12 +38,15 @@
    api
    auth
    catalog
+   combine
    config
    export
    mcp
    notebook
    overview
    references
+   render
+   requirements
    share
    share_api
    sources

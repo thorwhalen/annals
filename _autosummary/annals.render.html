@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.render - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.requirements" href="annals.requirements.html" /><link rel="prev" title="annals.references" href="annals.references.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.render"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.render.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.render.Embedder"><code class="docutils literal notranslate"><span class="pre">Embedder</span></code></a><ul>
+<li><a class="reference internal" href="#annals.render.Embedder.add_image"><code class="docutils literal notranslate"><span class="pre">Embedder.add_image()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.render.PDF_IMAGES_TOTAL_BYTES"><code class="docutils literal notranslate"><span class="pre">PDF_IMAGES_TOTAL_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.PDF_IMAGE_MAX_BYTES"><code class="docutils literal notranslate"><span class="pre">PDF_IMAGE_MAX_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.PDF_IMAGE_MAX_PIXELS"><code class="docutils literal notranslate"><span class="pre">PDF_IMAGE_MAX_PIXELS</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.PDF_IMAGE_MAX_PX"><code class="docutils literal notranslate"><span class="pre">PDF_IMAGE_MAX_PX</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.PDF_MAX_TEXT_BYTES"><code class="docutils literal notranslate"><span class="pre">PDF_MAX_TEXT_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.html_to_pdf"><code class="docutils literal notranslate"><span class="pre">html_to_pdf()</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.inline_embedded"><code class="docutils literal notranslate"><span class="pre">inline_embedded()</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.markdown_to_html"><code class="docutils literal notranslate"><span class="pre">markdown_to_html()</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.markdown_to_pdf"><code class="docutils literal notranslate"><span class="pre">markdown_to_pdf()</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.page_html"><code class="docutils literal notranslate"><span class="pre">page_html()</span></code></a></li>
+<li><a class="reference internal" href="#annals.render.resolve_ref"><code class="docutils literal notranslate"><span class="pre">resolve_ref()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.render</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.render">
+<span id="annals-render"></span><h1>annals.render<a class="headerlink" href="#module-annals.render" title="Link to this heading">#</a></h1>
+<p>Render markdown (and other page-like files) to html and PDF, with their images inside.</p>
+<p>No web framework in here, so the CLI can use it as the server does. The PDF is made by
+WeasyPrint from markdown-it’s HTML (raw html in the markdown is shown as text, never
+interpreted). Images are embedded; audio, video, other PDFs and files become a visible link
+to the resource, so the reader can open or play it. WeasyPrint is imported on first use; a
+missing one is a <a class="reference internal" href="annals.requirements.html#annals.requirements.MissingDependency" title="annals.requirements.MissingDependency"><code class="xref py py-class docutils literal notranslate"><span class="pre">annals.requirements.MissingDependency</span></code></a> with the install hint.</p>
+<p>Nothing is fetched from the network: an image outside the document is a link, never loaded.
+Everything WeasyPrint is allowed to load is a placeholder url (<code class="docutils literal notranslate"><span class="pre">annals-file:N</span></code>) for bytes
+this module already holds (<code class="xref py py-class docutils literal notranslate"><span class="pre">Embedded</span></code>).</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.PDF_IMAGE_MAX_PX" title="annals.render.PDF_IMAGE_MAX_PX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PDF_IMAGE_MAX_PX</span></code></a></p></td>
+<td><p>longest side of an embedded image; a 6000 px render is shrunk, a phone screenshot is not</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.render.PDF_IMAGE_MAX_BYTES" title="annals.render.PDF_IMAGE_MAX_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PDF_IMAGE_MAX_BYTES</span></code></a></p></td>
+<td><p>an image larger than this on disk is linked, not embedded</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.PDF_IMAGE_MAX_PIXELS" title="annals.render.PDF_IMAGE_MAX_PIXELS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PDF_IMAGE_MAX_PIXELS</span></code></a></p></td>
+<td><p>an image with more pixels than this is not decoded to be shrunk (a small box would run out of memory)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.render.PDF_IMAGES_TOTAL_BYTES" title="annals.render.PDF_IMAGES_TOTAL_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PDF_IMAGES_TOTAL_BYTES</span></code></a></p></td>
+<td><p>all embedded images of one PDF together</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.PDF_MAX_TEXT_BYTES" title="annals.render.PDF_MAX_TEXT_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PDF_MAX_TEXT_BYTES</span></code></a></p></td>
+<td><p>markdown larger than this is not made into a PDF (rendering cost grows faster than size)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.html_to_pdf" title="annals.render.html_to_pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_to_pdf</span></code></a>(doc, embedder)</p></td>
+<td><p>A4 PDF of the html page <code class="docutils literal notranslate"><span class="pre">doc</span></code>; the only things it may load are <code class="docutils literal notranslate"><span class="pre">embedder</span></code>'s.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.render.inline_embedded" title="annals.render.inline_embedded"><code class="xref py py-obj docutils literal notranslate"><span class="pre">inline_embedded</span></code></a>(body, embedder)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">body</span></code> with each placeholder url replaced by a <code class="docutils literal notranslate"><span class="pre">data:</span></code> url of its bytes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of_mime</span></code>(rel)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.render.markdown_to_html" title="annals.render.markdown_to_html"><code class="xref py py-obj docutils literal notranslate"><span class="pre">markdown_to_html</span></code></a>(text, *, rel, files, ...[, ...])</p></td>
+<td><p>The html body of the markdown <code class="docutils literal notranslate"><span class="pre">text</span></code> (the file <code class="docutils literal notranslate"><span class="pre">rel</span></code> of a document) and its images.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.markdown_to_pdf" title="annals.render.markdown_to_pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">markdown_to_pdf</span></code></a>(text, *, title, rel, files, ...)</p></td>
+<td><p>A titled A4 PDF of the markdown <code class="docutils literal notranslate"><span class="pre">text</span></code> with its images inside (see the module doc).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.render.page_html" title="annals.render.page_html"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_html</span></code></a>(title, body, *[, created])</p></td>
+<td><p>A standalone html page: the <code class="docutils literal notranslate"><span class="pre">title</span></code> as the document title, then <code class="docutils literal notranslate"><span class="pre">body</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.resolve_ref" title="annals.render.resolve_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_ref</span></code></a>(href, *, rel, files)</p></td>
+<td><p>The document file a relative <code class="docutils literal notranslate"><span class="pre">href</span></code> of the markdown file <code class="docutils literal notranslate"><span class="pre">rel</span></code> names, or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.Embedder" title="annals.render.Embedder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Embedder</span></code></a>(*[, max_total])</p></td>
+<td><p>The bytes a page may show, under placeholder urls, within a size budget.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.render.Embedder">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">Embedder</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_total</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">80000000</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#Embedder"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.Embedder" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The bytes a page may show, under placeholder urls, within a size budget.</p>
+<p>WeasyPrint is only ever allowed to load these (<a class="reference internal" href="#annals.render.html_to_pdf" title="annals.render.html_to_pdf"><code class="xref py py-func docutils literal notranslate"><span class="pre">html_to_pdf()</span></code></a>), and an html output
+gets them as <code class="docutils literal notranslate"><span class="pre">data:</span></code> urls (<a class="reference internal" href="#annals.render.inline_embedded" title="annals.render.inline_embedded"><code class="xref py py-func docutils literal notranslate"><span class="pre">inline_embedded()</span></code></a>), so no render reaches the network
+or the disk on its own.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.render.Embedder.add_image">
+<span class="sig-name descname"><span class="pre">add_image</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">read</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#Embedder.add_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.Embedder.add_image" title="Link to this definition">#</a></dt>
+<dd><p>A placeholder url for an image (shrunk), or <code class="docutils literal notranslate"><span class="pre">None</span></code> when it is too big to embed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.render.PDF_IMAGES_TOTAL_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">PDF_IMAGES_TOTAL_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">80000000</span></span><a class="headerlink" href="#annals.render.PDF_IMAGES_TOTAL_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>all embedded images of one PDF together</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.render.PDF_IMAGE_MAX_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">PDF_IMAGE_MAX_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">25000000</span></span><a class="headerlink" href="#annals.render.PDF_IMAGE_MAX_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>an image larger than this on disk is linked, not embedded</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.render.PDF_IMAGE_MAX_PIXELS">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">PDF_IMAGE_MAX_PIXELS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">40000000</span></span><a class="headerlink" href="#annals.render.PDF_IMAGE_MAX_PIXELS" title="Link to this definition">#</a></dt>
+<dd><p>an image with more pixels than this is not decoded to be shrunk (a small box would run out of memory)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.render.PDF_IMAGE_MAX_PX">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">PDF_IMAGE_MAX_PX</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1800</span></span><a class="headerlink" href="#annals.render.PDF_IMAGE_MAX_PX" title="Link to this definition">#</a></dt>
+<dd><p>longest side of an embedded image; a 6000 px render is shrunk, a phone screenshot is not</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.render.PDF_MAX_TEXT_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">PDF_MAX_TEXT_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">400000</span></span><a class="headerlink" href="#annals.render.PDF_MAX_TEXT_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>markdown larger than this is not made into a PDF (rendering cost grows faster than size)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.render.html_to_pdf">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">html_to_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#html_to_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.html_to_pdf" title="Link to this definition">#</a></dt>
+<dd><p>A4 PDF of the html page <code class="docutils literal notranslate"><span class="pre">doc</span></code>; the only things it may load are <code class="docutils literal notranslate"><span class="pre">embedder</span></code>’s.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.render.inline_embedded">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">inline_embedded</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">body</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedder</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#inline_embedded"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.inline_embedded" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">body</span></code> with each placeholder url replaced by a <code class="docutils literal notranslate"><span class="pre">data:</span></code> url of its bytes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.render.markdown_to_html">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">markdown_to_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">list_unreferenced</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#markdown_to_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.markdown_to_html" title="Link to this definition">#</a></dt>
+<dd><p>The html body of the markdown <code class="docutils literal notranslate"><span class="pre">text</span></code> (the file <code class="docutils literal notranslate"><span class="pre">rel</span></code> of a document) and its images.</p>
+<p>Images the document holds are embedded (placeholder urls in the returned
+<a class="reference internal" href="#annals.render.Embedder" title="annals.render.Embedder"><code class="xref py py-class docutils literal notranslate"><span class="pre">Embedder</span></code></a>); other files become links, shown as media rows; external images are
+never fetched. Raw html in the markdown is text, not markup. <code class="docutils literal notranslate"><span class="pre">read_bytes(rel)</span></code> reads
+an image the way the caller allows (a share filters svg text); <code class="docutils literal notranslate"><span class="pre">list_unreferenced=False</span></code>
+leaves out the “More in this document” rows (when the document’s other files are
+sections of a combined output of their own).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference internal" href="#annals.render.Embedder" title="annals.render.Embedder"><code class="xref py py-class docutils literal notranslate"><span class="pre">Embedder</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.render.markdown_to_pdf">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">markdown_to_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">created</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#markdown_to_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.markdown_to_pdf" title="Link to this definition">#</a></dt>
+<dd><p>A titled A4 PDF of the markdown <code class="docutils literal notranslate"><span class="pre">text</span></code> with its images inside (see the module doc).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.render.page_html">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">page_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">created</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#page_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.page_html" title="Link to this definition">#</a></dt>
+<dd><p>A standalone html page: the <code class="docutils literal notranslate"><span class="pre">title</span></code> as the document title, then <code class="docutils literal notranslate"><span class="pre">body</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.render.resolve_ref">
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">resolve_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">href</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#resolve_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.resolve_ref" title="Link to this definition">#</a></dt>
+<dd><p>The document file a relative <code class="docutils literal notranslate"><span class="pre">href</span></code> of the markdown file <code class="docutils literal notranslate"><span class="pre">rel</span></code> names, or <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>Absolute urls, paths that leave the document and files not in <code class="docutils literal notranslate"><span class="pre">files</span></code> are <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.references.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.references</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.requirements.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.requirements</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=39aadc1c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

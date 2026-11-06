@@ -69,11 +69,14 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.aggregate.html">annals.aggregate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.auth.html">annals.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.mcp.html">annals.mcp</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.store.html">annals.store</a></li>
@@ -112,7 +115,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#spoken-overviews">Spoken overviews</a></li>
 <li><a class="reference internal" href="#sharing-one-page">Sharing one page</a></li>
 <li><a class="reference internal" href="#downloads">Downloads</a></li>
-<li><a class="reference internal" href="#one-markdown-file-from-a-group">One Markdown file from a group</a></li>
+<li><a class="reference internal" href="#one-file-from-many-markdown-pdf-or-a-web-page">One file from many: Markdown, PDF or a web page</a></li>
 <li><a class="reference internal" href="#a-group-s-documents-as-separate-notebook-sources">A group&#8217;s documents as separate notebook sources</a></li>
 <li><a class="reference internal" href="#other-folders-search-filters-and-tags">Other folders, search, filters and tags</a></li>
 <li><a class="reference internal" href="#python-api">Python API</a></li>
@@ -273,7 +276,7 @@ data-aria-dark="Switch to auto color mode">
 <p>On a group’s page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):</p>
 <ul class="simple">
 <li><p><strong>Links</strong>: <strong>One link</strong> for a person (expiry, optional password, and on a document “What’s included”) or <strong>A link per document</strong> for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus <strong>Copy all</strong>.</p></li>
-<li><p><strong>One file</strong>: the picked documents’ Markdown as one file, to copy, download or open as text.</p></li>
+<li><p><strong>One file</strong>: the picked documents’ files (Markdown, html, text, PDFs, images) as one Markdown, PDF or web page file, to copy, download or open.</p></li>
 <li><p><strong>Listen</strong>: a spoken review (when the host offers them, see below). For several documents, <strong>One review of all</strong> (their text is put in one document, tagged <code class="docutils literal notranslate"><span class="pre">combined</span></code> and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or <strong>One each</strong> (makes only the missing or out-of-date ones).</p></li>
 </ul>
 <p>A document’s page has the same three buttons, acting on that document, and both pages keep the rest (copy the text, downloads, open raw, move to bin) under <strong>⋯ More</strong>. Every link, password and code block on the page has the same copy button: it copies inside the tap and answers on itself with a check and “Copied”.</p>
@@ -319,18 +322,62 @@ data-aria-dark="Switch to auto color mode">
 <h2>Downloads<a class="headerlink" href="#downloads" title="Link to this heading">#</a></h2>
 <p>Every markdown page offers two downloads made by the server, under <strong>One file</strong> and under <strong>⋯ More</strong>: <strong>Markdown (.md)</strong> and a titled <strong>PDF</strong> with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (<code class="docutils literal notranslate"><span class="pre">quarterly-report-q3.pdf</span></code>) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;annals[pdf]&quot;</span></code> (WeasyPrint, which uses Pango; <code class="docutils literal notranslate"><span class="pre">annals[server]</span></code> includes it); without it the PDF action answers with that hint. Pages (<code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;</span></code>) are drawn in the browser by <code class="docutils literal notranslate"><span class="pre">app.js</span></code>, so a page that gains an action gains it for every existing document.</p>
 </section>
-<section id="one-markdown-file-from-a-group">
-<h2>One Markdown file from a group<a class="headerlink" href="#one-markdown-file-from-a-group" title="Link to this heading">#</a></h2>
-<p>A group’s <strong>One file</strong> makes one Markdown file from every <code class="docutils literal notranslate"><span class="pre">.md</span></code> of the picked documents (all of them when none is ticked), folder documents included, and offers <strong>Copy Markdown</strong>, <strong>Download .md</strong> and <strong>Open as text</strong>, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group’s title, a table of contents, and one <code class="docutils literal notranslate"><span class="pre">##</span></code> section per file named after its path (<code class="docutils literal notranslate"><span class="pre">Report/01-intro.md</span></code>); paths that start with a number come first, in numeric order, the rest in the group’s order; each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same <strong>One file</strong> button, built from the share’s filtered text and only the files it includes.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;group-id-or-link&gt;<span class="w"> </span>&gt;<span class="w"> </span>all.md<span class="w">          </span><span class="c1"># the same file, from a shell</span>
-</span><span data-line="2">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--order<span class="w"> </span>given<span class="w"> </span>--demote<span class="w"> </span><span class="m">0</span><span class="w"> </span>--no-toc<span class="w"> </span>--keep-wraps
+<section id="one-file-from-many-markdown-pdf-or-a-web-page">
+<h2>One file from many: Markdown, PDF or a web page<a class="headerlink" href="#one-file-from-many-markdown-pdf-or-a-web-page" title="Link to this heading">#</a></h2>
+<p><strong>One file</strong> (on a group, a selection or one document) combines the picked documents’ files into a single file and lets you choose its format: <strong>Markdown</strong> (shown, with <strong>Copy Markdown</strong>, <strong>Download .md</strong> and <strong>Open as text</strong>), <strong>PDF</strong> (with a bookmark for each file) or a <strong>Web page</strong> (one self-contained <code class="docutils literal notranslate"><span class="pre">.html</span></code>). Audio and video cannot be part of a document; they are listed as left out, each with the reason, and so is a file that cannot be read (a damaged or password-protected PDF) while the others still go in. It is made on each request and never stored. A share link has the same button, built from the share’s filtered text and only the files it includes.</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>input</p></th>
+<th class="head"><p>to Markdown</p></th>
+<th class="head"><p>to web page / to PDF</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>markdown</p></td>
+<td><p>as it is</p></td>
+<td><p>rendered, the document’s images inside</p></td>
+</tr>
+<tr class="row-odd"><td><p>html</p></td>
+<td><p>converted (needs <code class="docutils literal notranslate"><span class="pre">markdownify</span></code>)</p></td>
+<td><p>its structure and words; scripts, styles, frames, forms and remote images are dropped</p></td>
+</tr>
+<tr class="row-even"><td><p>text (<code class="docutils literal notranslate"><span class="pre">.txt</span></code>, <code class="docutils literal notranslate"><span class="pre">.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.csv</span></code>, code…)</p></td>
+<td><p>a code block</p></td>
+<td><p>a preformatted block</p></td>
+</tr>
+<tr class="row-odd"><td><p>PDF</p></td>
+<td><p>its text (a scan has none)</p></td>
+<td><p>web page: its text; PDF: its pages, joined as they are</p></td>
+</tr>
+<tr class="row-even"><td><p>image</p></td>
+<td><p>not supported</p></td>
+<td><p>a figure / a page of its own</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>An image or a text file that sits in a document with pages (markdown, html, a PDF) belongs to that document, not a section of its own: a report and its figures combine as the report. Files are arranged with numbered names first, in numeric order, then the rest in the documents’ order.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;group-or-doc-id-or-link&gt;<span class="w"> </span>&gt;<span class="w"> </span>all.md<span class="w">                    </span><span class="c1"># Markdown, from a shell</span>
+</span><span data-line="2">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--format<span class="w"> </span>pdf<span class="w"> </span>--output<span class="w"> </span>all.pdf<span class="w">                     </span><span class="c1"># a PDF needs --output</span>
+</span><span data-line="3">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--format<span class="w"> </span>html<span class="w"> </span>--output<span class="w"> </span>all.html
+</span><span data-line="4">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;id&gt;<span class="w"> </span>--order<span class="w"> </span>given<span class="w"> </span>--demote<span class="w"> </span><span class="m">0</span><span class="w"> </span>--no-toc<span class="w"> </span>--keep-wraps<span class="w">   </span><span class="c1"># Markdown options</span>
 </span></pre></div>
 </div>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.aggregate</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_markdown</span>
+<p>The libraries behind each pair load only when it is used: PDF pages need WeasyPrint (which uses Pango), joining and reading PDFs need <code class="docutils literal notranslate"><span class="pre">pypdf</span></code> and <code class="docutils literal notranslate"><span class="pre">pdfdol</span></code>, html to Markdown needs <code class="docutils literal notranslate"><span class="pre">markdownify</span></code>. <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;annals[pdf]&quot;</span></code> installs them all; a missing one stops the job before it starts, naming the library and the command. The API is <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/groups/&lt;gid&gt;/aggregate?format=md|html|pdf</span></code> and <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/aggregate?doc=&lt;id&gt;&amp;doc=&lt;id&gt;</span></code> (<code class="docutils literal notranslate"><span class="pre">&amp;download=1</span></code> to save, <code class="docutils literal notranslate"><span class="pre">&amp;demote=</span></code>), <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/&lt;token&gt;/aggregate</span></code> on the share server, and <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/combine/formats</span></code> for what can be made; the response carries <code class="docutils literal notranslate"><span class="pre">X-Annals-Sections</span></code> (files that went in) and <code class="docutils literal notranslate"><span class="pre">X-Annals-Skipped</span></code> (percent-encoded JSON: which were left out and why).</p>
+<p>A new pair (say docx to PDF) is one function in <code class="docutils literal notranslate"><span class="pre">annals/combine.py</span></code>, and every surface above learns it:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.combine</span><span class="w"> </span><span class="kn">import</span> <span class="n">register</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="nd">@register</span><span class="p">(</span><span class="s2">"docx"</span><span class="p">,</span> <span class="s2">"pdf"</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">(</span><span class="s2">"some_module"</span><span class="p">,))</span>
+</span><span data-line="4"><span class="k">def</span><span class="w"> </span><span class="nf">docx_to_pdf</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span>          <span class="c1"># item.text(), item.data(), item.rel; return the part for the format</span>
+</span><span data-line="5">    <span class="o">...</span>
+</span></pre></div>
+</div>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.aggregate</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_markdown</span>        <span class="c1"># the text mechanism, no documents involved</span>
 </span><span data-line="2"><span class="n">aggregate_markdown</span><span class="p">({</span><span class="s2">"notes.md"</span><span class="p">:</span> <span class="s2">"# Notes"</span><span class="p">,</span> <span class="s2">"01-intro.md"</span><span class="p">:</span> <span class="s2">"Hello"</span><span class="p">},</span> <span class="n">title</span><span class="o">=</span><span class="s2">"Bundle"</span><span class="p">,</span> <span class="n">demote</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </span></pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">aggregate_markdown</span></code> takes <code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> pairs and knows nothing of annals: <code class="docutils literal notranslate"><span class="pre">order=</span></code> (<code class="docutils literal notranslate"><span class="pre">numbered_first</span></code> by default, <code class="docutils literal notranslate"><span class="pre">None</span></code> for the order given, or any <code class="docutils literal notranslate"><span class="pre">paths</span> <span class="pre">-&gt;</span> <span class="pre">paths</span></code> callable), <code class="docutils literal notranslate"><span class="pre">demote=</span></code>, <code class="docutils literal notranslate"><span class="pre">unwrap=</span></code>, <code class="docutils literal notranslate"><span class="pre">toc=</span></code>. The API is <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/groups/&lt;gid&gt;/aggregate</span></code> (<code class="docutils literal notranslate"><span class="pre">?download=1</span></code> to save it, <code class="docutils literal notranslate"><span class="pre">&amp;demote=</span></code>), and <code class="docutils literal notranslate"><span class="pre">GET</span> <span class="pre">/&lt;token&gt;/aggregate</span></code> on the share server.</p>
+<p><code class="docutils literal notranslate"><span class="pre">aggregate_markdown</span></code> takes <code class="docutils literal notranslate"><span class="pre">(path,</span> <span class="pre">text)</span></code> pairs and knows nothing of annals: <code class="docutils literal notranslate"><span class="pre">order=</span></code> (<code class="docutils literal notranslate"><span class="pre">numbered_first</span></code> by default, <code class="docutils literal notranslate"><span class="pre">None</span></code> for the order given, or any <code class="docutils literal notranslate"><span class="pre">paths</span> <span class="pre">-&gt;</span> <span class="pre">paths</span></code> callable), <code class="docutils literal notranslate"><span class="pre">demote=</span></code>, <code class="docutils literal notranslate"><span class="pre">unwrap=</span></code>, <code class="docutils literal notranslate"><span class="pre">toc=</span></code>. The Markdown file has the title, a table of contents, and one <code class="docutils literal notranslate"><span class="pre">##</span></code> section per file named after its path (<code class="docutils literal notranslate"><span class="pre">Report/01-intro.md</span></code>); each file’s headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined Markdown.</p>
 </section>
 <section id="a-group-s-documents-as-separate-notebook-sources">
 <h2>A group’s documents as separate notebook sources<a class="headerlink" href="#a-group-s-documents-as-separate-notebook-sources" title="Link to this heading">#</a></h2>
@@ -378,7 +425,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-04 12:41 UTC from <a href="https://github.com/thorwhalen/annals/commit/5b0a6ef57f8391e8f3b3af873fb2dbbbc7f4d4ff">5b0a6ef</a> (main) · annals 0.0.34 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-06 09:11 UTC from <a href="https://github.com/thorwhalen/annals/commit/2b40b61192a8d5556410df2a63ca990049b6c7a1">2b40b61</a> (main) · annals 0.0.35 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -413,7 +460,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=9dd25805"></script>
+      <script src="_static/documentation_options.js?v=39aadc1c"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

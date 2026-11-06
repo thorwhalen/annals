@@ -1,0 +1,34 @@
+annals.render
+=============
+
+.. automodule:: annals.render
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      PDF_IMAGE_MAX_PX
+      PDF_IMAGE_MAX_BYTES
+      PDF_IMAGE_MAX_PIXELS
+      PDF_IMAGES_TOTAL_BYTES
+      PDF_MAX_TEXT_BYTES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      html_to_pdf
+      inline_embedded
+      kind_of_mime
+      markdown_to_html
+      markdown_to_pdf
+      page_html
+      resolve_ref
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Embedder
+   

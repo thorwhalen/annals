@@ -69,11 +69,14 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3 current"><a class="current reference internal" href="#">annals.aggregate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
@@ -105,6 +108,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.aggregate.heading_anchor"><code class="docutils literal notranslate"><span class="pre">heading_anchor()</span></code></a></li>
 <li><a class="reference internal" href="#annals.aggregate.numbered_first"><code class="docutils literal notranslate"><span class="pre">numbered_first()</span></code></a></li>
 <li><a class="reference internal" href="#annals.aggregate.strip_front_matter"><code class="docutils literal notranslate"><span class="pre">strip_front_matter()</span></code></a></li>
+<li><a class="reference internal" href="#annals.aggregate.unique_paths"><code class="docutils literal notranslate"><span class="pre">unique_paths()</span></code></a></li>
 <li><a class="reference internal" href="#annals.aggregate.unwrap_lines"><code class="docutils literal notranslate"><span class="pre">unwrap_lines()</span></code></a></li>
 </ul>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
@@ -206,7 +210,10 @@ Nothing is stored: the document is made per request.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.aggregate.strip_front_matter" title="annals.aggregate.strip_front_matter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_front_matter</span></code></a>(text)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> without a leading YAML front-matter block (<code class="docutils literal notranslate"><span class="pre">---</span></code> .</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.aggregate.unwrap_lines" title="annals.aggregate.unwrap_lines"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unwrap_lines</span></code></a>(text)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.aggregate.unique_paths" title="annals.aggregate.unique_paths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unique_paths</span></code></a>(pairs)</p></td>
+<td><p>The pairs with repeated paths told apart: <code class="docutils literal notranslate"><span class="pre">a.md</span></code>, <code class="docutils literal notranslate"><span class="pre">a.md</span> <span class="pre">(2)</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.aggregate.unwrap_lines" title="annals.aggregate.unwrap_lines"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unwrap_lines</span></code></a>(text)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with hard-wrapped paragraphs and list items joined into one line each.</p></td>
 </tr>
 </tbody>
@@ -333,6 +340,17 @@ keeps it.</p>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.aggregate.unique_paths">
+<span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">unique_paths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pairs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#unique_paths"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.unique_paths" title="Link to this definition">#</a></dt>
+<dd><p>The pairs with repeated paths told apart: <code class="docutils literal notranslate"><span class="pre">a.md</span></code>, <code class="docutils literal notranslate"><span class="pre">a.md</span> <span class="pre">(2)</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.aggregate.unwrap_lines">
 <span class="sig-prename descclassname"><span class="pre">annals.aggregate.</span></span><span class="sig-name descname"><span class="pre">unwrap_lines</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/aggregate.html#unwrap_lines"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.aggregate.unwrap_lines" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with hard-wrapped paragraphs and list items joined into one line each.</p>
@@ -398,7 +416,7 @@ keep their line breaks.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=9dd25805"></script>
+      <script src="../_static/documentation_options.js?v=39aadc1c"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

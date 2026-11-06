@@ -1,0 +1,27 @@
+annals.requirements
+===================
+
+.. automodule:: annals.requirements
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_EXTRA
+      PACKAGES
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      check_requirements
+      import_lazily
+      missing_modules
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      MissingDependency
+   

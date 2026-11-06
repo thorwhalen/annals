@@ -50,6 +50,7 @@ Nothing is stored: the document is made per request.
 | [`heading_anchor`](#annals.aggregate.heading_anchor)(text[, seen])                         | The id GitHub (and most renderers) give a heading; `seen` numbers repeats.              |
 | [`numbered_first`](#annals.aggregate.numbered_first)(paths)                                | `paths` with numbered ones first, compared part by part, the rest in their given order. |
 | [`strip_front_matter`](#annals.aggregate.strip_front_matter)(text)                             | `text` without a leading YAML front-matter block (`---` .                               |
+| [`unique_paths`](#annals.aggregate.unique_paths)(pairs)                                  | The pairs with repeated paths told apart: `a.md`, `a.md (2)`.                           |
 | [`unwrap_lines`](#annals.aggregate.unwrap_lines)(text)                                   | `text` with hard-wrapped paragraphs and list items joined into one line each.           |
 
 ### Exceptions
@@ -151,6 +152,13 @@ keeps it.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.aggregate.unique_paths(pairs)
+
+The pairs with repeated paths told apart: `a.md`, `a.md (2)`.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
 ### annals.aggregate.unwrap_lines(text)
 

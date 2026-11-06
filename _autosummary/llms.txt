@@ -9,11 +9,14 @@
 - [annals.aggregate](annals.aggregate.html.md): Many markdown files as ONE markdown document: a title, a table of contents, a section per file.
 - [annals.auth](annals.auth.html.md): The auth seam: who may read the annals.
 - [annals.catalog](annals.catalog.html.md): The catalog: every source’s items as one list, with search and the owner’s tags.
+- [annals.combine](annals.combine.html.md): Many files of many kinds as ONE document: a Markdown, html or PDF file.
 - [annals.config](annals.config.html.md): Settings: where documents are published and what link to print.
 - [annals.mcp](annals.mcp.html.md): MCP surface: the same operations as the CLI, from &#96;annals.tools&#96;, via &#96;py2mcp&#96;.
 - [annals.notebook](annals.notebook.html.md): A share’s documents as separate notebook sources: one plain web page per text file.
 - [annals.overview](annals.overview.html.md): Spoken overviews of a document: the request a page makes, and the worker that fulfils it.
 - [annals.references](annals.references.html.md): The references of documents, extracted and combined, in three forms.
+- [annals.render](annals.render.html.md): Render markdown (and other page-like files) to html and PDF, with their images inside.
+- [annals.requirements](annals.requirements.html.md): Optional dependencies, checked where they are needed and explained when they are missing.
 - [annals.share](annals.share.html.md): Share links: one document (or a group) behind a public, unguessable, revocable link.
 - [annals.sources](annals.sources.html.md): Item sources: everything the page lists, wherever it lives, as rows of one shape.
 - [annals.store](annals.store.html.md): The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.

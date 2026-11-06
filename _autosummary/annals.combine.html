@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.combine - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.config" href="annals.config.html" /><link rel="prev" title="annals.catalog" href="annals.catalog.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.combine"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.combine.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.combine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.combine.COMPANION_KINDS"><code class="docutils literal notranslate"><span class="pre">COMPANION_KINDS</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Combined"><code class="docutils literal notranslate"><span class="pre">Combined</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Context"><code class="docutils literal notranslate"><span class="pre">Context</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.ConversionError"><code class="docutils literal notranslate"><span class="pre">ConversionError</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Format"><code class="docutils literal notranslate"><span class="pre">Format</span></code></a><ul>
+<li><a class="reference internal" href="#annals.combine.Format.context_per_item"><code class="docutils literal notranslate"><span class="pre">Format.context_per_item</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.combine.HTML_CSP"><code class="docutils literal notranslate"><span class="pre">HTML_CSP</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.HTML_DEMOTE"><code class="docutils literal notranslate"><span class="pre">HTML_DEMOTE</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Item"><code class="docutils literal notranslate"><span class="pre">Item</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Job"><code class="docutils literal notranslate"><span class="pre">Job</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.MAX_HTML_DEPTH"><code class="docutils literal notranslate"><span class="pre">MAX_HTML_DEPTH</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.MAX_RENDERED_FILES"><code class="docutils literal notranslate"><span class="pre">MAX_RENDERED_FILES</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.MAX_SKIPPED_LISTED"><code class="docutils literal notranslate"><span class="pre">MAX_SKIPPED_LISTED</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.MAX_SPAN"><code class="docutils literal notranslate"><span class="pre">MAX_SPAN</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.MAX_TEXT_FILE_BYTES"><code class="docutils literal notranslate"><span class="pre">MAX_TEXT_FILE_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.MAX_TEXT_PAGES"><code class="docutils literal notranslate"><span class="pre">MAX_TEXT_PAGES</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.NothingToCombine"><code class="docutils literal notranslate"><span class="pre">NothingToCombine</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.PAGE_KINDS"><code class="docutils literal notranslate"><span class="pre">PAGE_KINDS</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Pair"><code class="docutils literal notranslate"><span class="pre">Pair</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.REGISTRY"><code class="docutils literal notranslate"><span class="pre">REGISTRY</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Skipped"><code class="docutils literal notranslate"><span class="pre">Skipped</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.Source"><code class="docutils literal notranslate"><span class="pre">Source</span></code></a><ul>
+<li><a class="reference internal" href="#annals.combine.Source.read_bytes"><code class="docutils literal notranslate"><span class="pre">Source.read_bytes</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.combine.combine"><code class="docutils literal notranslate"><span class="pre">combine()</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.explain"><code class="docutils literal notranslate"><span class="pre">explain()</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.html_body"><code class="docutils literal notranslate"><span class="pre">html_body()</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.items_of"><code class="docutils literal notranslate"><span class="pre">items_of()</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.kinds_for"><code class="docutils literal notranslate"><span class="pre">kinds_for()</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.register"><code class="docutils literal notranslate"><span class="pre">register()</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.skipped_header"><code class="docutils literal notranslate"><span class="pre">skipped_header()</span></code></a></li>
+<li><a class="reference internal" href="#annals.combine.supported"><code class="docutils literal notranslate"><span class="pre">supported()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.combine</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.combine">
+<span id="annals-combine"></span><h1>annals.combine<a class="headerlink" href="#module-annals.combine" title="Link to this heading">#</a></h1>
+<p>Many files of many kinds as ONE document: a Markdown, html or PDF file.</p>
+<p>The mechanism is a registry. A <em>converter</em> turns one file of one kind into a <em>part</em> of the
+output format (markdown text, an html fragment, a PDF); a <em>joiner</em> puts the parts of a
+format together (a table of contents and a section each; bookmarks and pages). Which pairs
+exist is the table <a class="reference internal" href="#annals.combine.REGISTRY" title="annals.combine.REGISTRY"><code class="xref py py-data docutils literal notranslate"><span class="pre">REGISTRY</span></code></a>, filled by <a class="reference internal" href="#annals.combine.register" title="annals.combine.register"><code class="xref py py-func docutils literal notranslate"><span class="pre">register()</span></code></a>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nd">@register</span><span class="p">(</span><span class="s2">"pdf"</span><span class="p">,</span> <span class="s2">"md"</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">(</span><span class="s2">"pdfdol"</span><span class="p">,))</span>
+</span><span data-line="2"><span class="k">def</span><span class="w"> </span><span class="nf">pdf_to_md</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">ctx</span><span class="p">):</span> <span class="o">...</span>
+</span></pre></div>
+</div>
+<p>so a new pair (docx to pdf, say) is one decorated function, and the web page, the API and
+the CLI all learn it from <a class="reference internal" href="#annals.combine.supported" title="annals.combine.supported"><code class="xref py py-func docutils literal notranslate"><span class="pre">supported()</span></code></a> without a change.</p>
+<p>What goes in:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="o">=========</span>  <span class="o">===========</span>  <span class="o">=======================================================</span>
+</span><span data-line="2"><span class="nb">input</span>      <span class="n">to</span> <span class="n">md</span>        <span class="n">to</span> <span class="n">html</span> <span class="o">/</span> <span class="n">to</span> <span class="n">pdf</span>
+</span><span data-line="3"><span class="o">=========</span>  <span class="o">===========</span>  <span class="o">=======================================================</span>
+</span><span data-line="4"><span class="n">md</span>         <span class="k">as</span> <span class="n">it</span> <span class="ow">is</span>     <span class="n">rendered</span> <span class="p">(</span><span class="n">images</span> <span class="n">of</span> <span class="n">the</span> <span class="n">document</span> <span class="n">inside</span><span class="p">)</span>
+</span><span data-line="5"><span class="n">html</span>       <span class="n">converted</span>    <span class="n">its</span> <span class="n">text</span> <span class="ow">and</span> <span class="n">structure</span> <span class="p">(</span><span class="n">scripts</span> <span class="ow">and</span> <span class="n">styles</span> <span class="n">dropped</span><span class="p">)</span>
+</span><span data-line="6"><span class="n">text</span>       <span class="n">a</span> <span class="n">code</span> <span class="n">block</span> <span class="n">a</span> <span class="n">preformatted</span> <span class="n">block</span>
+</span><span data-line="7"><span class="n">pdf</span>        <span class="n">its</span> <span class="n">text</span>     <span class="n">html</span><span class="p">:</span> <span class="n">its</span> <span class="n">text</span><span class="p">;</span> <span class="n">pdf</span><span class="p">:</span> <span class="n">its</span> <span class="n">pages</span><span class="p">,</span> <span class="n">joined</span> <span class="k">as</span> <span class="n">they</span> <span class="n">are</span>
+</span><span data-line="8"><span class="n">image</span>      <span class="o">-</span>            <span class="n">a</span> <span class="n">figure</span> <span class="p">(</span><span class="n">html</span><span class="p">)</span> <span class="o">/</span> <span class="n">a</span> <span class="n">page</span> <span class="n">of</span> <span class="n">its</span> <span class="n">own</span> <span class="p">(</span><span class="n">pdf</span><span class="p">)</span>
+</span><span data-line="9"><span class="o">=========</span>  <span class="o">===========</span>  <span class="o">=======================================================</span>
+</span></pre></div>
+</div>
+<p>Audio, video and other files have no place in a document: they are reported as left out,
+each with the reason, never silently dropped. A file that cannot be read (a damaged or
+password-protected PDF) is left out the same way, and the others still go in.</p>
+<p>An image or a text file that sits in a document with pages (markdown, html, a PDF) is part
+of that document, not a section of its own: a report and its figures combine as the report.</p>
+<p>Heavy libraries load only when a pair needs them (WeasyPrint for PDF pages, pypdf and pdfdol
+to join and read PDFs, markdownify for html to markdown); a missing one is a
+<a class="reference internal" href="annals.requirements.html#annals.requirements.MissingDependency" title="annals.requirements.MissingDependency"><code class="xref py py-class docutils literal notranslate"><span class="pre">annals.requirements.MissingDependency</span></code></a> that says what to install, raised before any
+work starts. Nothing is stored: the document is made per call.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">combined</span> <span class="o">=</span> <span class="n">combine</span><span class="p">([</span><span class="n">_demo_source</span><span class="p">({</span><span class="s2">"b.md"</span><span class="p">:</span> <span class="s2">"# B</span><span class="se">\n</span><span class="s2">text"</span><span class="p">,</span> <span class="s2">"a.md"</span><span class="p">:</span> <span class="s2">"hello"</span><span class="p">})],</span> <span class="s2">"md"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">"T"</span><span class="p">)</span>
+</span><span data-line="2"><span class="gp">&gt;&gt;&gt; </span><span class="n">combined</span><span class="o">.</span><span class="n">sections</span><span class="p">,</span> <span class="n">combined</span><span class="o">.</span><span class="n">ext</span>
+</span><span data-line="3"><span class="go">(2, 'md')</span>
+</span><span data-line="4"><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">combined</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+</span><span data-line="5"><span class="go"># T</span>
+</span></pre></div>
+</div>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.PAGE_KINDS" title="annals.combine.PAGE_KINDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PAGE_KINDS</span></code></a></p></td>
+<td><p>kinds whose file is a document in itself</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.COMPANION_KINDS" title="annals.combine.COMPANION_KINDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMPANION_KINDS</span></code></a></p></td>
+<td><p>kinds that illustrate or accompany a document with pages, so are not sections of its own</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.MAX_SKIPPED_LISTED" title="annals.combine.MAX_SKIPPED_LISTED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_SKIPPED_LISTED</span></code></a></p></td>
+<td><p>skipped files listed in a result (and its headers); the rest are counted</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.MAX_TEXT_PAGES" title="annals.combine.MAX_TEXT_PAGES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_TEXT_PAGES</span></code></a></p></td>
+<td><p>a PDF with more pages than this is not read for its text (about 0.2 s a page)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.MAX_RENDERED_FILES" title="annals.combine.MAX_RENDERED_FILES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_RENDERED_FILES</span></code></a></p></td>
+<td><p>files made into PDF pages by rendering (about 0.4 s each) in one output</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.MAX_TEXT_FILE_BYTES" title="annals.combine.MAX_TEXT_FILE_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_TEXT_FILE_BYTES</span></code></a></p></td>
+<td><p>a text or html file larger than this is left out, and the others still go in</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.MAX_HTML_DEPTH" title="annals.combine.MAX_HTML_DEPTH"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_HTML_DEPTH</span></code></a></p></td>
+<td><p>html nested deeper than this is flattened (very deep trees overflow the converters)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.MAX_SPAN" title="annals.combine.MAX_SPAN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_SPAN</span></code></a></p></td>
+<td><p>a table cell may span this many columns or rows (a bigger number is a layout attack)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.HTML_DEMOTE" title="annals.combine.HTML_DEMOTE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HTML_DEMOTE</span></code></a></p></td>
+<td><p>headings of an embedded markdown or html file go this far down, under the section's own</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.REGISTRY" title="annals.combine.REGISTRY"><code class="xref py py-obj docutils literal notranslate"><span class="pre">REGISTRY</span></code></a></p></td>
+<td><p>(kind, format) -&gt; <a class="reference internal" href="#annals.combine.Pair" title="annals.combine.Pair"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pair</span></code></a>; add a pair with <a class="reference internal" href="#annals.combine.register" title="annals.combine.register"><code class="xref py py-func docutils literal notranslate"><span class="pre">register()</span></code></a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.HTML_CSP" title="annals.combine.HTML_CSP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HTML_CSP</span></code></a></p></td>
+<td><p>show itself, with its own styles and embedded images</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.combine" title="annals.combine.combine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine</span></code></a>(sources[, fmt, title, demote, toc, ...])</p></td>
+<td><p>Every usable file of <code class="docutils literal notranslate"><span class="pre">sources</span></code> as one <code class="docutils literal notranslate"><span class="pre">fmt</span></code> (&quot;md&quot;, &quot;html&quot; or &quot;pdf&quot;) file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.explain" title="annals.combine.explain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">explain</span></code></a>(fmt)</p></td>
+<td><p>One sentence on what a <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output is made of (the 'supported' part of a message).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.html_body" title="annals.combine.html_body"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_body</span></code></a>(text, *[, rewrite_src, demote])</p></td>
+<td><p>The content of an html page as a safe fragment: its structure and words, nothing live.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.items_of" title="annals.combine.items_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">items_of</span></code></a>(sources, fmt)</p></td>
+<td><p>The files to try for a <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output, in the documents' order.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.kinds_for" title="annals.combine.kinds_for"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kinds_for</span></code></a>(fmt)</p></td>
+<td><p>The kinds of file that can be put in a <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output, in a stable order.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.register" title="annals.combine.register"><code class="xref py py-obj docutils literal notranslate"><span class="pre">register</span></code></a>(kind, fmt, *[, requires])</p></td>
+<td><p>Decorator: the function turns a file of <code class="docutils literal notranslate"><span class="pre">kind</span></code> into a part of the <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.skipped_header" title="annals.combine.skipped_header"><code class="xref py py-obj docutils literal notranslate"><span class="pre">skipped_header</span></code></a>(skipped)</p></td>
+<td><p>The skipped files as compact JSON for a response header: few, short, ascii.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.supported" title="annals.combine.supported"><code class="xref py py-obj docutils literal notranslate"><span class="pre">supported</span></code></a>()</p></td>
+<td><p>What can be made: <code class="docutils literal notranslate"><span class="pre">{format:</span> <span class="pre">{&quot;label&quot;,</span> <span class="pre">&quot;ext&quot;,</span> <span class="pre">&quot;kinds&quot;}}</span></code>, for a page or a message.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.Combined" title="annals.combine.Combined"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Combined</span></code></a>(data, fmt, media_type, ext, sections)</p></td>
+<td><p>The result: the file's bytes, what it is, how many files went in and which did not.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.Context" title="annals.combine.Context"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Context</span></code></a>(fmt[, embedder])</p></td>
+<td><p>What a converter may use besides the item: where images go, and the output's own needs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.Format" title="annals.combine.Format"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Format</span></code></a>(name, label, ext, media_type, join[, ...])</p></td>
+<td><p>An output format: how it is named, joined, and whether each file gets its own context.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.Item" title="annals.combine.Item"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Item</span></code></a>(source, rel, kind, label, title)</p></td>
+<td><p>One file to put in the output: a section, or a run of pages.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.Job" title="annals.combine.Job"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Job</span></code></a>(title, demote, embedder[, toc, unwrap])</p></td>
+<td><p>What a joiner needs besides the parts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.Pair" title="annals.combine.Pair"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pair</span></code></a>(kind, fmt, fn[, requires])</p></td>
+<td><p>One (kind, format) cell of the registry.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.Skipped" title="annals.combine.Skipped"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skipped</span></code></a>(label, reason)</p></td>
+<td><p>A file left out, and why.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.Source" title="annals.combine.Source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Source</span></code></a>(meta, files, read_text, open_path[, ...])</p></td>
+<td><p>One document, as a caller lets it be read: its files and how to get at them.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Exceptions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.ConversionError" title="annals.combine.ConversionError"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConversionError</span></code></a></p></td>
+<td><p>One file could not be converted (damaged, protected, too large); the rest go on.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.NothingToCombine" title="annals.combine.NothingToCombine"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NothingToCombine</span></code></a></p></td>
+<td><p>No file could be put in the output (the message says which kinds could).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.COMPANION_KINDS">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">COMPANION_KINDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'image',</span> <span class="pre">'text'})</span></span><a class="headerlink" href="#annals.combine.COMPANION_KINDS" title="Link to this definition">#</a></dt>
+<dd><p>kinds that illustrate or accompany a document with pages, so are not sections of its own</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Combined">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sections</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">skipped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Combined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Combined" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The result: the file’s bytes, what it is, how many files went in and which did not.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Context">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Context</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">Embedder()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Context"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Context" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What a converter may use besides the item: where images go, and the output’s own needs.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="annals.combine.ConversionError">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">ConversionError</span></span><a class="reference internal" href="../_modules/annals/combine.html#ConversionError"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.ConversionError" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a></p>
+<p>One file could not be converted (damaged, protected, too large); the rest go on.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Format">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Format</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ext</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">join</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context_per_item</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Format"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Format" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>An output format: how it is named, joined, and whether each file gets its own context.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="annals.combine.Format.context_per_item">
+<span class="sig-name descname"><span class="pre">context_per_item</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><span class="pre">bool</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></span><a class="headerlink" href="#annals.combine.Format.context_per_item" title="Link to this definition">#</a></dt>
+<dd><p>one context (images, budget) per file rather than one for the whole output</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.HTML_CSP">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">HTML_CSP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&quot;default-src</span> <span class="pre">'none';</span> <span class="pre">img-src</span> <span class="pre">data:;</span> <span class="pre">style-src</span> <span class="pre">'unsafe-inline'&quot;</span></span><a class="headerlink" href="#annals.combine.HTML_CSP" title="Link to this definition">#</a></dt>
+<dd><p>show itself, with its own styles and embedded images</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>what a combined html page may do</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.HTML_DEMOTE">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">HTML_DEMOTE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2</span></span><a class="headerlink" href="#annals.combine.HTML_DEMOTE" title="Link to this definition">#</a></dt>
+<dd><p>headings of an embedded markdown or html file go this far down, under the section’s own</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Item">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Item</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Item"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Item" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>One file to put in the output: a section, or a run of pages.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Job">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Job</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">embedder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unwrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Job"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Job" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What a joiner needs besides the parts.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.MAX_HTML_DEPTH">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">MAX_HTML_DEPTH</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></span><a class="headerlink" href="#annals.combine.MAX_HTML_DEPTH" title="Link to this definition">#</a></dt>
+<dd><p>html nested deeper than this is flattened (very deep trees overflow the converters)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.MAX_RENDERED_FILES">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">MAX_RENDERED_FILES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">60</span></span><a class="headerlink" href="#annals.combine.MAX_RENDERED_FILES" title="Link to this definition">#</a></dt>
+<dd><p>files made into PDF pages by rendering (about 0.4 s each) in one output</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.MAX_SKIPPED_LISTED">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">MAX_SKIPPED_LISTED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4</span></span><a class="headerlink" href="#annals.combine.MAX_SKIPPED_LISTED" title="Link to this definition">#</a></dt>
+<dd><p>skipped files listed in a result (and its headers); the rest are counted</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.MAX_SPAN">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">MAX_SPAN</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">100</span></span><a class="headerlink" href="#annals.combine.MAX_SPAN" title="Link to this definition">#</a></dt>
+<dd><p>a table cell may span this many columns or rows (a bigger number is a layout attack)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.MAX_TEXT_FILE_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">MAX_TEXT_FILE_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2000000</span></span><a class="headerlink" href="#annals.combine.MAX_TEXT_FILE_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>a text or html file larger than this is left out, and the others still go in</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.MAX_TEXT_PAGES">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">MAX_TEXT_PAGES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">300</span></span><a class="headerlink" href="#annals.combine.MAX_TEXT_PAGES" title="Link to this definition">#</a></dt>
+<dd><p>a PDF with more pages than this is not read for its text (about 0.2 s a page)</p>
+</dd></dl>
+
+<dl class="py exception">
+<dt class="sig sig-object py" id="annals.combine.NothingToCombine">
+<span class="property"><span class="k"><span class="pre">exception</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">NothingToCombine</span></span><a class="reference internal" href="../_modules/annals/combine.html#NothingToCombine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.NothingToCombine" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/exceptions.html#ValueError" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">ValueError</span></code></a></p>
+<p>No file could be put in the output (the message says which kinds could).</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.PAGE_KINDS">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">PAGE_KINDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'html',</span> <span class="pre">'md',</span> <span class="pre">'pdf'})</span></span><a class="headerlink" href="#annals.combine.PAGE_KINDS" title="Link to this definition">#</a></dt>
+<dd><p>kinds whose file is a document in itself</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Pair">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Pair</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Pair"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Pair" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>One (kind, format) cell of the registry.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.combine.REGISTRY">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">REGISTRY</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><span class="pre">dict</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><span class="pre">tuple</span></a><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#annals.combine.Pair" title="annals.combine.Pair"><span class="pre">Pair</span></a><span class="p"><span class="pre">]</span></span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{('html',</span> <span class="pre">'html'):</span> <span class="pre">Pair(kind='html',</span> <span class="pre">fmt='html',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_html_body_of&gt;,</span> <span class="pre">requires=()),</span> <span class="pre">('html',</span> <span class="pre">'md'):</span> <span class="pre">Pair(kind='html',</span> <span class="pre">fmt='md',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_html_to_md&gt;,</span> <span class="pre">requires=('markdownify',)),</span> <span class="pre">('html',</span> <span class="pre">'pdf'):</span> <span class="pre">Pair(kind='html',</span> <span class="pre">fmt='pdf',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_page_to_pdf.&lt;locals&gt;.convert&gt;,</span> <span class="pre">requires=('weasyprint',)),</span> <span class="pre">('image',</span> <span class="pre">'html'):</span> <span class="pre">Pair(kind='image',</span> <span class="pre">fmt='html',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_image_body&gt;,</span> <span class="pre">requires=()),</span> <span class="pre">('image',</span> <span class="pre">'pdf'):</span> <span class="pre">Pair(kind='image',</span> <span class="pre">fmt='pdf',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_page_to_pdf.&lt;locals&gt;.convert&gt;,</span> <span class="pre">requires=('weasyprint',)),</span> <span class="pre">('md',</span> <span class="pre">'html'):</span> <span class="pre">Pair(kind='md',</span> <span class="pre">fmt='html',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_md_body&gt;,</span> <span class="pre">requires=('markdown_it',)),</span> <span class="pre">('md',</span> <span class="pre">'md'):</span> <span class="pre">Pair(kind='md',</span> <span class="pre">fmt='md',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_md_to_md&gt;,</span> <span class="pre">requires=()),</span> <span class="pre">('md',</span> <span class="pre">'pdf'):</span> <span class="pre">Pair(kind='md',</span> <span class="pre">fmt='pdf',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_page_to_pdf.&lt;locals&gt;.convert&gt;,</span> <span class="pre">requires=('markdown_it',</span> <span class="pre">'weasyprint')),</span> <span class="pre">('pdf',</span> <span class="pre">'html'):</span> <span class="pre">Pair(kind='pdf',</span> <span class="pre">fmt='html',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_pdf_body&gt;,</span> <span class="pre">requires=('pdfdol',</span> <span class="pre">'pypdf')),</span> <span class="pre">('pdf',</span> <span class="pre">'md'):</span> <span class="pre">Pair(kind='pdf',</span> <span class="pre">fmt='md',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_pdf_to_md&gt;,</span> <span class="pre">requires=('pdfdol',</span> <span class="pre">'pypdf')),</span> <span class="pre">('pdf',</span> <span class="pre">'pdf'):</span> <span class="pre">Pair(kind='pdf',</span> <span class="pre">fmt='pdf',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_pdf_to_pdf&gt;,</span> <span class="pre">requires=('pypdf',</span> <span class="pre">'pdfdol')),</span> <span class="pre">('text',</span> <span class="pre">'html'):</span> <span class="pre">Pair(kind='text',</span> <span class="pre">fmt='html',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_text_body&gt;,</span> <span class="pre">requires=()),</span> <span class="pre">('text',</span> <span class="pre">'md'):</span> <span class="pre">Pair(kind='text',</span> <span class="pre">fmt='md',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_text_to_md&gt;,</span> <span class="pre">requires=()),</span> <span class="pre">('text',</span> <span class="pre">'pdf'):</span> <span class="pre">Pair(kind='text',</span> <span class="pre">fmt='pdf',</span> <span class="pre">fn=&lt;function</span> <span class="pre">_page_to_pdf.&lt;locals&gt;.convert&gt;,</span> <span class="pre">requires=('weasyprint',))}</span></span><a class="headerlink" href="#annals.combine.REGISTRY" title="Link to this definition">#</a></dt>
+<dd><p>(kind, format) -&gt; <a class="reference internal" href="#annals.combine.Pair" title="annals.combine.Pair"><code class="xref py py-class docutils literal notranslate"><span class="pre">Pair</span></code></a>; add a pair with <a class="reference internal" href="#annals.combine.register" title="annals.combine.register"><code class="xref py py-func docutils literal notranslate"><span class="pre">register()</span></code></a></p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Skipped">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Skipped</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reason</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Skipped"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Skipped" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>A file left out, and why.</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.combine.Source">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">Source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">open_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">file_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">Source.&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#Source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.Source" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>One document, as a caller lets it be read: its files and how to get at them.</p>
+<p><code class="docutils literal notranslate"><span class="pre">read_text(rel)</span></code> is the file’s text (a share gives the <em>filtered</em> text);
+<code class="docutils literal notranslate"><span class="pre">open_path(rel)</span></code> its path on disk, for bytes. Either may raise <code class="docutils literal notranslate"><span class="pre">OSError</span></code> or
+<code class="docutils literal notranslate"><span class="pre">KeyError</span></code> for a file that is gone, which leaves that file out.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="annals.combine.Source.read_bytes">
+<span class="sig-name descname"><span class="pre">read_bytes</span></span><span class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><span class="pre">Callable</span></a><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><span class="pre">str</span></a><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><span class="pre">bytes</span></a><span class="p"><span class="pre">]</span></span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><span class="pre">None</span></a></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></span><a class="headerlink" href="#annals.combine.Source.read_bytes" title="Link to this definition">#</a></dt>
+<dd><p>how bytes are read when not straight from <code class="docutils literal notranslate"><span class="pre">open_path</span></code> (a share filters svg text)</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.combine">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">combine</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">unwrap</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">numbered_first&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_text_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_input_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">120000000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registry</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#combine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.combine" title="Link to this definition">#</a></dt>
+<dd><p>Every usable file of <code class="docutils literal notranslate"><span class="pre">sources</span></code> as one <code class="docutils literal notranslate"><span class="pre">fmt</span></code> (“md”, “html” or “pdf”) file.</p>
+<p><code class="docutils literal notranslate"><span class="pre">sources</span></code> are the documents (<a class="reference internal" href="#annals.combine.Source" title="annals.combine.Source"><code class="xref py py-class docutils literal notranslate"><span class="pre">Source</span></code></a>), in their order; files are arranged by
+<code class="docutils literal notranslate"><span class="pre">order</span></code> (<a class="reference internal" href="annals.aggregate.html#annals.aggregate.numbered_first" title="annals.aggregate.numbered_first"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.aggregate.numbered_first()</span></code></a>: numbered names first, numerically;
+<code class="docutils literal notranslate"><span class="pre">None</span></code> keeps the documents’ order). <code class="docutils literal notranslate"><span class="pre">demote</span></code> is how far an embedded markdown file’s
+headings go down in a markdown output, which also takes <code class="docutils literal notranslate"><span class="pre">toc</span></code> (a table of contents)
+and <code class="docutils literal notranslate"><span class="pre">unwrap</span></code> (join hard-wrapped lines). <code class="docutils literal notranslate"><span class="pre">max_text_bytes</span></code> caps all the text read
+(<a class="reference internal" href="annals.aggregate.html#annals.aggregate.TooLarge" title="annals.aggregate.TooLarge"><code class="xref py py-class docutils literal notranslate"><span class="pre">annals.aggregate.TooLarge</span></code></a>), <code class="docutils literal notranslate"><span class="pre">max_input_bytes</span></code> all the files together.</p>
+<p>A file with no converter, or that cannot be read, is left out and listed in
+<code class="docutils literal notranslate"><span class="pre">Combined.skipped</span></code> with the reason. Raises <a class="reference internal" href="#annals.combine.NothingToCombine" title="annals.combine.NothingToCombine"><code class="xref py py-class docutils literal notranslate"><span class="pre">NothingToCombine</span></code></a> when nothing is
+left, <a class="reference internal" href="annals.requirements.html#annals.requirements.MissingDependency" title="annals.requirements.MissingDependency"><code class="xref py py-class docutils literal notranslate"><span class="pre">annals.requirements.MissingDependency</span></code></a> when a library the conversions need
+is not installed (before any work), and <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for an unknown <code class="docutils literal notranslate"><span class="pre">fmt</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.combine.Combined" title="annals.combine.Combined"><code class="xref py py-class docutils literal notranslate"><span class="pre">Combined</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.explain">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">explain</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#explain"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.explain" title="Link to this definition">#</a></dt>
+<dd><p>One sentence on what a <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output is made of (the ‘supported’ part of a message).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.html_body">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">html_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewrite_src</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#html_body"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.html_body" title="Link to this definition">#</a></dt>
+<dd><p>The content of an html page as a safe fragment: its structure and words, nothing live.</p>
+<p>Only a fixed set of tags survives, with a few plain attributes: no script, style, frame,
+form, event handler, <code class="docutils literal notranslate"><span class="pre">class</span></code> or <code class="docutils literal notranslate"><span class="pre">id</span></code>; a link keeps only an <code class="docutils literal notranslate"><span class="pre">http(s)</span></code> or <code class="docutils literal notranslate"><span class="pre">mailto</span></code>
+address. <code class="docutils literal notranslate"><span class="pre">rewrite_src(src)</span></code> decides each image: the url to show it from, or <code class="docutils literal notranslate"><span class="pre">None</span></code>
+for its alt text instead (an image is never loaded from where the page says). <code class="docutils literal notranslate"><span class="pre">demote</span></code>
+pushes headings that many levels down. Unbalanced tags are closed, so a fragment can
+never swallow what is joined after it.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">html_body</span><span class="p">(</span><span class="s1">'&lt;body&gt;&lt;script&gt;x()&lt;/script&gt;&lt;h1 onclick="x()"&gt;Hi&lt;/h1&gt;&lt;a href="javascript:x()"&gt;y&lt;/a&gt;&lt;/body&gt;'</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">'&lt;h1&gt;Hi&lt;/h1&gt;&lt;a&gt;y&lt;/a&gt;'</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.items_of">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">items_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#items_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.items_of" title="Link to this definition">#</a></dt>
+<dd><p>The files to try for a <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output, in the documents’ order.</p>
+<p>A document with pages (markdown, html, PDF) contributes those; its images and text
+files are its own parts. A document with none contributes whatever it holds, so what
+cannot be used (a video) is reported and not silently missing. A folder, or a document
+with several such files, names each by its title then the file (<code class="docutils literal notranslate"><span class="pre">Report/01-intro.md</span></code>).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Iterator</span></code></a>[<a class="reference internal" href="#annals.combine.Item" title="annals.combine.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.kinds_for">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">kinds_for</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#kinds_for"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.kinds_for" title="Link to this definition">#</a></dt>
+<dd><p>The kinds of file that can be put in a <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output, in a stable order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/constants.html#Ellipsis" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">...</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.register">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">kind</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fmt</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">requires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.register" title="Link to this definition">#</a></dt>
+<dd><p>Decorator: the function turns a file of <code class="docutils literal notranslate"><span class="pre">kind</span></code> into a part of the <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output.</p>
+<p><code class="docutils literal notranslate"><span class="pre">requires</span></code> are the (importable) modules it needs, checked before any work starts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference internal" href="#annals.combine.Item" title="annals.combine.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a>, <a class="reference internal" href="#annals.combine.Context" title="annals.combine.Context"><code class="xref py py-class docutils literal notranslate"><span class="pre">Context</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a>]], <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference internal" href="#annals.combine.Item" title="annals.combine.Item"><code class="xref py py-class docutils literal notranslate"><span class="pre">Item</span></code></a>, <a class="reference internal" href="#annals.combine.Context" title="annals.combine.Context"><code class="xref py py-class docutils literal notranslate"><span class="pre">Context</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.skipped_header">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">skipped_header</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">skipped</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#skipped_header"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.skipped_header" title="Link to this definition">#</a></dt>
+<dd><p>The skipped files as compact JSON for a response header: few, short, ascii.</p>
+<p>At most <a class="reference internal" href="#annals.combine.MAX_SKIPPED_LISTED" title="annals.combine.MAX_SKIPPED_LISTED"><code class="xref py py-data docutils literal notranslate"><span class="pre">MAX_SKIPPED_LISTED</span></code></a> are listed (the count says how many there were) and
+names and reasons are cut, so the header stays far under what a proxy accepts.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.combine.supported">
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">supported</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#supported"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.supported" title="Link to this definition">#</a></dt>
+<dd><p>What can be made: <code class="docutils literal notranslate"><span class="pre">{format:</span> <span class="pre">{&quot;label&quot;,</span> <span class="pre">&quot;ext&quot;,</span> <span class="pre">&quot;kinds&quot;}}</span></code>, for a page or a message.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.catalog.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.catalog</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.config.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.config</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=39aadc1c"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

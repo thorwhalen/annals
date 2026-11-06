@@ -14,6 +14,7 @@ annals.aggregate
       heading_anchor
       numbered_first
       strip_front_matter
+      unique_paths
       unwrap_lines
    
    .. rubric:: Exceptions

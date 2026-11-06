@@ -69,11 +69,14 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
@@ -164,8 +167,8 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.aggregate" title="annals.tools.aggregate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aggregate</span></code></a>(group_id, *[, demote, order, ...])</p></td>
-<td><p>Every markdown file of a group as ONE markdown document, printed (nothing is stored).</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.aggregate" title="annals.tools.aggregate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">aggregate</span></code></a>(group_id, *[, format, output, ...])</p></td>
+<td><p>The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.configure" title="annals.tools.configure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">configure</span></code></a>(*[, target, base_url, to, outbox, ...])</p></td>
 <td><p>Write the publisher config (where to publish, what link to print) and show it.</p></td>
@@ -220,19 +223,23 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 </div>
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.tools.aggregate">
-<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numbered'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_toc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_wraps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#aggregate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.aggregate" title="Link to this definition">#</a></dt>
-<dd><p>Every markdown file of a group as ONE markdown document, printed (nothing is stored).</p>
-<p><code class="docutils literal notranslate"><span class="pre">group_id</span></code> is a group’s id or link. The document has the group’s title, a table of
-contents, then one <code class="docutils literal notranslate"><span class="pre">##</span></code> section per file named after its path (a folder document’s
-files under its title). <code class="docutils literal notranslate"><span class="pre">order</span></code>: <code class="docutils literal notranslate"><span class="pre">numbered</span></code> puts paths that start with a number
-first, numerically, the rest in the group’s order; <code class="docutils literal notranslate"><span class="pre">given</span></code> keeps the group’s order.
-<code class="docutils literal notranslate"><span class="pre">demote</span></code> pushes each file’s headings that many levels down (<code class="docutils literal notranslate"><span class="pre">0</span></code>: as written).
-Hard-wrapped lines are joined unless <code class="docutils literal notranslate"><span class="pre">keep_wraps</span></code>; <code class="docutils literal notranslate"><span class="pre">no_toc</span></code> leaves out the table
-of contents. Redirect
-to save it: <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;id&gt;</span> <span class="pre">&gt;</span> <span class="pre">bundle.md</span></code>.</p>
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numbered'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_toc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_wraps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#aggregate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.aggregate" title="Link to this definition">#</a></dt>
+<dd><p>The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).</p>
+<p><code class="docutils literal notranslate"><span class="pre">group_id</span></code> is a group’s or a document’s id or link. <code class="docutils literal notranslate"><span class="pre">format</span></code>: <code class="docutils literal notranslate"><span class="pre">md</span></code> (printed, or
+written to <code class="docutils literal notranslate"><span class="pre">output</span></code>), <code class="docutils literal notranslate"><span class="pre">html</span></code> (a web page, the same) or <code class="docutils literal notranslate"><span class="pre">pdf</span></code> (needs <code class="docutils literal notranslate"><span class="pre">output</span></code>).
+Markdown, html, text, PDF and image files go in; what cannot (audio, video, other
+files, a damaged PDF) is listed on stderr, with the reason, and left out. The markdown
+has the group’s title, a table of contents, then one <code class="docutils literal notranslate"><span class="pre">##</span></code> section per file named after
+its path (a folder document’s files under its title). <code class="docutils literal notranslate"><span class="pre">order</span></code>: <code class="docutils literal notranslate"><span class="pre">numbered</span></code> puts paths
+that start with a number first, numerically, the rest in the group’s order; <code class="docutils literal notranslate"><span class="pre">given</span></code>
+keeps the group’s order. <code class="docutils literal notranslate"><span class="pre">demote</span></code> pushes each file’s headings that many levels down
+(<code class="docutils literal notranslate"><span class="pre">0</span></code>: as written). Hard-wrapped lines are joined unless <code class="docutils literal notranslate"><span class="pre">keep_wraps</span></code>; <code class="docutils literal notranslate"><span class="pre">no_toc</span></code>
+leaves out the table of contents. Redirect to save text, or name the file:
+<code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;id&gt;</span> <span class="pre">--format</span> <span class="pre">pdf</span> <span class="pre">--output</span> <span class="pre">bundle.pdf</span></code>. A PDF or html needs
+<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[pdf]'</span></code>; a missing library says so.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -503,7 +510,7 @@ stdin, so it stays out of the shell history).</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=9dd25805"></script>
+      <script src="../_static/documentation_options.js?v=39aadc1c"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

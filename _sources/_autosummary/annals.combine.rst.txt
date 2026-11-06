@@ -1,0 +1,55 @@
+annals.combine
+==============
+
+.. automodule:: annals.combine
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      PAGE_KINDS
+      COMPANION_KINDS
+      MAX_SKIPPED_LISTED
+      MAX_TEXT_PAGES
+      MAX_RENDERED_FILES
+      MAX_TEXT_FILE_BYTES
+      MAX_HTML_DEPTH
+      MAX_SPAN
+      HTML_DEMOTE
+      REGISTRY
+      HTML_CSP
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      combine
+      explain
+      html_body
+      items_of
+      kinds_for
+      register
+      skipped_header
+      supported
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Combined
+      Context
+      Format
+      Item
+      Job
+      Pair
+      Skipped
+      Source
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      ConversionError
+      NothingToCombine
+   
