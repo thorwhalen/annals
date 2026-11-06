@@ -60,6 +60,8 @@ _NAME_RE = re.compile(r"^[A-Za-z0-9_-]+$")
 MAX_INLINE_TEXT_BYTES = 2_000_000
 # All the markdown one combined download (annals.aggregate) may hold.
 MAX_AGGREGATE_BYTES = 8_000_000
+# All the files (PDFs and images included) one combined download (annals.combine) may read.
+MAX_COMBINE_BYTES = 120_000_000
 # How many documents' texts the published source keeps for search (least recently used out first).
 DFLT_MAX_CACHED_TEXTS = 512
 

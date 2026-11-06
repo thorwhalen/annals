@@ -212,10 +212,12 @@ def test_owner_aggregate_errors(owner, store):
         == 404
     )
     assert owner.get("/annals/api/groups/not-an-id/aggregate").status_code == 404
-    pic = store.publish(text="plain", filename="a.txt")
-    g = store.make_group("No md", [pic["id"]])
+    # a text file is combinable now; a video has no place in any of the formats
+    clip = store.publish(text="not really a video", filename="a.mp4")
+    g = store.make_group("No md", [clip["id"]])
     r = owner.get(f"/annals/api/groups/{g['id']}/aggregate")
-    assert r.status_code == 404 and "no markdown" in r.json()["detail"]
+    assert r.status_code == 404 and "video" in r.json()["detail"]
+    assert "Markdown" in r.json()["detail"]  # what the format is made from
 
 
 def test_owner_aggregate_size_cap(owner, store, monkeypatch):

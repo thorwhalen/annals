@@ -14,71 +14,52 @@ imported on first use, and a missing one is a ``501`` with the install hint, not
 error at startup.
 
 :func:`aggregate_response` is the same kind of download for many files at once: a group's
-(or a share's) markdown files as one ``.md``, made by :mod:`annals.aggregate` from what the
-caller passes in.
+(or a share's) files as one ``.md``, ``.html`` or ``.pdf``, made by :mod:`annals.combine`
+from what the caller passes in. The page-rendering core is :mod:`annals.render`.
 """
 
 from __future__ import annotations
 
-import html
-import io
-import posixpath
+import functools
 import re
 from collections.abc import Callable, Iterable, Sequence
 from pathlib import Path
-from urllib.parse import quote, unquote, urlsplit
+from urllib.parse import quote, urlsplit
 
 from fastapi import HTTPException
 from fastapi.responses import Response
 
-from annals.aggregate import TooLarge, aggregate_markdown, doc_markdown_files
+from annals.aggregate import TooLarge
+from annals.combine import (
+    FORMATS as FORMATS_COMBINE,
+    HTML_CSP,
+    Combined,
+    NothingToCombine,
+    Source,
+    combine,
+    skipped_header,
+)
 from annals.config import MAX_AGGREGATE_BYTES
-from annals.share import dir_of
+from annals.render import (  # noqa: F401  (re-exported: the names tests and callers know)
+    PDF_CSS,
+    PDF_IMAGE_MAX_BYTES,
+    PDF_IMAGE_MAX_PIXELS,
+    PDF_IMAGE_MAX_PX,
+    PDF_IMAGES_TOTAL_BYTES,
+    PDF_MAX_TEXT_BYTES,
+    kind_of_mime,
+    resolve_ref,
+)
+from annals.render import markdown_to_pdf as _markdown_to_pdf
+from annals.requirements import MissingDependency
 from annals.store import kind_of, slugify
 
 FORMATS = ("md", "pdf")
-#: longest side of an embedded image; a 6000 px render is shrunk, a phone screenshot is not
-PDF_IMAGE_MAX_PX = 1800
-#: an image larger than this on disk is linked, not embedded
-PDF_IMAGE_MAX_BYTES = 25_000_000
-#: an image with more pixels than this is not decoded to be shrunk (a small box would run out of memory)
-PDF_IMAGE_MAX_PIXELS = 40_000_000
-#: all embedded images of one PDF together
-PDF_IMAGES_TOTAL_BYTES = 80_000_000
 #: PDFs rendered at once (each takes a core for a few seconds on a small server)
 PDF_CONCURRENCY = 2
-#: markdown larger than this is not made into a PDF (rendering cost grows faster than size)
-PDF_MAX_TEXT_BYTES = 400_000
 #: seconds a busy server tells a client to wait before asking again
 PDF_RETRY_AFTER_S = 10
 _pdf_active = 0  # PDFs being made; only touched on the event loop, so no lock
-_MEDIA_LABELS = {"video": "Video", "audio": "Audio", "pdf": "PDF", "html": "Page"}
-
-PDF_CSS = """
-@page { size: A4; margin: 20mm 18mm 22mm;
-  @bottom-left { content: string(doctitle); font: 8pt sans-serif; color: #666; }
-  @bottom-right { content: counter(page) " / " counter(pages); font: 8pt sans-serif; color: #666; } }
-html { font: 10.5pt/1.5 "DejaVu Serif", "Noto Serif", serif; color: #111; }
-h1.doc-title { string-set: doctitle content(); font: 700 21pt/1.2 "DejaVu Sans", sans-serif; margin: 0 0 4pt; }
-p.doc-meta { color: #666; font: 9pt "DejaVu Sans", sans-serif; margin: 0 0 16pt; }
-h1, h2, h3, h4 { font-family: "DejaVu Sans", sans-serif; line-height: 1.25; break-after: avoid; }
-h1 { font-size: 17pt; } h2 { font-size: 14pt; } h3 { font-size: 12pt; } h4 { font-size: 10.5pt; }
-a { color: #1a5fb4; text-decoration: none; overflow-wrap: anywhere; }
-img { max-width: 100%; max-height: 220mm; height: auto; }
-figure { margin: 10pt 0; break-inside: avoid; }
-figcaption { color: #666; font: 8.5pt "DejaVu Sans", sans-serif; }
-pre, code { font: 8.8pt/1.4 "DejaVu Sans Mono", monospace; }
-pre { background: #f3f3f3; padding: 8pt; border-radius: 4pt; white-space: pre-wrap; overflow-wrap: anywhere; }
-code { background: #f3f3f3; padding: 0 2pt; }
-pre code { background: none; padding: 0; }
-blockquote { margin: 8pt 0; padding-left: 10pt; border-left: 2.5pt solid #ccc; color: #444; }
-table { border-collapse: collapse; margin: 8pt 0; font-size: 9.5pt; }
-th, td { border: .5pt solid #bbb; padding: 3pt 6pt; text-align: left; vertical-align: top; }
-th { background: #f3f3f3; }
-.media-link { display: block; margin: 8pt 0; padding: 6pt 9pt; border: .5pt solid #bbb; border-radius: 4pt;
-  font: 9.5pt "DejaVu Sans", sans-serif; overflow-wrap: anywhere; break-inside: avoid; }
-.more h2 { font-size: 12pt; }
-"""
 
 
 def export_filename(title: str, ext: str) -> str:
@@ -115,6 +96,14 @@ def markdown_response(
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+def markdown_to_pdf(*args, **kwargs) -> bytes:
+    """:func:`annals.render.markdown_to_pdf`, a missing library being a ``501`` here."""
+    try:
+        return _markdown_to_pdf(*args, **kwargs)
+    except MissingDependency as e:
+        raise HTTPException(501, str(e))
 
 
 def export_response(
@@ -159,6 +148,66 @@ def export_response(
     raise HTTPException(400, f"format must be one of {', '.join(FORMATS)}")
 
 
+def _no_files(rel: str) -> Path:
+    raise OSError(f"no file access for {rel}")
+
+
+def sources_of(
+    docs: Iterable[tuple[dict, Iterable[str]]],
+    *,
+    read: Callable[[str, str], str],
+    open_path: Callable[[str, str], Path] | None = None,
+    read_bytes: Callable[[str, str], bytes] | None = None,
+    file_url: Callable[[str, str], str | None] | None = None,
+) -> list[Source]:
+    """:class:`annals.combine.Source` for ``(meta, files)`` pairs and the callers' readers.
+
+    ``open_path(doc_id, rel)`` gives a file's path; ``read_bytes(doc_id, rel)`` reads it
+    where the caller must change the bytes (a share filters svg text). An ``HTTPException``
+    from either (the servers' own "no such file", "too large") is a file that cannot be
+    read here, which leaves it out of the result instead of ending the whole job.
+    """
+
+    def guarded(fn, doc_id: str):
+        def call(rel: str):
+            try:
+                return fn(doc_id, rel)
+            except HTTPException as e:
+                raise ValueError(f"{rel}: {e.detail}") from e
+
+        return call
+
+    def opener(doc_id: str) -> Callable[[str], Path]:
+        if open_path is None:
+            return _no_files
+        return guarded(open_path, doc_id)
+
+    return [
+        Source(
+            meta=meta,
+            files=list(files),
+            read_text=guarded(read, meta["id"]),
+            open_path=opener(meta["id"]),
+            file_url=(
+                functools.partial(file_url, meta["id"])
+                if file_url
+                else (lambda rel: None)
+            ),
+            read_bytes=guarded(read_bytes, meta["id"]) if read_bytes else None,
+        )
+        for meta, files in docs
+    ]
+
+
+def combine_is_heavy(fmt: str, docs: Iterable[tuple[dict, Iterable[str]]]) -> bool:
+    """Whether making ``fmt`` of ``docs`` takes real CPU: a PDF, or any PDF to read the text of.
+
+    Heavy jobs share the ``PDF_CONCURRENCY`` slots; a markdown of plain text does not wait
+    for them.
+    """
+    return fmt == "pdf" or any(kind_of(f) == "pdf" for _, files in docs for f in files)
+
+
 def aggregate_response(
     docs: Iterable[tuple[dict, Iterable[str]]],
     *,
@@ -167,23 +216,62 @@ def aggregate_response(
     download: bool = False,
     demote: int = 1,
     max_bytes: int = MAX_AGGREGATE_BYTES,
+    fmt: str = "md",
+    open_path: Callable[[str, str], Path] | None = None,
+    read_bytes: Callable[[str, str], bytes] | None = None,
 ) -> Response:
-    """Every markdown file of ``docs`` as one ``.md`` (:mod:`annals.aggregate`), made now.
+    """The files of ``docs`` as ONE ``fmt`` ("md", "html" or "pdf") download, made now.
 
-    ``docs`` are ``(meta, files)`` pairs, ``files`` being what the caller may serve, and
-    ``read(doc_id, rel)`` gives one file's text (filtered, for a share). Nothing is kept.
-    The ``X-Annals-Sections`` header says how many files went in.
+    ``docs`` are ``(meta, files)`` pairs, ``files`` being what the caller may serve;
+    ``read(doc_id, rel)`` gives a file's text (filtered, for a share) and ``open_path(doc_id,
+    rel)`` its path (for PDFs and images), ``read_bytes`` how to read one where the bytes
+    must be changed (a share filters svg). See :mod:`annals.combine` for what goes into
+    which format. Nothing is kept. ``X-Annals-Sections`` says how many files went in and
+    ``X-Annals-Skipped`` (percent-encoded JSON) which were left out and why.
     """
+    if fmt not in FORMATS_COMBINE:
+        raise HTTPException(
+            400, f"format must be one of {', '.join(FORMATS_COMBINE)}, not {fmt!r}"
+        )
     try:
-        files = list(doc_markdown_files(docs, read=read, max_bytes=max_bytes))
+        combined = combine(
+            sources_of(docs, read=read, open_path=open_path, read_bytes=read_bytes),
+            fmt,
+            title=title,
+            demote=demote,
+            max_text_bytes=max_bytes,
+        )
     except TooLarge as e:
         raise HTTPException(413, str(e))
-    if not files:
-        raise HTTPException(404, "no markdown files to combine")
-    text = aggregate_markdown(files, title=title, demote=demote)
-    response = markdown_response(text, title=title, download=download)
-    response.headers["X-Annals-Sections"] = str(len(files))
+    except NothingToCombine as e:
+        raise HTTPException(404, str(e))
+    except MissingDependency as e:
+        raise HTTPException(501, str(e))
+    response = combined_response(combined, title=title, download=download)
+    response.headers["X-Annals-Sections"] = str(combined.sections)
+    response.headers["X-Annals-Format"] = combined.fmt
+    if combined.skipped:
+        response.headers["X-Annals-Skipped"] = quote(skipped_header(combined.skipped))
     return response
+
+
+def combined_response(combined: Combined, *, title: str, download: bool) -> Response:
+    """A :class:`annals.combine.Combined` as a response: shown, or saved with ``download``."""
+    if combined.fmt == "md":
+        return markdown_response(
+            combined.data.decode("utf-8"), title=title, download=download
+        )
+    disposition = _attachment(title, combined.ext)
+    if not download:
+        disposition = "inline" + disposition[len("attachment") :]
+    headers = {
+        "Content-Disposition": disposition,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+    }
+    if combined.fmt == "html":  # nothing in the page runs; the header says so too
+        headers["Content-Security-Policy"] = f"sandbox; {HTML_CSP}"
+    return Response(combined.data, media_type=combined.media_type, headers=headers)
 
 
 def trusted_base(request, base: str) -> str:
@@ -214,17 +302,17 @@ def file_url_builder(base: str, doc_id: str) -> Callable[[str], str | None]:
     return file_url
 
 
-async def run_export(fmt: str, **kwargs) -> Response:
-    """:func:`export_response` in a worker thread, at most ``PDF_CONCURRENCY`` PDFs at once.
+async def run_limited(make: Callable[[], Response], *, limited: bool) -> Response:
+    """``make`` in a worker thread; when ``limited``, at most ``PDF_CONCURRENCY`` at once.
 
-    A PDF over the limit is refused at once (``503`` and ``Retry-After``) instead of
-    waiting: a waiting request would hold one of the threads every app shares.
+    One over the limit is refused at once (``503`` and ``Retry-After``) instead of waiting:
+    a waiting request would hold one of the threads every app shares.
     """
     global _pdf_active
     import anyio.to_thread
 
-    if fmt != "pdf":
-        return await anyio.to_thread.run_sync(lambda: export_response(fmt, **kwargs))
+    if not limited:
+        return await anyio.to_thread.run_sync(make)
     if _pdf_active >= PDF_CONCURRENCY:
         raise HTTPException(
             503,
@@ -233,211 +321,13 @@ async def run_export(fmt: str, **kwargs) -> Response:
         )
     _pdf_active += 1
     try:
-        return await anyio.to_thread.run_sync(lambda: export_response(fmt, **kwargs))
+        return await anyio.to_thread.run_sync(make)
     finally:
         _pdf_active -= 1
 
 
-def resolve_ref(href: str, *, rel: str, files: Sequence[str]) -> str | None:
-    """The document file a relative ``href`` of the markdown file ``rel`` names, or ``None``.
-
-    Absolute urls, paths that leave the document and files not in ``files`` are ``None``.
-    """
-    parts = urlsplit(href)
-    if parts.scheme or parts.netloc or not parts.path or parts.path.startswith("/"):
-        return None
-    target = posixpath.normpath(posixpath.join(dir_of(rel), unquote(parts.path)))
-    return target if target in set(files) else None
-
-
-def _shrunk(data: bytes, rel: str) -> tuple[bytes, str]:
-    """``data`` as an image no wider than ``PDF_IMAGE_MAX_PX`` (Pillow, when installed)."""
-    try:
-        from PIL import Image
-    except ImportError:
-        return data, kind_of_mime(rel)
-    try:
-        with Image.open(io.BytesIO(data)) as im:
-            if im.width * im.height > PDF_IMAGE_MAX_PIXELS:
-                return data, Image.MIME.get(
-                    im.format, kind_of_mime(rel)
-                )  # not decoded here
-            if max(im.size) <= PDF_IMAGE_MAX_PX or im.format == "GIF":
-                return data, Image.MIME.get(im.format, kind_of_mime(rel))
-            im.thumbnail((PDF_IMAGE_MAX_PX, PDF_IMAGE_MAX_PX))
-            out = io.BytesIO()
-            keep_alpha = im.mode in ("RGBA", "LA", "P")
-            im.convert("RGBA" if keep_alpha else "RGB").save(
-                out,
-                "PNG" if keep_alpha else "JPEG",
-                **({} if keep_alpha else {"quality": 85}),
-            )
-            return out.getvalue(), "image/png" if keep_alpha else "image/jpeg"
-    except Exception:  # a file Pillow cannot read is left to WeasyPrint, which may
-        return data, kind_of_mime(rel)
-
-
-def kind_of_mime(rel: str) -> str:
-    import mimetypes
-
-    return mimetypes.guess_type(rel)[0] or "application/octet-stream"
-
-
-def markdown_to_pdf(
-    text: str,
-    *,
-    title: str,
-    rel: str,
-    files: Sequence[str],
-    open_file: Callable[[str], Path],
-    file_url: Callable[[str], str | None],
-    created: str = "",
-) -> bytes:
-    """A titled A4 PDF of the markdown ``text`` with its images inside (see the module doc)."""
-    try:
-        from markdown_it import MarkdownIt
-        from weasyprint import HTML
-    except (
-        ImportError,
-        OSError,
-    ):  # not installed, or its Pango/GLib libraries are missing
-        raise HTTPException(
-            501, "PDF export needs `pip install annals[pdf]` (and Pango) on the server"
-        )
-
-    allowed = list(files)
-    embedded: dict[str, tuple[bytes, str]] = {}  # placeholder url -> (bytes, mime)
-    used = 0
-    referenced: set[str] = set()  # every file the text names
-    linked: set[str] = set()  # the ones named by a link, not shown inline
-
-    def link_for(target: str) -> str | None:
-        return file_url(target)
-
-    def image_src(target: str) -> str | None:
-        """A placeholder url for an embeddable image file, or ``None`` (then it is linked)."""
-        nonlocal used
-        if kind_of(target) != "image":
-            return None
-        key = f"annals-file:{len(embedded)}"
-        try:
-            path = open_file(target)
-            size = path.stat().st_size
-            if size > PDF_IMAGE_MAX_BYTES or used + size > PDF_IMAGES_TOTAL_BYTES:
-                return None
-            data, mime = _shrunk(path.read_bytes(), target)
-        except (HTTPException, OSError):
-            return None
-        used += size
-        embedded[key] = (data, mime)
-        return key
-
-    md = MarkdownIt("commonmark", {"html": False, "linkify": False}).enable(
-        ["table", "strikethrough"]
+async def run_export(fmt: str, **kwargs) -> Response:
+    """:func:`export_response` in a worker thread, PDFs limited (see :func:`run_limited`)."""
+    return await run_limited(
+        lambda: export_response(fmt, **kwargs), limited=fmt == "pdf"
     )
-    tokens = md.parse(text)
-    for tok in tokens:
-        for child in tok.children or []:
-            if child.type == "image":
-                src = child.attrGet("src") or ""
-                target = resolve_ref(src, rel=rel, files=allowed)
-                if target:
-                    referenced.add(target)
-                    placeholder = image_src(target)
-                    if placeholder:
-                        child.attrSet("src", placeholder)
-                        continue
-                    child.attrSet("src", "annals-file:missing")
-                    child.attrSet("data-linked", link_for(target) or "")
-                    child.attrSet(
-                        "data-kind",
-                        _MEDIA_LABELS.get(
-                            kind_of(target),
-                            "Image" if kind_of(target) == "image" else "File",
-                        ),
-                    )
-                else:  # external or unknown images are never fetched
-                    child.attrSet("src", "annals-file:missing")
-                    child.attrSet(
-                        "data-linked",
-                        src if urlsplit(src).scheme in ("http", "https") else "",
-                    )
-            elif child.type == "link_open":
-                href = child.attrGet("href") or ""
-                target = resolve_ref(href, rel=rel, files=allowed)
-                if target:
-                    referenced.add(target)
-                    linked.add(target)
-                    child.attrSet("href", link_for(target) or "")
-                elif href.startswith("#"):
-                    child.attrSet("href", "")
-                elif urlsplit(href).scheme not in ("http", "https", "mailto"):
-                    child.attrSet("href", "")
-
-    renderer = md.renderer
-    default_image = renderer.rules["image"]
-
-    def render_image(tokens_, idx, options, env):
-        tok = tokens_[idx]
-        src = tok.attrGet("src") or ""
-        alt = tok.content or ""
-        if src == "annals-file:missing":
-            href = tok.attrGet("data-linked") or ""
-            label = html.escape(alt or posixpath.basename(href) or "image")
-            inner = f'<a href="{html.escape(href)}">{label}</a>' if href else label
-            kind = html.escape(tok.attrGet("data-kind") or "Image")
-            return f'<span class="media-link">{kind}: {inner}</span>'
-        return default_image(tokens_, idx, options, env)
-
-    renderer.rules["image"] = render_image
-    body = renderer.render(tokens, md.options, {})
-
-    # the media a page names but does not embed, then the ones it never names at all
-    rows: list[str] = []
-    for target in allowed:
-        kind = kind_of(target)
-        if kind in _MEDIA_LABELS and target not in referenced and target != rel:
-            rows.append(_media_row(kind, target, link_for(target)))
-    media_in_body = "".join(
-        _media_row(kind_of(t), t, link_for(t))
-        for t in sorted(linked)
-        if kind_of(t) in _MEDIA_LABELS or kind_of(t) == "file"
-    )
-    if media_in_body:
-        body += f'<section class="more"><h2>Linked media</h2>{media_in_body}</section>'
-    if rows:
-        body += f'<section class="more"><h2>More in this document</h2>{"".join(rows)}</section>'
-
-    meta = f'<p class="doc-meta">{html.escape(created[:10])}</p>' if created else ""
-    doc = (
-        f'<!doctype html><html><head><meta charset="utf-8"><title>{html.escape(title)}</title>'
-        f'</head><body><h1 class="doc-title">{html.escape(title)}</h1>{meta}{body}</body></html>'
-    )
-
-    def fetch(url: str, *args, **kwargs):
-        if url in embedded:
-            data, mime = embedded[url]
-            return _fetched(data, mime)
-        raise ValueError(f"not fetched: {url[:40]}")
-
-    from weasyprint import CSS
-
-    return HTML(string=doc, base_url="annals-doc:/", url_fetcher=fetch).write_pdf(
-        stylesheets=[CSS(string=PDF_CSS)]
-    )
-
-
-def _fetched(data: bytes, mime: str):
-    """A url fetcher's answer (WeasyPrint 68 wants a response object, older ones a dict)."""
-    try:
-        from weasyprint.urls import URLFetcherResponse
-    except ImportError:
-        return {"string": data, "mime_type": mime}
-    return URLFetcherResponse("annals-file:", body=data, headers={"Content-Type": mime})
-
-
-def _media_row(kind: str, rel: str, url: str | None) -> str:
-    label = _MEDIA_LABELS.get(kind, "File")
-    name = html.escape(posixpath.basename(rel))
-    inner = f'<a href="{html.escape(url)}">{name}</a>' if url else name
-    return f'<span class="media-link">{label}: {inner}</span>'

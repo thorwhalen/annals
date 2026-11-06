@@ -15,7 +15,7 @@ from pathlib import Path
 
 from annals.config import Settings, default_data_dir, load_settings, write_config
 from annals.store import DocStore, check_artifact_url, check_id, split_version
-from annals.target import SshTarget, parse_target
+from annals.target import SshTarget, check_rel, parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
 
@@ -253,46 +253,105 @@ def groups(
 def aggregate(
     group_id: str,
     *,
+    format: str = "md",
+    output: str | None = None,
     demote: int = 1,
     order: str = "numbered",
     no_toc: bool = False,
     keep_wraps: bool = False,
     target: str | None = None,
     to: str | None = None,
-) -> str:
-    """Every markdown file of a group as ONE markdown document, printed (nothing is stored).
+) -> str | dict:
+    """The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).
 
-    ``group_id`` is a group's id or link. The document has the group's title, a table of
-    contents, then one ``##`` section per file named after its path (a folder document's
-    files under its title). ``order``: ``numbered`` puts paths that start with a number
-    first, numerically, the rest in the group's order; ``given`` keeps the group's order.
-    ``demote`` pushes each file's headings that many levels down (``0``: as written).
-    Hard-wrapped lines are joined unless ``keep_wraps``; ``no_toc`` leaves out the table
-    of contents. Redirect
-    to save it: ``annals aggregate <id> > bundle.md``.
+    ``group_id`` is a group's or a document's id or link. ``format``: ``md`` (printed, or
+    written to ``output``), ``html`` (a web page, the same) or ``pdf`` (needs ``output``).
+    Markdown, html, text, PDF and image files go in; what cannot (audio, video, other
+    files, a damaged PDF) is listed on stderr, with the reason, and left out. The markdown
+    has the group's title, a table of contents, then one ``##`` section per file named after
+    its path (a folder document's files under its title). ``order``: ``numbered`` puts paths
+    that start with a number first, numerically, the rest in the group's order; ``given``
+    keeps the group's order. ``demote`` pushes each file's headings that many levels down
+    (``0``: as written). Hard-wrapped lines are joined unless ``keep_wraps``; ``no_toc``
+    leaves out the table of contents. Redirect to save text, or name the file:
+    ``annals aggregate <id> --format pdf --output bundle.pdf``. A PDF or html needs
+    ``pip install 'annals[pdf]'``; a missing library says so.
     """
-    from annals.aggregate import aggregate_markdown, doc_markdown_files, numbered_first
+    import functools
+    import sys
+    import tempfile
+
+    from annals.aggregate import numbered_first
+    from annals.combine import FORMATS, Source, combine
 
     orders = {"numbered": numbered_first, "given": None}
     if order not in orders:
         raise ValueError(f"order must be one of {', '.join(orders)}, not {order!r}")
+    if format not in FORMATS:
+        raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
+    if format == "pdf" and not output:
+        raise ValueError("a PDF is a binary file: name it with --output FILE")
     store = _store(load_settings(target=target, to=to))
-    g, metas = store.group_docs(_parse_ref(group_id)[1])
-    files = list(
-        doc_markdown_files(
-            ((m, m.get("files", [])) for m in metas), read=store.read_text
+    kind, ref = _parse_ref(group_id)
+    try:
+        if kind == "doc":
+            raise KeyError(ref)  # named as a document: no group to look for
+        g, metas = store.group_docs(ref)
+        title = g.get("title") or g["id"]
+    except (KeyError, ValueError):
+        if kind == "group":
+            raise
+        meta = store.meta(ref)  # a bare id may be a document's
+        title, metas = meta.get("title") or meta["id"], [meta]
+    with tempfile.TemporaryDirectory(prefix="annals-aggregate-") as scratch:
+        fetched: dict[str, Path] = {}
+
+        def open_path(doc_id: str, rel: str) -> Path:
+            """The file on disk: in place for a local store, else the document is fetched once."""
+            check_rel(rel)
+            doc_rel = store.doc_rel(doc_id)
+            here = store.target.local_path(f"{doc_rel}/{rel}")
+            if here is not None:
+                return here
+            if doc_id not in fetched:
+                dst = Path(scratch) / doc_id
+                store.target.get_tree(doc_rel, dst)
+                fetched[doc_id] = dst
+            return fetched[doc_id] / rel
+
+        sources = [
+            Source(
+                meta=m,
+                files=list(m.get("files", [])),
+                read_text=functools.partial(store.read_text, m["id"]),
+                open_path=functools.partial(open_path, m["id"]),
+            )
+            for m in metas
+        ]
+        result = combine(
+            sources,
+            format,
+            title=title,
+            demote=demote,
+            order=orders[order],
+            toc=not no_toc,
+            unwrap=not keep_wraps,
         )
-    )
-    if not files:
-        raise ValueError(f"group {g['id']} has no markdown files")
-    return aggregate_markdown(
-        files,
-        title=g.get("title") or g["id"],
-        order=orders[order],
-        demote=demote,
-        toc=not no_toc,
-        unwrap=not keep_wraps,
-    )
+    for s in result.skipped[:20]:
+        print(f"annals: left out {s.label}: {s.reason}", file=sys.stderr)
+    if len(result.skipped) > 20:
+        print(f"annals: and {len(result.skipped) - 20} more left out", file=sys.stderr)
+    if output:
+        out = Path(output).expanduser()
+        out.write_bytes(result.data)
+        return {
+            "path": str(out),
+            "format": format,
+            "sections": result.sections,
+            "bytes": len(result.data),
+            "skipped": len(result.skipped),
+        }
+    return result.data.decode("utf-8")
 
 
 def configure(

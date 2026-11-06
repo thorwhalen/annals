@@ -13,7 +13,7 @@
    ticked cards, all of them when none is ticked; a document page is a pick of one), then
    one of three results, each in one sheet: Links (one link for a person, with expiry and
    password, or a link per document for a notebook or an agent; annals.share,
-   annals.notebook), One file (the Markdown as one file; annals.aggregate) and Listen (a
+   annals.notebook), One file (the files as one Markdown, PDF or web page; annals.combine) and Listen (a
    spoken review of one, of all together, or one each; annals.overview). Actions that need
    no choosing are under More. The same file is the recipient's page: the share server sets
    window.ANNALS.share, BASE and API to the link, and the page then shows only what the
@@ -1100,13 +1100,27 @@
       hint: function (sc) { return "Links to open in a browser, or to give a notebook or an agent"; },
       when: function (sc) { return sc.kind !== "shared"; } },
     { id: "file", label: "One file", icon: "file", title: "One file", body: fileBody,
-      hint: function (sc) { return sc.items.length > 1 ? "All their text as one Markdown file, to copy, paste or save" : "Its text as a Markdown file, to copy, paste or save"; },
-      when: function (sc) { return sc.items.some(hasText); } },
+      hint: function (sc) { return sc.items.length > 1 ? "All their files as one Markdown, PDF or web page file, to copy or save" : "Its files as one Markdown, PDF or web page file, to copy or save"; },
+      when: function (sc) { return sc.items.some(canCombine); } },
     { id: "listen", label: "Listen", icon: "listen", title: "Listen", body: listenBody,
       hint: function (sc) { return "A few spoken minutes on " + (sc.items.length > 1 ? "these" : "this") + ". The cost is shown before anything is made"; },
       when: function (sc) { return !!sc.listen && sc.items.some(function (m) { return !!m.listen; }); } }
   ];
   /* Text a Markdown file can be made of: a markdown page, or a folder holding markdown. */
+  /* What can go in One file (annals.combine): text, html, PDFs and images. Audio and video cannot. */
+  var COMBINE_KINDS = ["md", "html", "text", "pdf", "image"];
+  var COMBINE_FORMATS = [["md", "Markdown"], ["pdf", "PDF"], ["html", "Web page"]];
+  /* the kinds of file a document holds: a listing row names them (held_kinds), a document
+     page maps file -> kind (file_kinds); null when the row says neither (a folder source) */
+  function heldKinds(m) {
+    return m.held_kinds || (m.file_kinds ? Object.keys(m.file_kinds).map(function (f) { return m.file_kinds[f]; }) : null);
+  }
+  function canCombine(m) {
+    var held = heldKinds(m);
+    if (held) return held.some(function (k) { return COMBINE_KINDS.indexOf(k) >= 0; });
+    return COMBINE_KINDS.indexOf(m.kind) >= 0 || m.kind === "folder";
+  }
+  function holdsMarkdown(m) { var held = heldKinds(m); return held ? held.indexOf("md") >= 0 : hasText(m); }
   function hasText(m) { return m.kind === "md" || (m.has_markdown === undefined ? m.kind === "folder" : !!m.has_markdown); }
   function scopeLabel(sc) {
     if (sc.kind === "doc") return sc.doc.title || sc.doc.id;
@@ -1121,7 +1135,7 @@
       return h("button", { class: "btn result", type: "button", "data-result": r.id, "aria-haspopup": "dialog", onclick: function (e) {
         var sc = getScope();
         if (!sc.items.length) return toast("Pick at least one document");
-        if (!r.when(sc)) return toast(r.id === "file" ? "None of these has text to put in one file" : "None of these can be spoken");
+        if (!r.when(sc)) return toast(r.id === "file" ? "None of these has files that can be put in one file" : "None of these can be spoken");
         taskSheet({ title: r.title, scope: scopeLabel(sc), hint: r.hint(sc), body: r.body(sc), returnTo: e.currentTarget });
       } }, [icon(r.icon), h("span", { class: "lbl" }, [r.label])]);
     });
@@ -1423,9 +1437,10 @@
   /* -------- One file: the text as one Markdown file -------------------------------- */
   function fileBody(sc) {
     if (sc.kind === "doc" && sc.doc.kind === "md") return docFileBody(sc.doc, sc.ctx);
-    var withText = sc.items.filter(hasText), without = sc.items.length - withText.length;
-    var url = sc.kind === "shared" ? API + "/aggregate" : aggregateUrl(sc, withText);
-    return h("div", null, [combinePanel(url), without ? h("p", { class: "muted" }, [without + (without === 1 ? " has" : " have") + " no Markdown text and " + (without === 1 ? "is" : "are") + " left out."]) : null]);
+    var without = sc.items.filter(function (m) { return !canCombine(m); }).length;
+    var url = sc.kind === "shared" ? API + "/aggregate" : aggregateUrl(sc, sc.items);
+    var first = !sc.items.length || sc.items.some(holdsMarkdown) ? "md" : "pdf";
+    return h("div", null, [combinePanel(url, first), without ? h("p", { class: "muted" }, [without + (without === 1 ? " has" : " have") + " nothing that can be put in one file (audio and video cannot) and " + (without === 1 ? "is" : "are") + " left out."]) : null]);
   }
   /* The owner's one-file url for a pick: GET /aggregate takes a group and/or documents. */
   function aggregateUrl(sc, docs) {
@@ -1589,32 +1604,70 @@
     show(first);
     return wrap;
   }
-  function combinePanel(url) {
-    var status = h("p", { class: "muted" }, ["Combining the markdown files…"]);
-    var wrap = h("section", { class: "combine-panel", "aria-label": "Combined Markdown", "aria-busy": "true" }, [status]);
-    fetch(url, { credentials: "same-origin" }).then(function (r) {
-      if (r.status === 401) { if (SHARE) location.reload(); else toLogin(); throw new Error("login"); }
-      if (!r.ok) return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.detail || r.statusText); });
-      var n = +(r.headers.get("X-Annals-Sections") || 0);
-      var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "combined.md";
-      return r.text().then(function (text) { draw(text, n, name); });
-    }).catch(function (e) {
-      if (e.message === "login") return;
-      wrap.removeAttribute("aria-busy");
-      status.className = "err"; status.textContent = "Could not combine them: " + (e.message || e);
-    });
-    function draw(text, n, name) {
-      var bytes = new Blob([text]).size;
-      var raw = h("textarea", { class: "combine-text", readonly: "", rows: "10", spellcheck: "false", "aria-label": "The combined Markdown" }, [text]);
-      wrap.removeAttribute("aria-busy");
-      status.textContent = n + (n === 1 ? " file, " : " files, ") + size(bytes) + ", with a table of contents. Made just now, not saved anywhere.";
-      wrap.appendChild(h("div", { class: "toolbar combine-actions" }, [
-        copyButton(text, { label: "Copy Markdown", primary: true, field: raw, copied: "Markdown copied" }),
-        h("a", { class: "btn", href: downloadUrl(url), download: name }, [icon("download"), h("span", { class: "lbl" }, ["Download .md"])]),
-        h("a", { class: "btn", href: url, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open as text"])])
-      ]));
-      wrap.appendChild(raw);
+  /* One file: the pick as Markdown (shown, to copy), PDF or a web page (made once, then saved
+     or opened from memory, so a download is not a second job). The server says what it left
+     out and why (X-Annals-Skipped); nothing is stored. */
+  function combinePanel(url, first) {
+    var wrap = h("section", { class: "combine-panel", "aria-label": "One file" });
+    var body = h("div", { "aria-live": "polite" });
+    var token = 0, blobUrl = null;
+    wrap.appendChild(segmented(COMBINE_FORMATS.map(function (f) { return [f[0], f[1]]; }), first, show, "Which kind of file"));
+    wrap.appendChild(body);
+    function withFormat(f) { return url + (url.indexOf("?") < 0 ? "?" : "&") + "format=" + f; }
+    function label(f) { return COMBINE_FORMATS.filter(function (x) { return x[0] === f; })[0][1]; }
+    function skippedNote(r) {
+      var raw = r.headers.get("X-Annals-Skipped");
+      if (!raw) return null;
+      var info; try { info = JSON.parse(decodeURIComponent(raw)); } catch (e) { return null; }
+      var shown = (info.listed || []).slice(0, 5), more = info.n - shown.length;
+      return h("details", { class: "muted", open: "" }, [h("summary", null, [info.n + (info.n === 1 ? " file" : " files") + " left out"]),
+        h("ul", null, shown.map(function (x) { return h("li", null, [x.label + ": " + x.reason]); }).concat(more > 0 ? [h("li", null, ["and " + more + " more"])] : []))]);
     }
+    function show(f) {
+      var mine = ++token;
+      if (blobUrl) { URL.revokeObjectURL(blobUrl); blobUrl = null; }
+      body.innerHTML = ""; body.setAttribute("aria-busy", "true");
+      var status = h("p", { class: "muted" }, [f === "pdf" ? "Making the PDF…" : "Combining the files…"]);
+      body.appendChild(status);
+      function fail(e) {
+        if (mine !== token || e.message === "login") return;
+        body.removeAttribute("aria-busy");
+        status.className = "err"; status.textContent = "Could not combine them: " + (e.message || e);
+      }
+      fetch(withFormat(f), { credentials: "same-origin" }).then(function (r) {
+        if (r.status === 401) { if (SHARE) location.reload(); else toLogin(); throw new Error("login"); }
+        if (!r.ok) return r.json().catch(function () { return {}; }).then(function (b) { throw new Error(b.detail || r.statusText); });
+        var n = +(r.headers.get("X-Annals-Sections") || 0);
+        var name = ((r.headers.get("Content-Disposition") || "").match(/filename="([^"]+)"/) || [])[1] || "combined." + f;
+        return (f === "md" ? r.text() : r.blob()).then(function (data) {
+          if (mine !== token) return;
+          body.removeAttribute("aria-busy");
+          var bytes = f === "md" ? new Blob([data]).size : data.size;
+          status.textContent = n + (n === 1 ? " file, " : " files, ") + size(bytes) + (f === "pdf" ? ", with a bookmark for each file" : ", with a table of contents") + ". Made just now, not saved anywhere.";
+          var left = skippedNote(r);
+          if (left) body.appendChild(left);
+          if (f === "md") draw(data, name); else drawFile(f, data, name);
+        });
+      }).catch(fail);
+    }
+    function draw(text, name) {
+      var raw = h("textarea", { class: "combine-text", readonly: "", rows: "10", spellcheck: "false", "aria-label": "The combined Markdown" }, [text]);
+      body.appendChild(h("div", { class: "toolbar combine-actions" }, [
+        copyButton(text, { label: "Copy Markdown", primary: true, field: raw, copied: "Markdown copied" }),
+        h("a", { class: "btn", href: downloadUrl(withFormat("md")), download: name }, [icon("download"), h("span", { class: "lbl" }, ["Download .md"])]),
+        h("a", { class: "btn", href: withFormat("md"), target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open as text"])])
+      ]));
+      body.appendChild(raw);
+    }
+    function drawFile(f, blob, name) {
+      blobUrl = URL.createObjectURL(blob);
+      body.appendChild(h("div", { class: "toolbar combine-actions" }, [
+        h("a", { class: "btn primary", href: blobUrl, download: name }, [icon("download"), h("span", { class: "lbl" }, ["Download " + (f === "pdf" ? "PDF" : ".html")])]),
+        /* a web page opens from the server, whose headers sandbox it; a blob url would not */
+        h("a", { class: "btn", href: f === "html" ? withFormat("html") : blobUrl, target: "_blank", rel: "noopener" }, [icon("open"), h("span", { class: "lbl" }, ["Open " + label(f).toLowerCase()])])
+      ]));
+    }
+    show(first);
     return wrap;
   }
 
