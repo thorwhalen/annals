@@ -324,7 +324,7 @@ def _section_body(text: str, *, n: int, demote: int, unwrap: bool) -> str:
     return body
 
 
-def _unique(pairs: Sequence[tuple[str, str]]) -> list[tuple[str, str]]:
+def unique_paths(pairs: Sequence[tuple[str, str]]) -> list[tuple[str, str]]:
     """The pairs with repeated paths told apart: ``a.md``, ``a.md (2)``."""
     count: dict[str, int] = {}
     out = []
@@ -351,7 +351,7 @@ def aggregate_markdown(
     unwrapped); see the module docstring for each choice.
     """
     pairs = list(files.items() if isinstance(files, Mapping) else files)
-    pairs = _unique([(unicodedata.normalize("NFC", p), t) for p, t in pairs])
+    pairs = unique_paths([(unicodedata.normalize("NFC", p), t) for p, t in pairs])
     texts = dict(pairs)
     paths = list(order([p for p, _ in pairs]) if order else texts)
     seen: dict[str, int] = {}

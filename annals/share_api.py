@@ -63,8 +63,11 @@ from annals.export import (
     aggregate_response,
     file_url_builder,
     run_export,
+    combine_is_heavy,
+    run_limited,
     trusted_base,
 )
+from annals.combine import supported
 from annals.config import APP_NAME, MAX_INLINE_TEXT_BYTES, default_data_dir
 from annals.notebook import (
     HTML_SOURCE_CSP,
@@ -539,39 +542,53 @@ def mk_share_api(
             created=meta.get("created", ""),
         )
 
+    @app.get("/{token}/combine/formats")
+    def shared_combine_formats(token: str, request: Request) -> dict:
+        """What ``/aggregate`` can make, as the owner's ``/combine/formats``."""
+        _open(token, request)
+        return {"formats": supported()}
+
     @app.get("/{token}/aggregate")
     async def shared_aggregate(
-        token: str, request: Request, download: bool = False
+        token: str, request: Request, download: bool = False, format: str = "md"
     ) -> Response:
-        """The share's markdown files as one ``.md``: the same filtered text ``/raw`` sends.
+        """The share's files as one ``md`` (default), ``html`` or ``pdf``: what ``/raw`` sends.
 
-        Only files the share includes are read, each through the filter, so the combined
-        file shows nothing the recipient could not already open one file at a time.
+        Only files the share includes are read, text through the same filter, so the
+        combined file shows nothing the recipient could not already open one file at a time.
         """
         rec = _open(token, request)
+        docs = await anyio.to_thread.run_sync(shares.included, rec)
+        allowed = {meta["id"]: files for meta, files in docs}
+
+        def read(doc_id: str, rel: str) -> str:
+            try:
+                path = doc_file_path(store, doc_id, rel)
+            except HTTPException:
+                raise FileNotFoundError(rel)
+            if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
+                raise HTTPException(413, "a page is too large to combine")
+            text = path.read_text(encoding="utf-8", errors="replace")
+            return _filtered(rec, request, doc_id, rel, allowed[doc_id], text)
+
+        def read_bytes(doc_id: str, rel: str) -> bytes:
+            """A file as ``/raw`` sends it: text (an svg too) filtered, the rest as it is."""
+            if _is_text(rel):
+                return read(doc_id, rel).encode("utf-8")
+            return doc_file_path(store, doc_id, rel).read_bytes()
 
         def make() -> Response:
-            docs = shares.included(rec)
-            allowed = {meta["id"]: files for meta, files in docs}
-
-            def read(doc_id: str, rel: str) -> str:
-                try:
-                    path = doc_file_path(store, doc_id, rel)
-                except HTTPException:
-                    raise FileNotFoundError(rel)
-                if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
-                    raise HTTPException(413, "a page is too large to combine")
-                text = path.read_text(encoding="utf-8", errors="replace")
-                return _filtered(rec, request, doc_id, rel, allowed[doc_id], text)
-
             return aggregate_response(
                 docs,
                 read=read,
+                open_path=functools.partial(doc_file_path, store),
+                read_bytes=read_bytes,
                 title=rec.get("title") or title,
                 download=download,
+                fmt=format,
             )
 
-        return await anyio.to_thread.run_sync(make)
+        return await run_limited(make, limited=combine_is_heavy(format, docs))
 
     @app.get("/{token}/thumb/{doc_id}/{rel:path}")
     async def shared_thumb(

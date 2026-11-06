@@ -35,11 +35,17 @@ server = [
     "pillow>=10",
     "weasyprint>=62",
     "markdown-it-py>=3",
+    "pypdf>=4",
+    "pdfdol>=0.1.26",
+    "markdownify>=0.11",
 ]
 pdf = [
     "weasyprint>=62",
     "markdown-it-py>=3",
     "pillow>=10",
+    "pypdf>=4",
+    "pdfdol>=0.1.26",
+    "markdownify>=0.11",
 ]
 mcp = [
     "py2mcp",
@@ -50,7 +56,9 @@ dev = [
     "httpx",
     "weasyprint>=62",
     "markdown-it-py>=3",
-    "pypdf",
+    "pypdf>=4",
+    "pdfdol>=0.1.26",
+    "markdownify>=0.11",
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "ruff>=0.1.0",

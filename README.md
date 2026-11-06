@@ -105,7 +105,7 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 On a group's page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):
 
 - **Links**: **One link** for a person (expiry, optional password, and on a document "What's included") or **A link per document** for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus **Copy all**.
-- **One file**: the picked documents' Markdown as one file, to copy, download or open as text.
+- **One file**: the picked documents' files (Markdown, html, text, PDFs, images) as one Markdown, PDF or web page file, to copy, download or open.
 - **Listen**: a spoken review (when the host offers them, see below). For several documents, **One review of all** (their text is put in one document, tagged `combined` and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or **One each** (makes only the missing or out-of-date ones).
 
 A document's page has the same three buttons, acting on that document, and both pages keep the rest (copy the text, downloads, open raw, move to bin) under **⋯ More**. Every link, password and code block on the page has the same copy button: it copies inside the tap and answers on itself with a check and "Copied".
@@ -159,21 +159,45 @@ then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or
 
 Every markdown page offers two downloads made by the server, under **One file** and under **⋯ More**: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner's login, or a share link's scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
 
-## One Markdown file from a group
+## One file from many: Markdown, PDF or a web page
 
-A group's **One file** makes one Markdown file from every `.md` of the picked documents (all of them when none is ticked), folder documents included, and offers **Copy Markdown**, **Download .md** and **Open as text**, with the text shown below for selecting by hand where a phone refuses to copy. The file has the group's title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); paths that start with a number come first, in numeric order, the rest in the group's order; each file's headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined file. It is made on each request and never stored. A share link to a group has the same **One file** button, built from the share's filtered text and only the files it includes.
+**One file** (on a group, a selection or one document) combines the picked documents' files into a single file and lets you choose its format: **Markdown** (shown, with **Copy Markdown**, **Download .md** and **Open as text**), **PDF** (with a bookmark for each file) or a **Web page** (one self-contained `.html`). Audio and video cannot be part of a document; they are listed as left out, each with the reason, and so is a file that cannot be read (a damaged or password-protected PDF) while the others still go in. It is made on each request and never stored. A share link has the same button, built from the share's filtered text and only the files it includes.
+
+| input | to Markdown | to web page / to PDF |
+|---|---|---|
+| markdown | as it is | rendered, the document's images inside |
+| html | converted (needs `markdownify`) | its structure and words; scripts, styles, frames, forms and remote images are dropped |
+| text (`.txt`, `.json`, `.csv`, code...) | a code block | a preformatted block |
+| PDF | its text (a scan has none) | web page: its text; PDF: its pages, joined as they are |
+| image | not supported | a figure / a page of its own |
+
+An image or a text file that sits in a document with pages (markdown, html, a PDF) belongs to that document, not a section of its own: a report and its figures combine as the report. Files are arranged with numbered names first, in numeric order, then the rest in the documents' order.
 
 ```bash
-annals aggregate <group-id-or-link> > all.md          # the same file, from a shell
-annals aggregate <id> --order given --demote 0 --no-toc --keep-wraps
+annals aggregate <group-or-doc-id-or-link> > all.md                    # Markdown, from a shell
+annals aggregate <id> --format pdf --output all.pdf                     # a PDF needs --output
+annals aggregate <id> --format html --output all.html
+annals aggregate <id> --order given --demote 0 --no-toc --keep-wraps   # Markdown options
+```
+
+The libraries behind each pair load only when it is used: PDF pages need WeasyPrint (which uses Pango), joining and reading PDFs need `pypdf` and `pdfdol`, html to Markdown needs `markdownify`. `pip install "annals[pdf]"` installs them all; a missing one stops the job before it starts, naming the library and the command. The API is `GET /groups/<gid>/aggregate?format=md|html|pdf` and `GET /aggregate?doc=<id>&doc=<id>` (`&download=1` to save, `&demote=`), `GET /<token>/aggregate` on the share server, and `GET /combine/formats` for what can be made; the response carries `X-Annals-Sections` (files that went in) and `X-Annals-Skipped` (percent-encoded JSON: which were left out and why).
+
+A new pair (say docx to PDF) is one function in `annals/combine.py`, and every surface above learns it:
+
+```python
+from annals.combine import register
+
+@register("docx", "pdf", requires=("some_module",))
+def docx_to_pdf(item, ctx):          # item.text(), item.data(), item.rel; return the part for the format
+    ...
 ```
 
 ```python
-from annals.aggregate import aggregate_markdown
+from annals.aggregate import aggregate_markdown        # the text mechanism, no documents involved
 aggregate_markdown({"notes.md": "# Notes", "01-intro.md": "Hello"}, title="Bundle", demote=1)
 ```
 
-`aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The API is `GET /groups/<gid>/aggregate` (`?download=1` to save it, `&demote=`), and `GET /<token>/aggregate` on the share server.
+`aggregate_markdown` takes `(path, text)` pairs and knows nothing of annals: `order=` (`numbered_first` by default, `None` for the order given, or any `paths -> paths` callable), `demote=`, `unwrap=`, `toc=`. The Markdown file has the title, a table of contents, and one `##` section per file named after its path (`Report/01-intro.md`); each file's headings go one level down and hard-wrapped lines are joined. Footnotes are renamed per file so they do not collide, and a code block a file leaves open is closed at the end of its section. Relative links and images keep their paths, so they do not resolve inside the combined Markdown.
 
 ## A group's documents as separate notebook sources
 

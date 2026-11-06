@@ -69,9 +69,12 @@ from annals.export import (
     aggregate_response,
     markdown_response,
     file_url_builder,
+    combine_is_heavy,
     run_export,
+    run_limited,
     trusted_base,
 )
+from annals.combine import supported
 from annals.sources import (
     PUBLISHED,
     PublishedSource,
@@ -430,6 +433,7 @@ def mk_api(
             row = _owner_tags(list_meta(meta))
             # what the page offers on a selection: text to combine, and each review's state
             row["has_markdown"] = any(kind_of(f) == "md" for f in meta.get("files", []))
+            row["held_kinds"] = sorted({kind_of(f) for f in meta.get("files", [])})
             if requests and overview.eligible(meta):
                 row["listen"] = overview.state_of(store, requests, meta)
             docs.append(row)
@@ -560,30 +564,29 @@ def mk_api(
 
         return await anyio.to_thread.run_sync(make)
 
+    @api.get("/combine/formats")
+    def combine_formats() -> dict:
+        """What ``/aggregate`` can make: ``{format: {label, ext, kinds}}`` (see ``annals.combine``)."""
+        return {"formats": supported()}
+
     @api.get("/aggregate")
     async def aggregate_selection(
         doc: list[str] = Query(default=[]),
         group: str = "",
         download: bool = False,
         demote: int = 1,
+        format: str = "md",
     ) -> Response:
-        """The markdown of some documents as one ``.md`` (``doc`` repeated, and/or ``group``).
+        """Some documents (``doc`` repeated, and/or ``group``) as one ``md``, ``html`` or ``pdf``.
 
         The same file as ``/groups/{gid}/aggregate``, for any pick of documents: a group's,
-        one document's (a folder's markdown), or documents from anywhere.
+        one document's (a folder's files), or documents from anywhere. Markdown, html, text,
+        PDFs and images go in; what cannot is listed in ``X-Annals-Skipped``.
         """
-
-        def make() -> Response:
-            title, docs = _selection(doc, group)
-            return aggregate_response(
-                ((m, m.get("files", [])) for m in docs),
-                read=store.read_text,
-                title=title,
-                download=download,
-                demote=demote,
-            )
-
-        return await anyio.to_thread.run_sync(make)
+        title, docs = await anyio.to_thread.run_sync(_selection, doc, group)
+        return await _combined(
+            docs, title=title, download=download, demote=demote, fmt=format
+        )
 
     @api.get("/groups/{gid}/aggregate")
     async def aggregate_group(
@@ -591,25 +594,40 @@ def mk_api(
         download: bool = False,
         demote: int = 1,
         doc: list[str] = Query(default=[]),
+        format: str = "md",
     ) -> Response:
-        """Every markdown file of a group's documents as one ``.md``, made per request.
+        """Every file of a group's documents as one ``md`` (default), ``html`` or ``pdf``.
 
-        Shown as plain text, or saved as ``<title>.md`` with ``?download=1``. ``doc``
-        (repeated) keeps only those documents of the group, in the group's order. Documents
-        in the bin are left out. See :mod:`annals.aggregate` for the layout.
+        Made per request. Markdown is shown as plain text, or saved as ``<title>.md`` with
+        ``?download=1``. ``doc`` (repeated) keeps only those documents of the group, in the
+        group's order. Documents in the bin are left out. See :mod:`annals.combine` for what
+        goes into which format and :mod:`annals.aggregate` for the markdown layout.
         """
+        group, docs = await anyio.to_thread.run_sync(_group_selection, gid, doc)
+        return await _combined(
+            docs,
+            title=group.get("title") or gid,
+            download=download,
+            demote=demote,
+            fmt=format,
+        )
+
+    async def _combined(docs, *, title, download, demote, fmt) -> Response:
+        """``docs`` as one file; a PDF, or any PDF to read, takes one of the heavy slots."""
+        pairs = [(m, m.get("files", [])) for m in docs]
 
         def make() -> Response:
-            group, docs = _group_selection(gid, doc)
             return aggregate_response(
-                ((m, m.get("files", [])) for m in docs),
+                pairs,
                 read=store.read_text,
-                title=group.get("title") or gid,
+                open_path=functools.partial(doc_file_path, store),
+                title=title,
                 download=download,
                 demote=demote,
+                fmt=fmt,
             )
 
-        return await anyio.to_thread.run_sync(make)
+        return await run_limited(make, limited=combine_is_heavy(fmt, pairs))
 
     # -- shares: public links to one document or group (the owner's side) -------------
     # The recipient's side is annals.share_api, mounted where this API's login does not
