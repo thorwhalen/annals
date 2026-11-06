@@ -426,7 +426,9 @@ def _html_body_of(item: Item, ctx: Context) -> str:
 def _nonempty(item: Item, body: str) -> str:
     """``body``, or a :class:`ConversionError` when a page with content came out empty."""
     if not body.strip() and item.size:
-        raise ConversionError("nothing in it could be shown (scripts, frames and forms only?)")
+        raise ConversionError(
+            "nothing in it could be shown (scripts, frames and forms only?)"
+        )
     return body
 
 
