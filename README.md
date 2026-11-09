@@ -47,6 +47,10 @@ A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-fi
 
 `annals publish page.html --artifact https://claude.ai/...` stores the link of a Claude Artifact holding the same page in the document's meta (`artifact`), and the document's page shows an "Open the interactive version" button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only plain `https` links to `claude.ai` are accepted (`annals.store.ARTIFACT_HOSTS`; no port, credentials or odd characters), `--artifact` takes one path, and a `--replace` without `--artifact` keeps the current link.
 
+### Links to what a document mentions
+
+The owner reads on a phone and clicks through, so a document that mentions an issue or a message should link to it. `annals publish` reads markdown and text documents before publishing and warns on stderr about bare issue references (`#12`, `owner/repo#12`) and dated mentions of a message ("Karl asked on 10-29 in #tech-app-test") that have no link (`annals.linkcheck`). It is a warning, not a gate: the document is published either way. `--no-link-check` turns it off.
+
 ### Living pages (`--replace`)
 
 `annals publish <path> --replace <link-or-id>` publishes a new version of an existing document: the id and the link stay, the page shows the new version marked "updated" and lists the earlier ones, each readable at `/d/<id>@<n>`. The previous files are kept under the document's `.versions/<n>/`; nothing is deleted. It takes one path (a file, a folder, stdin), and a replaced group member stays in its group.

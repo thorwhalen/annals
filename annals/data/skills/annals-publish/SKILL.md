@@ -21,6 +21,12 @@ Only if `annals` is not found: `pip install annals`. Do not `pip install -U` it 
 - The title is taken from the first `# heading` (markdown) or `<title>` (html); pass `--title "..."` to override.
 - `--tags a,b` adds tags (searchable). `--session <name>` records who published; always pass your session or corpus name when you have one.
 
+## Link everything you mention
+
+The owner reads on a phone and clicks through. So every time a document mentions something that has a URL, the mention is a link, including the second and later mentions: a Slack, WhatsApp, email or chat message → its permalink (`https://<workspace>.slack.com/archives/<channel>/p<ts>`); an issue, PR, discussion or commit → its GitHub URL, never a bare `#12` or `owner/repo#12`; a published page → its link. "Karl asked on 10-29 in #tech-app-test" is incomplete until "asked on 10-29" is a link to that message. When you build a report from a message export, keep each message's permalink next to its line from the start, so linking costs nothing at writing time.
+
+`annals publish` checks markdown and text documents and warns on stderr (`N mentions without a link: line 12 …`) about bare issue references and dated mentions of a message with no link. It publishes anyway. When you see the warning, add the links and republish with `--replace <link>`. `--no-link-check` turns the check off, for a document where those references are not meant to be links.
+
 ## Living pages: one link that stays current
 
 A guide, a status page or a dashboard you will refresh should keep ONE link. Publish it once, then publish each new version over it:
