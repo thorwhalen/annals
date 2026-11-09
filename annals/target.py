@@ -27,9 +27,57 @@ from typing import Protocol
 
 #: Separator between concatenated meta.json files when reading many at once over ssh.
 RECORD_SEP = "\x1e"
+#: what :meth:`Target.read_metas` reads by default: each document's meta.json
+META_GLOB = "*/meta.json"
+_GLOB_RE = re.compile(r"^[A-Za-z0-9_.*-]+(/[A-Za-z0-9_.*-]+)*$")
+_SOCKET_MAX = 100  # a unix socket path's limit: 104 bytes on macOS, 108 on Linux
+
+
+def check_glob(pattern: str) -> str:
+    """A glob safe to hand a remote shell unquoted: names, ``*`` and ``/`` only, no hidden part."""
+    if (
+        not _GLOB_RE.match(pattern)
+        or "**"
+        in pattern  # recursive for pathlib, a plain * for sh: the two would differ
+        or any(p.startswith(".") for p in pattern.split("/"))
+    ):
+        raise ValueError(f"not a plain glob: {pattern!r}")
+    return pattern
+
+
 #: the note a lock directory is created with (see :meth:`Target.make_lock`)
 LOCK_NOTE = "lock.json"
 SSH_OPTS = ("-o", "BatchMode=yes", "-o", "ConnectTimeout=15")
+#: how long the shared ssh connection outlives its last use: the several calls of one command
+#: (and the next command soon after) reuse it instead of paying a handshake each (~3 s to a far host)
+SSH_SHARE_S = 60
+
+
+def ssh_opts(*, share_dir: Path | None = None) -> tuple[str, ...]:
+    """The ssh options: batch mode, and one connection shared by consecutive calls.
+
+    The shared connection's socket lives in ``share_dir`` (default ``~/.ssh``); without that
+    directory every call opens its own connection, as plain ``ssh`` would.
+    """
+    share_dir = Path.home() / ".ssh" if share_dir is None else share_dir
+    socket = f"{share_dir}/annals-%C"  # ssh expands %C to 40 hex characters
+    if not share_dir.is_dir() or len(socket) - 2 + 40 > _SOCKET_MAX:
+        return SSH_OPTS
+    return SSH_OPTS + (
+        # a shared connection skips ConnectTimeout: a dead one (a network change) is noticed this way
+        "-o",
+        "ServerAliveInterval=10",
+        "-o",
+        "ServerAliveCountMax=3",
+        "-o",
+        "ControlMaster=auto",
+        "-o",
+        f"ControlPath={socket}",
+        "-o",
+        f"ControlPersist={SSH_SHARE_S}",
+    )
+
+
 _SSH_TARGET_RE = re.compile(r"^(?P<host>[A-Za-z0-9][A-Za-z0-9_.@-]*):(?P<path>[~/].*)$")
 
 
@@ -77,7 +125,9 @@ class Target(Protocol):
 
     def list_dirs(self, rel: str) -> list[str]: ...
 
-    def read_metas(self, rel: str) -> list[dict]: ...
+    def read_metas(self, rel: str, *, pattern: str = META_GLOB) -> list[dict]:
+        """Every JSON file under ``rel`` matching ``pattern``, read in one go (hidden ones skipped)."""
+        ...
 
     def list_files(self, rel: str) -> list[str]: ...
 
@@ -192,20 +242,17 @@ class LocalTarget:
         path = self._abs(rel).resolve()
         return path if path.is_relative_to(self.root.resolve()) else None
 
-    def read_metas(self, rel: str) -> list[dict]:
-        base = self._abs(rel)
+    def read_metas(self, rel: str, *, pattern: str = META_GLOB) -> list[dict]:
+        base, pattern = self._abs(rel), check_glob(pattern)
         if not base.is_dir():
             return []
         metas = []
-        for meta_path in base.glob("*/meta.json"):
-            if meta_path.parent.name.startswith("."):
+        for path in base.glob(pattern):
+            sub = path.relative_to(base).as_posix()
+            if any(part.startswith(".") for part in sub.split("/")):
                 continue  # work in progress (a replacement being applied), like ssh's glob
             try:
-                metas.append(
-                    json.loads(
-                        self.read_text(f"{rel}/{meta_path.parent.name}/meta.json")
-                    )
-                )
+                metas.append(json.loads(self.read_text(f"{rel}/{sub}")))
             except (OSError, ValueError):
                 continue  # half-written, or a symlink out of the root: not the reader's problem
         return metas
@@ -225,7 +272,7 @@ class SshTarget:
         return f"{self.root}/{check_rel(rel)}"
 
     def _ssh(self, script: str, *, stdin: str | None = None) -> str:
-        cmd = ["ssh", *SSH_OPTS, self.host, script]
+        cmd = ["ssh", *ssh_opts(), self.host, script]
         proc = subprocess.run(cmd, input=stdin, capture_output=True, text=True)
         if proc.returncode != 0:
             raise RuntimeError(
@@ -241,7 +288,7 @@ class SshTarget:
             "-a",
             "--delete",
             "-e",
-            "ssh " + " ".join(SSH_OPTS),
+            shlex.join(["ssh", *ssh_opts()]),
             f"{src_dir}/",
             f"{self.host}:{dst}/",
         ]
@@ -258,7 +305,7 @@ class SshTarget:
             "-a",
             "--no-links",
             "-e",
-            "ssh " + " ".join(SSH_OPTS),
+            shlex.join(["ssh", *ssh_opts()]),
             f"{self.host}:{self._abs(rel)}/",
             f"{dst_dir}/",
         ]
@@ -331,10 +378,10 @@ class SshTarget:
     def local_path(self, rel: str) -> Path | None:
         return None  # remote: nothing to stream from this machine's disk
 
-    def read_metas(self, rel: str) -> list[dict]:
+    def read_metas(self, rel: str, *, pattern: str = META_GLOB) -> list[dict]:
         base = _q(self._abs(rel))
         script = (
-            f"[ -d {base} ] || exit 0; for f in {base}/*/meta.json; do "
+            f"[ -d {base} ] || exit 0; for f in {base}/{check_glob(pattern)}; do "
             f'[ -f "$f" ] && cat "$f" && printf "{RECORD_SEP}"; done; true'
         )
         out = self._ssh(script)

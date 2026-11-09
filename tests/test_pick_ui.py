@@ -179,3 +179,36 @@ def test_the_interactive_version_leaves_room_for_the_buttons(chromium, site):
     for el in page.locator(".actionbar button.result, .actionbar .menu-btn, .actionbar .view-toggle").all():
         assert el.bounding_box()["width"] >= 44
     ctx.close()
+
+
+def test_a_document_links_to_the_groups_it_is_in(phone, site):
+    """Reached by a pasted link, a document still leads to its group (2026-11-09)."""
+    phone.goto(f"{site['base']}/d/{site['bees']['id']}")
+    chip = phone.locator(".in-groups a.group-chip")
+    chip.wait_for()
+    assert phone.locator(".in-groups").inner_text().startswith("In group")
+    assert chip.inner_text() == "Nature"
+    assert chip.bounding_box()["height"] >= 44
+    chip.click()
+    phone.locator(".selbar").wait_for()
+    assert phone.url.endswith(f"/g/{site['group']['id']}")
+
+
+def test_the_links_sheet_hands_own_agents_the_private_address(chromium, site):
+    """The owner made public links only so their own agents could read (2026-11-09)."""
+    ctx = chromium.new_context(viewport=PHONE, has_touch=True, is_mobile=True)
+    ctx.grant_permissions(["clipboard-read", "clipboard-write"])
+    page = ctx.new_page()
+    try:
+        _group(page, site)
+        page.locator(".pick input").first.check()
+        page.locator(".selbar").get_by_role("button", name="Links").click()
+        btn = page.locator(".agent-note .copy-btn")
+        assert btn.inner_text().strip() == "Copy the address"  # one picked: that document's
+        btn.click()
+        page.wait_for_function("b => b.getAttribute('data-state') === 'copied'", arg=btn.element_handle())
+        copied = page.evaluate("navigator.clipboard.readText()")
+        assert re.fullmatch(rf".*/d/({site['bees']['id']}|{site['tides']['id']})", copied)
+        assert "/shared/" not in copied
+    finally:
+        ctx.close()

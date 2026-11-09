@@ -227,11 +227,38 @@ def show(
     base_url: str | None = None,
     to: str | None = None,
 ) -> dict:
-    """A document's metadata and link (``to``: on a named target)."""
-    settings = load_settings(target=target, base_url=base_url, to=to)
-    meta = _store(settings).meta(doc_id)
-    meta["url"] = _doc_url(settings, doc_id)
+    """A document's metadata, link, and the groups it is in (``to``: on a named target).
+
+    ``doc_id`` may be the document's link; a group's link gives the group and its documents'
+    links. To read the text, use ``annals aggregate <link>``.
+    """
+    settings = _readable(load_settings(target=target, base_url=base_url, to=to))
+    store = _store(settings)
+    kind, ref = _parse_ref(doc_id)
+    if kind == "group":  # a group's link: the group, with its documents' links
+        g = store.group(ref)
+        return {
+            **g,
+            "url": _group_url(settings, g["id"]),
+            "doc_urls": [_doc_url(settings, i) for i in g["docs"]],
+        }
+    meta = store.meta(ref)
+    meta["url"] = _doc_url(settings, ref)
+    meta["groups"] = [  # a version is in the groups its document is in
+        {**g, "url": _group_url(settings, g["id"])}
+        for g in store.groups_of(meta.get("version_of") or ref)
+    ]
     return meta
+
+
+def _readable(settings: Settings) -> Settings:
+    """``settings``, refused when its target is an outbox: another machine pulls and empties it."""
+    if settings.outbox:
+        raise RuntimeError(
+            f"{settings.target} is an outbox (another machine pulls it), so the annals "
+            "cannot be read from here; read it on a machine whose target is the store"
+        )
+    return settings
 
 
 def trash(
@@ -328,7 +355,7 @@ def aggregate(
         raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
     if format == "pdf" and not output:
         raise ValueError("a PDF is a binary file: name it with --output FILE")
-    store = _store(load_settings(target=target, to=to))
+    store = _store(_readable(load_settings(target=target, to=to)))
     kind, ref = _parse_ref(group_id)
     try:
         if kind == "doc":
@@ -449,8 +476,18 @@ def configure(
 
 
 def _parse_ref(ref: str) -> tuple[str, str]:
-    """``("group"|"doc"|"id", id)`` from a link (``.../g/<id>``, ``.../d/<id>``) or a bare id."""
-    parts = ref.strip().rstrip("/").split("/")
+    """``("group"|"doc"|"id", id)`` from a link (``.../g/<id>``, ``.../d/<id>``) or a bare id.
+
+    A link's query and fragment are dropped (a file view is ``.../d/<id>?f=<file>``).
+
+    >>> _parse_ref("https://x.com/annals/d/abc?f=a.md#top")
+    ('doc', 'abc')
+    >>> _parse_ref("abc")
+    ('id', 'abc')
+    """
+    from urllib.parse import urlsplit
+
+    parts = urlsplit(ref.strip()).path.rstrip("/").split("/")
     if len(parts) >= 2 and parts[-2] in ("g", "d"):
         return ("group" if parts[-2] == "g" else "doc"), parts[-1]
     return "id", parts[-1]

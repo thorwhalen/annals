@@ -15,7 +15,7 @@
    Acting on documents is one model on a group and on a document: pick documents (a group's
    ticked cards, all of them when none is ticked; a document page is a pick of one), then
    one of three results, each in one sheet: Links (one link for a person, with expiry and
-   password, or a link per document for a notebook or an agent; annals.share,
+   password, or a link per document for a notebook; annals.share,
    annals.notebook), One file (the files as one Markdown, PDF or web page; annals.combine) and Listen (a
    spoken review of one, of all together, or one each; annals.overview). Actions that need
    no choosing are under More. The same file is the recipient's page: the share server sets
@@ -868,7 +868,12 @@
   }
   /* This page's own address: it needs the owner's login, so it is for the owner's use, never
      for sending (Links makes those). */
-  var COPY_ADDRESS = function () { return { section: "copy", label: "Copy my private address", hint: "Opens only with your login: for you, not for sending", icon: "link", run: function () { return copyText(location.href); } }; };
+  var COPY_ADDRESS = function () {
+    /* a document's or group's address is what the owner's agents read with `annals aggregate` */
+    var readable = /\/(d|g)\/[^/]+$/.test(location.pathname);
+    return { section: "copy", label: "Copy my private address", hint: readable ? "Opens only with your login; your own agents read it with annals" : "Opens only with your login",
+      icon: "link", run: function () { return copyText(readable ? location.origin + location.pathname : location.href); } };
+  };
 
   /* Renders `rel` into a container; returns {view, actions} for the page's action bar. */
   function renderFile(ctx, rel, kind, container) {
@@ -1080,13 +1085,19 @@
         m.listen && m.listen.state === "done" && m.listen.overview ? h("span", null, [link(BASE + "/d/" + m.listen.overview, m.listen.stale ? "▶ review (older)" : "▶ review")]) : null,
         m.files && m.files.length > 1 ? h("span", null, [m.files.length + " files"]) : null
       ]);
+      /* the groups it is in, each a way to its group (a document reached by a link has no other) */
+      var groups = rel || SHARE || m.in_trash ? [] : (m.groups || []);  /* a binned document is hidden on its groups' pages */
+      var inGroups = groups.length ? h("nav", { class: "in-groups", "aria-label": "Groups this document is in" },
+        [h("span", { class: "muted" }, [groups.length > 1 ? "In groups" : "In group"])].concat(groups.map(function (g) {
+          return link(BASE + "/g/" + g.id, g.title, "group-chip");
+        }))) : null;
       var showFiles = !rel && m.files && m.files.length > 1;
       page(rel ? basename(rel) : m.title, mainNav(m.in_trash ? "trash" : "published"), [
         rel ? null : backLink(SHARE ? BASE + "/" : scopeHref("published"), SHARE ? "Shared documents" : sourceTitle("published")),
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
-        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, inGroups, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
         fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
         rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
         body,
@@ -1104,7 +1115,7 @@
      {kind: "doc" | "group" | "shared", doc?, group?, items: [meta], total, listen?}. */
   var RESULTS = [
     { id: "links", label: "Links", icon: "link", title: "Links", body: linksBody,
-      hint: function (sc) { return "Links to open in a browser, or to give a notebook or an agent"; },
+      hint: function (sc) { return "Links to open in a browser, or to give a person or a notebook"; },
       when: function (sc) { return sc.kind !== "shared"; } },
     { id: "file", label: "One file", icon: "file", title: "One file", body: fileBody,
       hint: function (sc) { return sc.items.length > 1 ? "All their files as one Markdown, PDF or web page file, to copy or save" : "Its files as one Markdown, PDF or web page file, to copy or save"; },
@@ -1270,7 +1281,7 @@
      password since a notebook cannot type one. Nothing is revoked behind the owner's back:
      each press makes a new share, and the ones made before stay listed, each revocable. */
   var NOTEBOOK_URL = "https://notebooklm.google.com/";
-  var LINK_MODES = [["one", "One link", "for a person"], ["each", "A link per document", "for a notebook or an agent"]];
+  var LINK_MODES = [["one", "One link", "for a person"], ["each", "A link per document", "for a notebook"]];
   var LINK_EXPIRY = {
     one: [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"], ["never", "Never"], ["date", "On a date…"]],
     each: [["1d", "1 day"], ["7d", "7 days"], ["30d", "30 days"]]
@@ -1285,6 +1296,19 @@
       } }, [h("span", { class: "seg-main" }, [c[1]]), c[2] ? h("span", { class: "seg-sub" }, [c[2]]) : null]);
     }));
     return seg;
+  }
+  /* The owner's own agents read the private address through the annals command, so a link
+     made only for them is a public copy nobody needed: say so where links are made, and
+     copy what to hand them (the page, or the picked documents' addresses, one per line). */
+  function agentNote(sc) {
+    var whole = sc.kind === "doc" || sc.items.length === sc.total;
+    var addresses = whole ? [location.origin + location.pathname]
+      : sc.items.map(function (m) { return location.origin + BASE + "/d/" + m.id; });
+    var label = addresses.length === 1 ? "Copy the address" : "Copy " + addresses.length + " addresses";
+    return h("div", { class: "agent-note" }, [
+      h("p", { class: "muted" }, ["Your own agents need no link: give them the private address and they read it with ", h("code", null, ["annals aggregate"]), "."]),
+      copyButton(function () { return addresses.join("\n"); }, { label: label, name: label })
+    ]);
   }
   function linksBody(sc) {
     /* a share has one root, a document or a group (a pick from the whole list will get its
@@ -1396,6 +1420,7 @@
       } }, [label]);
       return h("div", { class: "toolbar" }, [off]);
     }
+    wrap.appendChild(agentNote(sc));
     wrap.appendChild(segmented(LINK_MODES, mode, function (v) { mode = v; writePref("linkmode:" + sc.kind, v); drawOpts(); }, "What kind of links"));
     wrap.appendChild(opts);
     wrap.appendChild(h("div", { class: "toolbar" }, [make]));
