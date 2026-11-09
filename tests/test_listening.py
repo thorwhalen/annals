@@ -222,3 +222,12 @@ def test_an_overview_that_failed_is_listed_with_why_until_it_is_made(store, docs
     requests.put(src, {"state": overview.FAILED, "minutes": 5, "requested": "2020-01-01T00:00:00+00:00", "error": "old"})
     assert c.get("/audio").json()["unmade"] == []  # an old failure is no longer offered
     assert _client(store).get("/audio").json()["unmade"] == []  # overviews off: nothing asked for
+
+
+def test_a_failed_commands_json_answer_is_read_for_its_reason():
+    from annals import overview
+
+    envelope = '{"duration_api_ms": 0, "usage": {"input_tokens": 0}, "is_error": true, "result": "Failed to authenticate: log in again", "uuid": "x"}'
+    said = overview._last_line("Traceback ...\nRuntimeError: claude -p exited 1: " + envelope + "\n")
+    assert said == "RuntimeError: claude -p exited 1: Failed to authenticate: log in again"
+    assert overview._last_line("plain failure {not json") == "plain failure {not json"

@@ -1975,22 +1975,33 @@
       unmadeEl.appendChild(h("h3", null, ["Not made yet"]));
       shown.forEach(function (u) { unmadeEl.appendChild(unmadeRow(u)); });
     }
+    /* One line of title, one of state: what happened, when it was last tried, and why behind
+       a toggle (opened below it), with Try again beside the text rather than under it. */
     function unmadeRow(u) {
       var href = BASE + "/d/" + u.doc, making = u.state === "queued" || u.state === "running";
       var link = h("a", { class: "title", href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [u.title]);
-      var out = [link, h("p", { class: making ? "muted" : "err" }, [making ? "Being made (" + u.minutes + " min). It takes about 2 minutes." : "Did not work."])];
-      if (!making) {
-        if (u.error) out.push(h("details", null, [h("summary", null, ["Why"]), h("p", { class: "why" }, [u.error])]));
-        var retry = h("button", { class: "btn", type: "button", onclick: function () {
-          if (isPending(retry)) return;
-          pending(retry, true);
-          api("/docs/" + encodeURIComponent(u.doc) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: u.minutes }) })
-            .then(function (s) { Object.assign(u, s); render(); watch(); })
-            .catch(function (e) { pending(retry, false); toast("Could not ask again: " + (e.message || e)); });
-        } }, ["Try again"]);
-        out.push(h("div", { class: "toolbar" }, [retry]));
-      }
-      return h("div", { class: "unmade-row" + (making ? "" : " failed") }, out);
+      var why = h("p", { class: "why", hidden: true }, [u.error || ""]);
+      var whyBtn = u.error && !making ? h("button", { class: "btn link", type: "button", "aria-expanded": "false", onclick: function () {
+        var open = whyBtn.getAttribute("aria-expanded") !== "true";
+        whyBtn.setAttribute("aria-expanded", String(open)); why.hidden = !open;
+      } }, ["Why"]) : null;
+      var tried = u.finished || u.requested;
+      var line = h("p", { class: "meta" }, [
+        h("span", { class: making ? "muted" : "err" }, [making ? "Being made (" + u.minutes + " min), about 2 minutes" : "Did not work"]),
+        tried ? h("span", { title: until(tried) }, [(making ? "asked " : "tried ") + when(tried)]) : null,
+        whyBtn,
+        u.created ? h("span", { class: "muted", title: until(u.created) }, ["document from " + when(u.created)]) : null
+      ]);
+      var text = h("div", { class: "unmade-text" }, [link, line, why]);
+      if (making) return h("div", { class: "unmade-row" }, [text]);
+      var retry = h("button", { class: "btn", type: "button", onclick: function () {
+        if (isPending(retry)) return;
+        pending(retry, true);
+        api("/docs/" + encodeURIComponent(u.doc) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: u.minutes }) })
+          .then(function (s) { Object.assign(u, s, { requested: new Date().toISOString(), finished: null }); render(); watch(); })
+          .catch(function (e) { pending(retry, false); toast("Could not ask again: " + (e.message || e)); });
+      } }, ["Try again"]);
+      return h("div", { class: "unmade-row failed" }, [text, retry]);
     }
     /* While one is being made, look again now and then, so it moves into the list when ready. */
     function watch() {

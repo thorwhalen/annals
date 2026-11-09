@@ -8,6 +8,7 @@ browser contexts stand for two devices sharing the server's record.
 
 import base64
 import io
+import os
 import struct
 import wave
 
@@ -19,6 +20,8 @@ from annals.store import DocStore
 PHONE = {"width": 390, "height": 844}
 SECONDS = 20
 RATE = 4
+#: a folder to save screenshots in, to look at the layout by eye (unset: none are taken)
+SHOTS = os.environ.get("ANNALS_TEST_SHOTS")
 
 
 def _silence_wav(seconds=SECONDS, rate=8000) -> str:
@@ -154,16 +157,23 @@ def test_an_overview_that_failed_shows_why_and_can_be_asked_for_again(device, se
     store = DocStore(tmp_path / "data")
     src = store.publish(text="# Moths", title="Moths at night", filename="moths.md")["id"]
     why = 'RuntimeError: claude -p exited 1: {"result": "' + "x" * 250 + '"}'  # long and unbroken, as the real one
-    overview.Requests(store.target.root).put(src, {"state": overview.FAILED, "minutes": 5, "requested": overview._now(), "error": why})
+    overview.Requests(store.target.root).put(src, {"state": overview.FAILED, "minutes": 5, "requested": overview._now(), "finished": overview._now(), "error": why})
     phone = device()
     phone.goto(f"{serve(store, overviews=True)}/audio")
     row = phone.locator(".unmade-row")
     row.wait_for()
-    assert "Moths at night" in row.inner_text() and "Did not work" in row.inner_text()
+    text = row.inner_text()
+    assert "Moths at night" in text and "Did not work" in text and "tried just now" in text and "document from" in text
     assert "No spoken overviews yet" in phone.locator(".audio-list").inner_text()
-    row.locator("summary").click()
+    assert row.locator(".why").is_hidden()
+    assert row.bounding_box()["height"] < 120  # a title and one line of state, Try again beside them
+    if SHOTS:
+        phone.screenshot(path=f"{SHOTS}/unmade-closed.png")
+    row.get_by_role("button", name="Why").click()
     assert "claude -p exited 1" in row.locator(".why").inner_text()
     _no_sideways_scroll(phone)
+    if SHOTS:
+        phone.screenshot(path=f"{SHOTS}/unmade-open.png")
     row.get_by_role("button", name="Try again").click()
     phone.wait_for_function("document.querySelector('.unmade-row').textContent.indexOf('Being made') >= 0")
     assert overview.Requests(store.target.root).get(src)["state"] == overview.QUEUED
