@@ -233,8 +233,9 @@ FAILED_SHOWN_S = 7 * 24 * 3600
 def unmade(store, requests: Requests) -> list[dict]:
     """The overviews asked for and not (yet) made: being made, or failed recently; newest first.
 
-    Each is ``state_of`` its document plus ``doc``, ``title`` and ``requested``. A request
-    whose document is gone, binned or no longer speakable is left out: nothing can be retried.
+    Each is ``state_of`` its document plus ``doc``, ``title``, ``created`` (the document's),
+    ``requested`` and ``finished`` (the last try's). A request whose document is gone, binned
+    or no longer speakable is left out: nothing can be retried.
     """
     out = []
     for doc_id in reversed(requests.ids()):
@@ -255,7 +256,9 @@ def unmade(store, requests: Requests) -> list[dict]:
                     **state,
                     "doc": doc_id,
                     "title": meta.get("title") or doc_id,
+                    "created": meta.get("created"),
                     "requested": record.get("requested"),
+                    "finished": record.get("finished"),
                 }
             )
     return out
@@ -457,9 +460,39 @@ def request_combined(
     }
 
 
+#: where a command that answers in JSON (``claude -p --output-format json``) says what went wrong
+_REASON_KEYS = ("error", "message", "result")
+
+
+def _readable(line: str) -> str:
+    """The line, with a JSON object at its end replaced by the reason inside it, if it has one.
+
+    A failed ``claude -p`` run surfaces as ``RuntimeError: claude -p exited 1: {...}``, its
+    JSON envelope whole, with the reason far into it; cut to the first characters, the reader
+    saw only token counts.
+
+    >>> _readable('RuntimeError: claude -p exited 1: {"usage": {}, "is_error": true, "result": "Not logged in"}')
+    'RuntimeError: claude -p exited 1: Not logged in'
+    >>> _readable("ValueError: no {braces} here")
+    'ValueError: no {braces} here'
+    """
+    at = line.find("{")
+    if at < 0:
+        return line
+    try:
+        said = json.loads(line[at:])
+    except ValueError:
+        return line
+    if isinstance(said, dict):
+        for key in _REASON_KEYS:
+            if isinstance(said.get(key), str) and said[key].strip():
+                return (line[:at] + said[key].strip()).strip()
+    return line
+
+
 def _last_line(text: str) -> str:
     lines = [ln.strip() for ln in (text or "").splitlines() if ln.strip()]
-    return lines[-1][:MAX_ERROR_CHARS] if lines else ""
+    return _readable(lines[-1])[:MAX_ERROR_CHARS] if lines else ""
 
 
 def _source_text(store, meta: dict) -> str:
