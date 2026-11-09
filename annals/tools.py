@@ -227,10 +227,18 @@ def show(
     base_url: str | None = None,
     to: str | None = None,
 ) -> dict:
-    """A document's metadata and link (``to``: on a named target)."""
+    """A document's metadata, link, and the groups it is in (``to``: on a named target).
+
+    ``doc_id`` may be the document's link. To read its text, use ``annals aggregate <link>``.
+    """
     settings = load_settings(target=target, base_url=base_url, to=to)
-    meta = _store(settings).meta(doc_id)
+    store = _store(settings)
+    doc_id = _parse_ref(doc_id)[1]
+    meta = store.meta(doc_id)
     meta["url"] = _doc_url(settings, doc_id)
+    meta["groups"] = [
+        {**g, "url": _group_url(settings, g["id"])} for g in store.groups_of(doc_id)
+    ]
     return meta
 
 

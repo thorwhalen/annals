@@ -106,3 +106,14 @@ def test_directory_publish_skips_junk_unless_asked(tmp_path):
     s = DocStore(tmp_path / "data")
     assert s.publish(d)["files"] == ["page.md"]
     assert len(s.publish(d, exclude=())["files"]) == 3
+
+
+def test_groups_of_a_document(store):
+    """The groups a document is in, newest first: its page links to each."""
+    a = store.publish(text="# A", title="A")
+    b = store.publish(text="# B", title="B")
+    g1 = store.make_group("First", [a["id"], b["id"]])
+    g2 = store.make_group("Second", [a["id"]])
+    assert {g["id"] for g in store.groups_of(a["id"])} == {g1["id"], g2["id"]}
+    assert store.groups_of(b["id"]) == [{"id": g1["id"], "title": "First", "n": 2}]
+    assert store.groups_of("nowhere") == []

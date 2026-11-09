@@ -1,6 +1,6 @@
 ---
 name: annals-publish
-description: Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner's private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to "publish this", "post it to my annals", "put it where I can read it on my phone", "give me a link to that report", "show me the images", "where can I see the renders", "share the page with me", or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers living pages (one link that stays current: `--replace`), grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.
+description: Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner's private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to "publish this", "post it to my annals", "put it where I can read it on my phone", "give me a link to that report", "show me the images", "where can I see the renders", "share the page with me", or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers living pages (one link that stays current: `--replace`), grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin. Also use whenever you are handed an annals link (`.../annals/d/<id>` or `.../annals/g/<id>`) to read: the page is private, so read it with `annals aggregate <link>`, never by fetching the URL and never by asking for a share link.
 ---
 
 # annals-publish — one command, one link
@@ -20,6 +20,18 @@ Only if `annals` is not found: `pip install annals`. Do not `pip install -U` it 
 - Markdown is rendered on the page with a toggle to the raw source (so the owner can copy it); its relative images resolve. HTML is rendered as-is in a frame (a page without `<!doctype html>` is served with one, so it renders in standards mode). Images, video, audio and PDFs show inline (video streams and seeks). Anything else is offered as a download.
 - The title is taken from the first `# heading` (markdown) or `<title>` (html); pass `--title "..."` to override.
 - `--tags a,b` adds tags (searchable). `--session <name>` records who published; always pass your session or corpus name when you have one.
+
+## Reading an annals link you are given
+
+The annals is private: fetching a `.../annals/d/<id>` or `.../annals/g/<id>` link gets a login page. Do not fetch it, and do not ask the owner for a share link (share links are for people outside). On any machine where `annals publish` works, read it through the same channel:
+
+```bash
+annals aggregate <link>           # the document's text (a group: every document's), as one markdown on stdout
+annals show <link>                # its metadata: files, tags, versions, and the groups it is in
+annals aggregate <link> --format pdf --output all.pdf
+```
+
+Images, audio and video are not in that text; `aggregate` names what it left out on stderr. A machine whose target is an outbox (`annals configure` shows `"outbox": true`) cannot read the annals; there, say so.
 
 ## Link everything you mention
 

@@ -244,6 +244,13 @@ nav.back { margin: 2px 0 0; }
 nav.back a { display: inline-flex; align-items: center; min-height: 32px; font-size: .95rem; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (pointer: coarse) { nav.back a { min-height: 44px; } }
 
+/* the groups a document is in, under its title: each a way to its group */
+.in-groups { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 0; font-size: .9rem; }
+.group-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px;
+  background: var(--card); color: var(--accent); text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (hover: hover) and (pointer: fine) { .group-chip:hover { border-color: var(--accent); } }
+@media (pointer: coarse) { .group-chip { min-height: 44px; } }
+
 /* pressed at once: set on pointerdown by app.js, on every button and menu row */
 .btn, .menuitem { touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 80ms ease-out, background-color 80ms; }
 .btn[data-pressed], .menuitem[data-pressed] { transform: scale(.96); }
@@ -362,3 +369,7 @@ html.sheet-open { overflow: hidden; }
 .listening-row .meta.grow { min-width: 0; }
 @media (pointer: coarse) { .listening-row .btn, .status-filter .btn { min-height: 44px; } }
 @media (pointer: coarse) { .unmade-row > .btn { min-height: 44px; } .unmade-row .meta .btn.link { min-height: 44px; min-width: 44px; padding: 0 8px; margin: -14px -8px; } }
+
+/* in the Links sheet: the owner's own agents read the private address, no link needed */
+.agent-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 12px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 9px; }
+.agent-note p { flex: 1 1 220px; margin: 0; font-size: .9rem; }

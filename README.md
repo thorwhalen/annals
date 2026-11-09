@@ -30,6 +30,13 @@ annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
 ```
 
+Handed an annals link to read? It is private, so fetching it gets a login page. Read it through the same channel that publishes, on any machine where `annals publish` works; no share link is needed:
+
+```bash
+annals aggregate <link>   # the text of a document, or of every document in a group, as one markdown on stdout
+annals show <link>        # its metadata, including the groups it is in
+```
+
 What each kind looks like on the page:
 
 | Published | Shown as |
@@ -108,7 +115,7 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 
 On a group's page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):
 
-- **Links**: **One link** for a person (expiry, optional password, and on a document "What's included") or **A link per document** for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus **Copy all**.
+- **Links**: **One link** for a person (expiry, optional password, and on a document "What's included") or **A link per document** for a notebook (one plain page each, no password). Your own agents need neither: the sheet's first line copies the private address, which they read with `annals aggregate <link>`. Every link has its own copy button, plus **Copy all**.
 - **One file**: the picked documents' files (Markdown, html, text, PDFs, images) as one Markdown, PDF or web page file, to copy, download or open.
 - **Listen**: a spoken review (when the host offers them, see below). For several documents, **One review of all** (their text is put in one document, tagged `combined` and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or **One each** (makes only the missing or out-of-date ones).
 

@@ -924,15 +924,17 @@ class DocStore:
 
     def list_groups(self) -> list[dict]:
         """Every group, newest first."""
-        names = [n for n in self.target.list_files(GROUPS) if n.endswith(".json")]
-        groups = []
-        for n in names:
-            try:
-                groups.append(json.loads(self.target.read_text(f"{GROUPS}/{n}")))
-            except (
-                OSError,
-                RuntimeError,
-                ValueError,
-            ):  # ValueError: bad JSON, or a symlink out of the root
-                continue
+        groups = [  # one read for all of them: over ssh, one call rather than one per group
+            g
+            for g in self.target.read_metas(GROUPS, pattern="*.json")
+            if isinstance(g, dict) and "id" in g and isinstance(g.get("docs"), list)
+        ]
         return sorted(groups, key=lambda g: g.get("created", ""), reverse=True)
+
+    def groups_of(self, doc_id: str) -> list[dict]:
+        """The groups a document is in, newest first, each as ``{"id", "title", "n"}``."""
+        return [
+            {"id": g["id"], "title": g.get("title") or g["id"], "n": len(g["docs"])}
+            for g in self.list_groups()
+            if doc_id in g.get("docs", [])
+        ]
