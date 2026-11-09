@@ -77,7 +77,9 @@ def _seconds(x: Any, *, what: str) -> float:
     return float(x)
 
 
-def merge_spans(spans: Iterable[Iterable[float]], *, max_spans: int = MAX_SPANS) -> list[list[float]]:
+def merge_spans(
+    spans: Iterable[Iterable[float]], *, max_spans: int = MAX_SPANS
+) -> list[list[float]]:
     """The union of ``spans`` as sorted, disjoint ``[start, end]`` pairs; empty spans dropped.
 
     Past ``max_spans`` pairs, the ones with the smallest gap between them are joined, so a
@@ -119,9 +121,15 @@ def status(record: dict | None) -> str:
         return NOT_STARTED
     mark = record.get("done")
     if mark is not None:
-        return DONE if mark else (STARTED if heard_seconds(record) >= MIN_STARTED_S else NOT_STARTED)
+        return (
+            DONE
+            if mark
+            else (STARTED if heard_seconds(record) >= MIN_STARTED_S else NOT_STARTED)
+        )
     d = record.get("duration") or 0
-    if record.get("listens", 0) > 0 or (d > 0 and heard_seconds(record) >= DONE_SHARE * d):
+    if record.get("listens", 0) > 0 or (
+        d > 0 and heard_seconds(record) >= DONE_SHARE * d
+    ):
         return DONE
     return STARTED if heard_seconds(record) >= MIN_STARTED_S else NOT_STARTED
 
@@ -149,7 +157,9 @@ def apply_report(record: dict | None, report: dict) -> dict:
         raise ValueError(f"unknown fields in a report: {sorted(extra)}")
     spans = report.get("spans", [])
     if not isinstance(spans, list) or len(spans) > MAX_REPORT_SPANS:
-        raise ValueError(f"spans is a list of at most {MAX_REPORT_SPANS} [start, end] pairs")
+        raise ValueError(
+            f"spans is a list of at most {MAX_REPORT_SPANS} [start, end] pairs"
+        )
     clean = []
     for s in spans:
         if not isinstance(s, (list, tuple)) or len(s) != 2:

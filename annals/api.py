@@ -422,7 +422,11 @@ def mk_api(
         heard = _records(request).snapshot() if listening is not None else {}
         for r in rows:
             r["listening"] = listen_log.summary(heard.get(r["id"]))
-        return {"docs": rows, "statuses": list(listen_log.STATUSES), "tracked": listening is not None}
+        return {
+            "docs": rows,
+            "statuses": list(listen_log.STATUSES),
+            "tracked": listening is not None,
+        }
 
     @api.get("/listening/{doc_id}")
     def get_listening(doc_id: str, request: Request) -> dict:
@@ -437,7 +441,9 @@ def mk_api(
         records = _records(request)
         _meta_or_404(store, doc_id, settle=False)
         try:
-            listen_log.apply_report(None, body)  # refuse a bad report before taking the lock
+            listen_log.apply_report(
+                None, body
+            )  # refuse a bad report before taking the lock
             rec = records.modify(doc_id, lambda r: listen_log.apply_report(r, body))
         except ValueError as e:
             raise HTTPException(422, str(e))
@@ -451,7 +457,9 @@ def mk_api(
         if set(body) != {"done"}:
             raise HTTPException(422, 'send {"done": true | false | null}')
         try:
-            rec = records.modify(doc_id, lambda r: listen_log.apply_mark(r, body["done"]))
+            rec = records.modify(
+                doc_id, lambda r: listen_log.apply_mark(r, body["done"])
+            )
         except ValueError as e:
             raise HTTPException(422, str(e))
         return listen_log.summary(rec)
@@ -1147,9 +1155,7 @@ def _html_response(
     Carries an ETag from the file's size and mtime, so a revalidation is a 304.
     """
     st = path.stat()
-    etag = (
-        f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}-{media_version()}-{HTML_SERVING_VERSION}"'
-    )
+    etag = f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}-{media_version()}-{HTML_SERVING_VERSION}"'
     headers = {
         "Cache-Control": cache,
         "ETag": etag,

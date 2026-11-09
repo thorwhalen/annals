@@ -15,7 +15,9 @@ from pathlib import Path
 MEDIA_JS = Path(__file__).parent / "data" / "ui" / "media-progress.js"
 #: what a page that plays media holds: a tag, a script building one ("audio" as a tag name
 #: handed to createElement or a helper), or an ``Audio()``; matched on the lowercased page
-_MEDIA_HINT_RE = re.compile(rb"<(?:audio|video)\b|[\"'`](?:audio|video)[\"'`]|\baudio\s*\(")
+_MEDIA_HINT_RE = re.compile(
+    rb"<(?:audio|video)\b|[\"'`](?:audio|video)[\"'`]|\baudio\s*\("
+)
 #: the opt-out, as an attribute of the page's ``<html>`` or ``<body>``
 _OPT_OUT_RE = re.compile(rb"<(?:html|body)\b[^>]*\bdata-annals-media\s*=\s*[\"']?off\b")
 
