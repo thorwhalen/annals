@@ -180,6 +180,11 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="11">annals<span class="w"> </span>trash<span class="w"> </span>&lt;id&gt;<span class="w">  </span>/<span class="w">  </span>annals<span class="w"> </span>restore<span class="w"> </span>&lt;id&gt;<span class="w">         </span><span class="c1"># the recycle bin</span>
 </span></pre></div>
 </div>
+<p>Handed an annals link to read? It is private, so fetching it gets a login page. Read it through the same channel that publishes, on any machine where <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span></code> works; no share link is needed:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">annals<span class="w"> </span>aggregate<span class="w"> </span>&lt;link&gt;<span class="w">   </span><span class="c1"># the text of a document, or of every document in a group, as one markdown on stdout</span>
+</span><span data-line="2">annals<span class="w"> </span>show<span class="w"> </span>&lt;link&gt;<span class="w">        </span><span class="c1"># its metadata, including the groups it is in</span>
+</span></pre></div>
+</div>
 <p>What each kind looks like on the page:</p>
 <div class="table-wrapper colwidths-auto docutils container">
 <table class="docutils align-default">
@@ -285,7 +290,7 @@ data-aria-dark="Switch to auto color mode">
 <h2>Acting on documents: pick, then choose what you want back<a class="headerlink" href="#acting-on-documents-pick-then-choose-what-you-want-back" title="Link to this heading">#</a></h2>
 <p>On a group’s page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):</p>
 <ul class="simple">
-<li><p><strong>Links</strong>: <strong>One link</strong> for a person (expiry, optional password, and on a document “What’s included”) or <strong>A link per document</strong> for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus <strong>Copy all</strong>.</p></li>
+<li><p><strong>Links</strong>: <strong>One link</strong> for a person (expiry, optional password, and on a document “What’s included”) or <strong>A link per document</strong> for a notebook (one plain page each, no password). Your own agents need neither: the sheet’s first line copies the private address, which they read with <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;link&gt;</span></code>. Every link has its own copy button, plus <strong>Copy all</strong>.</p></li>
 <li><p><strong>One file</strong>: the picked documents’ files (Markdown, html, text, PDFs, images) as one Markdown, PDF or web page file, to copy, download or open.</p></li>
 <li><p><strong>Listen</strong>: a spoken review (when the host offers them, see below). For several documents, <strong>One review of all</strong> (their text is put in one document, tagged <code class="docutils literal notranslate"><span class="pre">combined</span></code> and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or <strong>One each</strong> (makes only the missing or out-of-date ones).</p></li>
 </ul>
@@ -447,7 +452,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-09 14:15 UTC from <a href="https://github.com/thorwhalen/annals/commit/f396d9ce5335439f7561b0ef82383df15031f02c">f396d9c</a> (main) · annals 0.0.39 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-09 15:08 UTC from <a href="https://github.com/thorwhalen/annals/commit/2080993dbd513c4f8f564463f6ea31dbf1cdb5de">2080993</a> (main) · annals 0.0.40 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -482,7 +487,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=e648f5b4"></script>
+      <script src="_static/documentation_options.js?v=84bd753f"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

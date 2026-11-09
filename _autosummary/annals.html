@@ -110,6 +110,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.DocStore.doc_rel"><code class="docutils literal notranslate"><span class="pre">DocStore.doc_rel()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.group"><code class="docutils literal notranslate"><span class="pre">DocStore.group()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.group_docs"><code class="docutils literal notranslate"><span class="pre">DocStore.group_docs()</span></code></a></li>
+<li><a class="reference internal" href="#annals.DocStore.groups_of"><code class="docutils literal notranslate"><span class="pre">DocStore.groups_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.list"><code class="docutils literal notranslate"><span class="pre">DocStore.list()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.list_groups"><code class="docutils literal notranslate"><span class="pre">DocStore.list_groups()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.make_group"><code class="docutils literal notranslate"><span class="pre">DocStore.make_group()</span></code></a></li>
@@ -209,7 +210,7 @@ directory as a private page with search, sort, groups and a recycle bin.</p>
 <td><p>Bring documents back from the recycle bin.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.show" title="annals.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
-<td><p>A document's metadata and link (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p></td>
+<td><p>A document's metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.trash" title="annals.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Move documents to the recycle bin (restorable).</p></td>
@@ -283,6 +284,17 @@ directory as a private page with search, sort, groups and a recycle bin.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>, <a class="reference internal" href="#annals.DocStore.list" title="annals.DocStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.DocStore.groups_of">
+<span class="sig-name descname"><span class="pre">groups_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.groups_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.DocStore.groups_of" title="Link to this definition">#</a></dt>
+<dd><p>The groups a document is in, newest first, each as <code class="docutils literal notranslate"><span class="pre">{&quot;id&quot;,</span> <span class="pre">&quot;title&quot;,</span> <span class="pre">&quot;n&quot;}</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.DocStore.list" title="annals.DocStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -644,7 +656,9 @@ published either way. <code class="docutils literal notranslate"><span class="pr
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.show">
 <span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.show" title="Link to this definition">#</a></dt>
-<dd><p>A document’s metadata and link (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p>
+<dd><p>A document’s metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p>
+<p><code class="docutils literal notranslate"><span class="pre">doc_id</span></code> may be the document’s link; a group’s link gives the group and its documents’
+links. To read the text, use <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;link&gt;</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -778,7 +792,7 @@ published either way. <code class="docutils literal notranslate"><span class="pr
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=e648f5b4"></script>
+      <script src="../_static/documentation_options.js?v=84bd753f"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

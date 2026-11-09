@@ -113,6 +113,13 @@ A group and the meta of each of its documents, in its order (missing or binned o
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]]
 
+#### groups_of(doc_id)
+
+The groups a document is in, newest first, each as `{"id", "title", "n"}`.
+
+* **Return type:**
+  [`list`](#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).

@@ -1,4 +1,4 @@
-> built 2026-11-09 14:15 UTC from f396d9c (main) · annals 0.0.39. Details: build_info.json
+> built 2026-11-09 15:08 UTC from 2080993 (main) · annals 0.0.40. Details: build_info.json
 
 # index.html.md
 
@@ -34,6 +34,13 @@ annals publish guide.html --replace <link-or-id>  # a new version of a document:
 annals publish page.html --artifact <claude.ai artifact link>  # plus a button to its interactive version
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
+```
+
+Handed an annals link to read? It is private, so fetching it gets a login page. Read it through the same channel that publishes, on any machine where `annals publish` works; no share link is needed:
+
+```bash
+annals aggregate <link>   # the text of a document, or of every document in a group, as one markdown on stdout
+annals show <link>        # its metadata, including the groups it is in
 ```
 
 What each kind looks like on the page:
@@ -114,7 +121,7 @@ The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Au
 
 On a group’s page, tick the documents you want (with none ticked, all of them count); a bar at the bottom says what is picked and offers three buttons named after what they give, each opening one sheet (Back closes it):
 
-- **Links**: **One link** for a person (expiry, optional password, and on a document “What’s included”) or **A link per document** for a notebook or an agent (one plain page each, no password). Every link has its own copy button, plus **Copy all**.
+- **Links**: **One link** for a person (expiry, optional password, and on a document “What’s included”) or **A link per document** for a notebook (one plain page each, no password). Your own agents need neither: the sheet’s first line copies the private address, which they read with `annals aggregate <link>`. Every link has its own copy button, plus **Copy all**.
 - **One file**: the picked documents’ files (Markdown, html, text, PDFs, images) as one Markdown, PDF or web page file, to copy, download or open.
 - **Listen**: a spoken review (when the host offers them, see below). For several documents, **One review of all** (their text is put in one document, tagged `combined` and added to the group, and that document gets an ordinary review; the same documents at the same versions reuse it) or **One each** (makes only the missing or out-of-date ones).
 
@@ -1094,7 +1101,7 @@ directory as a private page with search, sort, groups and a recycle bin.
 | [`parse_target`](_autosummary/annals.html.md#annals.parse_target)(spec)                                   | `host:/path` becomes an [`SshTarget`](_autosummary/annals.html.md#annals.SshTarget); anything else a [`LocalTarget`](_autosummary/annals.html.md#annals.LocalTarget). |
 | [`publish`](_autosummary/annals.html.md#annals.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.                                                                                  |
 | [`restore`](_autosummary/annals.html.md#annals.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](_autosummary/annals.html.md#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                                                                                                         |
+| [`show`](_autosummary/annals.html.md#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata, link, and the groups it is in (`to`: on a named target).                                                                                   |
 | [`trash`](_autosummary/annals.html.md#annals.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
@@ -1138,6 +1145,13 @@ A group and the meta of each of its documents, in its order (missing or binned o
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](_autosummary/annals.html.md#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]]
+
+#### groups_of(doc_id)
+
+The groups a document is in, newest first, each as `{"id", "title", "n"}`.
+
+* **Return type:**
+  [`list`](_autosummary/annals.html.md#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### list(, trash=False)
 
@@ -1396,7 +1410,10 @@ Bring documents back from the recycle bin.
 
 ### annals.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link (`to`: on a named target).
+A document’s metadata, link, and the groups it is in (`to`: on a named target).
+
+`doc_id` may be the document’s link; a group’s link gives the group and its documents’
+links. To read the text, use `annals aggregate <link>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3172,6 +3189,13 @@ A group and the meta of each of its documents, in its order (missing or binned o
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]]
 
+#### groups_of(doc_id)
+
+The groups a document is in, newest first, each as `{"id", "title", "n"}`.
+
+* **Return type:**
+  [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).
@@ -3529,15 +3553,19 @@ endpoint) is the declared replacement for the ssh one and is not built yet.
 
 ### Module Attributes
 
-| [`RECORD_SEP`](_autosummary/annals.target.html.md#annals.target.RECORD_SEP)   | Separator between concatenated meta.json files when reading many at once over ssh.                                  |
-|---------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| [`LOCK_NOTE`](_autosummary/annals.target.html.md#annals.target.LOCK_NOTE)    | the note a lock directory is created with (see [`Target.make_lock()`](_autosummary/annals.target.html.md#annals.target.Target.make_lock)) |
+| [`RECORD_SEP`](_autosummary/annals.target.html.md#annals.target.RECORD_SEP)   | Separator between concatenated meta.json files when reading many at once over ssh.                                                  |
+|---------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
+| [`META_GLOB`](_autosummary/annals.target.html.md#annals.target.META_GLOB)    | each document's meta.json                                                                                                           |
+| [`LOCK_NOTE`](_autosummary/annals.target.html.md#annals.target.LOCK_NOTE)    | the note a lock directory is created with (see [`Target.make_lock()`](_autosummary/annals.target.html.md#annals.target.Target.make_lock))                 |
+| [`SSH_SHARE_S`](_autosummary/annals.target.html.md#annals.target.SSH_SHARE_S)  | the several calls of one command (and the next command soon after) reuse it instead of paying a handshake each (~3 s to a far host) |
 
 ### Functions
 
-| [`check_rel`](_autosummary/annals.target.html.md#annals.target.check_rel)(rel)     | Refuse anything that could escape the root; the store only ever passes safe paths.                                                                                |
-|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`parse_target`](_autosummary/annals.target.html.md#annals.target.parse_target)(spec) | `host:/path` becomes an [`SshTarget`](_autosummary/annals.target.html.md#annals.target.SshTarget); anything else a [`LocalTarget`](_autosummary/annals.target.html.md#annals.target.LocalTarget). |
+| [`check_glob`](_autosummary/annals.target.html.md#annals.target.check_glob)(pattern)       | A glob safe to hand a remote shell unquoted: names, `*` and `/` only, no hidden part.                                                                             |
+|----------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`check_rel`](_autosummary/annals.target.html.md#annals.target.check_rel)(rel)            | Refuse anything that could escape the root; the store only ever passes safe paths.                                                                                |
+| [`parse_target`](_autosummary/annals.target.html.md#annals.target.parse_target)(spec)        | `host:/path` becomes an [`SshTarget`](_autosummary/annals.target.html.md#annals.target.SshTarget); anything else a [`LocalTarget`](_autosummary/annals.target.html.md#annals.target.LocalTarget). |
+| [`ssh_opts`](_autosummary/annals.target.html.md#annals.target.ssh_opts)(\*[, share_dir]) | The ssh options: batch mode, and one connection shared by consecutive calls.                                                                                      |
 
 ### Classes
 
@@ -3563,9 +3591,24 @@ A directory on this machine.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+### annals.target.META_GLOB *= '\*/meta.json'*
+
+each document’s meta.json
+
+* **Type:**
+  what [`Target.read_metas()`](_autosummary/annals.target.html.md#annals.target.Target.read_metas) reads by default
+
 ### annals.target.RECORD_SEP *= '\\x1e'*
 
 Separator between concatenated meta.json files when reading many at once over ssh.
+
+### annals.target.SSH_SHARE_S *= 60*
+
+the several calls of one command
+(and the next command soon after) reuse it instead of paying a handshake each (~3 s to a far host)
+
+* **Type:**
+  how long the shared ssh connection outlives its last use
 
 ### *class* annals.target.SshTarget(host, root)
 
@@ -3608,6 +3651,20 @@ Rename; fails when the source is gone or the destination already exists.
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
+#### read_metas(rel, , pattern='\*/meta.json')
+
+Every JSON file under `rel` matching `pattern`, read in one go (hidden ones skipped).
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### annals.target.check_glob(pattern)
+
+A glob safe to hand a remote shell unquoted: names, `*` and `/` only, no hidden part.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### annals.target.check_rel(rel)
 
 Refuse anything that could escape the root; the store only ever passes safe paths.
@@ -3621,6 +3678,16 @@ Refuse anything that could escape the root; the store only ever passes safe path
 
 * **Return type:**
   [`Target`](_autosummary/annals.target.html.md#annals.target.Target)
+
+### annals.target.ssh_opts(, share_dir=None)
+
+The ssh options: batch mode, and one connection shared by consecutive calls.
+
+The shared connection’s socket lives in `share_dir` (default `~/.ssh`); without that
+directory every call opens its own connection, as plain `ssh` would.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 
 # _autosummary/annals.tools.html.md
@@ -3656,7 +3723,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                           |
 | [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.          |
 | [`shares`](_autosummary/annals.tools.html.md#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                           |
-| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata and link (`to`: on a named target).                                       |
+| [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, and the groups it is in (`to`: on a named target).                 |
 | [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                                 |
 | [`unshare`](_autosummary/annals.tools.html.md#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.                       |
 
@@ -3837,7 +3904,10 @@ List share links, newest first (`all`: revoked and expired ones too).
 
 ### annals.tools.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link (`to`: on a named target).
+A document’s metadata, link, and the groups it is in (`to`: on a named target).
+
+`doc_id` may be the document’s link; a group’s link gives the group and its documents’
+links. To read the text, use `annals aggregate <link>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3863,7 +3933,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-09 14:15 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/f396d9ce5335439f7561b0ef82383df15031f02c"><code>f396d9c</code></a> on branch <code>main</code>, for **annals 0.0.39** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-09 15:08 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/2080993dbd513c4f8f564463f6ea31dbf1cdb5de"><code>2080993</code></a> on branch <code>main</code>, for **annals 0.0.40** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -3872,7 +3942,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/f396d9ce5335439f7561b0ef82383df15031f02c"><code>f396d9ce5335439f7561b0ef82383df15031f02c</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/2080993dbd513c4f8f564463f6ea31dbf1cdb5de"><code>2080993dbd513c4f8f564463f6ea31dbf1cdb5de</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -3883,9 +3953,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42632340370">42632340370</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42641045916">42641045916</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>f396d9ce5335439f7561b0ef82383df15031f02c</code> (in the history of the built commit) |
+| Event commit | <code>2080993dbd513c4f8f564463f6ea31dbf1cdb5de</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3910,13 +3980,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.39/">0.0.39</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.40/">0.0.40</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout f396d9ce5335439f7561b0ef82383df15031f02c
+git checkout 2080993dbd513c4f8f564463f6ea31dbf1cdb5de
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
@@ -3940,7 +4010,7 @@ Skills are folders holding a `SKILL.md` (the [Agent Skills](https://agentskills.
 
 ### `annals-publish`
 
-Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner’s private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to “publish this”, “post it to my annals”, “put it where I can read it on my phone”, “give me a link to that report”, “show me the images”, “where can I see the renders”, “share the page with me”, or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers living pages (one link that stays current: `--replace`), grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin.
+Publish a document or media (a markdown report, an html page, images, video, audio, a PDF, or a whole folder of renders) to the owner’s private annals and hand back the link, so they can read it on a phone or tablet away from the terminal. Use whenever the user asks to “publish this”, “post it to my annals”, “put it where I can read it on my phone”, “give me a link to that report”, “show me the images”, “where can I see the renders”, “share the page with me”, or whenever you have produced a document longer than a few lines that the user will want to read later or elsewhere. Also covers living pages (one link that stays current: `--replace`), grouping several documents under one link, listing what is in the annals, and moving a document to the recycle bin. Also use whenever you are handed an annals link (`.../annals/d/<id>` or `.../annals/g/<id>`) to read: the page is private, so read it with `annals aggregate <link>`, never by fetching the URL and never by asking for a share link.
 
 ```bash
 gh skill install thorwhalen/annals annals-publish --agent claude-code

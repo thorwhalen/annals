@@ -29,7 +29,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                           |
 | [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.          |
 | [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                           |
-| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata and link (`to`: on a named target).                                       |
+| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, and the groups it is in (`to`: on a named target).                 |
 | [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                                 |
 | [`unshare`](#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.                       |
 
@@ -210,7 +210,10 @@ List share links, newest first (`all`: revoked and expired ones too).
 
 ### annals.tools.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link (`to`: on a named target).
+A document’s metadata, link, and the groups it is in (`to`: on a named target).
+
+`doc_id` may be the document’s link; a group’s link gives the group and its documents’
+links. To read the text, use `annals aggregate <link>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

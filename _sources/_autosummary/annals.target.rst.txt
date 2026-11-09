@@ -9,14 +9,18 @@ annals.target
    .. autosummary::
    
       RECORD_SEP
+      META_GLOB
       LOCK_NOTE
+      SSH_SHARE_S
    
    .. rubric:: Functions
 
    .. autosummary::
    
+      check_glob
       check_rel
       parse_target
+      ssh_opts
    
    .. rubric:: Classes
 

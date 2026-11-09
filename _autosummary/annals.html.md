@@ -18,7 +18,7 @@ directory as a private page with search, sort, groups and a recycle bin.
 | [`parse_target`](#annals.parse_target)(spec)                                   | `host:/path` becomes an [`SshTarget`](#annals.SshTarget); anything else a [`LocalTarget`](#annals.LocalTarget). |
 | [`publish`](#annals.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.                                                                                  |
 | [`restore`](#annals.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata and link (`to`: on a named target).                                                                                                         |
+| [`show`](#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata, link, and the groups it is in (`to`: on a named target).                                                                                   |
 | [`trash`](#annals.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
@@ -62,6 +62,13 @@ A group and the meta of each of its documents, in its order (missing or binned o
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict), [`list`](#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]]
+
+#### groups_of(doc_id)
+
+The groups a document is in, newest first, each as `{"id", "title", "n"}`.
+
+* **Return type:**
+  [`list`](#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 #### list(, trash=False)
 
@@ -320,7 +327,10 @@ Bring documents back from the recycle bin.
 
 ### annals.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata and link (`to`: on a named target).
+A document’s metadata, link, and the groups it is in (`to`: on a named target).
+
+`doc_id` may be the document’s link; a group’s link gives the group and its documents’
+links. To read the text, use `annals aggregate <link>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
