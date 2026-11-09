@@ -165,11 +165,14 @@ def publish(
     result: dict = docs[0] if len(docs) == 1 else {"docs": docs}
     warnings = [w for w in link_warnings if w]
     if not settings.configured:
-        warnings.insert(0, (
-            f"no annals config: published to the local {settings.target} and linked to a local "
-            f"server. To publish where the owner reads, run `annals configure --target "
-            f"host:/path --base-url https://.../annals` (see `annals configure`)."
-        ))
+        warnings.insert(
+            0,
+            (
+                f"no annals config: published to the local {settings.target} and linked to a local "
+                f"server. To publish where the owner reads, run `annals configure --target "
+                f"host:/path --base-url https://.../annals` (see `annals configure`)."
+            ),
+        )
     if warnings:
         result["warning"] = "\nannals: warning: ".join(warnings)
     if group and add_to:

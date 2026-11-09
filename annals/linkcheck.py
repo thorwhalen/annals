@@ -88,7 +88,9 @@ def unlinked_mentions(text: str) -> list[Mention]:
         if not URL.search(line) and CONVERSATION.search(bare):
             date = DATE.search(DATE_RANGE.sub("", bare))
             if date:
-                found.append(Mention(n, "message", f"Slack/chat message of {date.group(0)}"))
+                found.append(
+                    Mention(n, "message", f"Slack/chat message of {date.group(0)}")
+                )
     return found
 
 
