@@ -69,9 +69,36 @@ def test_a_bad_report_is_refused(report):
         L.apply_report(None, report)
 
 
-def test_reader_files_are_path_safe():
+def test_reader_files_are_path_safe_and_never_shared():
     assert L.reader_file("Me@Example.com") == "me@example.com.json"
-    assert "/" not in L.reader_file("../../etc/passwd") and L.reader_file("..") == "owner.json"
+    assert "/" not in L.reader_file("../../etc/passwd") and not L.reader_file("..").startswith(".")
+    names = ["a/b", "a_b", "a%2Fb", "..", "owner", ".owner"]
+    assert len({L.reader_file(n) for n in names}) == len(names)
+    with pytest.raises(ValueError):
+        L.reader_file("")
+
+
+def test_a_listen_needs_the_audio_heard_almost_whole():
+    dragged = L.apply_report(None, {"spans": [[0, 2], [97, 100]], "duration": 100, "ended": "p"})
+    assert dragged["listens"] == 0 and L.status(dragged) == L.STARTED
+    heard = L.apply_report(None, {"spans": [[0, 100]], "duration": 100, "ended": "p"})
+    assert heard["listens"] == 1
+
+
+def test_a_retried_end_never_counts_twice_even_after_another_device_ended():
+    rec = None
+    for play in ("phone", "tablet", "phone"):  # the phone's retry lands after the tablet's
+        rec = L.apply_report(rec, {"spans": [[0, 10]], "duration": 10, "ended": play})
+    assert rec["listens"] == 2
+
+
+def test_the_tag_store_is_still_a_whole_mutable_mapping(tmp_path):
+    from annals.tags import JsonTagStore
+
+    tags = JsonTagStore(tmp_path / "tags.json")
+    tags.update({"x:1": ["b", "a"]})  # MutableMapping.update, not the atomic modify
+    assert tags["x:1"] == ["a", "b"]
+    assert tags.modify("x:1", lambda v: v + ["c"]) == ["a", "b", "c"]
 
 
 # -- the API ---------------------------------------------------------------------------
@@ -130,8 +157,9 @@ def test_bad_reports_unknown_docs_and_cross_site_writes_are_refused(store, docs)
     assert r.status_code == 403
 
 
-def test_no_listening_store_means_no_progress_but_the_list_still_works(store, docs):
-    c = _client(store, listening=None)
+@pytest.mark.parametrize("off", [None, False])
+def test_no_listening_store_means_no_progress_but_the_list_still_works(store, docs, off):
+    c = _client(store, listening=off)
     assert c.get(f"/listening/{docs['over']}").status_code == 404
     rows = c.get("/audio").json()
     assert rows["tracked"] is False and rows["docs"][0]["listening"]["status"] == L.NOT_STARTED
@@ -144,9 +172,36 @@ def test_the_standalone_reader_is_the_gates_user(store, docs):
     assert c.get("/annals/audio").status_code == 200  # the page shell, routed by the browser
 
 
+def test_a_document_says_whether_its_listening_is_recorded(store, docs):
+    c = _client(store)
+    assert c.get(f"/docs/{docs['over']}").json()["listenable"] is True
+    assert c.get(f"/docs/{docs['plain']}").json()["listenable"] is False
+    assert _client(store, listening=None).get(f"/docs/{docs['over']}").json()["listenable"] is False
+
+
 # -- the relay ---------------------------------------------------------------------
-def test_html_that_plays_media_gets_the_relay_and_other_html_does_not():
-    assert b"annalsMedia" in serve_html(b"<html><body><audio src=a.mp3></audio></body></html>")
-    assert b"annalsMedia" not in serve_html(b"<html><body><p>text</p></body></html>")
-    off = b'<html data-annals-media="off"><body><audio></audio></body></html>'
-    assert b"annalsMedia" not in serve_html(off)
+@pytest.mark.parametrize(
+    "page",
+    [
+        b"<html><body><audio src=a.mp3></audio></body></html>",
+        b'<body><script>var a = d("audio", {preload: "auto"});</script></body>',  # @zodal/speech
+        b"<body><script>var a = new Audio(url);</script></body>",
+    ],
+)
+def test_html_that_plays_media_gets_the_relay(page):
+    assert b"annalsMedia" in serve_html(page)
+
+
+@pytest.mark.parametrize(
+    "page",
+    [
+        b"<html><body><p>An audio overview of the video.</p></body></html>",
+        b'<html data-annals-media="off"><body><audio></audio></body></html>',
+    ],
+)
+def test_html_that_plays_nothing_or_opts_out_does_not(page):
+    assert b"annalsMedia" not in serve_html(page)
+
+
+def test_a_shared_page_carries_no_relay():
+    assert b"annalsMedia" not in serve_html(b"<body><audio></audio></body>", media_relay=False)

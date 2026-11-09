@@ -1088,7 +1088,7 @@
         SHARE && !rel ? shareNotice() : null,
         h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
         fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
-        rel || SHARE || isVersion || m.in_trash || !isAudioDoc(m) ? null : listeningPanel(m, body),
+        rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
         body,
         rel || SHARE ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
@@ -1783,14 +1783,12 @@
      (postMessage from the frame), a plain audio file through its own element. */
   var LISTEN = {
     flushEveryS: 15,   /* send once this many new seconds were heard */
-    maxStepS: 5,       /* two samples further apart than this are a jump, not listening */
     resumeMinS: 5      /* a stop earlier than this is not worth picking up from */
   };
   var STATUS_LABEL = { not_started: "Not started", started: "In progress", done: "Done" };
   var listener = null;   /* the tracker of the document on screen, or null */
 
   function clock(s) { s = Math.max(0, Math.round(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
-  function isAudioDoc(m) { return (m.tags || []).indexOf("overview") >= 0 || m.kind === "audio"; }
   function listeningUrl(id) { return API + "/listening/" + encodeURIComponent(id); }
   /* The listening API without the page's login redirect: progress is never worth leaving
      the audio for. Resolves to null when the host keeps no progress (404). */
@@ -1801,43 +1799,47 @@
       return r.json();
     });
   }
-  function mergeSpans(spans) {
-    var out = [];
-    spans.slice().sort(function (a, b) { return a[0] - b[0]; }).forEach(function (s) {
-      if (s[1] <= s[0]) return;
-      var top = out[out.length - 1];
-      if (top && s[0] <= top[1]) top[1] = Math.max(top[1], s[1]); else out.push([s[0], s[1]]);
-    });
-    return out;
-  }
-  /* What one document's player reports, folded into spans heard and sent every so often.
-     A sample: {why, t, d, playing, ended} (seconds), from the frame relay or an element. */
+  function rangesOf(tr) { var out = []; for (var i = 0; tr && i < tr.length; i++) out.push([tr.start(i), tr.end(i)]); return out; }
+  function total(spans) { return spans.reduce(function (n, s) { return n + Math.max(0, s[1] - s[0]); }, 0); }
+  /* One document's player, reported as samples {why, t, d, playing, ended, played} (seconds;
+     played: what the element itself says it played), sent to the server every so often.
+     Whatever was played is sent whole each time: the server keeps the union, so a resend or
+     a retry adds nothing twice, and nothing heard while events were held back is lost. */
   function listenTracker(docId, onSaved) {
-    var spans = [], last = null, duration = null, position = 0, ended = null, fresh = 0, stopped = false;
+    var played = [], sentS = 0, duration = null, position = null, moved = false, ends = [], stopped = false, everPlayed = false;
     function playId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
     var play = playId();
     function sample(s) {
       if (stopped || typeof s.t !== "number" || !isFinite(s.t)) return;
       if (typeof s.d === "number" && isFinite(s.d) && s.d > 0) duration = s.d;
-      if (last && last.playing && s.why !== "seeking" && s.t >= last.t && s.t - last.t <= LISTEN.maxStepS) {
-        spans.push([last.t, s.t]); fresh += s.t - last.t;
-      }
-      position = s.t; last = s;
-      if (s.why === "ended") { ended = play; play = playId(); flush(); }
-      else if (s.why === "pause" || fresh >= LISTEN.flushEveryS) flush();
+      if (Array.isArray(s.played)) played = s.played.filter(function (r) { return Array.isArray(r) && r.length === 2 && isFinite(r[0]) && isFinite(r[1]); });
+      if (s.playing || total(played) > 0) everPlayed = true;
+      /* where it stopped is only worth saving once something played or was sought: a page
+         that only loaded its audio (at 0:00) must not wipe the place another device left */
+      if (total(played) > sentS || (s.why === "seeked" && everPlayed)) { position = s.t; moved = true; }
+      if (s.why === "ended") { ends.push(play); play = playId(); flush(); }
+      else if (s.why === "pause" || total(played) - sentS >= LISTEN.flushEveryS) flush();
     }
     function flush(leaving) {
-      if (!spans.length && !ended && !(leaving && last)) return Promise.resolve();
-      var sent = mergeSpans(spans), sentEnded = ended;
-      var body = { spans: sent, duration: duration, position: position };
-      if (sentEnded) body.ended = sentEnded;
-      spans = []; ended = null; fresh = 0;
+      if (!moved && !ends.length) return Promise.resolve();
+      var body = { spans: played.slice(0, 500), duration: duration };
+      if (moved) body.position = position;
+      var end = ends[0], heard = total(played);
+      if (end) body.ended = end;
+      moved = false;
       return listeningCall(docId, { method: "POST", keepalive: !!leaving, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(function (rec) { if (rec && onSaved && !stopped) onSaved(rec); })
-        .catch(function () { spans = sent.concat(spans); if (sentEnded && !ended) ended = sentEnded; });  /* kept for the next send */
+        .then(function (rec) {
+          sentS = Math.max(sentS, heard);
+          if (end && ends[0] === end) ends.shift();
+          if (ends.length) flush(leaving);
+          if (rec && onSaved && !stopped) onSaved(rec);
+        })
+        .catch(function () { if (body.position !== undefined) moved = true; });  /* sent again next time */
     }
     return {
       sample: sample, flush: flush, frame: null,
+      hasPlayed: function () { return everPlayed; },
+      discard: function () { stopped = true; moved = false; ends = []; },
       stop: function () { if (!stopped) { flush(true); stopped = true; } }
     };
   }
@@ -1877,45 +1879,48 @@
   }
 
   /* On a document that plays audio: what you have heard of it, the mark, and Start over.
-     Playback picks up where it stopped, on any device. */
+     Playback picks up where it stopped, on any device, unless it has already started here. */
   function listeningPanel(m, body) {
-    var wrap = h("section", { class: "listening", "aria-label": "What you have heard" });
     var frame = body.querySelector("iframe.frame"), el = frame ? null : body.querySelector("audio, video");
     if (!frame && !el) return null;
-    var resumed = false, frameReady = !frame, whenReady = null;
+    var wrap = h("section", { class: "listening", "aria-label": "What you have heard", hidden: "" });
+    var t = listenTracker(m.id, function (rec) { draw(rec, false); });
+    t.frame = frame;
+    var frameReady = !frame, whenReady = null;
     /* the frame's relay hears a "start at" only once the frame has loaded (it cannot be
        asked: a sandboxed frame's document is never readable from here) */
     if (frame) frame.addEventListener("load", function () { frameReady = true; if (whenReady) whenReady(); }, { once: true });
+    if (el) ["play", "pause", "seeking", "seeked", "ended", "timeupdate", "loadedmetadata"].forEach(function (name) {
+      el.addEventListener(name, function () { t.sample({ why: name, t: el.currentTime, d: el.duration, playing: !el.paused && !el.ended, ended: el.ended, played: rangesOf(el.played) }); });
+    });
+    /* this page's tracker from now on, once the page holding the panel is on screen (page()
+       stops the previous one); a panel left behind by a quick move on never takes over */
+    Promise.resolve().then(function () { if (wrap.isConnected) { stopListening(); listener = t; } });
     function seek(at) {
       if (frame) { try { frame.contentWindow.postMessage({ annals: "media-cmd", seek: at }, "*"); } catch (e) { /* frame gone */ } }
       else if (el) { var to = function () { el.currentTime = at; }; if (el.readyState >= 1) to(); else el.addEventListener("loadedmetadata", to, { once: true }); }
     }
-    function draw(L) {
-      wrap.innerHTML = "";
+    function draw(L, arriving) {
+      wrap.innerHTML = ""; wrap.hidden = false;
       wrap.appendChild(progressBar(L.percent));
-      var resume = !resumed && L.status === "started" && L.position >= LISTEN.resumeMinS && (!L.duration || L.position < L.duration - LISTEN.resumeMinS);
+      var resume = arriving && !t.hasPlayed() && L.status === "started" && L.position >= LISTEN.resumeMinS && (!L.duration || L.position < L.duration - LISTEN.resumeMinS);
       wrap.appendChild(h("div", { class: "listening-row" }, [
         h("p", { class: "meta grow", role: "status" }, [heardWords(L)]),
-        resume ? h("button", { class: "btn", title: "Play from the beginning instead", onclick: function (e) { seek(0); resumed = true; e.currentTarget.remove(); toast("Starts from the beginning"); } }, ["Start over"]) : null,
-        markButton(m.id, L, draw),
+        resume ? h("button", { class: "btn", title: "Play from the beginning instead", onclick: function (e) { seek(0); e.currentTarget.remove(); toast("Starts from the beginning"); } }, ["Start over"]) : null,
+        markButton(m.id, L, function (rec) { draw(rec, false); }),
         L.percent || L.listens || L.status !== "not_started" ? h("button", { class: "btn link", title: "Forget what you heard of this", onclick: function (e) {
           var b = e.currentTarget; if (isPending(b)) return; pending(b, true);
-          listeningCall(m.id, { method: "DELETE" }).then(function (rec) { toast("Progress cleared"); draw(rec); }).catch(function (er) { pending(b, false); toast("Not cleared: " + (er.message || er), 4000); });
+          /* the player still holds what it played; reload it, so nothing heard before is sent again */
+          t.discard();
+          listeningCall(m.id, { method: "DELETE" }).then(function () { toast("Progress cleared"); route(); }).catch(function (er) { pending(b, false); toast("Not cleared: " + (er.message || er), 4000); });
         } }, ["Reset"]) : null
       ]));
       if (resume) seek(L.position);
-      resumed = true;  /* only the record found on arrival is picked up from */
     }
     listeningCall(m.id).then(function (L) {
-      if (!L) { wrap.remove(); return; }
-      var t = listenTracker(m.id, draw);
-      t.frame = frame;
-      stopListening(); listener = t;
-      if (el) ["play", "pause", "seeking", "seeked", "ended", "timeupdate", "loadedmetadata"].forEach(function (name) {
-        el.addEventListener(name, function () { t.sample({ why: name, t: el.currentTime, d: el.duration, playing: !el.paused && !el.ended, ended: el.ended }); });
-      });
-      if (frameReady) draw(L); else { whenReady = function () { draw(L); }; }
-    }).catch(function () { wrap.remove(); });
+      if (!L || !wrap.isConnected) return;
+      if (frameReady) draw(L, true); else whenReady = function () { draw(L, true); };
+    }).catch(function () { /* progress unavailable: the audio still plays */ });
     return wrap;
   }
 

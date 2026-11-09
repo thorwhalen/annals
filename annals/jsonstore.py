@@ -7,14 +7,14 @@ atomically under an exclusive ``flock``, re-read whenever another process change
 never broken by a damaged file (it reads as empty and is kept aside at the next write).
 
 A subclass says what a valid value is (:meth:`JsonFileStore.valid`) and how a value is
-cleaned before it is stored (:meth:`JsonFileStore.clean`). :meth:`JsonFileStore.update`
+cleaned before it is stored (:meth:`JsonFileStore.clean`). :meth:`JsonFileStore.modify`
 changes one entry from its current value under the lock, so two devices reporting at once
 never lose each other's change.
 
 >>> import tempfile, pathlib
 >>> s = JsonFileStore(pathlib.Path(tempfile.mkdtemp()) / "x.json")
 >>> s["a"] = {"n": 1}
->>> s.update("a", lambda v: {"n": (v or {}).get("n", 0) + 1})
+>>> s.modify("a", lambda v: {"n": (v or {}).get("n", 0) + 1})
 {'n': 2}
 >>> dict(s)
 {'a': {'n': 2}}
@@ -147,7 +147,7 @@ class JsonFileStore(MutableMapping):
         st = self.path.stat()
         self._data, self._stamp = data, (st.st_ino, st.st_mtime_ns, st.st_size)
 
-    def update(self, key: str, change: Callable[[Any], Any]) -> Any:
+    def modify(self, key: str, change: Callable[[Any], Any]) -> Any:
         """Set ``key`` to ``change(current value or None)``, atomically; returns the stored value.
 
         ``change`` returning ``None`` deletes the entry (and returns ``None``).

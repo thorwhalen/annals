@@ -18,6 +18,7 @@ from annals.store import DocStore
 
 PHONE = {"width": 390, "height": 844}
 SECONDS = 20
+RATE = 4
 
 
 def _silence_wav(seconds=SECONDS, rate=8000) -> str:
@@ -32,9 +33,11 @@ def _silence_wav(seconds=SECONDS, rate=8000) -> str:
 
 PLAYER = """<!doctype html><html><head><meta charset="utf-8"><title>Bees</title></head><body>
 <button id="play">Play</button> <button id="pause">Pause</button> <button id="end">To the end</button>
+<!-- played at RATE times speed, so the test hears the whole clip in a few seconds -->
 <script>
   var bytes = Uint8Array.from(atob("%s"), function (c) { return c.charCodeAt(0); });
   var player = new Audio(URL.createObjectURL(new Blob([bytes], {type: "audio/wav"})));
+  player.playbackRate = %s;
   window.player = player;
   document.getElementById("play").onclick = function () { player.play(); };
   document.getElementById("pause").onclick = function () { player.pause(); };
@@ -45,7 +48,7 @@ PLAYER = """<!doctype html><html><head><meta charset="utf-8"><title>Bees</title>
 @pytest.fixture(scope="module")
 def site(tmp_path_factory, serve):
     store = DocStore(tmp_path_factory.mktemp("audio") / "data")
-    over = store.publish(text=PLAYER % _silence_wav(), title="Listen: Bees", filename="overview.html", tags=[TAG])
+    over = store.publish(text=PLAYER % (_silence_wav(), RATE), title="Listen: Bees", filename="overview.html", tags=[TAG])
     store.publish(text="# Tides", title="Tides", filename="tides.md")
     return {"base": serve(store), "over": over}
 
@@ -87,7 +90,7 @@ def test_listen_on_one_device_and_see_what_is_left_on_another(device, site):
     assert "Not started" in _status_line(phone).inner_text()
     frame = phone.frame_locator("iframe.frame")
     frame.locator("#play").click()
-    phone.wait_for_timeout(6500)
+    phone.wait_for_timeout(1800)  # about 7 s of the clip at RATE
     frame.locator("#pause").click()
     phone.wait_for_function("document.querySelector('.listening [role=status]').textContent.indexOf('In progress') === 0")
     assert "stopped at 0:0" in _status_line(phone).inner_text()
@@ -104,8 +107,8 @@ def test_listen_on_one_device_and_see_what_is_left_on_another(device, site):
     tframe.locator("#play").click()  # picks up where the phone stopped
     tablet.wait_for_timeout(500)
     assert tframe.locator("body").evaluate("() => window.player.currentTime") >= 5
-    tframe.locator("#end").click()
-    tablet.wait_for_function("document.querySelector('.listening [role=status]').textContent.indexOf('Done') === 0")
+    # the rest of it here: between the two devices it was heard whole, so it counts as a listen
+    tablet.wait_for_function("document.querySelector('.listening [role=status]').textContent.indexOf('Done') === 0", timeout=15000)
     assert "heard to the end once" in _status_line(tablet).inner_text()
 
     phone.goto(f"{site['base']}/audio")
@@ -114,6 +117,18 @@ def test_listen_on_one_device_and_see_what_is_left_on_another(device, site):
     assert "1× to the end" in phone.locator(".audio-row").inner_text()
     phone.get_by_role("button", name="Not started 0").click()
     assert phone.locator(".audio-list .empty").count() == 1
+
+
+def test_dragging_to_the_end_is_not_a_listen(device, serve, tmp_path):
+    store = DocStore(tmp_path / "data")
+    over = store.publish(text=PLAYER % (_silence_wav(), RATE), title="Listen: Wasps", filename="overview.html", tags=[TAG])
+    phone = device()
+    phone.goto(f"{serve(store)}/d/{over['id']}")
+    _status_line(phone).wait_for()
+    phone.frame_locator("iframe.frame").locator("#end").click()
+    phone.wait_for_timeout(1500)
+    assert "to the end" not in _status_line(phone).inner_text()
+    assert not _status_line(phone).inner_text().startswith("Done")
 
 
 def test_mark_done_from_the_list_and_search(device, site):

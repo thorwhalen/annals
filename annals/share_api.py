@@ -444,7 +444,7 @@ def mk_share_api(
             text = path.read_text(encoding="utf-8", errors="replace")
             body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
             if kind_of(rel) == "html":
-                body = serve_html(body)
+                body = serve_html(body, media_relay=False)
             media_type = media_type_of(rel)
             if "charset" not in media_type:
                 media_type += "; charset=utf-8"

@@ -135,10 +135,10 @@ The **Audio** tab lists every spoken overview (documents tagged `overview`), new
 Progress is kept on the server, per reader (the login's email; `owner` with no login), so it follows you from the phone to the tablet: an overview you stopped halfway picks up where you stopped, on any device, with **Start over** beside it. What counts:
 
 - **heard**: the distinct seconds played, so a replayed minute counts once; at 95% it is done;
-- **listens**: each play that reaches the end, counted once however often the page reports it;
+- **listens**: each play that reaches the end of audio heard almost whole (dragging to the end is not a listen), counted once however often the page reports it;
 - **your mark**: Mark done (or not done) wins over both; Reset forgets the document.
 
-An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (`annals.media`) that posts what plays to the page around it (opt out with `data-annals-media="off"`). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (`listening/<reader>.json`); `mk_api(listening=...)` takes any other store, and `listening=None` keeps none. Progress is recorded on the annals page itself; a page opened on its own ("Open full page") does not report.
+An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (`annals.media`) that posts what the player itself says it played to the page around it, so a locked screen, seeking or 2× speed are counted right (opt out with `data-annals-media="off"` on `<html>` or `<body>`; share links never carry it). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (`listening/<reader>.json`); `mk_api(listening=...)` takes any other store, and `listening=None` keeps none. Progress is recorded on the annals page itself; a page opened on its own ("Open full page") does not report.
 
 ## Sharing one page
 

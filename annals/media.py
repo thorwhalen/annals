@@ -13,11 +13,11 @@ from functools import lru_cache
 from pathlib import Path
 
 MEDIA_JS = Path(__file__).parent / "data" / "ui" / "media-progress.js"
-#: a ``</body>`` (the last one), where the script goes; else the end of the page
-_BODY_END_RE = re.compile(rb"</body\s*>(?![\s\S]*</body\s*>)", re.I)
-#: words a page that plays media holds somewhere (a tag, or a script building an element)
-_MEDIA_HINTS = (b"audio", b"video")
-OPT_OUT = b'data-annals-media="off"'
+#: what a page that plays media holds: a tag, a script building one ("audio" as a tag name
+#: handed to createElement or a helper), or an ``Audio()``; matched on the lowercased page
+_MEDIA_HINT_RE = re.compile(rb"<(?:audio|video)\b|[\"'`](?:audio|video)[\"'`]|\baudio\s*\(")
+#: the opt-out, as an attribute of the page's ``<html>`` or ``<body>``
+_OPT_OUT_RE = re.compile(rb"<(?:html|body)\b[^>]*\bdata-annals-media\s*=\s*[\"']?off\b")
 
 
 @lru_cache(maxsize=1)
@@ -38,10 +38,12 @@ def add_media_relay(html: bytes) -> bytes:
     True
     >>> b"annalsMedia" in add_media_relay(b"<body><audio src=a.mp3></audio></body>")
     True
+    >>> add_media_relay(b"<p>an audio overview</p>") == b"<p>an audio overview</p>"
+    True
     """
     low = html.lower()
-    if not any(w in low for w in _MEDIA_HINTS) or OPT_OUT in low:
+    if not _MEDIA_HINT_RE.search(low) or _OPT_OUT_RE.search(low):
         return html
-    m = _BODY_END_RE.search(html)
-    at = m.start() if m else len(html)
+    at = low.rfind(b"</body")
+    at = at if at >= 0 else len(html)
     return html[:at] + _snippet() + html[at:]

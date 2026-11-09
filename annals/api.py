@@ -322,6 +322,7 @@ def mk_api(
     if listening is True:
         local = isinstance(store.target, LocalTarget)
         listening = listen_log.for_reader(store.target.root) if local else None
+    listening = listening or None
     reader = reader or reader_of
     api = FastAPI(title=f"{title} api", docs_url=None, redoc_url=None, openapi_url=None)
     # No swagger: its /docs route would shadow ours.
@@ -348,6 +349,7 @@ def mk_api(
     def get_doc(doc_id: str) -> dict:
         """One document's meta, each file's kind, and its text inline when markdown or text."""
         meta = _owner_tags(with_thumb(_meta_or_404(store, doc_id)))
+        meta["listenable"] = listening is not None and is_listenable(meta)
         if "version_of" in meta:  # a version's page lists its siblings
             try:
                 current = store.meta(meta["version_of"])
@@ -403,7 +405,10 @@ def mk_api(
     def _records(request: Request):
         if listening is None:
             raise HTTPException(404, "listening progress is not kept here")
-        return listening(reader(request))
+        try:
+            return listening(reader(request))
+        except ValueError as e:
+            raise HTTPException(400, str(e))
 
     @api.get("/audio")
     def list_audio(request: Request, q: str = "") -> dict:
@@ -413,7 +418,7 @@ def mk_api(
         """
         docs = store.search(q) if q else store.list()
         rows = [_owner_tags(list_meta(m)) for m in docs]
-        rows = [r for r in rows if is_audio_overview(r)]
+        rows = [r for r in rows if is_listenable(r)]
         heard = _records(request).snapshot() if listening is not None else {}
         for r in rows:
             r["listening"] = listen_log.summary(heard.get(r["id"]))
@@ -433,7 +438,7 @@ def mk_api(
         _meta_or_404(store, doc_id, settle=False)
         try:
             listen_log.apply_report(None, body)  # refuse a bad report before taking the lock
-            rec = records.update(doc_id, lambda r: listen_log.apply_report(r, body))
+            rec = records.modify(doc_id, lambda r: listen_log.apply_report(r, body))
         except ValueError as e:
             raise HTTPException(422, str(e))
         return listen_log.summary(rec)
@@ -446,7 +451,7 @@ def mk_api(
         if set(body) != {"done"}:
             raise HTTPException(422, 'send {"done": true | false | null}')
         try:
-            rec = records.update(doc_id, lambda r: listen_log.apply_mark(r, body["done"]))
+            rec = records.modify(doc_id, lambda r: listen_log.apply_mark(r, body["done"]))
         except ValueError as e:
             raise HTTPException(422, str(e))
         return listen_log.summary(rec)
@@ -454,7 +459,7 @@ def mk_api(
     @api.delete("/listening/{doc_id}", dependencies=[Depends(_require_same_origin)])
     def forget_listening(doc_id: str, request: Request) -> dict:
         """Forget what this reader heard of a document: it reads as not started again."""
-        _records(request).update(doc_id, lambda r: None)
+        _records(request).modify(doc_id, lambda r: None)
         return listen_log.summary(None)
 
     @api.post("/docs/{doc_id}/trash", dependencies=[Depends(_require_same_origin)])
@@ -931,8 +936,10 @@ def mk_api(
     return api
 
 
-def is_audio_overview(meta: dict) -> bool:
-    """Whether a document is a spoken overview (tagged :data:`annals.overview.TAG`), in sight."""
+def is_listenable(meta: dict) -> bool:
+    """Whether a document is listed under Audio and its listening is recorded: for now, a
+    spoken overview (tagged :data:`annals.overview.TAG`) in sight. The page reads this
+    answer (``listenable`` on a document), so widening it is a change here only."""
     return overview.TAG in (meta.get("tags") or []) and not meta.get("in_trash")
 
 
@@ -1124,10 +1131,12 @@ def links_open_apart(html: bytes, *, max_bytes: int = LINK_REWRITE_MAX_BYTES) ->
     return "".join(parts).encode("utf-8", "surrogateescape")
 
 
-def serve_html(html: bytes) -> bytes:
+def serve_html(html: bytes, *, media_relay: bool = True) -> bytes:
     """An html file as it is served: standards mode, links that leave open apart, table
-    tools, and the media relay that lets the page record what was heard (:mod:`annals.media`)."""
-    return add_media_relay(add_table_tools(links_open_apart(doctype_guard(html))))
+    tools, and the media relay that lets the owner's page record what was heard
+    (:mod:`annals.media`; ``media_relay=False`` for a page nobody records, a share's)."""
+    html = add_table_tools(links_open_apart(doctype_guard(html)))
+    return add_media_relay(html) if media_relay else html
 
 
 def _html_response(

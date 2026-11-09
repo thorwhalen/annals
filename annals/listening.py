@@ -4,8 +4,9 @@ The page reports what was played, a few seconds at a time, as spans of the audio
 timeline (``[[start, end], ...]`` in seconds). The server keeps the **union** of those spans
 per reader and document, so the percent heard counts each second once, however often it was
 replayed or skipped back to, and two devices reporting the same minute add nothing twice.
-A listen is counted when playback reaches the end; a report carries the id of the play it
-belongs to, so a report sent twice (a retry, a page closing) counts one listen.
+A listen is counted when playback reaches the end of audio that has been heard almost
+whole (:data:`DONE_SHARE`), so dragging to the end is not a listen; a report carries the
+id of the play it belongs to, so a report sent twice (a retry, a page closing) counts one.
 
 A record, per reader and document::
 
@@ -17,14 +18,16 @@ is absent until they set it. :func:`status` reads a record as one of :data:`STAT
 
 Records live under the data root, one JSON file per reader (``listening/<reader>.json``),
 through :class:`annals.jsonstore.JsonFileStore`. :func:`for_reader` is the seam: any
-``(reader) -> store`` callable whose stores have ``update`` and ``snapshot`` (as
-:class:`annals.jsonstore.JsonFileStore` does) can replace it (``mk_api(listening=...)``).
+``(reader) -> store`` callable whose stores are :class:`Records` can replace it
+(``mk_api(listening=...)``).
 
 >>> merge_spans([[5, 10], [0, 3], [2, 6], [20, 20]])
 [[0.0, 10.0]]
 >>> rec = apply_report(None, {"spans": [[0, 30]], "duration": 100, "position": 30})
 >>> percent(rec), status(rec)
 (30, 'started')
+>>> apply_report(None, {"spans": [[95, 100]], "duration": 100, "ended": "p0"})["listens"]  # dragged to the end
+0
 >>> rec = apply_report(rec, {"spans": [[30, 100]], "duration": 100, "position": 100, "ended": "p1"})
 >>> rec = apply_report(rec, {"spans": [], "duration": 100, "position": 100, "ended": "p1"})
 >>> percent(rec), rec["listens"], status(rec)
@@ -34,11 +37,11 @@ through :class:`annals.jsonstore.JsonFileStore`. :func:`for_reader` is the seam:
 from __future__ import annotations
 
 import math
-import re
-from collections.abc import Callable, Iterable, MutableMapping
+from collections.abc import Callable, Iterable
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
+from urllib.parse import quote
 
 from annals.jsonstore import JsonFileStore
 
@@ -57,7 +60,9 @@ MAX_REPORT_SPANS = 500
 #: longest audio a report may claim, in seconds (a sanity bound, not a feature limit)
 MAX_DURATION_S = 24 * 3600
 MAX_PLAY_ID_LEN = 64
-_READER_SAFE = re.compile(r"[^A-Za-z0-9@._+-]")
+#: the plays that reached the end, remembered so a retried report counts none twice
+RECENT_PLAYS = 20
+MAX_READER_LEN = 200
 
 
 def _now() -> str:
@@ -125,7 +130,7 @@ def summary(record: dict | None) -> dict:
     """A record as the page shows it: the record plus ``percent`` and ``status``."""
     out = {"heard": [], "duration": None, "position": 0.0, "listens": 0}
     out.update(record or {})
-    out.pop("last_ended", None)
+    out.pop("recent_plays", None)
     out["percent"] = percent(record)
     out["status"] = status(record)
     return out
@@ -163,9 +168,11 @@ def apply_report(record: dict | None, report: dict) -> dict:
     if ended is not None:
         if not isinstance(ended, str) or not 0 < len(ended) <= MAX_PLAY_ID_LEN:
             raise ValueError("ended is the id of the play that reached the end")
-        if ended != rec.get("last_ended"):
+        recent = [p for p in rec.get("recent_plays", []) if isinstance(p, str)]
+        whole = d and heard_seconds(rec) >= DONE_SHARE * d
+        if whole and ended not in recent:
             rec["listens"] = int(rec.get("listens", 0)) + 1
-            rec["last_ended"] = ended
+            rec["recent_plays"] = (recent + [ended])[-RECENT_PLAYS:]
     rec.setdefault("listens", 0)
     rec["updated"] = _now()
     return rec
@@ -196,12 +203,32 @@ class ListeningStore(JsonFileStore):
 
 
 def reader_file(reader: str) -> str:
-    """The file name a reader's records are kept under (their identity, made path-safe)."""
-    name = _READER_SAFE.sub("_", reader.strip().lower())[:120].strip(".")
-    return (name or "owner") + ".json"
+    """The file name a reader's records are kept under: their identity, percent-encoded.
+
+    The encoding is one-to-one, so two readers never share a file, and never a path.
+    """
+    who = reader.strip().lower()
+    if not who or len(who) > MAX_READER_LEN:
+        raise ValueError(f"a reader is 1 to {MAX_READER_LEN} characters")
+    name = quote(who, safe="@+")
+    if name.startswith("."):
+        name = "%2E" + name[1:]
+    return name + ".json"
 
 
-ForReader = Callable[[str], MutableMapping]
+class Records(Protocol):
+    """One reader's records, as the API uses them."""
+
+    def get(self, key: str, default: Any = None) -> Any: ...
+
+    def modify(self, key: str, change: Callable[[Any], Any]) -> Any:
+        """Set ``key`` to ``change(current or None)`` atomically (``None`` deletes it)."""
+        ...
+
+    def snapshot(self) -> dict[str, Any]: ...
+
+
+ForReader = Callable[[str], Records]
 
 
 def for_reader(root: Path | str) -> ForReader:

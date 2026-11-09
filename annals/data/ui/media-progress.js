@@ -3,7 +3,9 @@
    such a page, shown in a sandboxed frame, so only the frame can see its <audio>; this
    script relays what it plays to the page around it, which records what was heard
    (annals.listening). It does nothing in a page opened on its own (no parent).
-   To the parent:  {annals: "media", why, t, d, playing, ended}   (t, d in seconds)
+   To the parent:  {annals: "media", why, t, d, playing, ended, played}   (seconds)
+     played is the element's own record of what it played ([[start, end], ...]), right
+     across seeking, playback speed and a locked screen that held the events back.
      on play, pause, seeking, seeked, ended, loadedmetadata, and timeupdate at most once
      per THROTTLE_MS.
    From the parent: {annals: "media-cmd", seek: s}: start the audio at s seconds (applied
@@ -17,12 +19,17 @@
   var EVENTS = ["play", "pause", "seeking", "seeked", "ended", "loadedmetadata"];
   var seen = [], pendingSeek = null, lastSent = 0;
 
+  function ranges(tr) {
+    var out = [];
+    for (var i = 0; tr && i < tr.length; i++) out.push([tr.start(i), tr.end(i)]);
+    return out;
+  }
   function post(el, why) {
     try {
       window.parent.postMessage({
         annals: "media", why: why, t: el.currentTime || 0,
         d: isFinite(el.duration) ? el.duration : null,
-        playing: !el.paused && !el.ended, ended: !!el.ended
+        playing: !el.paused && !el.ended, ended: !!el.ended, played: ranges(el.played)
       }, "*");
     } catch (e) { /* a parent that went away */ }
   }
