@@ -71,7 +71,10 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.listening.html">annals.listening</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.media.html">annals.media</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.references.html">annals.references</a></li>
@@ -113,6 +116,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#hosting-the-page">Hosting the page</a></li>
 <li><a class="reference internal" href="#acting-on-documents-pick-then-choose-what-you-want-back">Acting on documents: pick, then choose what you want back</a></li>
 <li><a class="reference internal" href="#spoken-overviews">Spoken overviews</a></li>
+<li><a class="reference internal" href="#audio-what-you-still-have-to-listen-to">Audio: what you still have to listen to</a></li>
 <li><a class="reference internal" href="#sharing-one-page">Sharing one page</a></li>
 <li><a class="reference internal" href="#downloads">Downloads</a></li>
 <li><a class="reference internal" href="#one-file-from-many-markdown-pdf-or-a-web-page">One file from many: Markdown, PDF or a web page</a></li>
@@ -295,6 +299,17 @@ data-aria-dark="Switch to auto color mode">
 </div>
 <p>Run <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">listen-work</span></code> from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (<code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEW_DAILY_LIMIT</span></code>). <code class="docutils literal notranslate"><span class="pre">annals.overview</span></code> has the details.</p>
 </section>
+<section id="audio-what-you-still-have-to-listen-to">
+<h2>Audio: what you still have to listen to<a class="headerlink" href="#audio-what-you-still-have-to-listen-to" title="Link to this heading">#</a></h2>
+<p>The <strong>Audio</strong> tab lists every spoken overview (documents tagged <code class="docutils literal notranslate"><span class="pre">overview</span></code>), newest first, with a search box and a filter by what you have heard: <strong>Not started</strong>, <strong>In progress</strong>, <strong>Done</strong>. Each row shows how much of it you heard and how many times you heard it to the end, and has a <strong>Mark done</strong> button for one you heard elsewhere.</p>
+<p>Progress is kept on the server, per reader (the login’s email; <code class="docutils literal notranslate"><span class="pre">owner</span></code> with no login), so it follows you from the phone to the tablet: an overview you stopped halfway picks up where you stopped, on any device, with <strong>Start over</strong> beside it. What counts:</p>
+<ul class="simple">
+<li><p><strong>heard</strong>: the distinct seconds played, so a replayed minute counts once; at 95% it is done;</p></li>
+<li><p><strong>listens</strong>: each play that reaches the end of audio heard almost whole (dragging to the end is not a listen), counted once however often the page reports it;</p></li>
+<li><p><strong>your mark</strong>: Mark done (or not done) wins over both; Reset forgets the document.</p></li>
+</ul>
+<p>An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (<code class="docutils literal notranslate"><span class="pre">annals.media</span></code>) that posts what the player itself says it played to the page around it, so a locked screen, seeking or 2× speed are counted right (opt out with <code class="docutils literal notranslate"><span class="pre">data-annals-media=&quot;off&quot;</span></code> on <code class="docutils literal notranslate"><span class="pre">&lt;html&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;body&gt;</span></code>; share links never carry it). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (<code class="docutils literal notranslate"><span class="pre">listening/&lt;reader&gt;.json</span></code>); <code class="docutils literal notranslate"><span class="pre">mk_api(listening=...)</span></code> takes any other store, and <code class="docutils literal notranslate"><span class="pre">listening=None</span></code> keeps none. Progress is recorded on the annals page itself; a page opened on its own (“Open full page”) does not report.</p>
+</section>
 <section id="sharing-one-page">
 <h2>Sharing one page<a class="headerlink" href="#sharing-one-page" title="Link to this heading">#</a></h2>
 <p>The annals is private; a <strong>share link</strong> lets someone without an account read ONE document (or one group) and nothing else. From the page, <strong>Links › One link</strong> on a document lists its files and the annals pages it links to under “What’s included”, so you choose what goes; from a shell:</p>
@@ -425,7 +440,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-06 09:11 UTC from <a href="https://github.com/thorwhalen/annals/commit/2b40b61192a8d5556410df2a63ca990049b6c7a1">2b40b61</a> (main) · annals 0.0.35 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-09 09:16 UTC from <a href="https://github.com/thorwhalen/annals/commit/4cab5e2306f98f746043279090212d8d665c49cb">4cab5e2</a> (main) · annals 0.0.36 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -460,7 +475,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=39aadc1c"></script>
+      <script src="_static/documentation_options.js?v=0e525676"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

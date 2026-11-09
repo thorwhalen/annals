@@ -41,7 +41,10 @@
    combine
    config
    export
+   jsonstore
+   listening
    mcp
+   media
    notebook
    overview
    references

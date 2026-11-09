@@ -19,26 +19,31 @@ can replace it (`mk_api(tags=...)`), e.g. a table in a database.
 
 ### Classes
 
-| [`JsonTagStore`](#annals.tags.JsonTagStore)(path)   | `{item key: [tags]}` in one JSON file, re-read when another process changed it.   |
-|-----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`JsonTagStore`](#annals.tags.JsonTagStore)(path)   | `{item key: [tags]}` in one JSON file (see [`annals.jsonstore.JsonFileStore`](annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)).   |
+|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ### *class* annals.tags.JsonTagStore(path)
 
-Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
+Bases: [`JsonFileStore`](annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)
 
-`{item key: [tags]}` in one JSON file, re-read when another process changed it.
+`{item key: [tags]}` in one JSON file (see [`annals.jsonstore.JsonFileStore`](annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)).
 
-Safe with several server processes on one machine: a write takes an exclusive
-`flock` on `<file>.lock`, re-reads the file, changes it and replaces it atomically,
-so two workers saving at once never lose each other’s change. A read re-reads the file
-whenever its inode, size or mtime changed (every write makes a new inode).
+Safe with several server processes on one machine; a damaged file reads as empty and is
+kept aside (`tags.json.damaged`) at the next write.
 
-#### snapshot()
+#### clean(value)
 
-Every entry at once, under one read (what a listing overlays).
+The value as stored; raise `ValueError` to refuse it.
 
 * **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+#### valid(value)
+
+Whether a value read from the file is kept (an invalid one is logged and skipped).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### annals.tags.normalize_tags(tags)
 

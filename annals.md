@@ -1,4 +1,4 @@
-> built 2026-11-06 09:11 UTC from 2b40b61 (main) · annals 0.0.35. Details: build_info.json
+> built 2026-11-09 09:16 UTC from 4cab5e2 (main) · annals 0.0.36. Details: build_info.json
 
 # index.html.md
 
@@ -133,6 +133,18 @@ annals listen <doc-id> --minutes 3 # asks for one from the command line, as the 
 ```
 
 Run `annals listen-work` from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (`ANNALS_OVERVIEW_DAILY_LIMIT`). `annals.overview` has the details.
+
+## Audio: what you still have to listen to
+
+The **Audio** tab lists every spoken overview (documents tagged `overview`), newest first, with a search box and a filter by what you have heard: **Not started**, **In progress**, **Done**. Each row shows how much of it you heard and how many times you heard it to the end, and has a **Mark done** button for one you heard elsewhere.
+
+Progress is kept on the server, per reader (the login’s email; `owner` with no login), so it follows you from the phone to the tablet: an overview you stopped halfway picks up where you stopped, on any device, with **Start over** beside it. What counts:
+
+- **heard**: the distinct seconds played, so a replayed minute counts once; at 95% it is done;
+- **listens**: each play that reaches the end of audio heard almost whole (dragging to the end is not a listen), counted once however often the page reports it;
+- **your mark**: Mark done (or not done) wins over both; Reset forgets the document.
+
+An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (`annals.media`) that posts what the player itself says it played to the page around it, so a locked screen, seeking or 2× speed are counted right (opt out with `data-annals-media="off"` on `<html>` or `<body>`; share links never carry it). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (`listening/<reader>.json`); `mk_api(listening=...)` takes any other store, and `listening=None` keeps none. Progress is recorded on the annals page itself; a page opened on its own (“Open full page”) does not report.
 
 ## Sharing one page
 
@@ -1395,7 +1407,10 @@ Move documents to the recycle bin (restorable).
 | [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog)           | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
 | [`combine`](_autosummary/annals.combine.html.md#module-annals.combine)           | Many files of many kinds as ONE document: a Markdown, html or PDF file.                                                                            |
 | [`config`](_autosummary/annals.config.html.md#module-annals.config)             | Settings: where documents are published and what link to print.                                                                                    |
+| [`jsonstore`](_autosummary/annals.jsonstore.html.md#module-annals.jsonstore)       | A `MutableMapping` kept in one JSON file, safe with several server processes.                                                                      |
+| [`listening`](_autosummary/annals.listening.html.md#module-annals.listening)       | What each reader has heard of each audio document: percent heard, listens, where they stopped.                                                     |
 | [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)                   | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
+| [`media`](_autosummary/annals.media.html.md#module-annals.media)               | The media relay for published html pages: what a framed page plays, told to the page around it.                                                    |
 | [`notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook)         | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
 | [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)         | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
 | [`references`](_autosummary/annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
@@ -1408,6 +1423,287 @@ Move documents to the recycle bin (restorable).
 | [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)                 | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
 | [`target`](_autosummary/annals.target.html.md#module-annals.target)             | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
 | [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)               | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
+
+
+# _autosummary/annals.jsonstore.html.md
+
+# annals.jsonstore
+
+A `MutableMapping` kept in one JSON file, safe with several server processes.
+
+The owner’s tags ([`annals.tags`](_autosummary/annals.tags.html.md#module-annals.tags)) and each reader’s listening progress
+([`annals.listening`](_autosummary/annals.listening.html.md#module-annals.listening)) are small, server-side records that the page changes one entry at
+a time. [`JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore) is that one mechanism: a JSON object in a file, written
+atomically under an exclusive `flock`, re-read whenever another process changed it, and
+never broken by a damaged file (it reads as empty and is kept aside at the next write).
+
+A subclass says what a valid value is ([`JsonFileStore.valid()`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore.valid)) and how a value is
+cleaned before it is stored ([`JsonFileStore.clean()`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore.clean)). [`JsonFileStore.modify()`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore.modify)
+changes one entry from its current value under the lock, so two devices reporting at once
+never lose each other’s change.
+
+```pycon
+>>> import tempfile, pathlib
+>>> s = JsonFileStore(pathlib.Path(tempfile.mkdtemp()) / "x.json")
+>>> s["a"] = {"n": 1}
+>>> s.modify("a", lambda v: {"n": (v or {}).get("n", 0) + 1})
+{'n': 2}
+>>> dict(s)
+{'a': {'n': 2}}
+```
+
+### Module Attributes
+
+| [`DAMAGED_SUFFIX`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.DAMAGED_SUFFIX)   | the suffix a damaged file is kept under, so a hand edit gone wrong can be recovered   |
+|-------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+
+### Classes
+
+| [`JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)(path)   | `{key: value}` in one JSON file, re-read when another process changed it.   |
+|------------------------------------------------------------------------|-----------------------------------------------------------------------------|
+
+### annals.jsonstore.DAMAGED_SUFFIX *= '.damaged'*
+
+the suffix a damaged file is kept under, so a hand edit gone wrong can be recovered
+
+### *class* annals.jsonstore.JsonFileStore(path)
+
+Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
+
+`{key: value}` in one JSON file, re-read when another process changed it.
+
+A write takes an exclusive `flock` on `<file>.lock`, re-reads the file, changes it
+and replaces it atomically. A read re-reads the file whenever its inode, size or mtime
+changed (every write makes a new inode). `label` names the store in log messages.
+
+#### clean(value)
+
+The value as stored; raise `ValueError` to refuse it.
+
+* **Return type:**
+  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
+
+#### modify(key, change)
+
+Set `key` to `change(current value or None)`, atomically; returns the stored value.
+
+`change` returning `None` deletes the entry (and returns `None`).
+
+* **Return type:**
+  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
+
+#### snapshot()
+
+Every entry at once, under one read (what a listing overlays).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)]
+
+#### valid(value)
+
+Whether a value read from the file is kept (an invalid one is logged and skipped).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+
+# _autosummary/annals.listening.html.md
+
+# annals.listening
+
+What each reader has heard of each audio document: percent heard, listens, where they stopped.
+
+The page reports what was played, a few seconds at a time, as spans of the audio’s own
+timeline (`[[start, end], ...]` in seconds). The server keeps the **union** of those spans
+per reader and document, so the percent heard counts each second once, however often it was
+replayed or skipped back to, and two devices reporting the same minute add nothing twice.
+A listen is counted when playback reaches the end of audio that has been heard almost
+whole ([`DONE_SHARE`](_autosummary/annals.listening.html.md#annals.listening.DONE_SHARE)), so dragging to the end is not a listen; a report carries the
+id of the play it belongs to, so a report sent twice (a retry, a page closing) counts one.
+
+A record, per reader and document:
+
+```default
+{"heard": [[0.0, 61.5], [90.0, 120.0]], "duration": 300.0, "position": 120.0,
+ "listens": 1, "done": true, "updated": "2026-11-09T10:00:00+00:00"}
+```
+
+`done` is the reader’s own mark (“I have heard this”), set or cleared from the page; it
+is absent until they set it. [`status()`](_autosummary/annals.listening.html.md#annals.listening.status) reads a record as one of [`STATUSES`](_autosummary/annals.listening.html.md#annals.listening.STATUSES).
+
+Records live under the data root, one JSON file per reader (`listening/<reader>.json`),
+through [`annals.jsonstore.JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore). [`for_reader()`](_autosummary/annals.listening.html.md#annals.listening.for_reader) is the seam: any
+`(reader) -> store` callable whose stores are [`Records`](_autosummary/annals.listening.html.md#annals.listening.Records) can replace it
+(`mk_api(listening=...)`).
+
+```pycon
+>>> merge_spans([[5, 10], [0, 3], [2, 6], [20, 20]])
+[[0.0, 10.0]]
+>>> rec = apply_report(None, {"spans": [[0, 30]], "duration": 100, "position": 30})
+>>> percent(rec), status(rec)
+(30, 'started')
+>>> apply_report(None, {"spans": [[95, 100]], "duration": 100, "ended": "p0"})["listens"]  # dragged to the end
+0
+>>> rec = apply_report(rec, {"spans": [[30, 100]], "duration": 100, "position": 100, "ended": "p1"})
+>>> rec = apply_report(rec, {"spans": [], "duration": 100, "position": 100, "ended": "p1"})
+>>> percent(rec), rec["listens"], status(rec)
+(100, 1, 'done')
+```
+
+### Module Attributes
+
+| [`STATUSES`](_autosummary/annals.listening.html.md#annals.listening.STATUSES)         | what a record reads as, in the order the page offers them as filters               |
+|-------------------------------------------------------------------|------------------------------------------------------------------------------------|
+| [`DONE_SHARE`](_autosummary/annals.listening.html.md#annals.listening.DONE_SHARE)       | heard at least this share of the audio counts as done, without a listen to the end |
+| [`MIN_STARTED_S`](_autosummary/annals.listening.html.md#annals.listening.MIN_STARTED_S)    | heard less than this many seconds is not started (a stray tap on play)             |
+| [`MAX_SPANS`](_autosummary/annals.listening.html.md#annals.listening.MAX_SPANS)        | at most this many separate spans are kept; past it the closest ones are joined     |
+| [`MAX_REPORT_SPANS`](_autosummary/annals.listening.html.md#annals.listening.MAX_REPORT_SPANS) | a report holds at most this many spans                                             |
+| [`MAX_DURATION_S`](_autosummary/annals.listening.html.md#annals.listening.MAX_DURATION_S)   | longest audio a report may claim, in seconds (a sanity bound, not a feature limit) |
+| [`RECENT_PLAYS`](_autosummary/annals.listening.html.md#annals.listening.RECENT_PLAYS)     | the plays that reached the end, remembered so a retried report counts none twice   |
+
+### Functions
+
+| [`apply_mark`](_autosummary/annals.listening.html.md#annals.listening.apply_mark)(record, done)            | `record` with the reader's own mark set (`True`/`False`) or cleared (`None`).       |
+|--------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`apply_report`](_autosummary/annals.listening.html.md#annals.listening.apply_report)(record, report)        | `record` with a report from the page folded in.                                     |
+| [`for_reader`](_autosummary/annals.listening.html.md#annals.listening.for_reader)(root)                    | The default seam: each reader's records in `<root>/listening/<reader>.json`.        |
+| [`heard_seconds`](_autosummary/annals.listening.html.md#annals.listening.heard_seconds)(record)               | How many distinct seconds of the audio were heard.                                  |
+| [`merge_spans`](_autosummary/annals.listening.html.md#annals.listening.merge_spans)(spans, \*[, max_spans]) | The union of `spans` as sorted, disjoint `[start, end]` pairs; empty spans dropped. |
+| [`percent`](_autosummary/annals.listening.html.md#annals.listening.percent)(record)                     | The share of the audio heard, 0 to 100 (0 while the duration is unknown).           |
+| [`reader_file`](_autosummary/annals.listening.html.md#annals.listening.reader_file)(reader)                 | The file name a reader's records are kept under: their identity, percent-encoded.   |
+| [`status`](_autosummary/annals.listening.html.md#annals.listening.status)(record)                      | `done`, `started` or `not_started`; the reader's own mark wins when set.            |
+| [`summary`](_autosummary/annals.listening.html.md#annals.listening.summary)(record)                     | A record as the page shows it: the record plus `percent` and `status`.              |
+
+### Classes
+
+| [`ListeningStore`](_autosummary/annals.listening.html.md#annals.listening.ListeningStore)(path)        | One reader's records: `{doc id: record}` in one JSON file.   |
+|------------------------------------------------------------------------------|--------------------------------------------------------------|
+| [`Records`](_autosummary/annals.listening.html.md#annals.listening.Records)(\*args, \*\*kwargs) | One reader's records, as the API uses them.                  |
+
+### annals.listening.DONE_SHARE *= 0.95*
+
+heard at least this share of the audio counts as done, without a listen to the end
+
+### *class* annals.listening.ListeningStore(path)
+
+Bases: [`JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)
+
+One reader’s records: `{doc id: record}` in one JSON file.
+
+#### valid(value)
+
+Whether a value read from the file is kept (an invalid one is logged and skipped).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.listening.MAX_DURATION_S *= 86400*
+
+longest audio a report may claim, in seconds (a sanity bound, not a feature limit)
+
+### annals.listening.MAX_REPORT_SPANS *= 500*
+
+a report holds at most this many spans
+
+### annals.listening.MAX_SPANS *= 200*
+
+at most this many separate spans are kept; past it the closest ones are joined
+
+### annals.listening.MIN_STARTED_S *= 3.0*
+
+heard less than this many seconds is not started (a stray tap on play)
+
+### annals.listening.RECENT_PLAYS *= 20*
+
+the plays that reached the end, remembered so a retried report counts none twice
+
+### *class* annals.listening.Records(\*args, \*\*kwargs)
+
+Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
+
+One reader’s records, as the API uses them.
+
+#### modify(key, change)
+
+Set `key` to `change(current or None)` atomically (`None` deletes it).
+
+* **Return type:**
+  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
+
+### annals.listening.STATUSES *= ('not_started', 'started', 'done')*
+
+what a record reads as, in the order the page offers them as filters
+
+### annals.listening.apply_mark(record, done)
+
+`record` with the reader’s own mark set (`True`/`False`) or cleared (`None`).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.listening.apply_report(record, report)
+
+`record` with a report from the page folded in. Raises `ValueError` on a bad report.
+
+A report: `{"spans": [[a, b], ...], "duration": s, "position": s, "ended"?: play_id}`.
+`ended` names the play that reached the end; each play id counts one listen.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.listening.for_reader(root)
+
+The default seam: each reader’s records in `<root>/listening/<reader>.json`.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`Records`](_autosummary/annals.listening.html.md#annals.listening.Records)]
+
+### annals.listening.heard_seconds(record)
+
+How many distinct seconds of the audio were heard.
+
+* **Return type:**
+  [`float`](https://docs.python.org/3/builtins/functions.html#float)
+
+### annals.listening.merge_spans(spans, , max_spans=200)
+
+The union of `spans` as sorted, disjoint `[start, end]` pairs; empty spans dropped.
+
+Past `max_spans` pairs, the ones with the smallest gap between them are joined, so a
+record stays small whatever a reader does (the percent heard can only grow by that).
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`float`](https://docs.python.org/3/builtins/functions.html#float)]]
+
+### annals.listening.percent(record)
+
+The share of the audio heard, 0 to 100 (0 while the duration is unknown).
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+### annals.listening.reader_file(reader)
+
+The file name a reader’s records are kept under: their identity, percent-encoded.
+
+The encoding is one-to-one, so two readers never share a file, and never a path.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.listening.status(record)
+
+`done`, `started` or `not_started`; the reader’s own mark wins when set.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.listening.summary(record)
+
+A record as the page shows it: the record plus `percent` and `status`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 
 # _autosummary/annals.mcp.html.md
@@ -1427,6 +1723,48 @@ core free of any MCP import; the function list is the one the CLI dispatches.
 ### annals.mcp.mk_server()
 
 Build the MCP server over [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools).
+
+
+# _autosummary/annals.media.html.md
+
+# annals.media
+
+The media relay for published html pages: what a framed page plays, told to the page around it.
+
+A spoken overview is an html page shown in a sandboxed frame, so the annals page cannot see
+its audio. This adds one inlined script (the page’s own `ui/media-progress.js`) to any
+html page that may play audio or video; the script posts what is played to the parent
+page, which records what the reader heard ([`annals.listening`](_autosummary/annals.listening.html.md#module-annals.listening)), and takes a “start at”
+from it. Opened on its own (no parent), the script does nothing.
+
+### Functions
+
+| [`add_media_relay`](_autosummary/annals.media.html.md#annals.media.add_media_relay)(html)   | `html` with the media relay injected, unless it plays nothing or opts out.                                          |
+|--------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
+| [`media_version`](_autosummary/annals.media.html.md#annals.media.media_version)()         | A short hash of what [`add_media_relay()`](_autosummary/annals.media.html.md#annals.media.add_media_relay) injects, for a page's ETag. |
+
+### annals.media.add_media_relay(html)
+
+`html` with the media relay injected, unless it plays nothing or opts out.
+
+```pycon
+>>> add_media_relay(b"<p>no media</p>") == b"<p>no media</p>"
+True
+>>> b"annalsMedia" in add_media_relay(b"<body><audio src=a.mp3></audio></body>")
+True
+>>> add_media_relay(b"<p>an audio overview</p>") == b"<p>an audio overview</p>"
+True
+```
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### annals.media.media_version()
+
+A short hash of what [`add_media_relay()`](_autosummary/annals.media.html.md#annals.media.add_media_relay) injects, for a page’s ETag.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/annals.notebook.html.md
@@ -2994,26 +3332,31 @@ can replace it (`mk_api(tags=...)`), e.g. a table in a database.
 
 ### Classes
 
-| [`JsonTagStore`](_autosummary/annals.tags.html.md#annals.tags.JsonTagStore)(path)   | `{item key: [tags]}` in one JSON file, re-read when another process changed it.   |
-|-----------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`JsonTagStore`](_autosummary/annals.tags.html.md#annals.tags.JsonTagStore)(path)   | `{item key: [tags]}` in one JSON file (see [`annals.jsonstore.JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)).   |
+|-----------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
 
 ### *class* annals.tags.JsonTagStore(path)
 
-Bases: [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)
+Bases: [`JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)
 
-`{item key: [tags]}` in one JSON file, re-read when another process changed it.
+`{item key: [tags]}` in one JSON file (see [`annals.jsonstore.JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)).
 
-Safe with several server processes on one machine: a write takes an exclusive
-`flock` on `<file>.lock`, re-reads the file, changes it and replaces it atomically,
-so two workers saving at once never lose each other’s change. A read re-reads the file
-whenever its inode, size or mtime changed (every write makes a new inode).
+Safe with several server processes on one machine; a damaged file reads as empty and is
+kept aside (`tags.json.damaged`) at the next write.
 
-#### snapshot()
+#### clean(value)
 
-Every entry at once, under one read (what a listing overlays).
+The value as stored; raise `ValueError` to refuse it.
 
 * **Return type:**
-  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+#### valid(value)
+
+Whether a value read from the file is kept (an invalid one is logged and skipped).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### annals.tags.normalize_tags(tags)
 
@@ -3368,18 +3711,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-06 09:11 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/2b40b61192a8d5556410df2a63ca990049b6c7a1"><code>2b40b61</code></a> on branch <code>main</code>, for **annals 0.0.35** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-09 09:16 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/4cab5e2306f98f746043279090212d8d665c49cb"><code>4cab5e2</code></a> on branch <code>main</code>, for **annals 0.0.36** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.35) is behind the latest release on PyPI (0.0.36): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.36) is behind the latest release on PyPI (0.0.37): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/2b40b61192a8d5556410df2a63ca990049b6c7a1"><code>2b40b61192a8d5556410df2a63ca990049b6c7a1</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/4cab5e2306f98f746043279090212d8d665c49cb"><code>4cab5e2306f98f746043279090212d8d665c49cb</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -3390,9 +3733,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42192851393">42192851393</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42591654037">42591654037</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>2b40b61192a8d5556410df2a63ca990049b6c7a1</code> (in the history of the built commit) |
+| Event commit | <code>4cab5e2306f98f746043279090212d8d665c49cb</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3417,13 +3760,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.36/">0.0.36</a>, newer than the documented version (0.0.35).
+Latest release: <a href="https://pypi.org/project/annals/0.0.37/">0.0.37</a>, newer than the documented version (0.0.36).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 2b40b61192a8d5556410df2a63ca990049b6c7a1
+git checkout 4cab5e2306f98f746043279090212d8d665c49cb
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

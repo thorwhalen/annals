@@ -71,7 +71,10 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.listening.html">annals.listening</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
@@ -102,7 +105,8 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#annals.tags.JsonTagStore"><code class="docutils literal notranslate"><span class="pre">JsonTagStore</span></code></a><ul>
-<li><a class="reference internal" href="#annals.tags.JsonTagStore.snapshot"><code class="docutils literal notranslate"><span class="pre">JsonTagStore.snapshot()</span></code></a></li>
+<li><a class="reference internal" href="#annals.tags.JsonTagStore.clean"><code class="docutils literal notranslate"><span class="pre">JsonTagStore.clean()</span></code></a></li>
+<li><a class="reference internal" href="#annals.tags.JsonTagStore.valid"><code class="docutils literal notranslate"><span class="pre">JsonTagStore.valid()</span></code></a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#annals.tags.normalize_tags"><code class="docutils literal notranslate"><span class="pre">normalize_tags()</span></code></a></li>
@@ -170,7 +174,7 @@ can replace it (<code class="docutils literal notranslate"><span class="pre">mk_
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.tags.JsonTagStore" title="annals.tags.JsonTagStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JsonTagStore</span></code></a>(path)</p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">{item</span> <span class="pre">key:</span> <span class="pre">[tags]}</span></code> in one JSON file, re-read when another process changed it.</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">{item</span> <span class="pre">key:</span> <span class="pre">[tags]}</span></code> in one JSON file (see <a class="reference internal" href="annals.jsonstore.html#annals.jsonstore.JsonFileStore" title="annals.jsonstore.JsonFileStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">annals.jsonstore.JsonFileStore</span></code></a>).</p></td>
 </tr>
 </tbody>
 </table>
@@ -178,21 +182,30 @@ can replace it (<code class="docutils literal notranslate"><span class="pre">mk_
 <dl class="py class">
 <dt class="sig sig-object py" id="annals.tags.JsonTagStore">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.tags.</span></span><span class="sig-name descname"><span class="pre">JsonTagStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tags.html#JsonTagStore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tags.JsonTagStore" title="Link to this definition">#</a></dt>
-<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">MutableMapping</span></code></a></p>
-<p><code class="docutils literal notranslate"><span class="pre">{item</span> <span class="pre">key:</span> <span class="pre">[tags]}</span></code> in one JSON file, re-read when another process changed it.</p>
-<p>Safe with several server processes on one machine: a write takes an exclusive
-<code class="docutils literal notranslate"><span class="pre">flock</span></code> on <code class="docutils literal notranslate"><span class="pre">&lt;file&gt;.lock</span></code>, re-reads the file, changes it and replaces it atomically,
-so two workers saving at once never lose each other’s change. A read re-reads the file
-whenever its inode, size or mtime changed (every write makes a new inode).</p>
+<dd><p>Bases: <a class="reference internal" href="annals.jsonstore.html#annals.jsonstore.JsonFileStore" title="annals.jsonstore.JsonFileStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">JsonFileStore</span></code></a></p>
+<p><code class="docutils literal notranslate"><span class="pre">{item</span> <span class="pre">key:</span> <span class="pre">[tags]}</span></code> in one JSON file (see <a class="reference internal" href="annals.jsonstore.html#annals.jsonstore.JsonFileStore" title="annals.jsonstore.JsonFileStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">annals.jsonstore.JsonFileStore</span></code></a>).</p>
+<p>Safe with several server processes on one machine; a damaged file reads as empty and is
+kept aside (<code class="docutils literal notranslate"><span class="pre">tags.json.damaged</span></code>) at the next write.</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py method">
-<dt class="sig sig-object py" id="annals.tags.JsonTagStore.snapshot">
-<span class="sig-name descname"><span class="pre">snapshot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tags.html#JsonTagStore.snapshot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tags.JsonTagStore.snapshot" title="Link to this definition">#</a></dt>
-<dd><p>Every entry at once, under one read (what a listing overlays).</p>
+<dt class="sig sig-object py" id="annals.tags.JsonTagStore.clean">
+<span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tags.html#JsonTagStore.clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tags.JsonTagStore.clean" title="Link to this definition">#</a></dt>
+<dd><p>The value as stored; raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> to refuse it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.tags.JsonTagStore.valid">
+<span class="sig-name descname"><span class="pre">valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tags.html#JsonTagStore.valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tags.JsonTagStore.valid" title="Link to this definition">#</a></dt>
+<dd><p>Whether a value read from the file is kept (an invalid one is logged and skipped).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -254,7 +267,7 @@ holds control characters, or for more than <code class="docutils literal notrans
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=39aadc1c"></script>
+      <script src="../_static/documentation_options.js?v=0e525676"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

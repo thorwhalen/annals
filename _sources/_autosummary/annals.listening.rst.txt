@@ -1,0 +1,39 @@
+annals.listening
+================
+
+.. automodule:: annals.listening
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      STATUSES
+      DONE_SHARE
+      MIN_STARTED_S
+      MAX_SPANS
+      MAX_REPORT_SPANS
+      MAX_DURATION_S
+      RECENT_PLAYS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      apply_mark
+      apply_report
+      for_reader
+      heard_seconds
+      merge_spans
+      percent
+      reader_file
+      status
+      summary
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      ListeningStore
+      Records
+   

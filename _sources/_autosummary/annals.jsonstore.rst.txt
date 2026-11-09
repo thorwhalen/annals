@@ -1,0 +1,18 @@
+annals.jsonstore
+================
+
+.. automodule:: annals.jsonstore
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DAMAGED_SUFFIX
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      JsonFileStore
+   
