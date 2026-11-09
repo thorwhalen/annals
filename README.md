@@ -136,6 +136,8 @@ Run `annals listen-work` from a timer, not from a watcher on the folder: finishe
 
 The **Audio** tab lists every spoken overview (documents tagged `overview`), newest first, with a search box and a filter by what you have heard: **Not started**, **In progress**, **Done**. Each row shows how much of it you heard and how many times you heard it to the end, and has a **Mark done** button for one you heard elsewhere.
 
+An overview you asked for that is not made yet is listed above them, under **Not made yet**: being made (the tab looks again every few seconds and moves it into the list when it is ready), or failed, with why and a **Try again** button. A failure stays there for a week, so an overview you asked for never silently fails to appear.
+
 Progress is kept on the server, per reader (the login's email; `owner` with no login), so it follows you from the phone to the tablet: an overview you stopped halfway picks up where you stopped, on any device, with **Start over** beside it. What counts:
 
 - **heard**: the distinct seconds played, so a replayed minute counts once; at 95% it is done;

@@ -1928,8 +1928,9 @@
   function audioView() {
     var params = new URLSearchParams(location.search);
     var state = { q: params.get("q") || "", status: params.get("status") || "" };
-    var rows = null, tracked = true, failed = null;
+    var rows = null, tracked = true, failed = null, unmade = [], poll = null;
     var seg = h("div", { class: "seg status-filter", role: "group", "aria-label": "Show" });
+    var unmadeEl = h("section", { class: "unmade", "aria-label": "Asked for, not made yet", "aria-live": "polite" });
     var countEl = h("span", { class: "count" });
     var listEl = h("div", { class: "list audio-list", "aria-busy": "true" }, [h("p", { class: "muted" }, ["Loading…"])]);
     function urlFor() {
@@ -1944,6 +1945,7 @@
       return state.q.toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) >= 0; });
     }
     function render() {
+      renderUnmade();
       listEl.innerHTML = "";
       listEl.setAttribute("aria-busy", String(rows === null && !failed));
       if (failed) { listEl.appendChild(h("p", { class: "err" }, [failed])); return; }
@@ -1962,6 +1964,48 @@
       countEl.textContent = shown.length + (shown.length === 1 ? " overview" : " overviews");
       if (!shown.length) { listEl.appendChild(emptyState()); return; }
       shown.forEach(function (r) { listEl.appendChild(audioRow(r)); });
+    }
+    /* What was asked for and is not in the list: being made, or failed with why and a retry.
+       Without it an overview that failed simply never shows up, with no word of why. */
+    function renderUnmade() {
+      unmadeEl.innerHTML = "";
+      var shown = state.status === "started" || state.status === "done" ? [] : unmade.filter(matches);
+      unmadeEl.hidden = !shown.length;
+      if (!shown.length) return;
+      unmadeEl.appendChild(h("h3", null, ["Not made yet"]));
+      shown.forEach(function (u) { unmadeEl.appendChild(unmadeRow(u)); });
+    }
+    function unmadeRow(u) {
+      var href = BASE + "/d/" + u.doc, making = u.state === "queued" || u.state === "running";
+      var link = h("a", { class: "title", href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [u.title]);
+      var out = [link, h("p", { class: making ? "muted" : "err" }, [making ? "Being made (" + u.minutes + " min). It takes about 2 minutes." : "Did not work."])];
+      if (!making) {
+        if (u.error) out.push(h("details", null, [h("summary", null, ["Why"]), h("p", { class: "why" }, [u.error])]));
+        var retry = h("button", { class: "btn", type: "button", onclick: function () {
+          if (isPending(retry)) return;
+          pending(retry, true);
+          api("/docs/" + encodeURIComponent(u.doc) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: u.minutes }) })
+            .then(function (s) { Object.assign(u, s); render(); watch(); })
+            .catch(function (e) { pending(retry, false); toast("Could not ask again: " + (e.message || e)); });
+        } }, ["Try again"]);
+        out.push(h("div", { class: "toolbar" }, [retry]));
+      }
+      return h("div", { class: "unmade-row" + (making ? "" : " failed") }, out);
+    }
+    /* While one is being made, look again now and then, so it moves into the list when ready. */
+    function watch() {
+      if (poll || !unmade.some(function (u) { return u.state === "queued" || u.state === "running"; })) return;
+      poll = setTimeout(function () {
+        poll = null;
+        if (!unmadeEl.isConnected) return;
+        load().catch(function () { watch(); });  /* a missed look: try again at the next tick */
+      }, LISTEN_POLL_MS);
+    }
+    function load() {
+      return api("/audio").then(function (res) {
+        rows = res.docs || []; tracked = res.tracked !== false; unmade = res.unmade || [];
+        render(); watch();
+      });
     }
     function emptyState() {
       if (!rows.length) return h("div", { class: "empty" }, ["No spoken overviews yet. On a document, choose Listen to make one."]);
@@ -1993,13 +2037,13 @@
     page("Audio", mainNav("audio"), [
       h("h2", { class: "scope-title" }, ["Audio"]),
       h("div", { class: "controls" }, [search]),
+      unmadeEl,
       seg,
       h("div", { class: "row", style: "margin-bottom:8px" }, [countEl]),
       listEl
     ]);
     viewLabel = function () { return "Audio" + (location.search ? ", filtered" : ""); };
-    api("/audio").then(function (res) { rows = res.docs || []; tracked = res.tracked !== false; render(); })
-      .catch(function (e) { failed = String(e.message || e); render(); });
+    load().catch(function (e) { failed = String(e.message || e); render(); });
   }
 
   /* -------- one file of a folder source (a ledger) ----------------------------------- */

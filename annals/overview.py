@@ -225,6 +225,42 @@ def state_of(store, requests: Requests, meta: dict) -> dict:
     }
 
 
+#: a failed request is still listed as unmade for this long, so a retry is offered where
+#: the reader looks for the overview (the Audio tab), not only on the document
+FAILED_SHOWN_S = 7 * 24 * 3600
+
+
+def unmade(store, requests: Requests) -> list[dict]:
+    """The overviews asked for and not (yet) made: being made, or failed recently; newest first.
+
+    Each is ``state_of`` its document plus ``doc``, ``title`` and ``requested``. A request
+    whose document is gone, binned or no longer speakable is left out: nothing can be retried.
+    """
+    out = []
+    for doc_id in reversed(requests.ids()):
+        try:
+            meta = store.meta(doc_id)
+        except (KeyError, ValueError, OSError):
+            continue
+        if not eligible(meta):
+            continue
+        record = requests.get(doc_id) or {}
+        state = state_of(store, requests, meta)
+        when = record.get("finished") or record.get("requested")
+        if state["state"] in ACTIVE or (
+            state["state"] == FAILED and not _older_than(when, FAILED_SHOWN_S)
+        ):
+            out.append(
+                {
+                    **state,
+                    "doc": doc_id,
+                    "title": meta.get("title") or doc_id,
+                    "requested": record.get("requested"),
+                }
+            )
+    return out
+
+
 def request(
     store,
     requests: Requests,

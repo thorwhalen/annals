@@ -205,3 +205,20 @@ def test_html_that_plays_nothing_or_opts_out_does_not(page):
 
 def test_a_shared_page_carries_no_relay():
     assert b"annalsMedia" not in serve_html(b"<body><audio></audio></body>", media_relay=False)
+
+
+# -- overviews asked for and not made ---------------------------------------------------
+def test_an_overview_that_failed_is_listed_with_why_until_it_is_made(store, docs):
+    from annals import overview
+
+    src = store.publish(text="# Moths", title="Moths", filename="moths.md")["id"]
+    requests = overview.Requests(store.target.root)
+    requests.put(src, {"state": overview.FAILED, "minutes": 5, "requested": overview._now(), "error": "login expired"})
+    c = _client(store, overviews=True)
+    unmade = c.get("/audio").json()["unmade"]
+    assert [(u["doc"], u["title"], u["state"], u["error"]) for u in unmade] == [(src, "Moths", "failed", "login expired")]
+    assert c.post(f"/docs/{src}/overview", json={"minutes": 5}).json()["state"] == overview.QUEUED  # Try again
+    assert c.get("/audio").json()["unmade"][0]["state"] == overview.QUEUED
+    requests.put(src, {"state": overview.FAILED, "minutes": 5, "requested": "2020-01-01T00:00:00+00:00", "error": "old"})
+    assert c.get("/audio").json()["unmade"] == []  # an old failure is no longer offered
+    assert _client(store).get("/audio").json()["unmade"] == []  # overviews off: nothing asked for
