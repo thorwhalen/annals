@@ -48,6 +48,28 @@ def _as_list(x) -> list[str]:
     return items
 
 
+#: the suffixes whose text the link check reads (prose an author writes by hand)
+LINK_CHECKED_SUFFIXES = frozenset({".md", ".markdown", ".txt"})
+
+
+def _link_warning(label: str, text: str) -> str | None:
+    """The unlinked-mention warning for one document's text, prefixed with its ``label``."""
+    from annals.linkcheck import unlinked_warning
+
+    w = unlinked_warning(text)
+    return f"{label}: {w}" if w else None
+
+
+def _link_warning_for_file(path: Path) -> str | None:
+    """The unlinked-mention warning for a markdown or text file; None for anything else."""
+    if path.suffix.lower() not in LINK_CHECKED_SUFFIXES or not path.is_file():
+        return None
+    try:
+        return _link_warning(path.name, path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
 def publish(
     paths: list[str],
     *,
@@ -62,6 +84,7 @@ def publish(
     to: str | None = None,
     replace: str | None = None,
     artifact: str | None = None,
+    no_link_check: bool = False,
 ) -> dict:
     """Publish one document and print its link; several paths become several documents.
 
@@ -79,6 +102,9 @@ def publish(
     guide, a status page) keeps one link. ``artifact`` (a claude.ai artifact link) is the
     interactive version of the page: the document's page shows an "Open the interactive
     version" button. Publish the Artifact first, then the same page here with its link.
+    A markdown or text document that mentions an issue or a Slack/email/chat message
+    without linking to it gets a warning on stderr (:mod:`annals.linkcheck`); it is
+    published either way. ``no_link_check`` turns that check off.
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
     if artifact is not None:
@@ -91,6 +117,7 @@ def publish(
     if session:
         source["session"] = session
     docs = []
+    link_warnings = []
     paths = _as_list(paths)
     replace_id = None
     if replace:
@@ -106,6 +133,8 @@ def publish(
             import sys
 
             text = sys.stdin.read()
+            if not no_link_check:
+                link_warnings.append(_link_warning("stdin", text))
             meta = store.publish(
                 title=title,
                 tags=tag_list,
@@ -115,6 +144,8 @@ def publish(
                 artifact=artifact,
             )
         else:
+            if not no_link_check:
+                link_warnings.append(_link_warning_for_file(Path(p)))
             meta = store.publish(
                 Path(p),
                 title=title if len(paths) == 1 else None,
@@ -132,12 +163,15 @@ def publish(
             }
         )
     result: dict = docs[0] if len(docs) == 1 else {"docs": docs}
+    warnings = [w for w in link_warnings if w]
     if not settings.configured:
-        result["warning"] = (
+        warnings.insert(0, (
             f"no annals config: published to the local {settings.target} and linked to a local "
             f"server. To publish where the owner reads, run `annals configure --target "
             f"host:/path --base-url https://.../annals` (see `annals configure`)."
-        )
+        ))
+    if warnings:
+        result["warning"] = "\nannals: warning: ".join(warnings)
     if group and add_to:
         raise ValueError(
             "pass --group (a new group) or --add-to (an existing one), not both"
