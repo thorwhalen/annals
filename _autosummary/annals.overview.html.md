@@ -202,8 +202,9 @@ What a page shows for a document: its request’s state and what it can start.
 
 The overviews asked for and not (yet) made: being made, or failed recently; newest first.
 
-Each is `state_of` its document plus `doc`, `title` and `requested`. A request
-whose document is gone, binned or no longer speakable is left out: nothing can be retried.
+Each is `state_of` its document plus `doc`, `title`, `created` (the document’s),
+`requested` and `finished` (the last try’s). A request whose document is gone, binned
+or no longer speakable is left out: nothing can be retried.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]

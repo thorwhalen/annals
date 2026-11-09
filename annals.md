@@ -1,4 +1,4 @@
-> built 2026-11-09 11:46 UTC from 1c82e21 (main) · annals 0.0.38. Details: build_info.json
+> built 2026-11-09 14:15 UTC from f396d9c (main) · annals 0.0.39. Details: build_info.json
 
 # index.html.md
 
@@ -142,7 +142,7 @@ Run `annals listen-work` from a timer, not from a watcher on the folder: finishe
 
 The **Audio** tab lists every spoken overview (documents tagged `overview`), newest first, with a search box and a filter by what you have heard: **Not started**, **In progress**, **Done**. Each row shows how much of it you heard and how many times you heard it to the end, and has a **Mark done** button for one you heard elsewhere.
 
-An overview you asked for that is not made yet is listed above them, under **Not made yet**: being made (the tab looks again every few seconds and moves it into the list when it is ready), or failed, with why and a **Try again** button. A failure stays there for a week, so an overview you asked for never silently fails to appear.
+An overview you asked for that is not made yet is listed above them, under **Not made yet**: being made (the tab looks again every few seconds and moves it into the list when it is ready), or failed, with when it was last tried, the document’s date, why (behind **Why**) and a **Try again** button. A command that answers in JSON (as `claude -p --output-format json` does) has its reason read out of it, so you see the reason rather than the envelope. A failure stays there for a week, so an overview you asked for never silently fails to appear.
 
 Progress is kept on the server, per reader (the login’s email; `owner` with no login), so it follows you from the phone to the tablet: an overview you stopped halfway picks up where you stopped, on any device, with **Start over** beside it. What counts:
 
@@ -2283,8 +2283,9 @@ What a page shows for a document: its request’s state and what it can start.
 
 The overviews asked for and not (yet) made: being made, or failed recently; newest first.
 
-Each is `state_of` its document plus `doc`, `title` and `requested`. A request
-whose document is gone, binned or no longer speakable is left out: nothing can be retried.
+Each is `state_of` its document plus `doc`, `title`, `created` (the document’s),
+`requested` and `finished` (the last try’s). A request whose document is gone, binned
+or no longer speakable is left out: nothing can be retried.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -3862,7 +3863,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-09 11:46 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/1c82e2127afc79705dafa6c27147fbdc07a0e9c9"><code>1c82e21</code></a> on branch <code>main</code>, for **annals 0.0.38** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-09 14:15 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/f396d9ce5335439f7561b0ef82383df15031f02c"><code>f396d9c</code></a> on branch <code>main</code>, for **annals 0.0.39** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -3871,7 +3872,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/1c82e2127afc79705dafa6c27147fbdc07a0e9c9"><code>1c82e2127afc79705dafa6c27147fbdc07a0e9c9</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/f396d9ce5335439f7561b0ef82383df15031f02c"><code>f396d9ce5335439f7561b0ef82383df15031f02c</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -3882,9 +3883,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42611280190">42611280190</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42632340370">42632340370</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>1c82e2127afc79705dafa6c27147fbdc07a0e9c9</code> (in the history of the built commit) |
+| Event commit | <code>f396d9ce5335439f7561b0ef82383df15031f02c</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3909,13 +3910,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.38/">0.0.38</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.39/">0.0.39</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 1c82e2127afc79705dafa6c27147fbdc07a0e9c9
+git checkout f396d9ce5335439f7561b0ef82383df15031f02c
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
