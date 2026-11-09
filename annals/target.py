@@ -30,12 +30,16 @@ RECORD_SEP = "\x1e"
 #: what :meth:`Target.read_metas` reads by default: each document's meta.json
 META_GLOB = "*/meta.json"
 _GLOB_RE = re.compile(r"^[A-Za-z0-9_.*-]+(/[A-Za-z0-9_.*-]+)*$")
+_SOCKET_MAX = 100  # a unix socket path's limit: 104 bytes on macOS, 108 on Linux
 
 
 def check_glob(pattern: str) -> str:
     """A glob safe to hand a remote shell unquoted: names, ``*`` and ``/`` only, no hidden part."""
-    if not _GLOB_RE.match(pattern) or any(
-        p.startswith(".") for p in pattern.split("/")
+    if (
+        not _GLOB_RE.match(pattern)
+        or "**"
+        in pattern  # recursive for pathlib, a plain * for sh: the two would differ
+        or any(p.startswith(".") for p in pattern.split("/"))
     ):
         raise ValueError(f"not a plain glob: {pattern!r}")
     return pattern
@@ -56,13 +60,19 @@ def ssh_opts(*, share_dir: Path | None = None) -> tuple[str, ...]:
     directory every call opens its own connection, as plain ``ssh`` would.
     """
     share_dir = Path.home() / ".ssh" if share_dir is None else share_dir
-    if not share_dir.is_dir():
+    socket = f"{share_dir}/annals-%C"  # ssh expands %C to 40 hex characters
+    if not share_dir.is_dir() or len(socket) - 2 + 40 > _SOCKET_MAX:
         return SSH_OPTS
     return SSH_OPTS + (
+        # a shared connection skips ConnectTimeout: a dead one (a network change) is noticed this way
+        "-o",
+        "ServerAliveInterval=10",
+        "-o",
+        "ServerAliveCountMax=3",
         "-o",
         "ControlMaster=auto",
         "-o",
-        f"ControlPath={share_dir}/annals-%C",
+        f"ControlPath={socket}",
         "-o",
         f"ControlPersist={SSH_SHARE_S}",
     )

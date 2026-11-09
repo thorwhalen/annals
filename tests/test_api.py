@@ -421,3 +421,14 @@ def test_a_document_lists_the_groups_it_is_in(store, client):
     g = store.make_group("Reading", [doc["id"]])
     got = client.get(f"/annals/api/docs/{doc['id']}").json()
     assert got["groups"] == [{"id": g["id"], "title": "Reading", "n": 1}]
+
+
+def test_a_version_is_in_its_documents_groups(store, client, tmp_path):
+    doc = store.list()[0]
+    g = store.make_group("Reading", [doc["id"]])
+    src = tmp_path / "v2.md"
+    src.write_text("# Hello\n\nagain")
+    store.publish(src, replace=doc["id"])
+    got = client.get(f"/annals/api/docs/{doc['id']}@1").json()
+    assert got["version_of"] == doc["id"]
+    assert [x["id"] for x in got["groups"]] == [g["id"]]

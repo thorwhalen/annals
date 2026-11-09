@@ -363,7 +363,7 @@ def mk_api(
             except ValueError:
                 del meta["artifact"]
         meta["file_kinds"] = {f: kind_of(f) for f in meta.get("files", [])}
-        meta["groups"] = store.groups_of(doc_id)
+        meta["groups"] = store.groups_of(meta.get("version_of") or doc_id)
         if requests and overview.eligible(meta):
             meta["listen"] = overview.state_of(store, requests, meta)
         if meta["kind"] in TEXT_KINDS and meta.get("size", 0) <= MAX_INLINE_TEXT_BYTES:

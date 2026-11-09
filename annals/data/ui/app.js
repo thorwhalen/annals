@@ -868,7 +868,12 @@
   }
   /* This page's own address: it needs the owner's login, so it is for the owner's use, never
      for sending (Links makes those). */
-  var COPY_ADDRESS = function () { return { section: "copy", label: "Copy my private address", hint: "Opens only with your login; your own agents read it with annals", icon: "link", run: function () { return copyText(location.href); } }; };
+  var COPY_ADDRESS = function () {
+    /* a document's or group's address is what the owner's agents read with `annals aggregate` */
+    var readable = /\/(d|g)\/[^/]+$/.test(location.pathname);
+    return { section: "copy", label: "Copy my private address", hint: readable ? "Opens only with your login; your own agents read it with annals" : "Opens only with your login",
+      icon: "link", run: function () { return copyText(readable ? location.origin + location.pathname : location.href); } };
+  };
 
   /* Renders `rel` into a container; returns {view, actions} for the page's action bar. */
   function renderFile(ctx, rel, kind, container) {
@@ -1081,7 +1086,7 @@
         m.files && m.files.length > 1 ? h("span", null, [m.files.length + " files"]) : null
       ]);
       /* the groups it is in, each a way to its group (a document reached by a link has no other) */
-      var groups = rel || SHARE ? [] : (m.groups || []);
+      var groups = rel || SHARE || m.in_trash ? [] : (m.groups || []);  /* a binned document is hidden on its groups' pages */
       var inGroups = groups.length ? h("nav", { class: "in-groups", "aria-label": "Groups this document is in" },
         [h("span", { class: "muted" }, [groups.length > 1 ? "In groups" : "In group"])].concat(groups.map(function (g) {
           return link(BASE + "/g/" + g.id, g.title, "group-chip");
@@ -1110,7 +1115,7 @@
      {kind: "doc" | "group" | "shared", doc?, group?, items: [meta], total, listen?}. */
   var RESULTS = [
     { id: "links", label: "Links", icon: "link", title: "Links", body: linksBody,
-      hint: function (sc) { return "Links to open in a browser, or to give a notebook or an agent"; },
+      hint: function (sc) { return "Links to open in a browser, or to give a person or a notebook"; },
       when: function (sc) { return sc.kind !== "shared"; } },
     { id: "file", label: "One file", icon: "file", title: "One file", body: fileBody,
       hint: function (sc) { return sc.items.length > 1 ? "All their files as one Markdown, PDF or web page file, to copy or save" : "Its files as one Markdown, PDF or web page file, to copy or save"; },

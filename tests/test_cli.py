@@ -195,3 +195,47 @@ def test_share_refuses_an_outbox(tmp_path, monkeypatch):
     out, err = io.StringIO(), io.StringIO()
     assert run(["share", "20260101-000000-x"], out=out, err=err) != 0
     assert "outbox" in err.getvalue() and "Share button" in err.getvalue()
+
+
+def _local(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://example.com/annals/")
+    monkeypatch.delenv("ANNALS_CONFIG", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+    from annals.store import DocStore
+
+    return DocStore(tmp_path / "data")
+
+
+def test_an_agent_reads_a_private_link_it_was_handed(tmp_path, monkeypatch):
+    """No share link needed: show and aggregate take the page's address as copied (2026-11-09)."""
+    store = _local(tmp_path, monkeypatch)
+    a = store.publish(text="# Bees\n\nhives", title="Bees", filename="bees.md")
+    g = store.make_group("Nature", [a["id"]])
+    base = "https://example.com/annals"
+    out = io.StringIO()
+    assert _run(["show", f"{base}/d/{a['id']}?f=bees.md#top"], out) == 0
+    shown = json.loads(out.getvalue())
+    assert shown["id"] == a["id"]
+    assert shown["groups"][0]["url"] == f"{base}/g/{g['id']}"
+    out = io.StringIO()
+    assert _run(["show", f"{base}/g/{g['id']}"], out) == 0
+    assert json.loads(out.getvalue())["doc_urls"] == [f"{base}/d/{a['id']}"]
+    out = io.StringIO()
+    assert _run(["aggregate", f"{base}/g/{g['id']}/"], out) == 0
+    assert "hives" in out.getvalue()
+
+
+def test_reading_refuses_an_outbox(tmp_path, monkeypatch):
+    cfg = tmp_path / "c.toml"
+    write_config(
+        Settings(target=str(tmp_path / "out"), base_url="https://h/annals", outbox=True),
+        config_path=cfg,
+    )
+    monkeypatch.setenv("ANNALS_CONFIG", str(cfg))
+    for var in ("ANNALS_TARGET", "ANNALS_BASE_URL", "ANNALS_SHARE_BASE_URL"):
+        monkeypatch.delenv(var, raising=False)
+    for cmd in ("show", "aggregate"):
+        out, err = io.StringIO(), io.StringIO()
+        assert run([cmd, "20260101-000000-x"], out=out, err=err) != 0
+        assert "outbox" in err.getvalue()

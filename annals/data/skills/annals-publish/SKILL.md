@@ -31,7 +31,7 @@ annals show <link>                # its metadata: files, tags, versions, and the
 annals aggregate <link> --format pdf --output all.pdf
 ```
 
-Images, audio and video are not in that text; `aggregate` names what it left out on stderr. A machine whose target is an outbox (`annals configure` shows `"outbox": true`) cannot read the annals; there, say so.
+Images, audio and video are not in that text: separate files are named on stderr as left out, and a page's own images stay as `![](fig.png)` references you cannot open. A machine whose target is an outbox (`annals configure` shows `"outbox": true`) cannot read the annals; the commands say so, and so should you.
 
 ## Link everything you mention
 
