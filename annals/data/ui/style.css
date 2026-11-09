@@ -331,3 +331,22 @@ html.sheet-open { overflow: hidden; }
   .actionbar > .menu-wrap, .sel-actions > .menu-wrap { flex: 1 1 0; min-width: 0; display: flex; }
   .actionbar > .menu-wrap > .menu-btn, .sel-actions > .menu-wrap > .menu-btn { width: 100%; }
 }
+
+/* audio: what you have heard (annals.listening) */
+.heard { height: 6px; border-radius: 3px; background: var(--chip); overflow: hidden; margin-top: 8px; }
+.heard-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .3s; }
+@media (prefers-reduced-motion: reduce) { .heard-fill { transition: none; } }
+.status-filter { display: flex; flex-wrap: wrap; margin: 4px 0 10px; width: fit-content; max-width: 100%; }
+.status-filter .btn { min-height: 40px; font-variant-numeric: tabular-nums; }
+.audio-row { display: flex; gap: 8px; align-items: stretch; }
+.audio-row .card { flex: 1 1 auto; min-width: 0; }
+.audio-row .mark { flex: 0 0 auto; align-self: center; min-height: 44px; white-space: nowrap; }
+.status { font-weight: 600; }
+.status.started { color: var(--accent); }
+.status.done { color: var(--muted); }
+.listening { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px; margin: 0 0 12px; }
+.listening .heard { margin-top: 0; }
+.listening-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+.listening-row .meta { margin: 0; }
+.listening-row .meta.grow { min-width: 0; }
+@media (pointer: coarse) { .listening-row .btn, .status-filter .btn { min-height: 44px; } }

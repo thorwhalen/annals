@@ -9,6 +9,9 @@
    BASE/g/<gid>        a group: one URL for a set of documents
    BASE/trash          the recycle bin: restore, or delete forever
    BASE/shares         the links the owner made ("Links"): copy, or revoke
+   BASE/audio          every spoken overview, searchable, by what you have heard of it
+                       (not started, in progress, done); progress is kept per reader on the
+                       server (annals.listening), so it follows you to every device
    Acting on documents is one model on a group and on a document: pick documents (a group's
    ticked cards, all of them when none is ticked; a document page is a pick of one), then
    one of three results, each in one sheet: Links (one link for a person, with expiry and
@@ -368,6 +371,7 @@
   /* -------- layout -------------------------------------------------------------- */
   function page(title, nav, body) {
     dropSheet();
+    stopListening();
     app.innerHTML = ""; listShown = 0;
     document.title = title ? title + " · " + NAME : NAME;
     viewLabel = title || NAME;
@@ -385,6 +389,7 @@
     if (SHARE) return [];
     var items = knownSources.map(function (s) { return [scopeHref(s.name), s.title, s.name]; });
     if (knownSources.length > 1) items.push([BASE + "/all", "All", "all"]);
+    items.push([BASE + "/audio", "Audio", "audio"]);
     items.push([BASE + "/shares", "Links", "shares"]);
     items.push([BASE + "/trash", "Bin", "trash"]);
     return items.map(function (x) { var a = link(x[0], x[1]); if (x[2] === current) a.setAttribute("aria-current", "page"); return a; });
@@ -1082,7 +1087,9 @@
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
         h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
-        fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools, body,
+        fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
+        rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
+        body,
         rel || SHARE ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
       ]);
@@ -1768,6 +1775,233 @@
     }).catch(function (e) { page(NAME, [], [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
 
+  /* -------- audio: every spoken overview, and what you have heard of each ----------- */
+  /* annals.listening keeps, per reader and document, the seconds heard (a union of spans,
+     so a replay counts once), the listens to the end, where playback stopped and the
+     reader's own "done" mark, on the server, so it follows them to every device. The page
+     sends what was played: a framed overview tells it through annals.media's relay
+     (postMessage from the frame), a plain audio file through its own element. */
+  var LISTEN = {
+    flushEveryS: 15,   /* send once this many new seconds were heard */
+    resumeMinS: 5      /* a stop earlier than this is not worth picking up from */
+  };
+  var STATUS_LABEL = { not_started: "Not started", started: "In progress", done: "Done" };
+  var listener = null;   /* the tracker of the document on screen, or null */
+
+  function clock(s) { s = Math.max(0, Math.round(s || 0)); var m = Math.floor(s / 60), r = s % 60; return m + ":" + (r < 10 ? "0" : "") + r; }
+  function listeningUrl(id) { return API + "/listening/" + encodeURIComponent(id); }
+  /* The listening API without the page's login redirect: progress is never worth leaving
+     the audio for. Resolves to null when the host keeps no progress (404). */
+  function listeningCall(id, opts) {
+    return fetch(listeningUrl(id), Object.assign({ credentials: "same-origin" }, opts || {})).then(function (r) {
+      if (r.status === 404 && !(opts && opts.method)) return null;
+      if (!r.ok) throw new Error(r.statusText || "not saved");
+      return r.json();
+    });
+  }
+  function rangesOf(tr) { var out = []; for (var i = 0; tr && i < tr.length; i++) out.push([tr.start(i), tr.end(i)]); return out; }
+  function total(spans) { return spans.reduce(function (n, s) { return n + Math.max(0, s[1] - s[0]); }, 0); }
+  /* One document's player, reported as samples {why, t, d, playing, ended, played} (seconds;
+     played: what the element itself says it played), sent to the server every so often.
+     Whatever was played is sent whole each time: the server keeps the union, so a resend or
+     a retry adds nothing twice, and nothing heard while events were held back is lost. */
+  function listenTracker(docId, onSaved) {
+    var played = [], sentS = 0, duration = null, position = null, moved = false, ends = [], stopped = false, everPlayed = false;
+    function playId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+    var play = playId();
+    function sample(s) {
+      if (stopped || typeof s.t !== "number" || !isFinite(s.t)) return;
+      if (typeof s.d === "number" && isFinite(s.d) && s.d > 0) duration = s.d;
+      if (Array.isArray(s.played)) played = s.played.filter(function (r) { return Array.isArray(r) && r.length === 2 && isFinite(r[0]) && isFinite(r[1]); });
+      if (s.playing || total(played) > 0) everPlayed = true;
+      /* where it stopped is only worth saving once something played or was sought: a page
+         that only loaded its audio (at 0:00) must not wipe the place another device left */
+      if (total(played) > sentS || (s.why === "seeked" && everPlayed)) { position = s.t; moved = true; }
+      if (s.why === "ended") { ends.push(play); play = playId(); flush(); }
+      else if (s.why === "pause" || total(played) - sentS >= LISTEN.flushEveryS) flush();
+    }
+    function flush(leaving) {
+      if (!moved && !ends.length) return Promise.resolve();
+      var body = { spans: played.slice(0, 500), duration: duration };
+      if (moved) body.position = position;
+      var end = ends[0], heard = total(played);
+      if (end) body.ended = end;
+      moved = false;
+      return listeningCall(docId, { method: "POST", keepalive: !!leaving, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(function (rec) {
+          sentS = Math.max(sentS, heard);
+          if (end && ends[0] === end) ends.shift();
+          if (ends.length) flush(leaving);
+          if (rec && onSaved && !stopped) onSaved(rec);
+        })
+        .catch(function () { if (body.position !== undefined) moved = true; });  /* sent again next time */
+    }
+    return {
+      sample: sample, flush: flush, frame: null,
+      hasPlayed: function () { return everPlayed; },
+      discard: function () { stopped = true; moved = false; ends = []; },
+      stop: function () { if (!stopped) { flush(true); stopped = true; } }
+    };
+  }
+  function stopListening() { if (listener) { listener.stop(); listener = null; } }
+  window.addEventListener("message", function (e) {
+    var m = e.data;
+    if (!listener || !listener.frame || !m || m.annals !== "media" || e.source !== listener.frame.contentWindow) return;
+    listener.sample(m);
+  });
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "hidden" && listener) listener.flush(true); });
+  window.addEventListener("pagehide", function () { if (listener) listener.flush(true); });
+
+  function progressBar(pct, label) {
+    return h("div", { class: "heard", role: "progressbar", "aria-valuemin": "0", "aria-valuemax": "100", "aria-valuenow": String(pct), "aria-label": label || "Heard" },
+      [h("div", { class: "heard-fill", style: "width:" + pct + "%" })]);
+  }
+  function heardWords(L) {
+    var parts = [STATUS_LABEL[L.status] || L.status];
+    if (L.percent) parts.push(L.percent + "% heard");
+    if (L.listens) parts.push(L.listens === 1 ? "heard to the end once" : "heard to the end " + L.listens + " times");
+    if (L.status === "started" && L.position >= LISTEN.resumeMinS) parts.push("stopped at " + clock(L.position) + (L.duration ? " of " + clock(L.duration) : ""));
+    else if (L.duration) parts.push(clock(L.duration) + " long");
+    return parts.join(" · ");
+  }
+  /* "Done" from the page: the reader's own mark, set or cleared, saved at once. */
+  function markButton(id, L, onSaved) {
+    var done = L.status === "done";
+    var btn = h("button", { class: "btn mark", "aria-pressed": String(done), title: done ? "Mark as not heard yet" : "Mark as heard",
+      onclick: function () {
+        if (isPending(btn)) return;
+        pending(btn, true);
+        listeningCall(id, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ done: !done }) })
+          .then(function (rec) { toast(rec.status === "done" ? "Marked as heard" : "Marked as not heard yet"); onSaved(rec); })
+          .catch(function (e) { pending(btn, false); toast("Not saved: " + (e.message || e), 4000); });
+      } }, [done ? "✓ Done" : "Mark done"]);
+    return btn;
+  }
+
+  /* On a document that plays audio: what you have heard of it, the mark, and Start over.
+     Playback picks up where it stopped, on any device, unless it has already started here. */
+  function listeningPanel(m, body) {
+    var frame = body.querySelector("iframe.frame"), el = frame ? null : body.querySelector("audio, video");
+    if (!frame && !el) return null;
+    var wrap = h("section", { class: "listening", "aria-label": "What you have heard", hidden: "" });
+    var t = listenTracker(m.id, function (rec) { draw(rec, false); });
+    t.frame = frame;
+    var frameReady = !frame, whenReady = null;
+    /* the frame's relay hears a "start at" only once the frame has loaded (it cannot be
+       asked: a sandboxed frame's document is never readable from here) */
+    if (frame) frame.addEventListener("load", function () { frameReady = true; if (whenReady) whenReady(); }, { once: true });
+    if (el) ["play", "pause", "seeking", "seeked", "ended", "timeupdate", "loadedmetadata"].forEach(function (name) {
+      el.addEventListener(name, function () { t.sample({ why: name, t: el.currentTime, d: el.duration, playing: !el.paused && !el.ended, ended: el.ended, played: rangesOf(el.played) }); });
+    });
+    /* this page's tracker from now on, once the page holding the panel is on screen (page()
+       stops the previous one); a panel left behind by a quick move on never takes over */
+    Promise.resolve().then(function () { if (wrap.isConnected) { stopListening(); listener = t; } });
+    function seek(at) {
+      if (frame) { try { frame.contentWindow.postMessage({ annals: "media-cmd", seek: at }, "*"); } catch (e) { /* frame gone */ } }
+      else if (el) { var to = function () { el.currentTime = at; }; if (el.readyState >= 1) to(); else el.addEventListener("loadedmetadata", to, { once: true }); }
+    }
+    function draw(L, arriving) {
+      wrap.innerHTML = ""; wrap.hidden = false;
+      wrap.appendChild(progressBar(L.percent));
+      var resume = arriving && !t.hasPlayed() && L.status === "started" && L.position >= LISTEN.resumeMinS && (!L.duration || L.position < L.duration - LISTEN.resumeMinS);
+      wrap.appendChild(h("div", { class: "listening-row" }, [
+        h("p", { class: "meta grow", role: "status" }, [heardWords(L)]),
+        resume ? h("button", { class: "btn", title: "Play from the beginning instead", onclick: function (e) { seek(0); e.currentTarget.remove(); toast("Starts from the beginning"); } }, ["Start over"]) : null,
+        markButton(m.id, L, function (rec) { draw(rec, false); }),
+        L.percent || L.listens || L.status !== "not_started" ? h("button", { class: "btn link", title: "Forget what you heard of this", onclick: function (e) {
+          var b = e.currentTarget; if (isPending(b)) return; pending(b, true);
+          /* the player still holds what it played; reload it, so nothing heard before is sent again */
+          t.discard();
+          listeningCall(m.id, { method: "DELETE" }).then(function () { toast("Progress cleared"); route(); }).catch(function (er) { pending(b, false); toast("Not cleared: " + (er.message || er), 4000); });
+        } }, ["Reset"]) : null
+      ]));
+      if (resume) seek(L.position);
+    }
+    listeningCall(m.id).then(function (L) {
+      if (!L || !wrap.isConnected) return;
+      if (frameReady) draw(L, true); else whenReady = function () { draw(L, true); };
+    }).catch(function () { /* progress unavailable: the audio still plays */ });
+    return wrap;
+  }
+
+  /* BASE/audio: every spoken overview, searchable, filtered by what you have heard. */
+  function audioView() {
+    var params = new URLSearchParams(location.search);
+    var state = { q: params.get("q") || "", status: params.get("status") || "" };
+    var rows = null, tracked = true, failed = null;
+    var seg = h("div", { class: "seg status-filter", role: "group", "aria-label": "Show" });
+    var countEl = h("span", { class: "count" });
+    var listEl = h("div", { class: "list audio-list", "aria-busy": "true" }, [h("p", { class: "muted" }, ["Loading…"])]);
+    function urlFor() {
+      var u = new URLSearchParams();
+      if (state.q) u.set("q", state.q);
+      if (state.status) u.set("status", state.status);
+      var qs = u.toString();
+      return location.pathname + (qs ? "?" + qs : "");
+    }
+    function matches(r) {
+      var hay = ((r.title || "") + " " + (r.tags || []).join(" ") + " " + (r.excerpt || "")).toLowerCase();
+      return state.q.toLowerCase().split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) >= 0; });
+    }
+    function render() {
+      listEl.innerHTML = "";
+      listEl.setAttribute("aria-busy", String(rows === null && !failed));
+      if (failed) { listEl.appendChild(h("p", { class: "err" }, [failed])); return; }
+      if (rows === null) { listEl.appendChild(h("p", { class: "muted" }, ["Loading…"])); return; }
+      var found = rows.filter(matches), counts = { "": found.length };
+      found.forEach(function (r) { counts[r.listening.status] = (counts[r.listening.status] || 0) + 1; });
+      seg.innerHTML = "";
+      seg.hidden = !tracked;
+      [""].concat(Object.keys(STATUS_LABEL)).forEach(function (s) {
+        seg.appendChild(h("button", { class: "btn", "aria-pressed": String(state.status === s), onclick: function () {
+          if (state.status === s) return;
+          state.status = s; history.pushState(history.state, "", urlFor()); render();
+        } }, [(s ? STATUS_LABEL[s] : "All") + " " + (counts[s] || 0)]));
+      });
+      var shown = found.filter(function (r) { return !state.status || r.listening.status === state.status; });
+      countEl.textContent = shown.length + (shown.length === 1 ? " overview" : " overviews");
+      if (!shown.length) { listEl.appendChild(emptyState()); return; }
+      shown.forEach(function (r) { listEl.appendChild(audioRow(r)); });
+    }
+    function emptyState() {
+      if (!rows.length) return h("div", { class: "empty" }, ["No spoken overviews yet. On a document, choose Listen to make one."]);
+      var ways = [];
+      if (state.status) ways.push(h("button", { class: "btn", onclick: function () { state.status = ""; history.replaceState(history.state, "", urlFor()); render(); } }, ["Show all"]));
+      if (state.q) ways.push(h("button", { class: "btn", onclick: function () { search.value = ""; state.q = ""; history.replaceState(history.state, "", urlFor()); render(); } }, ["Clear the search"]));
+      var what = state.status ? STATUS_LABEL[state.status].toLowerCase() + " " : "";
+      return h("div", { class: "empty" }, [h("p", null, ["No " + what + "overviews" + (state.q ? " match “" + state.q + "”" : "") + "."]), h("div", { class: "toolbar center" }, ways)]);
+    }
+    function audioRow(r) {
+      var L = r.listening, href = BASE + "/d/" + r.id;
+      var title = (r.title || r.id).replace(/^Listen:\s*/, "");
+      var card = h("a", { class: "card audio-card", href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [
+        h("p", { class: "title" }, [title]),
+        h("div", { class: "meta" }, [
+          tracked ? h("span", { class: "status " + L.status }, [STATUS_LABEL[L.status]]) : null,
+          L.duration ? h("span", null, [clock(L.duration)]) : null,
+          L.percent && L.status !== "done" ? h("span", null, [L.percent + "% heard"]) : null,
+          L.listens ? h("span", { title: "Heard to the end" }, [L.listens + "× to the end"]) : null,
+          ageEl(r.created)
+        ]),
+        tracked ? progressBar(L.percent, "Heard of " + title) : null
+      ]);
+      return h("div", { class: "audio-row" }, [card, tracked ? markButton(r.id, L, function (rec) { r.listening = rec; render(); }) : null]);
+    }
+    var timer;
+    var search = h("input", { type: "search", placeholder: "Search the overviews", value: state.q, autocomplete: "off", "aria-label": "Search the overviews",
+      oninput: function (e) { state.q = e.target.value.trim(); clearTimeout(timer); timer = setTimeout(function () { history.replaceState(history.state, "", urlFor()); render(); }, 120); } });
+    page("Audio", mainNav("audio"), [
+      h("h2", { class: "scope-title" }, ["Audio"]),
+      h("div", { class: "controls" }, [search]),
+      seg,
+      h("div", { class: "row", style: "margin-bottom:8px" }, [countEl]),
+      listEl
+    ]);
+    viewLabel = function () { return "Audio" + (location.search ? ", filtered" : ""); };
+    api("/audio").then(function (res) { rows = res.docs || []; tracked = res.tracked !== false; render(); })
+      .catch(function (e) { failed = String(e.message || e); render(); });
+  }
+
   /* -------- one file of a folder source (a ledger) ----------------------------------- */
   function itemView(source, id) {
     var key = source + ":" + id, back = scopeHref(source);
@@ -1810,6 +2044,7 @@
       if (kind === "all") return listView("all");
       if (kind === "trash") return listView("trash");
       if (kind === "shares") return sharesView();
+      if (kind === "audio") return audioView();
       return listView("published");
     });
   }
