@@ -33,28 +33,30 @@ there, so a watcher on the folder would keep waking it.
 
 ### Module Attributes
 
-| [`DFLT_DAILY_LIMIT`](#annals.overview.DFLT_DAILY_LIMIT)   | at most this many overviews are started in any 24 hours, whoever asks                        |
-|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| [`QUEUED_EXPIRY_S`](#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                 |
-| [`RUNNING_MARGIN_S`](#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                  |
-| [`MINUTES`](#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed |
-| [`CHARS_PER_MINUTE`](#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate     |
-| [`TAG`](#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview      |
-| [`COMBINED_TAG`](#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all  |
+| [`DFLT_DAILY_LIMIT`](#annals.overview.DFLT_DAILY_LIMIT)   | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
+|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`QUEUED_EXPIRY_S`](#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                                                                                      |
+| [`RUNNING_MARGIN_S`](#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                                                                                       |
+| [`MINUTES`](#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
+| [`CHARS_PER_MINUTE`](#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
+| [`TAG`](#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
+| [`FAILED_SHOWN_S`](#annals.overview.FAILED_SHOWN_S)     | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
+| [`COMBINED_TAG`](#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
 
 ### Functions
 
-| [`choices`](#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
-|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| [`combined_document`](#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.           |
-| [`combined_key`](#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                     |
-| [`eligible`](#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
-| [`html_to_text`](#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
-| [`request`](#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
-| [`request_combined`](#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.      |
-| [`state_of`](#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
-| [`valid_minutes`](#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
-| [`work`](#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
+| [`choices`](#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                          |
+|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| [`combined_document`](#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.               |
+| [`combined_key`](#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                         |
+| [`eligible`](#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.     |
+| [`html_to_text`](#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                |
+| [`request`](#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                        |
+| [`request_combined`](#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.          |
+| [`state_of`](#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.              |
+| [`unmade`](#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, or failed recently; newest first. |
+| [`valid_minutes`](#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                        |
+| [`work`](#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened.     |
 
 ### Classes
 
@@ -72,6 +74,11 @@ marks a document made by putting several documents’ text in one, for one revie
 ### annals.overview.DFLT_DAILY_LIMIT *= 20*
 
 at most this many overviews are started in any 24 hours, whoever asks
+
+### annals.overview.FAILED_SHOWN_S *= 604800*
+
+a failed request is still listed as unmade for this long, so a retry is offered where
+the reader looks for the overview (the Audio tab), not only on the document
 
 ### annals.overview.MINUTES *= (3, 5, 7)*
 
@@ -190,6 +197,16 @@ What a page shows for a document: its request’s state and what it can start.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.unmade(store, requests)
+
+The overviews asked for and not (yet) made: being made, or failed recently; newest first.
+
+Each is `state_of` its document plus `doc`, `title` and `requested`. A request
+whose document is gone, binned or no longer speakable is left out: nothing can be retried.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 ### annals.overview.valid_minutes(minutes)
 

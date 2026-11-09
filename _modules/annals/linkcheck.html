@@ -230,32 +230,34 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="88">        <span class="k">if</span> <span class="ow">not</span> <span class="n">URL</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="ow">and</span> <span class="n">CONVERSATION</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">bare</span><span class="p">):</span>
 </span><span data-line="89">            <span class="n">date</span> <span class="o">=</span> <span class="n">DATE</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">DATE_RANGE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="n">bare</span><span class="p">))</span>
 </span><span data-line="90">            <span class="k">if</span> <span class="n">date</span><span class="p">:</span>
-</span><span data-line="91">                <span class="n">found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Mention</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Slack/chat message of </span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
-</span><span data-line="92">    <span class="k">return</span> <span class="n">found</span></div>
+</span><span data-line="91">                <span class="n">found</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="92">                    <span class="n">Mention</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="s2">"message"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"Slack/chat message of </span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="93">                <span class="p">)</span>
+</span><span data-line="94">    <span class="k">return</span> <span class="n">found</span></div>
 
-</span><span data-line="93">
-</span><span data-line="94">
+</span><span data-line="95">
+</span><span data-line="96">
 <div class="viewcode-block" id="unlinked_warning">
 <a class="viewcode-back" href="../../_autosummary/annals.linkcheck.html#annals.linkcheck.unlinked_warning">[docs]</a>
-</span><span data-line="95"><span class="k">def</span><span class="w"> </span><span class="nf">unlinked_warning</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">max_listed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">MAX_LISTED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="96"><span class="w">    </span><span class="sd">"""A one-paragraph warning naming the unlinked mentions in ``text``, or None if there are none.</span>
-</span><span data-line="97">
-</span><span data-line="98"><span class="sd">    &gt;&gt;&gt; print(unlinked_warning("Fixed in #4."))</span>
-</span><span data-line="99"><span class="sd">    1 mention without a link (the reader clicks through from a phone): line 1 #4. Link each one: an issue or PR to its GitHub URL, a Slack/email/chat message to its permalink.</span>
-</span><span data-line="100"><span class="sd">    &gt;&gt;&gt; unlinked_warning("All linked: [#4](https://github.com/o/r/issues/4).") is None</span>
-</span><span data-line="101"><span class="sd">    True</span>
-</span><span data-line="102"><span class="sd">    """</span>
-</span><span data-line="103">    <span class="n">found</span> <span class="o">=</span> <span class="n">unlinked_mentions</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
-</span><span data-line="104">    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
-</span><span data-line="105">        <span class="k">return</span> <span class="kc">None</span>
-</span><span data-line="106">    <span class="n">listed</span> <span class="o">=</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"line </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">line</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[:</span><span class="n">max_listed</span><span class="p">])</span>
-</span><span data-line="107">    <span class="n">more</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"; and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">max_listed</span><span class="si">}</span><span class="s2"> more"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_listed</span> <span class="k">else</span> <span class="s2">""</span>
-</span><span data-line="108">    <span class="n">s</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"s"</span>
-</span><span data-line="109">    <span class="k">return</span> <span class="p">(</span>
-</span><span data-line="110">        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span><span class="si">}</span><span class="s2"> mention</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2"> without a link (the reader clicks through from a phone): "</span>
-</span><span data-line="111">        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">listed</span><span class="si">}{</span><span class="n">more</span><span class="si">}</span><span class="s2">. Link each one: an issue or PR to its GitHub URL, "</span>
-</span><span data-line="112">        <span class="sa">f</span><span class="s2">"a Slack/email/chat message to its permalink."</span>
-</span><span data-line="113">    <span class="p">)</span></div>
+</span><span data-line="97"><span class="k">def</span><span class="w"> </span><span class="nf">unlinked_warning</span><span class="p">(</span><span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">max_listed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">MAX_LISTED</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="98"><span class="w">    </span><span class="sd">"""A one-paragraph warning naming the unlinked mentions in ``text``, or None if there are none.</span>
+</span><span data-line="99">
+</span><span data-line="100"><span class="sd">    &gt;&gt;&gt; print(unlinked_warning("Fixed in #4."))</span>
+</span><span data-line="101"><span class="sd">    1 mention without a link (the reader clicks through from a phone): line 1 #4. Link each one: an issue or PR to its GitHub URL, a Slack/email/chat message to its permalink.</span>
+</span><span data-line="102"><span class="sd">    &gt;&gt;&gt; unlinked_warning("All linked: [#4](https://github.com/o/r/issues/4).") is None</span>
+</span><span data-line="103"><span class="sd">    True</span>
+</span><span data-line="104"><span class="sd">    """</span>
+</span><span data-line="105">    <span class="n">found</span> <span class="o">=</span> <span class="n">unlinked_mentions</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+</span><span data-line="106">    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+</span><span data-line="107">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="108">    <span class="n">listed</span> <span class="o">=</span> <span class="s2">"; "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">"line </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">line</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">ref</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[:</span><span class="n">max_listed</span><span class="p">])</span>
+</span><span data-line="109">    <span class="n">more</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"; and </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">max_listed</span><span class="si">}</span><span class="s2"> more"</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_listed</span> <span class="k">else</span> <span class="s2">""</span>
+</span><span data-line="110">    <span class="n">s</span> <span class="o">=</span> <span class="s2">""</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">"s"</span>
+</span><span data-line="111">    <span class="k">return</span> <span class="p">(</span>
+</span><span data-line="112">        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">)</span><span class="si">}</span><span class="s2"> mention</span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2"> without a link (the reader clicks through from a phone): "</span>
+</span><span data-line="113">        <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">listed</span><span class="si">}{</span><span class="n">more</span><span class="si">}</span><span class="s2">. Link each one: an issue or PR to its GitHub URL, "</span>
+</span><span data-line="114">        <span class="sa">f</span><span class="s2">"a Slack/email/chat message to its permalink."</span>
+</span><span data-line="115">    <span class="p">)</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -284,7 +286,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=aa2ad26f"></script>
+      <script src="../../_static/documentation_options.js?v=423071ad"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

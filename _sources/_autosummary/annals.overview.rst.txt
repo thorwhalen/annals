@@ -14,6 +14,7 @@ annals.overview
       MINUTES
       CHARS_PER_MINUTE
       TAG
+      FAILED_SHOWN_S
       COMBINED_TAG
    
    .. rubric:: Functions
@@ -28,6 +29,7 @@ annals.overview
       request
       request_combined
       state_of
+      unmade
       valid_minutes
       work
    

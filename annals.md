@@ -1,4 +1,4 @@
-> built 2026-11-09 10:54 UTC from 12e4427 (main) · annals 0.0.37. Details: build_info.json
+> built 2026-11-09 11:46 UTC from 1c82e21 (main) · annals 0.0.38. Details: build_info.json
 
 # index.html.md
 
@@ -141,6 +141,8 @@ Run `annals listen-work` from a timer, not from a watcher on the folder: finishe
 ## Audio: what you still have to listen to
 
 The **Audio** tab lists every spoken overview (documents tagged `overview`), newest first, with a search box and a filter by what you have heard: **Not started**, **In progress**, **Done**. Each row shows how much of it you heard and how many times you heard it to the end, and has a **Mark done** button for one you heard elsewhere.
+
+An overview you asked for that is not made yet is listed above them, under **Not made yet**: being made (the tab looks again every few seconds and moves it into the list when it is ready), or failed, with why and a **Try again** button. A failure stays there for a week, so an overview you asked for never silently fails to appear.
 
 Progress is kept on the server, per reader (the login’s email; `owner` with no login), so it follows you from the phone to the tablet: an overview you stopped halfway picks up where you stopped, on any device, with **Start over** beside it. What counts:
 
@@ -2112,28 +2114,30 @@ there, so a watcher on the folder would keep waking it.
 
 ### Module Attributes
 
-| [`DFLT_DAILY_LIMIT`](_autosummary/annals.overview.html.md#annals.overview.DFLT_DAILY_LIMIT)   | at most this many overviews are started in any 24 hours, whoever asks                        |
-|---------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                 |
-| [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                  |
-| [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed |
-| [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate     |
-| [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview      |
-| [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all  |
+| [`DFLT_DAILY_LIMIT`](_autosummary/annals.overview.html.md#annals.overview.DFLT_DAILY_LIMIT)   | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
+|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                                                                                      |
+| [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                                                                                       |
+| [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
+| [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
+| [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
+| [`FAILED_SHOWN_S`](_autosummary/annals.overview.html.md#annals.overview.FAILED_SHOWN_S)     | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
+| [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
 
 ### Functions
 
-| [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
-|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.           |
-| [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                     |
-| [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
-| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
-| [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
-| [`request_combined`](_autosummary/annals.overview.html.md#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.      |
-| [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
-| [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
-| [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
+| [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                          |
+|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.               |
+| [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                         |
+| [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.     |
+| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                |
+| [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                        |
+| [`request_combined`](_autosummary/annals.overview.html.md#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.          |
+| [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.              |
+| [`unmade`](_autosummary/annals.overview.html.md#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, or failed recently; newest first. |
+| [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                        |
+| [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened.     |
 
 ### Classes
 
@@ -2151,6 +2155,11 @@ marks a document made by putting several documents’ text in one, for one revie
 ### annals.overview.DFLT_DAILY_LIMIT *= 20*
 
 at most this many overviews are started in any 24 hours, whoever asks
+
+### annals.overview.FAILED_SHOWN_S *= 604800*
+
+a failed request is still listed as unmade for this long, so a retry is offered where
+the reader looks for the overview (the Audio tab), not only on the document
 
 ### annals.overview.MINUTES *= (3, 5, 7)*
 
@@ -2269,6 +2278,16 @@ What a page shows for a document: its request’s state and what it can start.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.unmade(store, requests)
+
+The overviews asked for and not (yet) made: being made, or failed recently; newest first.
+
+Each is `state_of` its document plus `doc`, `title` and `requested`. A request
+whose document is gone, binned or no longer speakable is left out: nothing can be retried.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 ### annals.overview.valid_minutes(minutes)
 
@@ -3843,7 +3862,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-09 10:54 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/12e44270d9b1388fb665b6fad76898020361197f"><code>12e4427</code></a> on branch <code>main</code>, for **annals 0.0.37** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-09 11:46 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/1c82e2127afc79705dafa6c27147fbdc07a0e9c9"><code>1c82e21</code></a> on branch <code>main</code>, for **annals 0.0.38** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -3852,7 +3871,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/12e44270d9b1388fb665b6fad76898020361197f"><code>12e44270d9b1388fb665b6fad76898020361197f</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/1c82e2127afc79705dafa6c27147fbdc07a0e9c9"><code>1c82e2127afc79705dafa6c27147fbdc07a0e9c9</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -3863,9 +3882,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42604241911">42604241911</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42611280190">42611280190</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>12e44270d9b1388fb665b6fad76898020361197f</code> (in the history of the built commit) |
+| Event commit | <code>1c82e2127afc79705dafa6c27147fbdc07a0e9c9</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3890,13 +3909,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.37/">0.0.37</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.38/">0.0.38</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 12e44270d9b1388fb665b6fad76898020361197f
+git checkout 1c82e2127afc79705dafa6c27147fbdc07a0e9c9
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
