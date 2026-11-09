@@ -128,6 +128,18 @@ annals listen <doc-id> --minutes 3 # asks for one from the command line, as the 
 
 Run `annals listen-work` from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (`ANNALS_OVERVIEW_DAILY_LIMIT`). `annals.overview` has the details.
 
+## Audio: what you still have to listen to
+
+The **Audio** tab lists every spoken overview (documents tagged `overview`), newest first, with a search box and a filter by what you have heard: **Not started**, **In progress**, **Done**. Each row shows how much of it you heard and how many times you heard it to the end, and has a **Mark done** button for one you heard elsewhere.
+
+Progress is kept on the server, per reader (the login's email; `owner` with no login), so it follows you from the phone to the tablet: an overview you stopped halfway picks up where you stopped, on any device, with **Start over** beside it. What counts:
+
+- **heard**: the distinct seconds played, so a replayed minute counts once; at 95% it is done;
+- **listens**: each play that reaches the end, counted once however often the page reports it;
+- **your mark**: Mark done (or not done) wins over both; Reset forgets the document.
+
+An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (`annals.media`) that posts what plays to the page around it (opt out with `data-annals-media="off"`). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (`listening/<reader>.json`); `mk_api(listening=...)` takes any other store, and `listening=None` keeps none. Progress is recorded on the annals page itself; a page opened on its own ("Open full page") does not report.
+
 ## Sharing one page
 
 The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, **Links › One link** on a document lists its files and the annals pages it links to under "What's included", so you choose what goes; from a shell:

@@ -7,12 +7,14 @@ Two factories, one implementation:
   page's assets (``/ui/...``). Beside the documents, ``/items`` lists every source's items
   as one collection (published documents plus folders read in place, such as the crowsnest
   ledgers; see :mod:`annals.sources`) with full-text search, and ``PATCH /items/{key}``
-  sets the owner's tags, which live apart from the items (see :mod:`annals.tags`). A host platform mounts it under its own prefix and gates it
+  sets the owner's tags, which live apart from the items (see :mod:`annals.tags`).
+  ``/audio`` lists the spoken overviews with what the reader has heard of each, and
+  ``/listening/{id}`` records it (see :mod:`annals.listening`). A host platform mounts it under its own prefix and gates it
   with its own login; that is how annals runs as an enlace app (``/api/annals``), with
   the page shell from :func:`page_html` as the app's frontend.
 * :func:`mk_app` is the standalone server ``annals serve`` runs: the API at
   ``{base}/api``, the page at ``{base}/``, ``{base}/d/{id}``, ``{base}/g/{gid}``,
-  ``{base}/trash``, ``{base}/all``, ``{base}/s/{source}``, ``{base}/i/{source}/{id}`` (one
+  ``{base}/trash``, ``{base}/audio``, ``{base}/all``, ``{base}/s/{source}``, ``{base}/i/{source}/{id}`` (one
   html shell; the browser routes), and an auth gate around it all
   (see :mod:`annals.auth`).
 
@@ -50,8 +52,9 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from annals import overview
+from annals import listening as listen_log, overview
 from annals.auth import Authorizer, authorizer_from_env, no_auth
+from annals.media import add_media_relay, media_version
 from annals.overview import Requests
 from annals.target import LocalTarget
 from annals.config import (
@@ -277,6 +280,8 @@ def mk_api(
     tags: MutableMapping[str, list[str]] | None = None,
     share_base_url: str | None = None,
     overviews: bool = False,
+    listening: listen_log.ForReader | bool | None = True,
+    reader: Callable[[Request], str] | None = None,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The JSON API, raw files and page assets, rooted at ``/``, with no auth of its own.
@@ -296,6 +301,10 @@ def mk_api(
     ``overviews`` offers a spoken overview of a document on its page (off by default, since
     making one spends money); it needs a local data root and a worker, see
     :mod:`annals.overview`.
+    ``listening`` is where each reader's listening progress lives (:mod:`annals.listening`):
+    ``True`` for one JSON file per reader under a local data root, any ``(reader) -> store``
+    callable, or ``None`` to keep none. ``reader`` names the caller of a request; by default
+    :func:`reader_of` (the login's email, else ``"owner"``).
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     if overviews and not isinstance(store.target, LocalTarget):
@@ -310,6 +319,10 @@ def mk_api(
     if thumbnailer is True:
         thumbnailer = default_thumbnailer()
     catalog = mk_catalog(store, sources=sources, tags=tags)
+    if listening is True:
+        local = isinstance(store.target, LocalTarget)
+        listening = listen_log.for_reader(store.target.root) if local else None
+    reader = reader or reader_of
     api = FastAPI(title=f"{title} api", docs_url=None, redoc_url=None, openapi_url=None)
     # No swagger: its /docs route would shadow ours.
 
@@ -385,6 +398,64 @@ def mk_api(
             )  # fmt: skip
         except ValueError as e:
             raise HTTPException(400, str(e))
+
+    # -- audio: every spoken overview, and what this reader has heard of each ---------
+    def _records(request: Request):
+        if listening is None:
+            raise HTTPException(404, "listening progress is not kept here")
+        return listening(reader(request))
+
+    @api.get("/audio")
+    def list_audio(request: Request, q: str = "") -> dict:
+        """Every audio overview, newest first, each with this reader's ``listening`` summary.
+
+        ``q`` filters by words, as ``/docs`` does. ``statuses`` lists the filter values in order.
+        """
+        docs = store.search(q) if q else store.list()
+        rows = [_owner_tags(list_meta(m)) for m in docs]
+        rows = [r for r in rows if is_audio_overview(r)]
+        heard = _records(request).snapshot() if listening is not None else {}
+        for r in rows:
+            r["listening"] = listen_log.summary(heard.get(r["id"]))
+        return {"docs": rows, "statuses": list(listen_log.STATUSES), "tracked": listening is not None}
+
+    @api.get("/listening/{doc_id}")
+    def get_listening(doc_id: str, request: Request) -> dict:
+        """What this reader has heard of a document."""
+        records = _records(request)
+        _meta_or_404(store, doc_id, settle=False)
+        return listen_log.summary(records.get(doc_id))
+
+    @api.post("/listening/{doc_id}", dependencies=[Depends(_require_same_origin)])
+    def report_listening(doc_id: str, request: Request, body: dict = Body(...)) -> dict:
+        """Fold in what was just played: ``{"spans": [[a, b]], "duration", "position", "ended"?}``."""
+        records = _records(request)
+        _meta_or_404(store, doc_id, settle=False)
+        try:
+            listen_log.apply_report(None, body)  # refuse a bad report before taking the lock
+            rec = records.update(doc_id, lambda r: listen_log.apply_report(r, body))
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        return listen_log.summary(rec)
+
+    @api.patch("/listening/{doc_id}", dependencies=[Depends(_require_same_origin)])
+    def mark_listening(doc_id: str, request: Request, body: dict = Body(...)) -> dict:
+        """The reader's own mark: ``{"done": true}``, ``{"done": false}`` or ``{"done": null}``."""
+        records = _records(request)
+        _meta_or_404(store, doc_id, settle=False)
+        if set(body) != {"done"}:
+            raise HTTPException(422, 'send {"done": true | false | null}')
+        try:
+            rec = records.update(doc_id, lambda r: listen_log.apply_mark(r, body["done"]))
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        return listen_log.summary(rec)
+
+    @api.delete("/listening/{doc_id}", dependencies=[Depends(_require_same_origin)])
+    def forget_listening(doc_id: str, request: Request) -> dict:
+        """Forget what this reader heard of a document: it reads as not started again."""
+        _records(request).update(doc_id, lambda r: None)
+        return listen_log.summary(None)
 
     @api.post("/docs/{doc_id}/trash", dependencies=[Depends(_require_same_origin)])
     def trash_doc(doc_id: str) -> dict:
@@ -860,6 +931,25 @@ def mk_api(
     return api
 
 
+def is_audio_overview(meta: dict) -> bool:
+    """Whether a document is a spoken overview (tagged :data:`annals.overview.TAG`), in sight."""
+    return overview.TAG in (meta.get("tags") or []) and not meta.get("in_trash")
+
+
+def reader_of(request: Request) -> str:
+    """Who is asking: the standalone gate's user, else the host login's email or id, else ``owner``.
+
+    ``annals serve`` puts its authorizer's answer in ``request.state.annals_user``; an enlace
+    host puts the login's ``user_email`` and ``user_id`` there.
+    """
+    state = request.state
+    for attr in ("annals_user", "user_email", "user_id"):
+        who = getattr(state, attr, None)
+        if isinstance(who, str) and who.strip():
+            return who.strip().lower()
+    return "owner"
+
+
 def doc_file_path(store: DocStore, doc_id: str, rel: str) -> Path:
     """A document's file on disk, or a 404.
 
@@ -1035,8 +1125,9 @@ def links_open_apart(html: bytes, *, max_bytes: int = LINK_REWRITE_MAX_BYTES) ->
 
 
 def serve_html(html: bytes) -> bytes:
-    """An html file as it is served: standards mode, links that leave open apart, table tools."""
-    return add_table_tools(links_open_apart(doctype_guard(html)))
+    """An html file as it is served: standards mode, links that leave open apart, table
+    tools, and the media relay that lets the page record what was heard (:mod:`annals.media`)."""
+    return add_media_relay(add_table_tools(links_open_apart(doctype_guard(html))))
 
 
 def _html_response(
@@ -1048,7 +1139,7 @@ def _html_response(
     """
     st = path.stat()
     etag = (
-        f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}-{HTML_SERVING_VERSION}"'
+        f'"{st.st_size:x}-{st.st_mtime_ns:x}-{tables_version()}-{media_version()}-{HTML_SERVING_VERSION}"'
     )
     headers = {
         "Cache-Control": cache,
@@ -1167,13 +1258,14 @@ def mk_app(
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
     overviews: bool = False,
+    listening: listen_log.ForReader | bool | None = True,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The standalone server: page + API under ``base_path``, behind ``authorizer``.
 
     Every argument has a working default (the local data dir; auth from the environment,
     which is none on a bare machine, so bind to localhost). ``sources`` and ``tags`` are
-    :func:`mk_api`'s, and so is ``overviews``. Share links are served, ungated, at ``{base_path}/shared/<token>/``
+    :func:`mk_api`'s, and so are ``overviews`` and ``listening``. Share links are served, ungated, at ``{base_path}/shared/<token>/``
     (:func:`annals.share_api.mk_share_api`).
     """
     from annals.share_api import mk_share_api
@@ -1189,6 +1281,7 @@ def mk_app(
     @app.get(base + "/g/{gid}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/trash", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/shares", response_class=HTMLResponse, include_in_schema=False)
+    @app.get(base + "/audio", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/all", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/s/{source}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(
@@ -1212,6 +1305,7 @@ def mk_app(
         share_base_url=shared,
         title=title,
         overviews=overviews,
+        listening=listening,
     )
     app.mount(base + "/api", owner_api)
     app.mount(shared, mk_share_api(shares=owner_api.state.shares, title=title))
