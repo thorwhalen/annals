@@ -1,4 +1,4 @@
-> built 2026-11-09 09:16 UTC from 4cab5e2 (main) · annals 0.0.36. Details: build_info.json
+> built 2026-11-09 10:54 UTC from 12e4427 (main) · annals 0.0.37. Details: build_info.json
 
 # index.html.md
 
@@ -52,6 +52,10 @@ A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-fi
 ### Interactive version (`--artifact`)
 
 `annals publish page.html --artifact https://claude.ai/...` stores the link of a Claude Artifact holding the same page in the document’s meta (`artifact`), and the document’s page shows an “Open the interactive version” button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only plain `https` links to `claude.ai` are accepted (`annals.store.ARTIFACT_HOSTS`; no port, credentials or odd characters), `--artifact` takes one path, and a `--replace` without `--artifact` keeps the current link.
+
+### Links to what a document mentions
+
+The owner reads on a phone and clicks through, so a document that mentions an issue or a message should link to it. `annals publish` reads markdown and text documents before publishing and warns on stderr about bare issue references (`#12`, `owner/repo#12`) and dated mentions of a message (“Karl asked on 10-29 in #tech-app-test”) that have no link (`annals.linkcheck`). It is a warning, not a gate: the document is published either way. `--no-link-check` turns it off.
 
 ### Living pages (`--replace`)
 
@@ -1356,7 +1360,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](_autosummary/annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -1374,6 +1378,9 @@ page shows the new version and offers the earlier ones. That is how a living pag
 guide, a status page) keeps one link. `artifact` (a claude.ai artifact link) is the
 interactive version of the page: the document’s page shows an “Open the interactive
 version” button. Publish the Artifact first, then the same page here with its link.
+A markdown or text document that mentions an issue or a Slack/email/chat message
+without linking to it gets a warning on stderr ([`annals.linkcheck`](_autosummary/annals.linkcheck.html.md#module-annals.linkcheck)); it is
+published either way. `no_link_check` turns that check off.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1408,6 +1415,7 @@ Move documents to the recycle bin (restorable).
 | [`combine`](_autosummary/annals.combine.html.md#module-annals.combine)           | Many files of many kinds as ONE document: a Markdown, html or PDF file.                                                                            |
 | [`config`](_autosummary/annals.config.html.md#module-annals.config)             | Settings: where documents are published and what link to print.                                                                                    |
 | [`jsonstore`](_autosummary/annals.jsonstore.html.md#module-annals.jsonstore)       | A `MutableMapping` kept in one JSON file, safe with several server processes.                                                                      |
+| [`linkcheck`](_autosummary/annals.linkcheck.html.md#module-annals.linkcheck)       | Find what a document mentions without linking to it: the owner reads on a phone and clicks through.                                                |
 | [`listening`](_autosummary/annals.listening.html.md#module-annals.listening)       | What each reader has heard of each audio document: percent heard, listens, where they stopped.                                                     |
 | [`mcp`](_autosummary/annals.mcp.html.md#module-annals.mcp)                   | MCP surface: the same operations as the CLI, from [`annals.tools`](_autosummary/annals.tools.html.md#module-annals.tools), via `py2mcp`. |
 | [`media`](_autosummary/annals.media.html.md#module-annals.media)               | The media relay for published html pages: what a framed page plays, told to the page around it.                                                    |
@@ -1505,6 +1513,118 @@ Whether a value read from the file is kept (an invalid one is logged and skipped
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+
+# _autosummary/annals.linkcheck.html.md
+
+# annals.linkcheck
+
+Find what a document mentions without linking to it: the owner reads on a phone and clicks through.
+
+A published report says “Karl asked on 10-29 in #tech-app-test” or “see owner/repo#12”.
+Without a link the reader has to go and find the message or the issue, often on a phone.
+This module finds such mentions so `annals publish` can warn the author. It only warns
+and never blocks: the author decides.
+
+Two kinds, both in markdown or plain text (code spans and fenced blocks are ignored):
+
+- `issue`: a GitHub-style reference, `owner/repo#12` or a bare `#12`, outside a link;
+- `message`: a line that points at one message (a message, a thread, a DM, a reply, a
+  post, someone who asked, said or wrote, or a `#channel`), carries a date, and has no
+  web address at all. A dated pointer to a conversation names one message, so it should be
+  its permalink. Headings and date ranges (“2026-10-04 → 2026-11-07”) are periods, not
+  messages, and are skipped.
+
+```pycon
+>>> doc = '''# Catch-up
+... - Karl asked on 2026-10-29 in #tech-app-test what was missing.
+... - Karl asked on [2026-10-29](https://x.slack.com/archives/C1/p1) in #tech-app-test.
+... - Tracked in inoocq/meta#7 and #12.
+... - Tracked in [inoocq/meta#7](https://github.com/inoocq/meta/issues/7).
+... - Run `git log #3` here.
+... ## Slack, 2026-10-04 → 2026-11-07
+... - 574 messages from 2026-10-04 to 2026-11-07, Slack read by hand until 10-04.
+... '''
+>>> [(m.line, m.kind, m.ref) for m in unlinked_mentions(doc)]
+[(2, 'message', 'Slack/chat message of 2026-10-29'), (4, 'issue', 'inoocq/meta#7'), (4, 'issue', '#12')]
+```
+
+### Module Attributes
+
+| [`URL`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.URL)          | a web address anywhere on a line                                        |
+|---------------------------------------------------------------|-------------------------------------------------------------------------|
+| [`MD_LINK`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.MD_LINK)      | a markdown link or image `[text](url)`, or an autolink `<url>`          |
+| [`CODE_SPAN`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.CODE_SPAN)    | an inline code span                                                     |
+| [`ISSUE_REF`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.ISSUE_REF)    | a GitHub-style issue or PR reference, qualified or bare                 |
+| [`CONVERSATION`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.CONVERSATION) | words that point at one message, and a #channel (letters, not a number) |
+| [`DATE_RANGE`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.DATE_RANGE)   | a period between two dates, which names no single message               |
+| [`MAX_LISTED`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.MAX_LISTED)   | how many mentions a warning lists before it says "and N more"           |
+
+### Functions
+
+| [`unlinked_mentions`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.unlinked_mentions)(text)                  | Every issue reference and dated conversation mention in `text` that has no link.           |
+|-------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| [`unlinked_warning`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.unlinked_warning)(text, \*[, max_listed]) | A one-paragraph warning naming the unlinked mentions in `text`, or None if there are none. |
+
+### Classes
+
+| [`Mention`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.Mention)(line, kind, ref)   | One unlinked mention: the 1-based `line`, its `kind` and the `ref` it names.   |
+|-----------------------------------------------------------------------------|--------------------------------------------------------------------------------|
+
+### annals.linkcheck.CODE_SPAN *= re.compile('\`[^\`]\*\`')*
+
+an inline code span
+
+### annals.linkcheck.CONVERSATION *= re.compile('\\\\b(?:message|thread|DM|e-?mail|reply|replied|post|posted|asked|said|wrote)\\\\b|(?<![\\\\w&/])#[a-z][\\\\w-]\*[a-z]\\\\b', re.IGNORECASE)*
+
+words that point at one message, and a #channel (letters, not a number)
+
+### annals.linkcheck.DATE_RANGE *= re.compile('\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b\\\\s\*(?:→|->|–|—|to|-)\\\\s\*\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b')*
+
+a period between two dates, which names no single message
+
+### annals.linkcheck.ISSUE_REF *= re.compile('(?<![\\\\w/&#])(?:[A-Za-z0-9][\\\\w.-]\*/[\\\\w.-]+)?#\\\\d+\\\\b')*
+
+a GitHub-style issue or PR reference, qualified or bare
+
+### annals.linkcheck.MAX_LISTED *= 5*
+
+how many mentions a warning lists before it says “and N more”
+
+### annals.linkcheck.MD_LINK *= re.compile('!?\\\\[[^\\\\]]\*\\\\]\\\\([^)]\*\\\\)|<https?://[^>]+>')*
+
+a markdown link or image `[text](url)`, or an autolink `<url>`
+
+### *class* annals.linkcheck.Mention(line, kind, ref)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+One unlinked mention: the 1-based `line`, its `kind` and the `ref` it names.
+
+### annals.linkcheck.URL *= re.compile('https?://\\\\S+')*
+
+a web address anywhere on a line
+
+### annals.linkcheck.unlinked_mentions(text)
+
+Every issue reference and dated conversation mention in `text` that has no link.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`Mention`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.Mention)]
+
+### annals.linkcheck.unlinked_warning(text, , max_listed=5)
+
+A one-paragraph warning naming the unlinked mentions in `text`, or None if there are none.
+
+```pycon
+>>> print(unlinked_warning("Fixed in #4."))
+1 mention without a link (the reader clicks through from a phone): line 1 #4. Link each one: an issue or PR to its GitHub URL, a Slack/email/chat message to its permalink.
+>>> unlinked_warning("All linked: [#4](https://github.com/o/r/issues/4).") is None
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 
 # _autosummary/annals.listening.html.md
@@ -3494,6 +3614,11 @@ This module is the single source of truth for what a annals can do. The CLI
 names) and the shipped skill all describe the same functions, so there is nothing to keep
 in parity. Nothing here prints or exits; the surfaces do that.
 
+### Module Attributes
+
+| [`LINK_CHECKED_SUFFIXES`](_autosummary/annals.tools.html.md#annals.tools.LINK_CHECKED_SUFFIXES)   | the suffixes whose text the link check reads (prose an author writes by hand)   |
+|--------------------------------------------------------------------------|---------------------------------------------------------------------------------|
+
 ### Functions
 
 | [`aggregate`](_autosummary/annals.tools.html.md#annals.tools.aggregate)(group_id, \*[, format, output, ...])     | The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).   |
@@ -3514,6 +3639,10 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata and link (`to`: on a named target).                                       |
 | [`trash`](_autosummary/annals.tools.html.md#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                                 |
 | [`unshare`](_autosummary/annals.tools.html.md#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.                       |
+
+### annals.tools.LINK_CHECKED_SUFFIXES *= frozenset({'.markdown', '.md', '.txt'})*
+
+the suffixes whose text the link check reads (prose an author writes by hand)
 
 ### annals.tools.aggregate(group_id, , format='md', output=None, demote=1, order='numbered', no_toc=False, keep_wraps=False, target=None, to=None)
 
@@ -3619,7 +3748,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -3637,6 +3766,9 @@ page shows the new version and offers the earlier ones. That is how a living pag
 guide, a status page) keeps one link. `artifact` (a claude.ai artifact link) is the
 interactive version of the page: the document’s page shows an “Open the interactive
 version” button. Publish the Artifact first, then the same page here with its link.
+A markdown or text document that mentions an issue or a Slack/email/chat message
+without linking to it gets a warning on stderr ([`annals.linkcheck`](_autosummary/annals.linkcheck.html.md#module-annals.linkcheck)); it is
+published either way. `no_link_check` turns that check off.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3711,18 +3843,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-09 09:16 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/4cab5e2306f98f746043279090212d8d665c49cb"><code>4cab5e2</code></a> on branch <code>main</code>, for **annals 0.0.36** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-09 10:54 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/12e44270d9b1388fb665b6fad76898020361197f"><code>12e4427</code></a> on branch <code>main</code>, for **annals 0.0.37** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.36) is behind the latest release on PyPI (0.0.37): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/4cab5e2306f98f746043279090212d8d665c49cb"><code>4cab5e2306f98f746043279090212d8d665c49cb</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/12e44270d9b1388fb665b6fad76898020361197f"><code>12e44270d9b1388fb665b6fad76898020361197f</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -3733,9 +3863,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42591654037">42591654037</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42604241911">42604241911</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>4cab5e2306f98f746043279090212d8d665c49cb</code> (in the history of the built commit) |
+| Event commit | <code>12e44270d9b1388fb665b6fad76898020361197f</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3760,13 +3890,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.37/">0.0.37</a>, newer than the documented version (0.0.36).
+Latest release: <a href="https://pypi.org/project/annals/0.0.37/">0.0.37</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 4cab5e2306f98f746043279090212d8d665c49cb
+git checkout 12e44270d9b1388fb665b6fad76898020361197f
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

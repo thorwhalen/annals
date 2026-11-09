@@ -1,0 +1,31 @@
+annals.linkcheck
+================
+
+.. automodule:: annals.linkcheck
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      URL
+      MD_LINK
+      CODE_SPAN
+      ISSUE_REF
+      CONVERSATION
+      DATE_RANGE
+      MAX_LISTED
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      unlinked_mentions
+      unlinked_warning
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      Mention
+   

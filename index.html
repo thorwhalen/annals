@@ -72,6 +72,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.linkcheck.html">annals.linkcheck</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.listening.html">annals.listening</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.mcp.html">annals.mcp</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.media.html">annals.media</a></li>
@@ -106,6 +107,7 @@ data-aria-dark="Switch to auto color mode">
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#for-agents">For agents</a><ul>
 <li><a class="reference internal" href="#interactive-version-artifact">Interactive version (<code class="docutils literal notranslate"><span class="pre">--artifact</span></code>)</a></li>
+<li><a class="reference internal" href="#links-to-what-a-document-mentions">Links to what a document mentions</a></li>
 <li><a class="reference internal" href="#living-pages-replace">Living pages (<code class="docutils literal notranslate"><span class="pre">--replace</span></code>)</a></li>
 </ul>
 </li>
@@ -212,6 +214,10 @@ data-aria-dark="Switch to auto color mode">
 <section id="interactive-version-artifact">
 <h3>Interactive version (<code class="docutils literal notranslate"><span class="pre">--artifact</span></code>)<a class="headerlink" href="#interactive-version-artifact" title="Link to this heading">#</a></h3>
 <p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">page.html</span> <span class="pre">--artifact</span> <span class="pre">https://claude.ai/...</span></code> stores the link of a Claude Artifact holding the same page in the document’s meta (<code class="docutils literal notranslate"><span class="pre">artifact</span></code>), and the document’s page shows an “Open the interactive version” button next to the frame. Comments, per-viewer and shared state and sharing then live on the artifact while annals stays the single in-tray. Only plain <code class="docutils literal notranslate"><span class="pre">https</span></code> links to <code class="docutils literal notranslate"><span class="pre">claude.ai</span></code> are accepted (<code class="docutils literal notranslate"><span class="pre">annals.store.ARTIFACT_HOSTS</span></code>; no port, credentials or odd characters), <code class="docutils literal notranslate"><span class="pre">--artifact</span></code> takes one path, and a <code class="docutils literal notranslate"><span class="pre">--replace</span></code> without <code class="docutils literal notranslate"><span class="pre">--artifact</span></code> keeps the current link.</p>
+</section>
+<section id="links-to-what-a-document-mentions">
+<h3>Links to what a document mentions<a class="headerlink" href="#links-to-what-a-document-mentions" title="Link to this heading">#</a></h3>
+<p>The owner reads on a phone and clicks through, so a document that mentions an issue or a message should link to it. <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span></code> reads markdown and text documents before publishing and warns on stderr about bare issue references (<code class="docutils literal notranslate"><span class="pre">#12</span></code>, <code class="docutils literal notranslate"><span class="pre">owner/repo#12</span></code>) and dated mentions of a message (“Karl asked on 10-29 in #tech-app-test”) that have no link (<code class="docutils literal notranslate"><span class="pre">annals.linkcheck</span></code>). It is a warning, not a gate: the document is published either way. <code class="docutils literal notranslate"><span class="pre">--no-link-check</span></code> turns it off.</p>
 </section>
 <section id="living-pages-replace">
 <h3>Living pages (<code class="docutils literal notranslate"><span class="pre">--replace</span></code>)<a class="headerlink" href="#living-pages-replace" title="Link to this heading">#</a></h3>
@@ -440,7 +446,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-09 09:16 UTC from <a href="https://github.com/thorwhalen/annals/commit/4cab5e2306f98f746043279090212d8d665c49cb">4cab5e2</a> (main) · annals 0.0.36 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-09 10:54 UTC from <a href="https://github.com/thorwhalen/annals/commit/12e44270d9b1388fb665b6fad76898020361197f">12e4427</a> (main) · annals 0.0.37 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -475,7 +481,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=0e525676"></script>
+      <script src="_static/documentation_options.js?v=aa2ad26f"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

@@ -286,7 +286,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -304,6 +304,9 @@ page shows the new version and offers the earlier ones. That is how a living pag
 guide, a status page) keeps one link. `artifact` (a claude.ai artifact link) is the
 interactive version of the page: the document’s page shows an “Open the interactive
 version” button. Publish the Artifact first, then the same page here with its link.
+A markdown or text document that mentions an issue or a Slack/email/chat message
+without linking to it gets a warning on stderr ([`annals.linkcheck`](annals.linkcheck.html.md#module-annals.linkcheck)); it is
+published either way. `no_link_check` turns that check off.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -338,6 +341,7 @@ Move documents to the recycle bin (restorable).
 | [`combine`](annals.combine.html.md#module-annals.combine)           | Many files of many kinds as ONE document: a Markdown, html or PDF file.                                                                            |
 | [`config`](annals.config.html.md#module-annals.config)             | Settings: where documents are published and what link to print.                                                                                    |
 | [`jsonstore`](annals.jsonstore.html.md#module-annals.jsonstore)       | A `MutableMapping` kept in one JSON file, safe with several server processes.                                                                      |
+| [`linkcheck`](annals.linkcheck.html.md#module-annals.linkcheck)       | Find what a document mentions without linking to it: the owner reads on a phone and clicks through.                                                |
 | [`listening`](annals.listening.html.md#module-annals.listening)       | What each reader has heard of each audio document: percent heard, listens, where they stopped.                                                     |
 | [`mcp`](annals.mcp.html.md#module-annals.mcp)                   | MCP surface: the same operations as the CLI, from [`annals.tools`](annals.tools.html.md#module-annals.tools), via `py2mcp`. |
 | [`media`](annals.media.html.md#module-annals.media)               | The media relay for published html pages: what a framed page plays, told to the page around it.                                                    |

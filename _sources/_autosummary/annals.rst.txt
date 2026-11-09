@@ -42,6 +42,7 @@
    config
    export
    jsonstore
+   linkcheck
    listening
    mcp
    media

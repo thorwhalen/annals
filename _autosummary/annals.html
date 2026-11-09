@@ -72,6 +72,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.linkcheck.html">annals.linkcheck</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.listening.html">annals.listening</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
@@ -603,7 +604,7 @@ and the file’s default target for this call (explicit arguments still win).</p
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.publish">
-<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.publish" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_link_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.publish" title="Link to this definition">#</a></dt>
 <dd><p>Publish one document and print its link; several paths become several documents.</p>
 <p><code class="docutils literal notranslate"><span class="pre">paths</span></code>: files of any kind (markdown, html, images, video, audio, pdf, text), a
 directory (one document: an <code class="docutils literal notranslate"><span class="pre">index.html</span></code> or single page with its assets, else a
@@ -618,7 +619,10 @@ id) publishes ONE path as a new version of that document: the link stays the sam
 page shows the new version and offers the earlier ones. That is how a living page (a
 guide, a status page) keeps one link. <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai artifact link) is the
 interactive version of the page: the document’s page shows an “Open the interactive
-version” button. Publish the Artifact first, then the same page here with its link.</p>
+version” button. Publish the Artifact first, then the same page here with its link.
+A markdown or text document that mentions an issue or a Slack/email/chat message
+without linking to it gets a warning on stderr (<a class="reference internal" href="annals.linkcheck.html#module-annals.linkcheck" title="annals.linkcheck"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.linkcheck</span></code></a>); it is
+published either way. <code class="docutils literal notranslate"><span class="pre">no_link_check</span></code> turns that check off.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -681,49 +685,52 @@ version” button. Publish the Artifact first, then the same page here with its 
 <tr class="row-even"><td><p><a class="reference internal" href="annals.jsonstore.html#module-annals.jsonstore" title="annals.jsonstore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">jsonstore</span></code></a></p></td>
 <td><p>A <code class="docutils literal notranslate"><span class="pre">MutableMapping</span></code> kept in one JSON file, safe with several server processes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.listening.html#module-annals.listening" title="annals.listening"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listening</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.linkcheck.html#module-annals.linkcheck" title="annals.linkcheck"><code class="xref py py-obj docutils literal notranslate"><span class="pre">linkcheck</span></code></a></p></td>
+<td><p>Find what a document mentions without linking to it: the owner reads on a phone and clicks through.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.listening.html#module-annals.listening" title="annals.listening"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listening</span></code></a></p></td>
 <td><p>What each reader has heard of each audio document: percent heard, listens, where they stopped.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.mcp.html#module-annals.mcp" title="annals.mcp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mcp</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.mcp.html#module-annals.mcp" title="annals.mcp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mcp</span></code></a></p></td>
 <td><p>MCP surface: the same operations as the CLI, from <a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.tools</span></code></a>, via <code class="docutils literal notranslate"><span class="pre">py2mcp</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.media.html#module-annals.media" title="annals.media"><code class="xref py py-obj docutils literal notranslate"><span class="pre">media</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.media.html#module-annals.media" title="annals.media"><code class="xref py py-obj docutils literal notranslate"><span class="pre">media</span></code></a></p></td>
 <td><p>The media relay for published html pages: what a framed page plays, told to the page around it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.notebook.html#module-annals.notebook" title="annals.notebook"><code class="xref py py-obj docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.notebook.html#module-annals.notebook" title="annals.notebook"><code class="xref py py-obj docutils literal notranslate"><span class="pre">notebook</span></code></a></p></td>
 <td><p>A share's documents as separate notebook sources: one plain web page per text file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.overview.html#module-annals.overview" title="annals.overview"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overview</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.overview.html#module-annals.overview" title="annals.overview"><code class="xref py py-obj docutils literal notranslate"><span class="pre">overview</span></code></a></p></td>
 <td><p>Spoken overviews of a document: the request a page makes, and the worker that fulfils it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.references.html#module-annals.references" title="annals.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.references.html#module-annals.references" title="annals.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a></p></td>
 <td><p>The references of documents, extracted and combined, in three forms.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.render.html#module-annals.render" title="annals.render"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.render.html#module-annals.render" title="annals.render"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render</span></code></a></p></td>
 <td><p>Render markdown (and other page-like files) to html and PDF, with their images inside.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.requirements.html#module-annals.requirements" title="annals.requirements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">requirements</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.requirements.html#module-annals.requirements" title="annals.requirements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">requirements</span></code></a></p></td>
 <td><p>Optional dependencies, checked where they are needed and explained when they are missing.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.share.html#module-annals.share" title="annals.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.share.html#module-annals.share" title="annals.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a></p></td>
 <td><p>Share links: one document (or a group) behind a public, unguessable, revocable link.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.sources.html#module-annals.sources" title="annals.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.sources.html#module-annals.sources" title="annals.sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sources</span></code></a></p></td>
 <td><p>Item sources: everything the page lists, wherever it lives, as rows of one shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.store.html#module-annals.store" title="annals.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.store.html#module-annals.store" title="annals.store"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store</span></code></a></p></td>
 <td><p>The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.tables.html#module-annals.tables" title="annals.tables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tables</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.tables.html#module-annals.tables" title="annals.tables"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tables</span></code></a></p></td>
 <td><p>Scrolling, zooming tables for published html pages.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.tags.html#module-annals.tags" title="annals.tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.tags.html#module-annals.tags" title="annals.tags"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tags</span></code></a></p></td>
 <td><p>The owner's tags: a <code class="docutils literal notranslate"><span class="pre">MutableMapping</span></code> from item key to tag list, kept apart from the items.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="annals.target.html#module-annals.target" title="annals.target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.target.html#module-annals.target" title="annals.target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target</span></code></a></p></td>
 <td><p>The transport seam: a document tree lands in a directory, here or on another machine.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
 <td><p>The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.</p></td>
 </tr>
 </tbody>
@@ -771,7 +778,7 @@ version” button. Publish the Artifact first, then the same page here with its 
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=0e525676"></script>
+      <script src="../_static/documentation_options.js?v=aa2ad26f"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

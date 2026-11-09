@@ -72,6 +72,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.linkcheck.html">annals.linkcheck</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.listening.html">annals.listening</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
@@ -104,6 +105,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.tools.LINK_CHECKED_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">LINK_CHECKED_SUFFIXES</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.aggregate"><code class="docutils literal notranslate"><span class="pre">aggregate()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.configure"><code class="docutils literal notranslate"><span class="pre">configure()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.copy"><code class="docutils literal notranslate"><span class="pre">copy()</span></code></a></li>
@@ -166,6 +168,16 @@ data-aria-dark="Switch to auto color mode">
 (<code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.__main__</span></code>, via <code class="docutils literal notranslate"><span class="pre">cw</span></code>), the MCP server (<code class="docutils literal notranslate"><span class="pre">py2mcp</span></code> over string refs to these
 names) and the shipped skill all describe the same functions, so there is nothing to keep
 in parity. Nothing here prints or exits; the surfaces do that.</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.LINK_CHECKED_SUFFIXES" title="annals.tools.LINK_CHECKED_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LINK_CHECKED_SUFFIXES</span></code></a></p></td>
+<td><p>the suffixes whose text the link check reads (prose an author writes by hand)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
@@ -224,6 +236,12 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 </tbody>
 </table>
 </div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.tools.LINK_CHECKED_SUFFIXES">
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">LINK_CHECKED_SUFFIXES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'.markdown',</span> <span class="pre">'.md',</span> <span class="pre">'.txt'})</span></span><a class="headerlink" href="#annals.tools.LINK_CHECKED_SUFFIXES" title="Link to this definition">#</a></dt>
+<dd><p>the suffixes whose text the link check reads (prose an author writes by hand)</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.tools.aggregate">
 <span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">aggregate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'numbered'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_toc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_wraps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#aggregate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.aggregate" title="Link to this definition">#</a></dt>
@@ -359,7 +377,7 @@ with the package.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.tools.publish">
-<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.publish" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">paths</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_files</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">no_link_check</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.publish" title="Link to this definition">#</a></dt>
 <dd><p>Publish one document and print its link; several paths become several documents.</p>
 <p><code class="docutils literal notranslate"><span class="pre">paths</span></code>: files of any kind (markdown, html, images, video, audio, pdf, text), a
 directory (one document: an <code class="docutils literal notranslate"><span class="pre">index.html</span></code> or single page with its assets, else a
@@ -374,7 +392,10 @@ id) publishes ONE path as a new version of that document: the link stays the sam
 page shows the new version and offers the earlier ones. That is how a living page (a
 guide, a status page) keeps one link. <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai artifact link) is the
 interactive version of the page: the document’s page shows an “Open the interactive
-version” button. Publish the Artifact first, then the same page here with its link.</p>
+version” button. Publish the Artifact first, then the same page here with its link.
+A markdown or text document that mentions an issue or a Slack/email/chat message
+without linking to it gets a warning on stderr (<a class="reference internal" href="annals.linkcheck.html#module-annals.linkcheck" title="annals.linkcheck"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.linkcheck</span></code></a>); it is
+published either way. <code class="docutils literal notranslate"><span class="pre">no_link_check</span></code> turns that check off.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -513,7 +534,7 @@ stdin, so it stays out of the shell history).</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=0e525676"></script>
+      <script src="../_static/documentation_options.js?v=aa2ad26f"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

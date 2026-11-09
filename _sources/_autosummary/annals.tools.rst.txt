@@ -4,6 +4,12 @@ annals.tools
 .. automodule:: annals.tools
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      LINK_CHECKED_SUFFIXES
+   
    .. rubric:: Functions
 
    .. autosummary::

@@ -12,6 +12,7 @@
 - [annals.combine](annals.combine.html.md): Many files of many kinds as ONE document: a Markdown, html or PDF file.
 - [annals.config](annals.config.html.md): Settings: where documents are published and what link to print.
 - [annals.jsonstore](annals.jsonstore.html.md): A &#96;MutableMapping&#96; kept in one JSON file, safe with several server processes.
+- [annals.linkcheck](annals.linkcheck.html.md): Find what a document mentions without linking to it: the owner reads on a phone and clicks through.
 - [annals.listening](annals.listening.html.md): What each reader has heard of each audio document: percent heard, listens, where they stopped.
 - [annals.mcp](annals.mcp.html.md): MCP surface: the same operations as the CLI, from &#96;annals.tools&#96;, via &#96;py2mcp&#96;.
 - [annals.media](annals.media.html.md): The media relay for published html pages: what a framed page plays, told to the page around it.
