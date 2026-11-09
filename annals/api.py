@@ -415,6 +415,8 @@ def mk_api(
         """Every audio overview, newest first, each with this reader's ``listening`` summary.
 
         ``q`` filters by words, as ``/docs`` does. ``statuses`` lists the filter values in order.
+        ``unmade`` lists the overviews asked for and not made: being made, or failed (with
+        why), so one asked for never just fails to appear (``[]`` where overviews are off).
         """
         docs = store.search(q) if q else store.list()
         rows = [_owner_tags(list_meta(m)) for m in docs]
@@ -426,6 +428,7 @@ def mk_api(
             "docs": rows,
             "statuses": list(listen_log.STATUSES),
             "tracked": listening is not None,
+            "unmade": overview.unmade(store, requests) if requests else [],
         }
 
     @api.get("/listening/{doc_id}")
