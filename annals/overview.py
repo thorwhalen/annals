@@ -246,8 +246,10 @@ class Requests:
 
 def _is_down(mark: dict) -> bool:
     docs = mark.get("docs")
-    return isinstance(mark.get("reason"), str) and bool(mark["reason"]) or (
-        isinstance(docs, list) and len(docs) >= DOWN_AFTER
+    return (
+        isinstance(mark.get("reason"), str)
+        and bool(mark["reason"])
+        or (isinstance(docs, list) and len(docs) >= DOWN_AFTER)
     )
 
 
@@ -263,7 +265,9 @@ def maker_down(requests: Requests) -> dict | None:
     if not _is_down(mark):
         return None
     return {
-        "reason": mark.get("reason") or mark.get("error") or "the overview maker is down",
+        "reason": mark.get("reason")
+        or mark.get("error")
+        or "the overview maker is down",
         "since": mark.get("since"),
         "link": mark.get("link"),
     }
@@ -284,8 +288,14 @@ def mark_down(requests: Requests, reason: str = "", *, link: str | None = None) 
         raise ValueError("the maker is not marked down: say why, too")
     reason = reason or mark.get("reason") or mark.get("error")
     # Whoever marks it has just seen it fail, so the first probe is a full interval away.
-    stamps = {"since": mark.get("since"), "tried": mark.get("tried")} if was_down else {"since": _now(), "tried": _now()}
-    requests.put_mark({**mark, **stamps, "reason": reason, "link": link or mark.get("link")})
+    stamps = (
+        {"since": mark.get("since"), "tried": mark.get("tried")}
+        if was_down
+        else {"since": _now(), "tried": _now()}
+    )
+    requests.put_mark(
+        {**mark, **stamps, "reason": reason, "link": link or mark.get("link")}
+    )
     return maker_down(requests)
 
 
@@ -301,7 +311,9 @@ def _wake(requests: Requests, *, first_only: bool = False) -> list[str]:
     for doc_id in requests.ids():
         record = requests.get(doc_id) or {}
         if record.get("state") == WAITING:
-            requests.put(doc_id, {**record, "state": QUEUED, "requested": _now(), "waited": True})
+            requests.put(
+                doc_id, {**record, "state": QUEUED, "requested": _now(), "waited": True}
+            )
             woken.append(doc_id)
             if first_only:
                 break
@@ -337,9 +349,13 @@ def _note_failure(requests: Requests, error: str, doc_id: str) -> bool:
     requests.put_mark(mark)
     if not _is_down(mark):
         return False
-    for other in docs:  # those that failed the same way wait for it too, instead of failing
+    for (
+        other
+    ) in docs:  # those that failed the same way wait for it too, instead of failing
         record = requests.get(other) or {}
-        if record.get("state") == FAILED and _gist(str(record.get("error", ""))) == _gist(error):
+        if record.get("state") == FAILED and _gist(
+            str(record.get("error", ""))
+        ) == _gist(error):
             requests.put(other, {**record, "state": WAITING})
     return True
 
@@ -831,10 +847,14 @@ def _step(
     down = maker_down(requests) is not None
 
     def wait(why=None) -> dict:  # made later, never dropped: nobody has to ask again
-        requests.put(doc_id, {**record, "state": WAITING, **({"error": why} if why else {})})
+        requests.put(
+            doc_id, {**record, "state": WAITING, **({"error": why} if why else {})}
+        )
         return {"doc": doc_id, "state": WAITING, **({"error": why} if why else {})}
 
-    if down and not _probe_due(requests):  # it would only fail again, and use up the limit
+    if down and not _probe_due(
+        requests
+    ):  # it would only fail again, and use up the limit
         return wait()
     if requests.started_today() >= limit:
         why = f"the limit of {limit} overviews a day was reached"
@@ -857,7 +877,11 @@ def _step(
     except Exception as e:  # recorded for the page; the next request must still run
         why = str(e)[:MAX_ERROR_CHARS]
         quick = time.monotonic() - began <= FAST_FAILURE_S
-        if isinstance(e, MakerFailed) and quick and _note_failure(requests, why, doc_id):
+        if (
+            isinstance(e, MakerFailed)
+            and quick
+            and _note_failure(requests, why, doc_id)
+        ):
             return wait(why)
         return wait(why) if down else fail(why)  # a failed probe keeps its place
     requests.put(
@@ -898,7 +922,9 @@ def work(
         if not mine:
             return results
         if not maker_down(requests):
-            _wake(requests)  # left waiting by a page that asked just as the maker came back
+            _wake(
+                requests
+            )  # left waiting by a page that asked just as the maker came back
         elif _probe_due(requests):
             _wake(requests, first_only=True)
         while fresh := [i for i in requests.ids() if i not in seen]:
@@ -923,5 +949,9 @@ def work(
                 if happened:
                     results.append(happened)
                 if happened and happened["state"] == DONE:  # those it woke run now
-                    seen = {i for i in seen if (requests.get(i) or {}).get("state") != QUEUED}
+                    seen = {
+                        i
+                        for i in seen
+                        if (requests.get(i) or {}).get("state") != QUEUED
+                    }
     return results
