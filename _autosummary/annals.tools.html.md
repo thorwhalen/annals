@@ -21,6 +21,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.                       |
 | [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                      |
 | [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                      |
+| [`listen_down`](#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.            |
 | [`listen_work`](#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).           |
 | [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.                 |
 | [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                     |
@@ -106,6 +107,19 @@ List groups, newest first.
 ### annals.tools.listen(doc_id, , minutes=5, force=False, target=None, to=None)
 
 Ask for a spoken overview of a document, as its page’s Listen button does. Spends money.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.listen_down(reason='', , link='', clear=False, target=None, to=None)
+
+Say why spoken overviews cannot be made, and where that is being fixed; or clear it.
+
+With nothing given, shows the current state. The Audio tab then shows the reason and the
+link instead of a Try again that cannot work, e.g.
+`annals listen-down "the server's login expired" --link <issue url>`. The worker finds
+out by itself too, and clears it on the next success; `--clear` clears it now and
+queues every request that waited.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

@@ -141,6 +141,14 @@ annals listen <doc-id> --minutes 3 # asks for one from the command line, as the 
 
 Run `annals listen-work` from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (`ANNALS_OVERVIEW_DAILY_LIMIT`). `annals.overview` has the details.
 
+When the command cannot work until someone acts (an expired login, a voice account out of credit), the worker notices (the same failure, fast, from two documents in a row) and marks it down. The Audio tab and the Listen control then say why instead of offering a Try again, new requests wait, one is tried again every few hours, and the first success makes everything that waited. An agent that filed the fix can attach it, so the page links to it:
+
+```bash
+annals listen-down "the server's login expired" --link https://github.com/<owner>/<repo>/issues/<n>
+annals listen-down            # shows the current state
+annals listen-down --clear    # it works again: clears the mark and queues what waited
+```
+
 ## Audio: what you still have to listen to
 
 The **Audio** tab lists every spoken overview (documents tagged `overview`), newest first, with a search box and a filter by what you have heard: **Not started**, **In progress**, **Done**. Each row shows how much of it you heard and how many times you heard it to the end, and has a **Mark done** button for one you heard elsewhere.

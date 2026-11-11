@@ -112,6 +112,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.tools.group"><code class="docutils literal notranslate"><span class="pre">group()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.groups"><code class="docutils literal notranslate"><span class="pre">groups()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.listen"><code class="docutils literal notranslate"><span class="pre">listen()</span></code></a></li>
+<li><a class="reference internal" href="#annals.tools.listen_down"><code class="docutils literal notranslate"><span class="pre">listen_down()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.listen_work"><code class="docutils literal notranslate"><span class="pre">listen_work()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.ls"><code class="docutils literal notranslate"><span class="pre">ls()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.page_shell"><code class="docutils literal notranslate"><span class="pre">page_shell()</span></code></a></li>
@@ -200,37 +201,40 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.listen" title="annals.tools.listen"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listen</span></code></a>(doc_id, *[, minutes, force, target, to])</p></td>
 <td><p>Ask for a spoken overview of a document, as its page's Listen button does.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.listen_work" title="annals.tools.listen_work"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listen_work</span></code></a>(*[, command, target, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.listen_down" title="annals.tools.listen_down"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listen_down</span></code></a>([reason, link, clear, target, to])</p></td>
+<td><p>Say why spoken overviews cannot be made, and where that is being fixed; or clear it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.listen_work" title="annals.tools.listen_work"><code class="xref py py-obj docutils literal notranslate"><span class="pre">listen_work</span></code></a>(*[, command, target, to])</p></td>
 <td><p>Fulfil the queued overview requests, one at a time (a timer runs this on the server).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.ls" title="annals.tools.ls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ls</span></code></a>([q, trash, limit, target, base_url, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.ls" title="annals.tools.ls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ls</span></code></a>([q, trash, limit, target, base_url, to])</p></td>
 <td><p>List documents (newest first), optionally filtered by words or showing the bin.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.page_shell" title="annals.tools.page_shell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_shell</span></code></a>(*[, api, base, title])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.page_shell" title="annals.tools.page_shell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_shell</span></code></a>(*[, api, base, title])</p></td>
 <td><p>The page's html shell, for a host that serves the API under its own prefix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.publish" title="annals.tools.publish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">publish</span></code></a>(paths, *[, title, tags, group, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.publish" title="annals.tools.publish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">publish</span></code></a>(paths, *[, title, tags, group, ...])</p></td>
 <td><p>Publish one document and print its link; several paths become several documents.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.restore" title="annals.tools.restore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore</span></code></a>(doc_ids, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.restore" title="annals.tools.restore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Bring documents back from the recycle bin.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path, ...])</p></td>
 <td><p>Serve the annals page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[server]'</span></code>).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.share" title="annals.tools.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a>(ref, *[, password, expires, include, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.share" title="annals.tools.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a>(ref, *[, password, expires, include, ...])</p></td>
 <td><p>Make a public link to ONE document (or group) and print it; nothing else is reachable.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.shares" title="annals.tools.shares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shares</span></code></a>(*[, all, target, base_url, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.shares" title="annals.tools.shares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shares</span></code></a>(*[, all, target, base_url, to])</p></td>
 <td><p>List share links, newest first (<code class="docutils literal notranslate"><span class="pre">all</span></code>: revoked and expired ones too).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
 <td><p>A document's metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.trash" title="annals.tools.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.trash" title="annals.tools.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Move documents to the recycle bin (restorable).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.unshare" title="annals.tools.unshare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unshare</span></code></a>(links, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.unshare" title="annals.tools.unshare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unshare</span></code></a>(links, *[, target, to])</p></td>
 <td><p>Revoke share links (their token or full link): they stop working at once.</p></td>
 </tr>
 </tbody>
@@ -328,6 +332,22 @@ copy. The source must be readable from this machine (a directory, or <code class
 <dt class="sig sig-object py" id="annals.tools.listen">
 <span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">listen</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#listen"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.listen" title="Link to this definition">#</a></dt>
 <dd><p>Ask for a spoken overview of a document, as its page’s Listen button does. Spends money.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.tools.listen_down">
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">listen_down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">reason</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">link</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clear</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#listen_down"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.listen_down" title="Link to this definition">#</a></dt>
+<dd><p>Say why spoken overviews cannot be made, and where that is being fixed; or clear it.</p>
+<p>With nothing given, shows the current state. The Audio tab then shows the reason and the
+link instead of a Try again that cannot work, e.g.
+<code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">listen-down</span> <span class="pre">&quot;the</span> <span class="pre">server's</span> <span class="pre">login</span> <span class="pre">expired&quot;</span> <span class="pre">--link</span> <span class="pre">&lt;issue</span> <span class="pre">url&gt;</span></code>. The worker finds
+out by itself too, and clears it on the next success; <code class="docutils literal notranslate"><span class="pre">--clear</span></code> clears it now and
+queues every request that waited.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -536,7 +556,7 @@ links. To read the text, use <code class="docutils literal notranslate"><span cl
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=84bd753f"></script>
+      <script src="../_static/documentation_options.js?v=20c5f126"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

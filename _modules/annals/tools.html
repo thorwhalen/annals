@@ -1021,25 +1021,55 @@ data-aria-dark="Switch to auto color mode">
 
 </span><span data-line="834">
 </span><span data-line="835">
-</span><span data-line="836"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="837">    <span class="n">publish</span><span class="p">,</span>
-</span><span data-line="838">    <span class="n">ls</span><span class="p">,</span>
-</span><span data-line="839">    <span class="n">show</span><span class="p">,</span>
-</span><span data-line="840">    <span class="n">trash</span><span class="p">,</span>
-</span><span data-line="841">    <span class="n">restore</span><span class="p">,</span>
-</span><span data-line="842">    <span class="n">group</span><span class="p">,</span>
-</span><span data-line="843">    <span class="n">groups</span><span class="p">,</span>
-</span><span data-line="844">    <span class="n">aggregate</span><span class="p">,</span>
-</span><span data-line="845">    <span class="n">copy</span><span class="p">,</span>
-</span><span data-line="846">    <span class="n">share</span><span class="p">,</span>
-</span><span data-line="847">    <span class="n">shares</span><span class="p">,</span>
-</span><span data-line="848">    <span class="n">unshare</span><span class="p">,</span>
-</span><span data-line="849">    <span class="n">configure</span><span class="p">,</span>
-</span><span data-line="850">    <span class="n">serve</span><span class="p">,</span>
-</span><span data-line="851">    <span class="n">page_shell</span><span class="p">,</span>
-</span><span data-line="852">    <span class="n">listen</span><span class="p">,</span>
-</span><span data-line="853">    <span class="n">listen_work</span><span class="p">,</span>
-</span><span data-line="854"><span class="p">]</span>
+<div class="viewcode-block" id="listen_down">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.listen_down">[docs]</a>
+</span><span data-line="836"><span class="k">def</span><span class="w"> </span><span class="nf">listen_down</span><span class="p">(</span>
+</span><span data-line="837">    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="838">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="839">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="840">    <span class="n">clear</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="841">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="842">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="843"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="844"><span class="w">    </span><span class="sd">"""Say why spoken overviews cannot be made, and where that is being fixed; or clear it.</span>
+</span><span data-line="845">
+</span><span data-line="846"><span class="sd">    With nothing given, shows the current state. The Audio tab then shows the reason and the</span>
+</span><span data-line="847"><span class="sd">    link instead of a Try again that cannot work, e.g.</span>
+</span><span data-line="848"><span class="sd">    ``annals listen-down "the server's login expired" --link &lt;issue url&gt;``. The worker finds</span>
+</span><span data-line="849"><span class="sd">    out by itself too, and clears it on the next success; ``--clear`` clears it now and</span>
+</span><span data-line="850"><span class="sd">    queues every request that waited.</span>
+</span><span data-line="851"><span class="sd">    """</span>
+</span><span data-line="852">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
+</span><span data-line="853">
+</span><span data-line="854">    <span class="n">_</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="855">    <span class="k">if</span> <span class="n">clear</span><span class="p">:</span>
+</span><span data-line="856">        <span class="k">return</span> <span class="p">{</span><span class="s2">"down"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"queued"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">mark_up</span><span class="p">(</span><span class="n">requests</span><span class="p">)}</span>
+</span><span data-line="857">    <span class="k">if</span> <span class="n">reason</span> <span class="ow">or</span> <span class="n">link</span><span class="p">:</span>
+</span><span data-line="858">        <span class="n">overview</span><span class="o">.</span><span class="n">mark_down</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="n">reason</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">link</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="859">    <span class="k">return</span> <span class="p">{</span><span class="s2">"down"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">maker_down</span><span class="p">(</span><span class="n">requests</span><span class="p">)}</span></div>
+
+</span><span data-line="860">
+</span><span data-line="861">
+</span><span data-line="862"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="863">    <span class="n">publish</span><span class="p">,</span>
+</span><span data-line="864">    <span class="n">ls</span><span class="p">,</span>
+</span><span data-line="865">    <span class="n">show</span><span class="p">,</span>
+</span><span data-line="866">    <span class="n">trash</span><span class="p">,</span>
+</span><span data-line="867">    <span class="n">restore</span><span class="p">,</span>
+</span><span data-line="868">    <span class="n">group</span><span class="p">,</span>
+</span><span data-line="869">    <span class="n">groups</span><span class="p">,</span>
+</span><span data-line="870">    <span class="n">aggregate</span><span class="p">,</span>
+</span><span data-line="871">    <span class="n">copy</span><span class="p">,</span>
+</span><span data-line="872">    <span class="n">share</span><span class="p">,</span>
+</span><span data-line="873">    <span class="n">shares</span><span class="p">,</span>
+</span><span data-line="874">    <span class="n">unshare</span><span class="p">,</span>
+</span><span data-line="875">    <span class="n">configure</span><span class="p">,</span>
+</span><span data-line="876">    <span class="n">serve</span><span class="p">,</span>
+</span><span data-line="877">    <span class="n">page_shell</span><span class="p">,</span>
+</span><span data-line="878">    <span class="n">listen</span><span class="p">,</span>
+</span><span data-line="879">    <span class="n">listen_work</span><span class="p">,</span>
+</span><span data-line="880">    <span class="n">listen_down</span><span class="p">,</span>
+</span><span data-line="881"><span class="p">]</span>
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -1067,7 +1097,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=84bd753f"></script>
+      <script src="../../_static/documentation_options.js?v=20c5f126"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

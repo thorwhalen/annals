@@ -1,4 +1,4 @@
-> built 2026-11-09 15:08 UTC from 2080993 (main) · annals 0.0.40. Details: build_info.json
+> built 2026-11-11 17:08 UTC from e4738ab (main) · annals 0.0.41. Details: build_info.json
 
 # index.html.md
 
@@ -144,6 +144,14 @@ annals listen <doc-id> --minutes 3 # asks for one from the command line, as the 
 ```
 
 Run `annals listen-work` from a timer, not from a watcher on the folder: finished request files stay there, so a watcher would keep waking it. A current overview is not made again unless forced, and at most 20 are started in any 24 hours (`ANNALS_OVERVIEW_DAILY_LIMIT`). `annals.overview` has the details.
+
+When the command cannot work until someone acts (an expired login, a voice account out of credit), the worker notices (the same failure, fast, from two documents in a row) and marks it down. The Audio tab and the Listen control then say why instead of offering a Try again, new requests wait, one is tried again every few hours, and the first success makes everything that waited. An agent that filed the fix can attach it, so the page links to it:
+
+```bash
+annals listen-down "the server's login expired" --link https://github.com/<owner>/<repo>/issues/<n>
+annals listen-down            # shows the current state
+annals listen-down --clear    # it works again: clears the mark and queues what waited
+```
 
 ## Audio: what you still have to listen to
 
@@ -2122,6 +2130,16 @@ request nobody fulfilled expires rather than spending money whenever a worker ne
 Run the worker on a timer. Finished request files stay in the folder and the worker writes
 there, so a watcher on the folder would keep waking it.
 
+When the command cannot work until someone acts (an expired login, a voice account out of
+credit), pressing again only spends the daily limit. So the worker notices it: the same
+failure, fast, from two documents in a row, marks the maker *down* with that reason (a
+document failing twice is that document). An agent can mark it too, with a link to where it
+is being fixed (`annals listen-down "why" --link URL`). While it is down, nothing fails or
+is dropped: requests *wait* (past the daily limit too), the page says why and what to do
+instead of offering a Try again, and the worker tries one of them again every few hours. The
+first success, or `annals listen-down --clear`, clears the mark and queues everything that
+waited.
+
 ```pycon
 >>> html_to_text("<title>x</title><p>One &amp; two</p><script>no()</script><p>Three</p>")
 'One & two\n\nThree'
@@ -2135,31 +2153,44 @@ there, so a watcher on the folder would keep waking it.
 |---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                                                                                      |
 | [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                                                                                       |
+| [`DOWN_FILE`](_autosummary/annals.overview.html.md#annals.overview.DOWN_FILE)          | the file marking the maker down; not `.json`, because every `.json` here is a request                                                                             |
+| [`DOWN_AFTER`](_autosummary/annals.overview.html.md#annals.overview.DOWN_AFTER)         | the same fast failure from this many documents in a row means the maker is down                                                                                   |
+| [`FAST_FAILURE_S`](_autosummary/annals.overview.html.md#annals.overview.FAST_FAILURE_S)     | the maker could not start                                                                                                                                         |
+| [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.overview.PROBE_EVERY_S)      | while the maker is down, one waiting request is tried this often, to notice it works again                                                                        |
 | [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
 | [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
 | [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
+| [`WAITING`](_autosummary/annals.overview.html.md#annals.overview.WAITING)            | made once it works again, never spent on before                                                                                                                   |
 | [`FAILED_SHOWN_S`](_autosummary/annals.overview.html.md#annals.overview.FAILED_SHOWN_S)     | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
 | [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
 
 ### Functions
 
-| [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                          |
-|-----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|
-| [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.               |
-| [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                         |
-| [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.     |
-| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                |
-| [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                        |
-| [`request_combined`](_autosummary/annals.overview.html.md#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.          |
-| [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.              |
-| [`unmade`](_autosummary/annals.overview.html.md#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, or failed recently; newest first. |
-| [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                        |
-| [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened.     |
+| [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
+|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.           |
+| [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                     |
+| [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
+| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
+| [`maker_down`](_autosummary/annals.overview.html.md#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.      |
+| [`mark_down`](_autosummary/annals.overview.html.md#annals.overview.mark_down)(requests[, reason, link])                | Say the maker is down, why, and where it is being fixed; keep what is not given.      |
+| [`mark_up`](_autosummary/annals.overview.html.md#annals.overview.mark_up)(requests)                                  | The maker works (again): clear the mark and queue what waited; return those ids.      |
+| [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
+| [`request_combined`](_autosummary/annals.overview.html.md#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.      |
+| [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
+| [`unmade`](_autosummary/annals.overview.html.md#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, waiting, or failed recently.  |
+| [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
+| [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
 
 ### Classes
 
 | [`Requests`](_autosummary/annals.overview.html.md#annals.overview.Requests)(data_dir)   | The request files: one per document, each replaced whole so a reader never sees half.   |
 |-----------------------------------------------------------------------|-----------------------------------------------------------------------------------------|
+
+### Exceptions
+
+| [`MakerFailed`](_autosummary/annals.overview.html.md#annals.overview.MakerFailed)   | The overview command ran and failed: the maker's fault, not the document's.   |
+|----------------------------------------------------------------|-------------------------------------------------------------------------------|
 
 ### annals.overview.CHARS_PER_MINUTE *= 900*
 
@@ -2173,14 +2204,39 @@ marks a document made by putting several documents’ text in one, for one revie
 
 at most this many overviews are started in any 24 hours, whoever asks
 
+### annals.overview.DOWN_AFTER *= 2*
+
+the same fast failure from this many documents in a row means the maker is down
+
+### annals.overview.DOWN_FILE *= 'maker-down'*
+
+the file marking the maker down; not `.json`, because every `.json` here is a request
+
 ### annals.overview.FAILED_SHOWN_S *= 604800*
 
 a failed request is still listed as unmade for this long, so a retry is offered where
 the reader looks for the overview (the Audio tab), not only on the document
 
+### annals.overview.FAST_FAILURE_S *= 120*
+
+the maker could not start
+
+* **Type:**
+  a failure this quick never reached the work
+
 ### annals.overview.MINUTES *= (3, 5, 7)*
 
 the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed
+
+### *exception* annals.overview.MakerFailed
+
+Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#RuntimeError)
+
+The overview command ran and failed: the maker’s fault, not the document’s.
+
+### annals.overview.PROBE_EVERY_S *= 10800*
+
+while the maker is down, one waiting request is tried this often, to notice it works again
 
 ### annals.overview.QUEUED_EXPIRY_S *= 3600*
 
@@ -2206,9 +2262,23 @@ Documents with a request, oldest request first.
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
+#### mark()
+
+What the worker knows of the maker’s recent failures (see [`maker_down()`](_autosummary/annals.overview.html.md#annals.overview.maker_down)).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 #### note_start(doc_id)
 
 Logged before the money is spent, so a crash still counts against the limit.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### put_mark(mark)
+
+Replace the mark, or remove it (`None`).
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -2223,6 +2293,13 @@ How many overviews were started in the last 24 hours.
 ### annals.overview.TAG *= 'overview'*
 
 marks a document that is itself an overview, so nobody makes an overview of an overview
+
+### annals.overview.WAITING *= 'waiting'*
+
+made once it works again, never spent on before
+
+* **Type:**
+  asked for while the maker is down
 
 ### annals.overview.choices()
 
@@ -2269,12 +2346,43 @@ The readable text of a page: no markup, scripts or styles.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.overview.maker_down(requests)
+
+Why no overview can be made until someone acts, or `None` while the maker works.
+
+`{"reason", "since", "link"}`: in words, from when, and where it is being fixed (or
+`None`). Set by the worker once the same fast failure came from [`DOWN_AFTER`](_autosummary/annals.overview.html.md#annals.overview.DOWN_AFTER)
+documents in a row, or by hand with [`mark_down()`](_autosummary/annals.overview.html.md#annals.overview.mark_down); cleared by the next success or
+[`mark_up()`](_autosummary/annals.overview.html.md#annals.overview.mark_up).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.overview.mark_down(requests, reason='', , link=None)
+
+Say the maker is down, why, and where it is being fixed; keep what is not given.
+
+For an agent that filed the task that would fix it: the page then links to it. A link
+alone only adds to a mark that is already there. Raises `ValueError` otherwise, or for a
+link that is not a web address.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.overview.mark_up(requests)
+
+The maker works (again): clear the mark and queue what waited; return those ids.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
 ### annals.overview.request(store, requests, doc_id, , minutes=5, force=False)
 
 Ask for an overview of a document. Raises `ValueError` if it cannot be asked for.
 
 Asking again while one is being made changes nothing, and neither does asking for one
-that exists and is current unless `force`, so a repeat costs nothing.
+that exists and is current unless `force`, so a repeat costs nothing. While the maker
+is down ([`maker_down()`](_autosummary/annals.overview.html.md#annals.overview.maker_down)), the request waits for it rather than failing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2298,11 +2406,11 @@ What a page shows for a document: its request’s state and what it can start.
 
 ### annals.overview.unmade(store, requests)
 
-The overviews asked for and not (yet) made: being made, or failed recently; newest first.
+The overviews asked for and not (yet) made: being made, waiting, or failed recently.
 
 Each is `state_of` its document plus `doc`, `title`, `created` (the document’s),
 `requested` and `finished` (the last try’s). A request whose document is gone, binned
-or no longer speakable is left out: nothing can be retried.
+or no longer speakable is left out: nothing can be retried. Newest first.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -2320,7 +2428,8 @@ Fulfil every queued request, one at a time, until none is left; return what happ
 
 A failure is recorded on its request, for the page to show, and the next one still runs.
 A request made while this runs is picked up before it exits. `doc_url` turns a document
-id into its page, for `{url}`.
+id into its page, for `{url}`. While the maker is down, requests wait, and one of them
+is tried every [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.overview.PROBE_EVERY_S); once one works, those waiting run too.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -3715,6 +3824,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.                       |
 | [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                      |
 | [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                      |
+| [`listen_down`](_autosummary/annals.tools.html.md#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.            |
 | [`listen_work`](_autosummary/annals.tools.html.md#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).           |
 | [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to])        | List documents (newest first), optionally filtered by words or showing the bin.                 |
 | [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                     |
@@ -3800,6 +3910,19 @@ List groups, newest first.
 ### annals.tools.listen(doc_id, , minutes=5, force=False, target=None, to=None)
 
 Ask for a spoken overview of a document, as its page’s Listen button does. Spends money.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.listen_down(reason='', , link='', clear=False, target=None, to=None)
+
+Say why spoken overviews cannot be made, and where that is being fixed; or clear it.
+
+With nothing given, shows the current state. The Audio tab then shows the reason and the
+link instead of a Try again that cannot work, e.g.
+`annals listen-down "the server's login expired" --link <issue url>`. The worker finds
+out by itself too, and clears it on the next success; `--clear` clears it now and
+queues every request that waited.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3933,16 +4056,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-09 15:08 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/2080993dbd513c4f8f564463f6ea31dbf1cdb5de"><code>2080993</code></a> on branch <code>main</code>, for **annals 0.0.40** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-11 17:08 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/e4738abb7e283267657fce0e7ca8db344810b6f6"><code>e4738ab</code></a> on branch <code>main</code>, for **annals 0.0.41** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.41) is behind the latest release on PyPI (0.0.42): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/2080993dbd513c4f8f564463f6ea31dbf1cdb5de"><code>2080993dbd513c4f8f564463f6ea31dbf1cdb5de</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/e4738abb7e283267657fce0e7ca8db344810b6f6"><code>e4738abb7e283267657fce0e7ca8db344810b6f6</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -3953,9 +4078,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/42641045916">42641045916</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43064651031">43064651031</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>2080993dbd513c4f8f564463f6ea31dbf1cdb5de</code> (in the history of the built commit) |
+| Event commit | <code>e4738abb7e283267657fce0e7ca8db344810b6f6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -3980,13 +4105,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.40/">0.0.40</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.42/">0.0.42</a>, newer than the documented version (0.0.41).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 2080993dbd513c4f8f564463f6ea31dbf1cdb5de
+git checkout e4738abb7e283267657fce0e7ca8db344810b6f6
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

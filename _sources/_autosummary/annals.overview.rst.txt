@@ -11,9 +11,14 @@ annals.overview
       DFLT_DAILY_LIMIT
       QUEUED_EXPIRY_S
       RUNNING_MARGIN_S
+      DOWN_FILE
+      DOWN_AFTER
+      FAST_FAILURE_S
+      PROBE_EVERY_S
       MINUTES
       CHARS_PER_MINUTE
       TAG
+      WAITING
       FAILED_SHOWN_S
       COMBINED_TAG
    
@@ -26,6 +31,9 @@ annals.overview
       combined_key
       eligible
       html_to_text
+      maker_down
+      mark_down
+      mark_up
       request
       request_combined
       state_of
@@ -38,4 +46,10 @@ annals.overview
    .. autosummary::
    
       Requests
+   
+   .. rubric:: Exceptions
+
+   .. autosummary::
+   
+      MakerFailed
    
