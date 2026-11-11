@@ -472,18 +472,28 @@ def test_the_same_fast_failure_twice_marks_the_maker_down(client, store, pair, r
     assert client.get(f"/docs/{pair[0]}/overview").json()["down"] == audio["down"]
 
 
+def test_one_document_failing_twice_is_that_document(store, doc, requests, tmp_path):
+    for _ in range(2):
+        overview.request(store, requests, doc, minutes=3, force=True)
+        overview.work(store, requests, command=_maker(tmp_path, LOGIN))
+    assert overview.maker_down(requests) is None and requests.get(doc)["state"] == "failed"
+
+
+def _probe_due_now(requests):
+    requests.put_mark({**requests.mark(), "tried": "2020-01-01T00:00:00+00:00"})
+
+
 def test_different_failures_are_the_documents_not_the_maker(store, pair, requests, tmp_path):
     for d in pair:
         overview.request(store, requests, d, minutes=3)
-    bad = "import sys\nsys.exit('no good: ' + open(source).read()[:4])"
+    bad = "import sys\nsys.exit('too short' if 'D0' in open(source).read() else 'not english')"
     overview.work(store, requests, command=_maker(tmp_path, bad))
     assert overview.maker_down(requests) is None
     assert {requests.get(d)["state"] for d in pair} == {"failed"}
 
 
 def test_while_down_a_request_waits_and_nothing_is_spent(client, store, doc, requests, tmp_path):
-    overview.mark_down(requests, "the login expired")
-    requests.put_mark({**requests.mark(), "tried": overview._now()})  # probed just now
+    overview.mark_down(requests, "the login expired")  # whoever marks it just saw it fail
     assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "waiting"
     marker = tmp_path / "ran"
     overview.work(store, requests, command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD))
@@ -493,7 +503,8 @@ def test_while_down_a_request_waits_and_nothing_is_spent(client, store, doc, req
 
 
 def test_a_probe_that_works_clears_the_mark_and_makes_what_waited(client, store, pair, requests, tmp_path):
-    overview.mark_down(requests, "the login expired")  # never probed: one is due at once
+    overview.mark_down(requests, "the login expired")
+    _probe_due_now(requests)
     for d in pair:
         overview.request(store, requests, d, minutes=3)
     results = overview.work(store, requests, command=_maker(tmp_path, GOOD))
@@ -503,6 +514,7 @@ def test_a_probe_that_works_clears_the_mark_and_makes_what_waited(client, store,
 
 def test_a_probe_that_fails_again_keeps_the_rest_waiting(store, pair, requests, tmp_path):
     overview.mark_down(requests, "the login expired")
+    _probe_due_now(requests)
     for d in pair:
         overview.request(store, requests, d, minutes=3)
     overview.work(store, requests, command=_maker(tmp_path, LOGIN))
@@ -528,3 +540,39 @@ def test_an_agent_links_the_fix_and_clears_it_by_hand(client, store, pair, reque
     assert sorted(tools.listen_down(clear=True, **here)["queued"]) == sorted(pair)
     assert overview.maker_down(requests) is None
     assert {requests.get(d)["state"] for d in pair} == {"queued"}
+    with pytest.raises(ValueError, match="not marked down"):
+        tools.listen_down(link=issue, **here)  # a link alone never takes a working maker down
+
+
+@pytest.mark.parametrize("probe", ["import time\ntime.sleep(0.2)\nraise SystemExit('slow')", "pass"])
+def test_a_probe_that_fails_otherwise_keeps_its_place(store, doc, requests, tmp_path, monkeypatch, probe):
+    monkeypatch.setattr(overview, "FAST_FAILURE_S", 0.1)  # so the slow one counts as slow
+    overview.mark_down(requests, "the login expired")
+    _probe_due_now(requests)
+    overview.request(store, requests, doc, minutes=3)
+    overview.work(store, requests, command=_maker(tmp_path, probe))
+    assert requests.get(doc)["state"] == "waiting" and overview.maker_down(requests)
+
+
+def test_the_daily_limit_never_drops_what_waited(store, doc, requests, tmp_path):
+    overview.mark_down(requests, "the login expired")
+    _probe_due_now(requests)
+    overview.request(store, requests, doc, minutes=3)
+    overview.work(store, requests, command=_maker(tmp_path, GOOD), daily_limit=0)
+    assert requests.get(doc)["state"] == "waiting"
+    assert overview._probe_due(requests), "a probe that did not run does not use up its slot"
+    overview.mark_up(requests)  # back, but the day's limit is spent: it still waits
+    overview.work(store, requests, command=_maker(tmp_path, GOOD), daily_limit=0)
+    assert requests.get(doc)["state"] == "waiting"
+    overview.work(store, requests, command=_maker(tmp_path, GOOD))
+    assert requests.get(doc)["state"] == "done"
+
+
+@pytest.mark.parametrize("junk", [{"docs": "ab", "reason": 3}, {"docs": None}, []])
+def test_a_damaged_mark_breaks_no_page(client, doc, requests, junk):
+    import json
+
+    requests.folder.mkdir(parents=True, exist_ok=True)
+    (requests.folder / overview.DOWN_FILE).write_text(json.dumps(junk))
+    assert client.get(f"/docs/{doc}").status_code == 200
+    assert client.get("/audio").json()["down"] is None
