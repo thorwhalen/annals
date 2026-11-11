@@ -373,3 +373,5 @@ html.sheet-open { overflow: hidden; }
 /* in the Links sheet: the owner's own agents read the private address, no link needed */
 .agent-note { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 12px; padding: 8px 10px; border: 1px dashed var(--line); border-radius: 9px; }
 .agent-note p { flex: 1 1 220px; margin: 0; font-size: .9rem; }
+/* the overview maker is down (annals.overview.maker_down): what is wrong and what to do */
+.down { border: 1px solid var(--danger); border-radius: var(--radius); background: var(--card); padding: 8px 10px; margin: 4px 0 12px; overflow-wrap: anywhere; }

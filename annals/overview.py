@@ -20,6 +20,14 @@ request nobody fulfilled expires rather than spending money whenever a worker ne
 Run the worker on a timer. Finished request files stay in the folder and the worker writes
 there, so a watcher on the folder would keep waking it.
 
+When the command cannot work until someone acts (an expired login, a voice account out of
+credit), pressing again only spends the daily limit. So the worker notices it: the same
+failure, fast, twice in a row, marks the maker *down* with that reason. An agent can mark it
+too, with a link to where it is being fixed (``annals listen-down "why" --link URL``). While it
+is down, nothing fails: requests *wait*, the page says why and what to do instead of offering
+a Try again, and the worker tries one of them again every few hours. The first success, or
+``annals listen-down --clear``, clears the mark and queues everything that waited.
+
 >>> html_to_text("<title>x</title><p>One &amp; two</p><script>no()</script><p>Three</p>")
 'One & two\\n\\nThree'
 >>> [c["characters"] for c in choices()]
@@ -34,6 +42,7 @@ import shlex
 import signal
 import subprocess
 import tempfile
+import time
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from html.parser import HTMLParser
@@ -52,6 +61,14 @@ QUEUED_EXPIRY_S = 3600
 #: a request still running after this long has lost its worker
 RUNNING_MARGIN_S = 600
 KILL_GRACE_S = 5
+#: the file marking the maker down; not ``.json``, because every ``.json`` here is a request
+DOWN_FILE = "maker-down"
+#: this many identical fast failures in a row mean the maker is down, not the document
+DOWN_AFTER = 2
+#: a failure this quick never reached the work: the maker could not start
+FAST_FAILURE_S = 120
+#: while the maker is down, one waiting request is tried this often, to notice it works again
+PROBE_EVERY_S = 3 * 3600
 #: the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed
 MINUTES = (3, 5, 7)
 DFLT_MINUTES = 5
@@ -63,6 +80,8 @@ MAX_ERROR_CHARS = 300
 TAG = "overview"
 SUPPORTED_KINDS = frozenset({"md", "text", "html"})
 QUEUED, RUNNING, DONE, FAILED, NONE = "queued", "running", "done", "failed", "none"
+#: asked for while the maker is down: made once it works again, never spent on before
+WAITING = "waiting"
 ACTIVE = frozenset({QUEUED, RUNNING})
 _SKIPPED_TAGS = frozenset({"script", "style", "title", "template", "noscript", "svg"})
 _BLOCK_TAGS = frozenset(
@@ -168,14 +187,35 @@ class Requests:
         return record if isinstance(record, dict) else None
 
     def put(self, doc_id: str, record: dict) -> dict:
+        return self._write(self._path(doc_id), record)
+
+    def _write(self, path: Path, record: dict) -> dict:
         self.folder.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=self.folder, prefix=".tmp-", suffix=".part")
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(record, f)
         # A name that ends in .json appears at once and whole, so the worker's watcher fires
         # only for a finished file.
-        os.replace(tmp, self._path(doc_id))
+        os.replace(tmp, path)
         return record
+
+    def mark(self) -> dict:
+        """What the worker knows of the maker's recent failures (see :func:`maker_down`)."""
+        try:
+            mark = json.loads((self.folder / DOWN_FILE).read_text(encoding="utf-8"))
+        except (FileNotFoundError, ValueError):
+            return {}
+        return mark if isinstance(mark, dict) else {}
+
+    def put_mark(self, mark: dict | None) -> None:
+        """Replace the mark, or remove it (``None``)."""
+        if mark is not None:
+            self._write(self.folder / DOWN_FILE, mark)
+            return
+        try:
+            (self.folder / DOWN_FILE).unlink()
+        except FileNotFoundError:
+            pass
 
     def ids(self) -> list[str]:
         """Documents with a request, oldest request first."""
@@ -201,6 +241,89 @@ class Requests:
             f.write(f"{_now()} {doc_id}\n")
 
 
+def _is_down(mark: dict) -> bool:
+    return bool(mark.get("reason")) or mark.get("streak", 0) >= DOWN_AFTER
+
+
+def maker_down(requests: Requests) -> dict | None:
+    """Why no overview can be made until someone acts, or ``None`` while the maker works.
+
+    ``{"reason", "since", "link"}``: in words, from when, and where it is being fixed (or
+    ``None``). Set by the worker after :data:`DOWN_AFTER` identical fast failures, or by hand
+    with :func:`mark_down`; cleared by the next success or :func:`mark_up`.
+    """
+    mark = requests.mark()
+    if not _is_down(mark):
+        return None
+    return {
+        "reason": mark.get("reason") or mark.get("error") or "the overview maker is down",
+        "since": mark.get("since"),
+        "link": mark.get("link"),
+    }
+
+
+def mark_down(requests: Requests, reason: str = "", *, link: str | None = None) -> dict:
+    """Say the maker is down, why, and where it is being fixed; keep what is not given.
+
+    For an agent that filed the task that would fix it: the page then links to it.
+    """
+    if link and not link.startswith(("https://", "http://")):
+        raise ValueError("the link must be a web address (https://...)")
+    mark = requests.mark()
+    reason = reason or mark.get("reason") or mark.get("error") or "the overview maker is down"
+    link = link or mark.get("link")
+    since = mark.get("since") if _is_down(mark) else _now()
+    requests.put_mark({**mark, "reason": reason, "link": link, "since": since})
+    if mark.get("error"):
+        _hold_failed(requests, mark["error"])
+    return maker_down(requests)
+
+
+def mark_up(requests: Requests) -> list[str]:
+    """The maker works (again): clear the mark and queue what waited; return those ids."""
+    requests.put_mark(None)
+    return _wake(requests)
+
+
+def _wake(requests: Requests, *, first_only: bool = False) -> list[str]:
+    """Queue the waiting requests again (only the oldest, for a probe), as if asked just now."""
+    woken = []
+    for doc_id in requests.ids():
+        record = requests.get(doc_id) or {}
+        if record.get("state") == WAITING:
+            requests.put(doc_id, {**record, "state": QUEUED, "requested": _now()})
+            woken.append(doc_id)
+            if first_only:
+                break
+    return woken
+
+
+def _hold_failed(requests: Requests, error: str) -> None:
+    """Requests that failed the way the maker is now down wait for it instead."""
+    for doc_id in requests.ids():
+        record = requests.get(doc_id) or {}
+        if record.get("state") == FAILED and record.get("error") == error:
+            requests.put(doc_id, {**record, "state": WAITING})
+
+
+def _note_failure(requests: Requests, error: str) -> bool:
+    """Count one fast failure of the maker; return whether it is now down."""
+    mark = requests.mark()
+    same = mark.get("error") == error
+    streak = mark.get("streak", 0) + 1 if same else 1
+    since = mark.get("since") if (same or mark.get("reason")) else _now()
+    mark = {**mark, "error": error, "streak": streak, "since": since, "tried": _now()}
+    requests.put_mark(mark)
+    if _is_down(mark):
+        _hold_failed(requests, error)
+        return True
+    return False
+
+
+def _probe_due(requests: Requests) -> bool:
+    return _older_than(requests.mark().get("tried"), PROBE_EVERY_S)
+
+
 def state_of(store, requests: Requests, meta: dict) -> dict:
     """What a page shows for a document: its request's state and what it can start."""
     record = requests.get(meta["id"]) or {}
@@ -209,6 +332,9 @@ def state_of(store, requests: Requests, meta: dict) -> dict:
     error = record.get("error")
     if lost := _lost(record):
         state, error = FAILED, lost
+    down = maker_down(requests)
+    if state == WAITING:
+        error = (down or {}).get("reason") or error
     if state == DONE:
         try:
             if not isinstance(overview, str) or store.meta(overview).get("in_trash"):
@@ -219,9 +345,10 @@ def state_of(store, requests: Requests, meta: dict) -> dict:
         "state": state,
         "minutes": record.get("minutes", DFLT_MINUTES),
         "overview": overview,
-        "error": error if state == FAILED else None,
+        "error": error if state in (FAILED, WAITING) else None,
         "stale": state == DONE and record.get("version") != meta.get("version"),
         "choices": choices(),
+        "down": down,
     }
 
 
@@ -231,11 +358,11 @@ FAILED_SHOWN_S = 7 * 24 * 3600
 
 
 def unmade(store, requests: Requests) -> list[dict]:
-    """The overviews asked for and not (yet) made: being made, or failed recently; newest first.
+    """The overviews asked for and not (yet) made: being made, waiting, or failed recently.
 
     Each is ``state_of`` its document plus ``doc``, ``title``, ``created`` (the document's),
     ``requested`` and ``finished`` (the last try's). A request whose document is gone, binned
-    or no longer speakable is left out: nothing can be retried.
+    or no longer speakable is left out: nothing can be retried. Newest first.
     """
     out = []
     for doc_id in reversed(requests.ids()):
@@ -248,7 +375,7 @@ def unmade(store, requests: Requests) -> list[dict]:
         record = requests.get(doc_id) or {}
         state = state_of(store, requests, meta)
         when = record.get("finished") or record.get("requested")
-        if state["state"] in ACTIVE or (
+        if state["state"] in ACTIVE | {WAITING} or (
             state["state"] == FAILED and not _older_than(when, FAILED_SHOWN_S)
         ):
             out.append(
@@ -275,7 +402,8 @@ def request(
     """Ask for an overview of a document. Raises ``ValueError`` if it cannot be asked for.
 
     Asking again while one is being made changes nothing, and neither does asking for one
-    that exists and is current unless ``force``, so a repeat costs nothing.
+    that exists and is current unless ``force``, so a repeat costs nothing. While the maker
+    is down (:func:`maker_down`), the request waits for it rather than failing.
     """
     meta = store.meta(doc_id)
     if not eligible(meta):
@@ -290,7 +418,7 @@ def request(
     requests.put(
         doc_id,
         {
-            "state": QUEUED,
+            "state": WAITING if maker_down(requests) else QUEUED,
             "force": force,
             "minutes": minutes,
             "version": meta.get("version"),
@@ -495,6 +623,10 @@ def _last_line(text: str) -> str:
     return _readable(lines[-1])[:MAX_ERROR_CHARS] if lines else ""
 
 
+class MakerFailed(RuntimeError):
+    """The overview command ran and failed: the maker's fault, not the document's."""
+
+
 def _source_text(store, meta: dict) -> str:
     text = store.read_text(meta["id"])
     return html_to_text(text) if meta.get("kind") == "html" else text
@@ -582,13 +714,13 @@ def _fulfil(
         try:
             code, said = _run(argv, cwd=tmp, timeout=timeout)
         except OSError as e:
-            raise RuntimeError(
+            raise MakerFailed(
                 f"could not run the overview command: {e.strerror}"
             ) from None
         if code:
-            raise RuntimeError(said or f"the overview command exited {code}")
+            raise MakerFailed(said or f"the overview command exited {code}")
         if not out.is_file() or not out.stat().st_size:
-            raise RuntimeError("the overview command wrote no page")
+            raise MakerFailed("the overview command wrote no page")
         made = store.publish(
             out, title=f"Listen: {title}", tags=[TAG],
             source={"session": "annals overview", "of": doc_id, "of_version": version},
@@ -672,10 +804,16 @@ def _step(
     minutes = record.get("minutes")
     if not valid_minutes(minutes):
         return fail(f"not a length on offer: {minutes!r}")
+    if maker_down(requests):
+        if not _probe_due(requests):  # it would only fail again, and count against the limit
+            requests.put(doc_id, {**record, "state": WAITING})
+            return {"doc": doc_id, "state": WAITING}
+        requests.put_mark({**requests.mark(), "tried": _now()})  # this one is the probe
     if requests.started_today() >= limit:
         return fail(f"the limit of {limit} overviews a day was reached")
     requests.note_start(doc_id)
     requests.put(doc_id, {**record, "state": RUNNING, "started": _now()})
+    began = time.monotonic()
     try:
         made, version = _fulfil(
             store,
@@ -687,7 +825,14 @@ def _step(
             force=record.get("force") is True,
         )
     except Exception as e:  # recorded for the page; the next request must still run
+        quick = time.monotonic() - began <= FAST_FAILURE_S
+        if isinstance(e, MakerFailed) and quick:
+            why = str(e)[:MAX_ERROR_CHARS]
+            if _note_failure(requests, why):  # down: this one waits too
+                requests.put(doc_id, {**record, "state": WAITING, "error": why})
+                return {"doc": doc_id, "state": WAITING, "error": why}
         return fail(e)
+    mark_up(requests)  # it works: whatever waited for it is queued again
     requests.put(
         doc_id,
         {
@@ -714,7 +859,8 @@ def work(
 
     A failure is recorded on its request, for the page to show, and the next one still runs.
     A request made while this runs is picked up before it exits. ``doc_url`` turns a document
-    id into its page, for ``{url}``.
+    id into its page, for ``{url}``. While the maker is down, requests wait, and one of them
+    is tried every :data:`PROBE_EVERY_S`; once one works, those waiting run too.
     """
     argv = _command(command)
     limit = _daily_limit(daily_limit)
@@ -723,6 +869,10 @@ def work(
     with _only_one_worker(requests.folder) as mine:
         if not mine:
             return results
+        if not maker_down(requests):
+            _wake(requests)  # left waiting by a page that asked just as the maker came back
+        elif _probe_due(requests):
+            _wake(requests, first_only=True)
         while fresh := [i for i in requests.ids() if i not in seen]:
             for doc_id in fresh:
                 seen.add(doc_id)
@@ -744,4 +894,6 @@ def work(
                     }
                 if happened:
                     results.append(happened)
+                if happened and happened["state"] == DONE:  # those it woke run now
+                    seen = {i for i in seen if (requests.get(i) or {}).get("state") != QUEUED}
     return results

@@ -1513,6 +1513,8 @@
     var n = spoken.length, choices = (sc.listen && sc.listen.choices) || spoken[0].listen.choices;
     var mode = missing.length ? "all" : "each", minutes = choices[1] ? choices[1].minutes : choices[0].minutes;
     var skipped = sc.items.length - n;
+    var down = spoken.map(function (m) { return m.listen.down; }).filter(Boolean)[0];
+    if (down) wrap.appendChild(downNote(down));
     wrap.appendChild(h("p", null, [current.length ? current.length + " of " + n + (current.length === 1 ? " has" : " have") + " a current review." : "None of these " + n + " has a review yet.",
       skipped ? " " + skipped + " cannot be spoken and " + (skipped === 1 ? "is" : "are") + " left out." : ""]));
     var modeSeg = segmented([["all", "One review of all " + n, "covers them together"], ["each", "One each", missing.length ? "makes " + missing.length + ", reuses " + (n - missing.length) : "all made already"]], mode, function (v) { mode = v; draw(); }, "What kind of review");
@@ -1534,7 +1536,7 @@
       rows.innerHTML = "";
       spoken.forEach(function (m) {
         var s = m.listen, state = isCurrent(m) ? sheetLink(BASE + "/d/" + s.overview, "▶ Play its review") : s.state === "done" ? h("span", { class: "muted" }, ["its review is older than the document"]) :
-          s.state === "queued" || s.state === "running" ? h("span", { class: "muted" }, ["being made"]) : s.state === "failed" ? h("span", { class: "err" }, ["the last try failed"]) : h("span", { class: "muted" }, ["no review"]);
+          s.state === "queued" || s.state === "running" ? h("span", { class: "muted" }, ["being made"]) : s.state === "waiting" ? h("span", { class: "muted" }, ["waiting for listening to work"]) : s.state === "failed" ? h("span", { class: "err" }, ["the last try failed"]) : h("span", { class: "muted" }, ["no review"]);
         rows.appendChild(h("li", null, [h("span", { class: "grow" }, [m.title || m.id]), " ", state]));
       });
     }
@@ -1584,6 +1586,18 @@
 
   /* -------- a spoken review of one document (annals.overview) ------------------- */
   var LISTEN_POLL_MS = 5000, LISTEN_MAX_MISSES = 5;
+  /* When the overview maker cannot work until someone acts (overview.maker_down): what is
+     wrong and what to do, in one line, so nobody presses a Try again that cannot work. */
+  function issueLabel(url) {
+    var m = /github\.com\/[^/]+\/([^/]+)\/(?:issues|pull)\/(\d+)/.exec(url);
+    return m ? m[1] + "#" + m[2] : url;
+  }
+  function downNote(d) {
+    var parts = ["Listening is off" + (d.since ? " since " + when(d.since) : "") + ": " + String(d.reason).replace(/[.\s]+$/, "") + ". "];
+    if (d.link && /^https?:\/\//.test(d.link)) parts.push("What to do: ", h("a", { href: d.link, target: "_blank", rel: "noopener" }, [issueLabel(d.link)]), ". ");
+    parts.push("What you ask for waits, and is made once it works again.");
+    return h("p", { class: "down", role: "status" }, parts);
+  }
   function listenPanel(m, first) {
     var wrap = h("section", { class: "listen-panel", "aria-label": "Spoken review" });
     var url = "/docs/" + encodeURIComponent(m.id) + "/overview";
@@ -1609,6 +1623,11 @@
       }
       if (s.state === "done") wrap.appendChild(h("p", null, [sheetLink(BASE + "/d/" + s.overview, "▶ Play the review", "btn primary"), s.stale ? " This document has changed since it was made." : ""]));
       if (s.state === "done" && !s.stale) return;  /* current, so there is nothing to pay for */
+      if (s.down) wrap.appendChild(downNote(s.down));
+      if (s.state === "waiting") {  /* already asked for: nothing to press until it works */
+        wrap.appendChild(h("p", { class: "muted" }, ["Your " + s.minutes + " minute overview is waiting, and will be made once listening works again."]));
+        return;
+      }
       if (s.state === "failed") wrap.appendChild(h("p", { class: "err", role: "alert" }, ["That did not work: " + (s.error || "no reason given")]));
       if (note) wrap.appendChild(h("p", { class: "err", role: "alert" }, [note]));
       var cost = h("p", { class: "muted" });
@@ -1630,7 +1649,7 @@
         api(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: picked }) })
           .then(function (next) { show(next); })
           .catch(function (e) { show(s, "Could not ask for it: " + (e.message || e)); });
-      } }, [s.state === "done" ? "Make a new one" : "Make it"]);
+      } }, [s.down ? "Make it once listening works" : s.state === "done" ? "Make a new one" : "Make it"]);
       wrap.appendChild(seg); wrap.appendChild(cost); wrap.appendChild(start);
     }
     show(first);
@@ -1953,7 +1972,8 @@
   function audioView() {
     var params = new URLSearchParams(location.search);
     var state = { q: params.get("q") || "", status: params.get("status") || "" };
-    var rows = null, tracked = true, failed = null, unmade = [], poll = null;
+    var rows = null, tracked = true, failed = null, unmade = [], down = null, poll = null;
+    var downEl = h("div", { "aria-live": "polite" });
     var seg = h("div", { class: "seg status-filter", role: "group", "aria-label": "Show" });
     var unmadeEl = h("section", { class: "unmade", "aria-label": "Asked for, not made yet", "aria-live": "polite" });
     var countEl = h("span", { class: "count" });
@@ -1993,6 +2013,8 @@
     /* What was asked for and is not in the list: being made, or failed with why and a retry.
        Without it an overview that failed simply never shows up, with no word of why. */
     function renderUnmade() {
+      downEl.innerHTML = "";
+      if (down) downEl.appendChild(downNote(down));
       unmadeEl.innerHTML = "";
       var shown = state.status === "started" || state.status === "done" ? [] : unmade.filter(matches);
       unmadeEl.hidden = !shown.length;
@@ -2001,24 +2023,27 @@
       shown.forEach(function (u) { unmadeEl.appendChild(unmadeRow(u)); });
     }
     /* One line of title, one of state: what happened, when it was last tried, and why behind
-       a toggle (opened below it), with Try again beside the text rather than under it. */
+       a toggle (opened below it), with Try again beside the text rather than under it. No Try
+       again while the maker is down: it cannot work, and what waits is made once it does. */
     function unmadeRow(u) {
       var href = BASE + "/d/" + u.doc, making = u.state === "queued" || u.state === "running";
+      var waiting = u.state === "waiting";
       var link = h("a", { class: "title", href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [u.title]);
       var why = h("p", { class: "why", hidden: true }, [u.error || ""]);
-      var whyBtn = u.error && !making ? h("button", { class: "btn link", type: "button", "aria-expanded": "false", onclick: function () {
+      var whyBtn = u.error && !making && !waiting ? h("button", { class: "btn link", type: "button", "aria-expanded": "false", onclick: function () {
         var open = whyBtn.getAttribute("aria-expanded") !== "true";
         whyBtn.setAttribute("aria-expanded", String(open)); why.hidden = !open;
       } }, ["Why"]) : null;
       var tried = u.finished || u.requested;
       var line = h("p", { class: "meta" }, [
-        h("span", { class: making ? "muted" : "err" }, [making ? "Being made (" + u.minutes + " min), about 2 minutes" : "Did not work"]),
-        tried ? h("span", { title: until(tried) }, [(making ? "asked " : "tried ") + when(tried)]) : null,
+        h("span", { class: making || waiting ? "muted" : "err" }, [making ? "Being made (" + u.minutes + " min), about 2 minutes" : waiting ? "Waiting (" + u.minutes + " min) for listening to work" : "Did not work"]),
+        tried ? h("span", { title: until(tried) }, [(making || waiting ? "asked " : "tried ") + when(tried)]) : null,
         whyBtn,
         u.created ? h("span", { class: "muted", title: until(u.created) }, ["document from " + when(u.created)]) : null
       ]);
       var text = h("div", { class: "unmade-text" }, [link, line, why]);
-      if (making) return h("div", { class: "unmade-row" }, [text]);
+      if (making || waiting) return h("div", { class: "unmade-row" }, [text]);
+      if (down) return h("div", { class: "unmade-row failed" }, [text]);
       var retry = h("button", { class: "btn", type: "button", onclick: function () {
         if (isPending(retry)) return;
         pending(retry, true);
@@ -2039,7 +2064,7 @@
     }
     function load() {
       return api("/audio").then(function (res) {
-        rows = res.docs || []; tracked = res.tracked !== false; unmade = res.unmade || [];
+        rows = res.docs || []; tracked = res.tracked !== false; unmade = res.unmade || []; down = res.down || null;
         render(); watch();
       });
     }
@@ -2072,6 +2097,7 @@
       oninput: function (e) { state.q = e.target.value.trim(); clearTimeout(timer); timer = setTimeout(function () { history.replaceState(history.state, "", urlFor()); render(); }, 120); } });
     page("Audio", mainNav("audio"), [
       h("h2", { class: "scope-title" }, ["Audio"]),
+      downEl,
       h("div", { class: "controls" }, [search]),
       unmadeEl,
       seg,
