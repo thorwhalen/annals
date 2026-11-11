@@ -179,3 +179,35 @@ def test_an_overview_that_failed_shows_why_and_can_be_asked_for_again(device, se
     assert overview.Requests(store.target.root).get(src)["state"] == overview.QUEUED
     phone.get_by_role("button", name="Done 0").click()
     assert phone.locator(".unmade").is_hidden()  # not what a "done" filter asks about
+
+
+def test_when_the_maker_is_down_the_page_says_why_and_offers_no_try_again(device, serve, tmp_path):
+    """The owner pressed Try again on two days while the server's login had expired (annals#62)."""
+    from annals import overview
+
+    store = DocStore(tmp_path / "data")
+    requests = overview.Requests(store.target.root)
+    waits = store.publish(text="# Moths", title="Moths at night", filename="moths.md")["id"]
+    failed = store.publish(text="# Owls", title="Owls", filename="owls.md")["id"]
+    now = overview._now()
+    requests.put(failed, {"state": overview.FAILED, "minutes": 5, "requested": now, "finished": now, "error": "the login expired"})
+    overview.mark_down(requests, "the server's login expired", link="https://github.com/someone/platform/issues/563")
+    overview.request(store, requests, waits, minutes=3)
+    base = serve(store, overviews=True)
+    phone = device()
+    phone.goto(f"{base}/audio")
+    note = phone.locator(".down")
+    note.wait_for()
+    assert "Listening is off" in note.inner_text() and "the server's login expired" in note.inner_text()
+    assert note.get_by_role("link", name="platform#563").get_attribute("href").endswith("/issues/563")
+    phone.locator(".unmade-row").nth(1).wait_for()
+    assert "Waiting (3 min)" in phone.locator(".unmade").inner_text()
+    assert phone.get_by_role("button", name="Try again").count() == 0
+    _no_sideways_scroll(phone)
+    if SHOTS:
+        phone.screenshot(path=f"{SHOTS}/maker-down.png")
+    phone.goto(f"{base}/d/{waits}")
+    phone.get_by_role("button", name="Listen").click()
+    panel = phone.locator(".listen-panel")
+    panel.locator(".down").wait_for()
+    assert "is waiting" in panel.inner_text() and panel.get_by_role("button").count() == 0

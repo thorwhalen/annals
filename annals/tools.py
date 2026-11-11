@@ -833,6 +833,32 @@ def listen_work(
     }
 
 
+def listen_down(
+    reason: str = "",
+    *,
+    link: str = "",
+    clear: bool = False,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Say why spoken overviews cannot be made, and where that is being fixed; or clear it.
+
+    With nothing given, shows the current state. The Audio tab then shows the reason and the
+    link instead of a Try again that cannot work, e.g.
+    ``annals listen-down "the server's login expired" --link <issue url>``. The worker finds
+    out by itself too, and clears it on the next success; ``--clear`` clears it now and
+    queues every request that waited.
+    """
+    from annals import overview
+
+    _, requests = _overviews_here(target=target, to=to)
+    if clear:
+        return {"down": None, "queued": overview.mark_up(requests)}
+    if reason or link:
+        overview.mark_down(requests, reason, link=link or None)
+    return {"down": overview.maker_down(requests)}
+
+
 _dispatch_funcs[:] = [
     publish,
     ls,
@@ -851,4 +877,5 @@ _dispatch_funcs[:] = [
     page_shell,
     listen,
     listen_work,
+    listen_down,
 ]
