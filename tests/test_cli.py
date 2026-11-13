@@ -239,3 +239,21 @@ def test_reading_refuses_an_outbox(tmp_path, monkeypatch):
         out, err = io.StringIO(), io.StringIO()
         assert run([cmd, "20260101-000000-x"], out=out, err=err) != 0
         assert "outbox" in err.getvalue()
+
+
+def test_an_audio_file_takes_its_timed_text_along_as_one_document(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://example.com/annals")
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+    names = ("talk.mp3", "talk.vtt", "talk.chapters.vtt", "notes.md")
+    for name in names:
+        (tmp_path / name).write_text("# Notes" if name.endswith(".md") else "x")
+    out = io.StringIO()
+    assert _run(["publish", *(str(tmp_path / n) for n in names)], out) == 0
+    ids = [d["id"] for d in json.loads(out.getvalue())["docs"]]
+    assert len(ids) == 2, "the audio with its transcript and chapters, and the notes"
+    out = io.StringIO()
+    _run(["show", ids[0]], out)
+    shown = json.loads(out.getvalue())
+    assert shown["kind"] == "audio" and shown["main"] == "talk.mp3"
+    assert sorted(shown["files"]) == ["talk.chapters.vtt", "talk.mp3", "talk.vtt"]

@@ -117,3 +117,16 @@ def test_groups_of_a_document(store):
     assert {g["id"] for g in store.groups_of(a["id"])} == {g1["id"], g2["id"]}
     assert store.groups_of(b["id"]) == [{"id": g1["id"], "title": "First", "n": 2}]
     assert store.groups_of("nowhere") == []
+
+
+def test_audio_with_its_timed_text_beside_it_is_an_audio_document(tmp_path):
+    store = DocStore(tmp_path / "data")
+    talk = tmp_path / "talk"
+    talk.mkdir()
+    for name in ("talk.mp3", "talk.vtt", "talk.chapters.vtt", "talk.cues.json"):
+        (talk / name).write_bytes(b"x")
+    meta = store.publish(talk, title="Talk")
+    assert (meta["kind"], meta["main"]) == ("audio", "talk.mp3")
+    # a file that is not its timed text keeps it a folder
+    (talk / "notes.vtt").write_bytes(b"x")
+    assert store.publish(talk, title="Talk and notes")["kind"] == "folder"

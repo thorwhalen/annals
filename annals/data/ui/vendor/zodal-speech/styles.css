@@ -1,0 +1,99 @@
+/* @zodal/speech: tune through the --zs-* tokens. The widget inherits the host's type. */
+:root {
+  --zs-ink: #1d1c1a; --zs-dim: #8a867d; --zs-rule: #e6e2d9; --zs-accent: #b5501e;
+  --zs-mark: #f6e3c7; --zs-bar: rgba(251, 250, 247, 0.94); --zs-shadow: rgba(0, 0, 0, 0.08);
+  --zs-paper: #fbfaf7; --zs-bar-offset: 7.5rem; /* replaced by the bar's measured height */
+  --zs-bar-top: 0px; /* a host's own sticky header above the pinned bar */
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --zs-ink: #ece9e2; --zs-dim: #8d887e; --zs-rule: #2e2c28; --zs-accent: #f08a4b;
+    --zs-mark: #4a3420; --zs-bar: rgba(23, 22, 20, 0.94); --zs-shadow: rgba(0, 0, 0, 0.4);
+    --zs-paper: #171614;
+  }
+}
+.zs-player [hidden] { display: none !important; }
+.zs-player { position: relative; color: var(--zs-ink); }
+.zs-sources { margin-top: 1.6em; color: var(--zs-dim); font-size: 0.92em; }
+.zs-sources a { color: var(--zs-accent); }
+.zs-sources ul { margin: 0.3em 0 0; padding-left: 1.2em; }
+.zs-text { margin-top: 1.6em; }
+.zs-text p { margin: 0 0 1.1em; }
+.zs-who { display: block; font-size: 0.68em; letter-spacing: 0.06em; text-transform: uppercase; color: var(--zs-dim); }
+.zs-s { cursor: pointer; border-radius: 4px; transition: color 0.25s; }
+.zs-at-bottom .zs-s { scroll-margin-bottom: var(--zs-bar-offset); }
+.zs-at-top .zs-s { scroll-margin-top: calc(var(--zs-bar-top) + var(--zs-bar-offset) + 0.5rem); }
+.zs-playing .zs-s { color: var(--zs-dim); }
+.zs-playing .zs-s.zs-on { color: var(--zs-ink); }
+@media (hover: hover) {
+  .zs-s:hover { text-decoration: underline; text-decoration-color: var(--zs-rule); text-underline-offset: 3px; }
+}
+.zs-w.zs-on { background: var(--zs-mark); border-radius: 3px; box-shadow: 0 0 0 2px var(--zs-mark); }
+.zs-bar {
+  z-index: 1; background: var(--zs-bar);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+}
+/* at the top of the player, pinned there as the transcript scrolls (the default) */
+.zs-bar-top {
+  position: sticky; top: var(--zs-bar-top); margin: 0 -16px; padding: 0.45rem 16px 0.35rem;
+  border-bottom: 1px solid var(--zs-rule); box-shadow: 0 4px 16px var(--zs-shadow);
+}
+.zs-bar-sticky, .zs-bar-fixed {
+  bottom: 0; border-top: 1px solid var(--zs-rule); box-shadow: 0 -4px 16px var(--zs-shadow);
+  padding: 0.55rem 16px calc(0.7rem + env(safe-area-inset-bottom));
+}
+.zs-bar-sticky { position: sticky; }
+.zs-bar-fixed { position: fixed; left: 0; right: 0; }
+.zs-bar-in { max-width: 42rem; margin: 0 auto; }
+/* The seek bar is a 44 px touch target (the bar drawn in its middle looks as before). It cannot
+   grow upward into the buttons' own 44 px, so it grows down over the time readout, which takes
+   no taps: the track keeps 36 px of layout and the input spills 8 px over the times row. */
+.zs-track { position: relative; height: 44px; margin-bottom: -8px; }
+.zs-seek { position: relative; z-index: 1; display: block; width: 100%; margin: 0; height: 44px; accent-color: var(--zs-accent); }
+.zs-ghost {
+  position: absolute; z-index: 2; top: 14px; width: 3px; height: 16px; margin-left: -1px; border-radius: 2px;
+  background: var(--zs-dim); opacity: 0; pointer-events: none;
+}
+.zs-dragging .zs-ghost { opacity: 0.7; }
+.zs-times { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--zs-dim); font-variant-numeric: tabular-nums; }
+.zs-dragging .zs-now { color: var(--zs-accent); }
+.zs-status { min-height: 1.2em; text-align: center; }
+.zs-status.zs-err { color: var(--zs-accent); }
+.zs-controls { display: flex; align-items: center; gap: 0.5rem; }
+.zs-gap { flex: 1; }
+.zs-player button {
+  font: inherit; color: var(--zs-ink); background: none; border: 0; padding: 0.35rem; cursor: pointer;
+  min-height: 44px; border-radius: 999px; -webkit-tap-highlight-color: transparent;
+}
+.zs-player button:focus-visible, .zs-s:focus-visible { outline: 2px solid var(--zs-accent); outline-offset: 2px; }
+.zs-player button:disabled { opacity: 0.4; cursor: default; }
+.zs-player .zs-speed { font-size: 0.85rem; min-width: 3.2rem; font-variant-numeric: tabular-nums; }
+.zs-player .zs-skip, .zs-download { width: 44px; height: 44px; min-width: 44px; display: grid; place-items: center; flex: none; }
+.zs-skip svg, .zs-download svg { width: 28px; height: 28px; }
+.zs-skip svg text { font-family: inherit; font-weight: 600; }
+.zs-download { color: var(--zs-ink); border-radius: 999px; -webkit-tap-highlight-color: transparent; }
+.zs-download:focus-visible { outline: 2px solid var(--zs-accent); outline-offset: 2px; }
+.zs-download.zs-none { display: none; }
+.zs-player .zs-play { width: 48px; height: 48px; flex: none; background: var(--zs-ink); color: var(--zs-paper); display: grid; place-items: center; }
+.zs-player .zs-play[aria-busy="true"] { opacity: 0.7; }
+.zs-play svg { width: 1.5rem; height: 1.5rem; fill: currentColor; }
+.zs-player .zs-follow {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 2;
+  background: var(--zs-ink); color: var(--zs-paper); padding: 0.45rem 1rem; font-size: 0.9rem;
+  box-shadow: 0 4px 14px var(--zs-shadow);
+}
+.zs-at-bottom .zs-follow { bottom: calc(var(--zs-bar-offset) + env(safe-area-inset-bottom)); }
+.zs-at-top .zs-follow { position: sticky; display: block; margin: 0.4rem auto 0; transform: none; top: calc(var(--zs-bar-top) + var(--zs-bar-offset) + 0.4rem); left: auto; }
+@media (hover: hover) { .zs-download:hover, .zs-player .zs-skip:hover { background: var(--zs-rule); } }
+@media (prefers-reduced-motion: reduce) { .zs-s { transition: none; } }
+/* Chapters: one 44 px row each, the current one marked. */
+.zs-chapters { margin-top: 1.2em; }
+.zs-chapters summary { color: var(--zs-dim); font-size: 0.92em; cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.zs-chapters ol { list-style: none; margin: 0; padding: 0; }
+.zs-player .zs-ch {
+  display: flex; gap: 0.75em; align-items: baseline; width: 100%; min-height: 44px; padding: 0.55rem 0.5rem;
+  text-align: left; background: none; color: inherit; font: inherit; border: 0; border-radius: 6px; cursor: pointer;
+}
+.zs-ch-at { flex: none; min-width: 3.2em; color: var(--zs-dim); font-variant-numeric: tabular-nums; }
+.zs-player .zs-ch[aria-current="true"] { background: var(--zs-mark); }
+@media (hover: hover) { .zs-player .zs-ch:hover { background: var(--zs-rule); } }

@@ -704,7 +704,7 @@
   function docCtx(m) {
     var files = m.files || [];
     return {
-      title: m.title, main: m.main, text: m.text, sizes: m.sizes || {},
+      title: m.title, main: m.main, text: m.text, sizes: m.sizes || {}, files: files,
       raw: function (rel) { return rawUrl(m.id, rel); },
       exportUrl: function (fmt, rel) { return exportUrl(m.id, fmt, rel === m.main ? "" : rel); },
       view: function (rel) { return (m.file_kinds || {})[rel] === "file" ? null : fileUrl(m.id, rel); },
@@ -880,6 +880,87 @@
   };
 
   /* Renders `rel` into a container; returns {view, actions} for the page's action bar. */
+  /* -------- audio: the fleet's player, with the timed text published beside it ------ */
+  /* An audio file plays in @zodal/speech's player (vendored under ui/vendor/zodal-speech/,
+     see scripts/vendor-zodal-speech.sh): seek bar, skips, speed, and a transcript (tap a line
+     to play from it) and chapters when they were published beside the audio as
+     <stem>.cues.json, <stem>.vtt or <stem>.srt, and <stem>.chapters.vtt (SIDECARS, the same
+     names annals.store reads). The <audio> element is made here, at once, so the listening
+     panel tracks it and moves it to where the reader stopped; the player adopts it, source and
+     place, once its script has loaded, and if that fails it keeps the browser's controls. */
+  var SPEECH_UI = "vendor/zodal-speech/";
+  var SIDECARS = { cues: ".cues.json", vtt: ".vtt", srt: ".srt", chapters: ".chapters.vtt" };
+  var speechReady;
+  function loadStyle(name) {
+    return new Promise(function (ok, ko) {
+      var l = h("link", { rel: "stylesheet", href: UI + "/" + name });
+      l.onload = ok; l.onerror = function () { ko(new Error("could not load " + name)); };
+      document.head.appendChild(l);
+    });
+  }
+  function withSpeechPlayer() {
+    if (window.ZodalSpeech) return Promise.resolve(window.ZodalSpeech);
+    speechReady = speechReady || Promise.all([loadScript(SPEECH_UI + "player.iife.js"), loadStyle(SPEECH_UI + "styles.css")])
+      .then(function () { return window.ZodalSpeech; }, function (e) { speechReady = null; throw e; });
+    return speechReady;
+  }
+  function stemOf(rel) { var dot = rel.lastIndexOf("."); return dot > rel.lastIndexOf("/") ? rel.slice(0, dot) : rel; }
+  function isTime(x) { return typeof x === "number" && isFinite(x) && x >= 0; }
+  /* A cues JSON is a list of cues, or an object with "cues" (and "chapters"): the shape of
+     @zodal/speech's track. Anything malformed in it is dropped, not fatal. */
+  function cuesFromJson(j) {
+    var list = Array.isArray(j) ? j : (j && Array.isArray(j.cues) ? j.cues : []);
+    return list.filter(function (c) { return c && isTime(c.start) && isTime(c.end) && typeof c.text === "string"; }).map(function (c) {
+      var out = { start: c.start, end: c.end, text: c.text };
+      if (typeof c.speaker === "string") out.speaker = c.speaker;
+      if (Number.isInteger(c.segment) && c.segment >= 0) out.segment = c.segment;
+      if (Array.isArray(c.words)) out.words = c.words.filter(function (w) { return Array.isArray(w) && w.length === 3 && isTime(w[0]) && isTime(w[1]) && typeof w[2] === "string"; });
+      return out;
+    });
+  }
+  function chaptersFrom(list) {
+    return (list || []).filter(function (c) { return c && isTime(c.start) && typeof (c.title || c.text) === "string"; })
+      .map(function (c) { return { start: c.start, title: c.title || c.text }; });
+  }
+  /* The transcript and chapters published beside `rel`: the richest that is there wins
+     (cues JSON, with words and paragraphs, over .vtt over .srt). A missing or bad one is
+     left out: the audio still plays. */
+  function timedTextOf(ctx, rel, ZS) {
+    var stem = stemOf(rel), files = ctx.files || [];
+    function get(suffix, parse) {
+      var f = stem + suffix;
+      if (f === rel || files.indexOf(f) < 0) return Promise.resolve(null);
+      return textOf(ctx, f).then(parse).catch(function () { return null; });
+    }
+    return Promise.all([
+      get(SIDECARS.cues, JSON.parse), get(SIDECARS.vtt, ZS.parseWebVtt), get(SIDECARS.srt, ZS.parseWebVtt), get(SIDECARS.chapters, ZS.parseWebVtt)
+    ]).then(function (r) {
+      var json = r[0], fromJson = json ? cuesFromJson(json) : [];
+      var vttCues = (r[1] || r[2] || []).map(function (c) { var o = { start: c.start, end: c.end, text: c.text }; if (c.speaker) o.speaker = c.speaker; return o; });
+      return {
+        cues: fromJson.length ? fromJson : vttCues,
+        chapters: r[3] ? chaptersFrom(r[3]) : chaptersFrom(json && !Array.isArray(json) ? json.chapters : null)
+      };
+    });
+  }
+  function audioPlayer(ctx, rel) {
+    var src = ctx.raw(rel);
+    var box = h("div", { class: "media audio full speech loading" });
+    var el = h("audio", { src: src, preload: "metadata" });
+    var status = h("div", { class: "media-status" }, [h("span", { class: "spinner" }), h("span", { class: "media-msg" }, [""])]);
+    box.appendChild(el); box.appendChild(status);
+    function native() { el.setAttribute("controls", ""); box.classList.remove("loading"); status.remove(); }
+    withSpeechPlayer().then(function (ZS) {
+      return timedTextOf(ctx, rel, ZS).then(function (tt) {
+        var head = document.querySelector("header.bar");
+        if (head) box.style.setProperty("--zs-bar-top", head.offsetHeight + "px");
+        ZS.mount(box, { title: ctx.title || basename(rel), audio: { src: src }, filename: basename(rel), cues: tt.cues, chapters: tt.chapters }, { audio: el });
+        box.classList.remove("loading"); status.remove();
+      });
+    }).catch(native);
+    return box;
+  }
+
   function renderFile(ctx, rel, kind, container) {
     var view = [], actions = [];
     if (kind === "md") {
@@ -910,7 +991,9 @@
       actions.push({ section: "copy", label: "Copy text", hint: "Copy the file's text", icon: "copy", run: function () { return copyText(t2); } });
     } else if (kind === "html") {
       container.appendChild(h("iframe", { class: "frame", src: ctx.raw(rel), sandbox: FRAME_SANDBOX, title: ctx.title }));
-    } else if (kind === "image" || kind === "video" || kind === "audio" || kind === "pdf") {
+    } else if (kind === "audio") {
+      container.appendChild(audioPlayer(ctx, rel));
+    } else if (kind === "image" || kind === "video" || kind === "pdf") {
       container.appendChild(mediaBox(kind, ctx.raw(rel), { name: rel, cls: "full" }));
     } else {
       container.appendChild(h("div", { class: "empty" }, [h("a", { class: "btn primary", href: ctx.raw(rel), download: basename(rel) }, ["Download " + basename(rel)]),

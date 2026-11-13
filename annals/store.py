@@ -98,6 +98,12 @@ TEXT_KINDS = frozenset({"md", "text"})
 MEDIA_KINDS = frozenset({"image", "video", "audio", "pdf"})
 PAGE_KINDS = frozenset({"md", "html"})
 FOLDER = "folder"
+#: timed text published beside an audio or video file, named ``<stem><suffix>``: a
+#: transcript (``.cues.json``, ``.vtt`` or ``.srt``) and chapters (``.chapters.vtt``). The
+#: page plays the media with them (``app.js``'s ``SIDECARS``); a document of one media file
+#: and its sidecars is that media's kind, not a folder.
+SIDECAR_SUFFIXES = (".cues.json", ".chapters.vtt", ".vtt", ".srt")
+SIDECAR_MEDIA_KINDS = frozenset({"audio", "video"})
 
 
 def now_iso() -> str:
@@ -238,7 +244,8 @@ def _pick_main(files: list[Path]) -> tuple[Path, str]:
     """The file a viewer opens first, and the document's kind.
 
     ``index.html`` wins; else the only page (markdown or html) among the files, with the
-    rest as its assets; else the file itself when there is one. Anything else (a folder of
+    rest as its assets; else the file itself when there is one; else one audio or video
+    file with only its timed text beside it (``SIDECAR_SUFFIXES``). Anything else (a folder of
     renders, several pages, mixed media) is a ``folder``: shown as a gallery and file list,
     with the first file as ``main``.
     """
@@ -250,7 +257,20 @@ def _pick_main(files: list[Path]) -> tuple[Path, str]:
         return pages[0], kind_of(pages[0].name)
     if len(files) == 1:
         return files[0], kind_of(files[0].name)
+    media = [f for f in files if kind_of(f.name) in SIDECAR_MEDIA_KINDS]
+    if len(media) == 1 and all(f == media[0] or is_sidecar_of(f.name, media[0].name) for f in files):
+        return media[0], kind_of(media[0].name)
     return files[0], FOLDER
+
+
+def is_sidecar_of(name: str, media: str) -> bool:
+    """True when ``name`` is timed text for ``media``: ``talk.vtt`` or ``talk.cues.json`` for ``talk.mp3``.
+
+    >>> is_sidecar_of("talk.chapters.vtt", "talk.mp3"), is_sidecar_of("other.vtt", "talk.mp3")
+    (True, False)
+    """
+    stem = media[: -len(Path(media).suffix)] if Path(media).suffix else media
+    return any(name == stem + suffix for suffix in SIDECAR_SUFFIXES)
 
 
 def _folder_summary(files: list[str]) -> str:
