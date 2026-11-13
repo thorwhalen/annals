@@ -372,6 +372,7 @@
   function page(title, nav, body) {
     dropSheet();
     stopListening();
+    dropPlayer();
     app.innerHTML = ""; listShown = 0;
     document.title = title ? title + " · " + NAME : NAME;
     viewLabel = title || NAME;
@@ -890,7 +891,12 @@
      place, once its script has loaded, and if that fails it keeps the browser's controls. */
   var SPEECH_UI = "vendor/zodal-speech/";
   var SIDECARS = { cues: ".cues.json", vtt: ".vtt", srt: ".srt", chapters: ".chapters.vtt" };
-  var speechReady;
+  var SIDECAR = {
+    maxBytes: 8 * 1024 * 1024,  /* a bigger one is left out: the audio plays without it */
+    waitMs: 10000               /* a sidecar slower than this is left out */
+  };
+  var speechReady, mountedPlayer = null;  /* the player on screen; page() destroys it */
+  function dropPlayer() { if (mountedPlayer) { mountedPlayer.destroy(); mountedPlayer = null; } }
   function loadStyle(name) {
     return new Promise(function (ok, ko) {
       var l = h("link", { rel: "stylesheet", href: UI + "/" + name });
@@ -916,10 +922,10 @@
       if (Number.isInteger(c.segment) && c.segment >= 0) out.segment = c.segment;
       if (Array.isArray(c.words)) out.words = c.words.filter(function (w) { return Array.isArray(w) && w.length === 3 && isTime(w[0]) && isTime(w[1]) && typeof w[2] === "string"; });
       return out;
-    });
+    }).sort(function (a, b) { return a.start - b.start; });
   }
   function chaptersFrom(list) {
-    return (list || []).filter(function (c) { return c && isTime(c.start) && typeof (c.title || c.text) === "string"; })
+    return (Array.isArray(list) ? list : []).filter(function (c) { return c && isTime(c.start) && typeof (c.title || c.text) === "string"; })
       .map(function (c) { return { start: c.start, title: c.title || c.text }; });
   }
   /* The transcript and chapters published beside `rel`: the richest that is there wins
@@ -928,9 +934,11 @@
   function timedTextOf(ctx, rel, ZS) {
     var stem = stemOf(rel), files = ctx.files || [];
     function get(suffix, parse) {
-      var f = stem + suffix;
-      if (f === rel || files.indexOf(f) < 0) return Promise.resolve(null);
-      return textOf(ctx, f).then(parse).catch(function () { return null; });
+      var want = (stem + suffix).toLowerCase();  /* talk.VTT is talk.vtt, as annals.store reads it */
+      var f = files.filter(function (x) { return x !== rel && x.toLowerCase() === want; })[0];
+      if (!f || (ctx.sizes[f] || 0) > SIDECAR.maxBytes) return Promise.resolve(null);
+      var late = new Promise(function (ok) { setTimeout(function () { ok(null); }, SIDECAR.waitMs); });
+      return Promise.race([textOf(ctx, f).then(parse), late]).catch(function () { return null; });
     }
     return Promise.all([
       get(SIDECARS.cues, JSON.parse), get(SIDECARS.vtt, ZS.parseWebVtt), get(SIDECARS.srt, ZS.parseWebVtt), get(SIDECARS.chapters, ZS.parseWebVtt)
@@ -952,9 +960,11 @@
     function native() { el.setAttribute("controls", ""); box.classList.remove("loading"); status.remove(); }
     withSpeechPlayer().then(function (ZS) {
       return timedTextOf(ctx, rel, ZS).then(function (tt) {
+        if (!box.isConnected) return;  /* the reader moved on while it loaded */
         var head = document.querySelector("header.bar");
         if (head) box.style.setProperty("--zs-bar-top", head.offsetHeight + "px");
-        ZS.mount(box, { title: ctx.title || basename(rel), audio: { src: src }, filename: basename(rel), cues: tt.cues, chapters: tt.chapters }, { audio: el });
+        dropPlayer();
+        mountedPlayer = ZS.mount(box, { title: ctx.title || basename(rel), audio: { src: src }, filename: basename(rel), cues: tt.cues, chapters: tt.chapters }, { audio: el });
         box.classList.remove("loading"); status.remove();
       });
     }).catch(native);

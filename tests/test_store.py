@@ -130,3 +130,20 @@ def test_audio_with_its_timed_text_beside_it_is_an_audio_document(tmp_path):
     # a file that is not its timed text keeps it a folder
     (talk / "notes.vtt").write_bytes(b"x")
     assert store.publish(talk, title="Talk and notes")["kind"] == "folder"
+
+
+@pytest.mark.parametrize(
+    "names, kind",
+    [
+        (("talk.mp3", "talk.VTT"), "audio"),  # the suffix in any case
+        (("a/talk.mp3", "b/talk.vtt"), "folder"),  # timed text sits beside its audio
+        (("talk.mp4", "talk.vtt"), "folder"),  # video does not show it yet
+    ],
+)
+def test_which_files_are_timed_text_of_an_audio_file(tmp_path, names, kind):
+    store = DocStore(tmp_path / "data")
+    root = tmp_path / "doc"
+    for name in names:
+        (root / name).parent.mkdir(parents=True, exist_ok=True)
+        (root / name).write_bytes(b"x")
+    assert store.publish(root, title="Doc")["kind"] == kind

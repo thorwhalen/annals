@@ -245,7 +245,7 @@ def test_an_audio_file_takes_its_timed_text_along_as_one_document(tmp_path, monk
     monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
     monkeypatch.setenv("ANNALS_BASE_URL", "https://example.com/annals")
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
-    names = ("talk.mp3", "talk.vtt", "talk.chapters.vtt", "notes.md")
+    names = ("talk.chapters.vtt", "talk.mp3", "notes.md", "talk.vtt")  # as a shell glob lists them
     for name in names:
         (tmp_path / name).write_text("# Notes" if name.endswith(".md") else "x")
     out = io.StringIO()

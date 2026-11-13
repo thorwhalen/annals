@@ -77,21 +77,15 @@ def _with_sidecars(paths: list[str]) -> list[list[str]]:
     >>> _with_sidecars(["a/talk.mp3", "a/talk.vtt", "notes.md", "a/talk.chapters.vtt"])
     [['a/talk.mp3', 'a/talk.vtt', 'a/talk.chapters.vtt'], ['notes.md']]
     """
-    taken: set[int] = set()
-    units = []
-    for i, p in enumerate(paths):
-        if i in taken:
-            continue
-        unit = [p]
-        if p != "-" and kind_of(p) in SIDECAR_MEDIA_KINDS:
-            media = Path(p)
-            for j, q in enumerate(paths):
-                if j != i and j not in taken and q != "-":
-                    if Path(q).parent == media.parent and is_sidecar_of(Path(q).name, media.name):
-                        unit.append(q)
-                        taken.add(j)
-        units.append(unit)
-    return units
+    media = [p for p in paths if p != "-" and kind_of(p) in SIDECAR_MEDIA_KINDS]
+    claimed: dict[str, list[str]] = {m: [] for m in media}
+    taken: set[str] = set()
+    for q in paths:  # first, which files are whose timed text, wherever they are listed
+        owner = next((m for m in media if q != m and q != "-" and is_sidecar_of(str(Path(q)), str(Path(m)))), None)
+        if owner is not None and q not in taken:
+            claimed[owner].append(q)
+            taken.add(q)
+    return [[p, *claimed.get(p, [])] for p in paths if p not in taken]
 
 
 def _link_warning_for_file(path: Path) -> str | None:
@@ -147,7 +141,7 @@ def publish(
     settings = load_settings(target=target, base_url=base_url, to=to)
     if artifact is not None:
         artifact = check_artifact_url(artifact)
-        if len(_as_list(paths)) > 1:
+        if len(_with_sidecars(_as_list(paths))) > 1:
             raise ValueError("--artifact takes one path: the page it is the version of")
     store = _store(settings)
     tag_list = [t for t in tags.split(",") if t.strip()]

@@ -144,12 +144,15 @@ def test_it_picks_up_where_the_reader_stopped(phone, site):
     phone.wait_for_function("/stopped at/.test(document.querySelector('.listening [role=status]').textContent)")
     _open(phone, site["base"], site["plain"])
     phone.wait_for_function(f"{audio}.currentTime >= 14")
+    # the player's readout says so too, whether the seek landed before it came or after
+    phone.wait_for_function("document.querySelector('.zs-now').textContent === '0:14'")
     assert phone.locator(".listening").get_by_text("Start over").count() == 1
 
 
 def test_the_transport_stays_in_sight_below_the_masthead(phone, site):
     _open(phone, site["base"], site["long"])
     assert phone.locator(".zs-text p").count() == 10, "a cues JSON keeps its paragraphs"
+    assert phone.evaluate("scrollY") == 0, "opening the page never scrolls it"
     if SHOTS:
         phone.screenshot(path=os.path.join(SHOTS, "audio-player-top.png"))
     phone.mouse.wheel(0, 2000)
