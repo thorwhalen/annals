@@ -145,7 +145,11 @@ def test_it_picks_up_where_the_reader_stopped(phone, site):
     _open(phone, site["base"], site["plain"])
     phone.wait_for_function(f"{audio}.currentTime >= 14")
     # the player's readout says so too, whether the seek landed before it came or after
-    phone.wait_for_function("document.querySelector('.zs-now').textContent === '0:14'")
+    # (a slower machine stops later than 0:14: the readout must match the element, not 0:00)
+    phone.wait_for_function(
+        f"(() => {{ const s = Math.floor({audio}.currentTime);"
+        " return document.querySelector('.zs-now').textContent === '0:' + String(s).padStart(2, '0'); }})()"
+    )
     assert phone.locator(".listening").get_by_text("Start over").count() == 1
 
 
