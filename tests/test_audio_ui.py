@@ -211,3 +211,84 @@ def test_when_the_maker_is_down_the_page_says_why_and_offers_no_try_again(device
     panel = phone.locator(".listen-panel")
     panel.locator(".down").wait_for()
     assert "is waiting" in panel.inner_text() and panel.get_by_role("button").count() == 0
+
+
+#: a transcript player in the shape of @zodal/speech's: tapping a line seeks, then plays
+LINES_PLAYER = """<!doctype html><html><head><meta charset="utf-8"><title>Lines</title></head><body>
+<p class="line" data-at="0">Zero.</p><p class="line" data-at="1">One.</p>
+<p class="line" data-at="2">Two.</p><p class="line" data-at="3">Three.</p>
+<script>
+  var bytes = Uint8Array.from(atob("%s"), function (c) { return c.charCodeAt(0); });
+  var player = document.createElement("audio");
+  player.src = URL.createObjectURL(new Blob([bytes], {type: "audio/wav"}));
+  document.body.appendChild(player);
+  window.player = player;
+  document.querySelectorAll(".line").forEach(function (line) {
+    line.onclick = function () { player.currentTime = Number(line.dataset.at); player.play(); };
+  });
+</script></body></html>"""
+
+
+#: resolves when the audio has ended; fails rather than hangs if it never does
+_UNTIL_ENDED = """a => new Promise((ok, no) => {
+  if (a.ended) return ok();
+  a.addEventListener('ended', () => ok(), {once: true});
+  setTimeout(() => no(new Error('the audio never ended')), 10000);
+})"""
+
+
+@pytest.mark.parametrize("engine", ["chromium", "webkit"])
+def test_tapping_a_line_after_the_end_plays_from_that_line(engine, request, serve, tmp_path):
+    """Reported 2026-11-13 on an iPad: once the audio had finished, tapping the transcript
+    played it again from the start, not from the line tapped. WebKit (every iPhone and iPad
+    browser) starts an ended element from its end or from 0 when a seek is still landing as
+    play() is called; the relay (annals.media) holds play() until the seek lands. The race is
+    lost most of the time without the fix, so several taps make a miss near-certain."""
+    browser = request.getfixturevalue(engine)
+    store = DocStore(tmp_path / "data")
+    over = store.publish(text=LINES_PLAYER % _silence_wav(seconds=4), title="Listen: Lines", filename="overview.html", tags=[TAG])
+    page = browser.new_page()
+    try:
+        page.goto(f"{serve(store)}/d/{over['id']}")
+        frame = page.frame_locator("iframe.frame")
+        audio = frame.locator("audio")
+        for attempt in range(4):
+            frame.locator(".line").nth(3).click()
+            audio.evaluate(_UNTIL_ENDED)
+            page.wait_for_timeout(100 + 150 * attempt)
+            frame.locator(".line").nth(1).click()
+            page.wait_for_timeout(600)
+            at, paused = audio.evaluate("a => [a.currentTime, a.paused]")
+            assert not paused and 1.1 < at < 2.5, f"{engine}, tap {attempt}: at {at:.2f}s, paused={paused}; expected playing from 1s"
+    finally:
+        page.close()
+
+
+@pytest.mark.parametrize("engine", ["chromium", "webkit"])
+def test_a_pause_while_a_play_is_held_wins(engine, request, serve, tmp_path):
+    """The relay holds play() of an ended element until its seek lands; a pause() meanwhile
+    (a stop button, pausing the other players) must win, and the held play() rejects with
+    AbortError as a native one would (review of annals#68)."""
+    browser = request.getfixturevalue(engine)
+    store = DocStore(tmp_path / "data")
+    over = store.publish(text=LINES_PLAYER % _silence_wav(seconds=4), title="Listen: Pause", filename="overview.html", tags=[TAG])
+    page = browser.new_page()
+    try:
+        page.goto(f"{serve(store)}/d/{over['id']}")
+        frame = page.frame_locator("iframe.frame")
+        audio = frame.locator("audio")
+        frame.locator(".line").nth(3).click()
+        audio.evaluate(_UNTIL_ENDED)
+        outcome = audio.evaluate("""a => new Promise(done => {
+          a.currentTime = 1;
+          const p = a.play();
+          a.pause();
+          let how = 'pending';
+          p.then(() => { how = 'resolved'; }, e => { how = e.name; });
+          setTimeout(() => done([how, a.paused, a.currentTime]), 700);
+        })""")
+        how, paused, at = outcome
+        assert paused, f"{engine}: playing at {at:.2f}s after pause()"
+        assert how == "AbortError", f"{engine}: the play() promise {how}"
+    finally:
+        page.close()

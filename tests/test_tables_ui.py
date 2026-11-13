@@ -55,15 +55,9 @@ def test_nothing_sticks_unconditionally():
 
 
 @pytest.fixture(scope="module")
-def browser():
-    sync_api = pytest.importorskip("playwright.sync_api")
-    with sync_api.sync_playwright() as p:
-        try:
-            b = p.chromium.launch(executable_path=os.environ.get("ANNALS_TEST_BROWSER"))
-        except sync_api.Error as e:
-            pytest.skip(f"no browser to run: {e}")
-        yield b
-        b.close()
+def browser(chromium):
+    """The shared Chromium (conftest): two Playwrights cannot run in one test run."""
+    return chromium
 
 
 @pytest.fixture(params=["light", "dark"])

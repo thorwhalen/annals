@@ -1,4 +1,4 @@
-"""Fixtures shared by the browser tests: a live annals server and a Chromium.
+"""Fixtures shared by the browser tests: a live annals server, a Chromium and a WebKit.
 
 The browser tests skip where Playwright or its Chromium is missing; ``ANNALS_TEST_BROWSER``
 names a browser executable Playwright did not download. On CI (``CI`` set, as GitHub Actions
@@ -54,30 +54,40 @@ def serve():
         server.should_exit = True
 
 
-@pytest.fixture(scope="module")
-def chromium():
+@pytest.fixture(scope="session")
+def _playwright():
+    """The one Playwright of the run: two cannot run at once, so every browser comes from it."""
     sync_api = pytest.importorskip("playwright.sync_api")
     with sync_api.sync_playwright() as p:
+        yield p
 
-        def launch():
-            return p.chromium.launch(
-                executable_path=os.environ.get("ANNALS_TEST_BROWSER")
-            )
 
-        try:
-            b = launch()
-        except sync_api.Error as e:
-            if not os.environ.get("CI"):
-                pytest.skip(f"no browser to run: {e}")
-            cmd = [
-                sys.executable,
-                "-m",
-                "playwright",
-                "install",
-                "--with-deps",
-                "chromium",
-            ]
-            subprocess.run(cmd, check=True, timeout=600)
-            b = launch()
-        yield b
-        b.close()
+def _browser(p, engine, *, executable_path=None):
+    """A launched Playwright browser of ``engine`` (chromium, webkit, firefox), for a fixture to
+    yield. Skips where it is missing; on CI it is installed once instead."""
+    from playwright.sync_api import Error
+
+    def launch():
+        return getattr(p, engine).launch(executable_path=executable_path)
+
+    try:
+        b = launch()
+    except Error as e:
+        if not os.environ.get("CI"):
+            pytest.skip(f"no {engine} to run: {e}")
+        cmd = [sys.executable, "-m", "playwright", "install", "--with-deps", engine]
+        subprocess.run(cmd, check=True, timeout=600)
+        b = launch()
+    yield b
+    b.close()
+
+
+@pytest.fixture(scope="module")
+def chromium(_playwright):
+    yield from _browser(_playwright, "chromium", executable_path=os.environ.get("ANNALS_TEST_BROWSER"))
+
+
+@pytest.fixture(scope="module")
+def webkit(_playwright):
+    """Safari's engine: what every browser on an iPhone or iPad runs, where media timing differs."""
+    yield from _browser(_playwright, "webkit")
