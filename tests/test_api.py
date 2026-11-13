@@ -432,3 +432,16 @@ def test_a_version_is_in_its_documents_groups(store, client, tmp_path):
     got = client.get(f"/annals/api/docs/{doc['id']}@1").json()
     assert got["version_of"] == doc["id"]
     assert [x["id"] for x in got["groups"]] == [g["id"]]
+
+
+def test_html_print_variant_prints_on_load_and_is_never_cached(client, store, tmp_path):
+    d = tmp_path / "pr"
+    d.mkdir()
+    (d / "index.html").write_text("<title>P</title><body><p>hi</p></body>")
+    m = store.publish(d)
+    url = f"/annals/api/raw/{m['id']}/index.html"
+    plain, printed = client.get(url), client.get(url + "?print=1")
+    assert b"print" not in plain.content.replace(b"<p>hi</p>", b"")
+    assert printed.content.index(b"print") < printed.content.index(b"</body>")
+    assert printed.headers["content-security-policy"].startswith("sandbox")
+    assert printed.headers["cache-control"] == "private, no-store" and "etag" not in printed.headers

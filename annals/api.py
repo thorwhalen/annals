@@ -883,20 +883,25 @@ def mk_api(
         rel: str,
         if_none_match: str | None = Header(None),
         download: bool = False,
+        print: bool = False,
     ) -> Response:
         """A document's file as itself, streamed, with byte ranges (video and audio seek).
 
         ``FileResponse`` answers ``Range`` with ``206 Partial Content`` and never loads the
         file into memory, which is what a ``<video>`` element needs (Safari will not play
         without ranges). ``?download=1`` answers with ``Content-Disposition: attachment``,
-        so every kind of media, a PDF included, can be saved from its viewer.
+        so every kind of media, a PDF included, can be saved from its viewer. ``?print=1`` on
+        an html file opens the browser's print dialog once the page has loaded (the page
+        alone, none of the viewer; "Save as PDF" there is a faithful PDF, grid and all).
         """
         path = doc_file_path(store, doc_id, rel)
         cache = RAW_CACHE if _is_version(doc_id) else CURRENT_CACHE
         if download:
             return raw_response(path, rel, cache=cache, download=True)
         if kind_of(rel) == "html":
-            return _html_response(path, rel, cache=cache, request_etag=if_none_match)
+            return _html_response(
+                path, rel, cache=cache, request_etag=if_none_match, print_on_load=print
+            )
         return raw_response(path, rel, cache=cache)
 
     @api.get("/export/{doc_id}")
@@ -1154,8 +1159,25 @@ def serve_html(html: bytes, *, media_relay: bool = True) -> bytes:
     return add_media_relay(html) if media_relay else html
 
 
+#: Opens the print dialog once the page (images and fonts included) has loaded; the
+#: sandbox's ``allow-modals`` lets a document print itself.
+PRINT_ON_LOAD = b"<script>addEventListener('load',function(){setTimeout(print,300)})</script>"
+
+
+def _with_print_on_load(html: bytes) -> bytes:
+    """``html`` with :data:`PRINT_ON_LOAD` just before ``</body>`` (else at the end)."""
+    at = html.lower().rfind(b"</body")
+    at = at if at >= 0 else len(html)
+    return html[:at] + PRINT_ON_LOAD + html[at:]
+
+
 def _html_response(
-    path: Path, rel: str, *, cache: str, request_etag: str | None = None
+    path: Path,
+    rel: str,
+    *,
+    cache: str,
+    request_etag: str | None = None,
+    print_on_load: bool = False,
 ) -> Response:
     """An html file through :func:`doctype_guard`, under the sandbox policy.
 
@@ -1169,10 +1191,14 @@ def _html_response(
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": RAW_SANDBOX_CSP,
     }
-    if request_etag and etag in {t.strip() for t in request_etag.split(",")}:
+    if print_on_load:  # a different body under the same url: never cached or revalidated
+        headers.pop("ETag")
+        headers["Cache-Control"] = "private, no-store"
+    elif request_etag and etag in {t.strip() for t in request_etag.split(",")}:
         return Response(status_code=304, headers=headers)
+    body = serve_html(path.read_bytes())
     return Response(
-        serve_html(path.read_bytes()),
+        _with_print_on_load(body) if print_on_load else body,
         media_type=media_type_of(rel),
         headers=headers,
     )

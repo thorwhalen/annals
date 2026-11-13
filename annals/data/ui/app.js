@@ -803,6 +803,10 @@
       { section: "download", label: "PDF", hint: "Save a titled PDF with the images inside; other media are linked", icon: "download", run: function () { return saveDownload(ctx.exportUrl("pdf", rel), "PDF"); } }
     ];
     if (kind === "md") return [];
+    if (kind === "html") return [
+      { section: "download", label: "Print / Save as PDF", hint: "Open the page alone and print it; Save as PDF there keeps the layout exactly", icon: "download", href: ctx.raw(rel) + "?print=1", newTab: true },
+      { section: "download", label: "Original file", hint: "Save the file as it is", icon: "download", href: downloadUrl(ctx.raw(rel)), download: basename(rel) }
+    ];
     return [{ section: "download", label: kind === "file" ? "File" : "Original file", hint: "Save the file as it is", icon: "download", href: downloadUrl(ctx.raw(rel)), download: basename(rel) }];
   }
   function actionItem(a, close) {
