@@ -1163,7 +1163,9 @@ def serve_html(html: bytes, *, media_relay: bool = True) -> bytes:
 
 #: Opens the print dialog once the page (images and fonts included) has loaded; the
 #: sandbox's ``allow-modals`` lets a document print itself.
-PRINT_ON_LOAD = b"<script>addEventListener('load',function(){setTimeout(print,300)})</script>"
+PRINT_ON_LOAD = (
+    b"<script>addEventListener('load',function(){setTimeout(print,300)})</script>"
+)
 
 
 def _with_print_on_load(html: bytes) -> bytes:
@@ -1193,7 +1195,9 @@ def _html_response(
         "X-Content-Type-Options": "nosniff",
         "Content-Security-Policy": RAW_SANDBOX_CSP,
     }
-    if print_on_load:  # a different body under the same url: never cached or revalidated
+    if (
+        print_on_load
+    ):  # a different body under the same url: never cached or revalidated
         headers.pop("ETag")
         headers["Cache-Control"] = "private, no-store"
     elif request_etag and etag in {t.strip() for t in request_etag.split(",")}:

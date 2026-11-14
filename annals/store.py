@@ -259,7 +259,9 @@ def _pick_main(files: list[Path]) -> tuple[Path, str]:
     if len(files) == 1:
         return files[0], kind_of(files[0].name)
     media = [f for f in files if kind_of(f.name) in SIDECAR_MEDIA_KINDS]
-    if len(media) == 1 and all(f == media[0] or is_sidecar_of(str(f), str(media[0])) for f in files):
+    if len(media) == 1 and all(
+        f == media[0] or is_sidecar_of(str(f), str(media[0])) for f in files
+    ):
         return media[0], kind_of(media[0].name)
     return files[0], FOLDER
 

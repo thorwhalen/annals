@@ -81,7 +81,14 @@ def _with_sidecars(paths: list[str]) -> list[list[str]]:
     claimed: dict[str, list[str]] = {m: [] for m in media}
     taken: set[str] = set()
     for q in paths:  # first, which files are whose timed text, wherever they are listed
-        owner = next((m for m in media if q != m and q != "-" and is_sidecar_of(str(Path(q)), str(Path(m)))), None)
+        owner = next(
+            (
+                m
+                for m in media
+                if q != m and q != "-" and is_sidecar_of(str(Path(q)), str(Path(m)))
+            ),
+            None,
+        )
         if owner is not None and q not in taken:
             claimed[owner].append(q)
             taken.add(q)
