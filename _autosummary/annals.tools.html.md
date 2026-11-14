@@ -159,6 +159,10 @@ with the package.
 
 Publish one document and print its link; several paths become several documents.
 
+An audio or video file takes its timed text along as one document: `talk.mp3
+talk.vtt talk.chapters.vtt` (or `talk.cues.json`) is one audio document whose page
+shows the transcript and chapters (`annals.store.SIDECAR_SUFFIXES`).
+
 `paths`: files of any kind (markdown, html, images, video, audio, pdf, text), a
 directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`

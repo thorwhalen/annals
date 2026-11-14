@@ -1,4 +1,4 @@
-> built 2026-11-13 08:38 UTC from ebb44d5 (main) · annals 0.0.42. Details: build_info.json
+> built 2026-11-14 08:28 UTC from c65ad97 (main) · annals 0.0.43. Details: build_info.json
 
 # index.html.md
 
@@ -1387,6 +1387,10 @@ List documents (newest first), optionally filtered by words or showing the bin.
 ### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False)
 
 Publish one document and print its link; several paths become several documents.
+
+An audio or video file takes its timed text along as one document: `talk.mp3
+talk.vtt talk.chapters.vtt` (or `talk.cues.json`) is one audio document whose page
+shows the transcript and chapters (`annals.store.SIDECAR_SUFFIXES`).
 
 `paths`: files of any kind (markdown, html, images, video, audio, pdf, text), a
 directory (one document: an `index.html` or single page with its assets, else a
@@ -3217,32 +3221,34 @@ replacement twice and nothing is ever deleted.
 
 ### Module Attributes
 
-| [`HEAD_CHARS`](_autosummary/annals.store.html.md#annals.store.HEAD_CHARS)      | how much of a file is read to find its title and excerpt                                                                                                                                                                                          |
-|------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE)    | hidden files, caches, compiled python                                                                                                                                                                                                             |
-| [`VERSIONS`](_autosummary/annals.store.html.md#annals.store.VERSIONS)        | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                           |
-| [`VERSION_SEP`](_autosummary/annals.store.html.md#annals.store.VERSION_SEP)     | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                            |
-| [`PENDING_SEP`](_autosummary/annals.store.html.md#annals.store.PENDING_SEP)     | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                          |
-| [`LOCK_PREFIX`](_autosummary/annals.store.html.md#annals.store.LOCK_PREFIX)     | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know) |
-| [`LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.LOCK_STALE_S)    | its work is finished or undone                                                                                                                                                                                                                    |
-| [`SWAP_WAIT_S`](_autosummary/annals.store.html.md#annals.store.SWAP_WAIT_S)     | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`SWAP_STEP_S`](_autosummary/annals.store.html.md#annals.store.SWAP_STEP_S)     | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX) | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
-| [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)        | the store's bookkeeping lives there                                                                                                                                                                                                               |
-| [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)  | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
+| [`HEAD_CHARS`](_autosummary/annals.store.html.md#annals.store.HEAD_CHARS)       | how much of a file is read to find its title and excerpt                                                                                                                                                                                          |
+|-------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE)     | hidden files, caches, compiled python                                                                                                                                                                                                             |
+| [`VERSIONS`](_autosummary/annals.store.html.md#annals.store.VERSIONS)         | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                           |
+| [`VERSION_SEP`](_autosummary/annals.store.html.md#annals.store.VERSION_SEP)      | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                            |
+| [`PENDING_SEP`](_autosummary/annals.store.html.md#annals.store.PENDING_SEP)      | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                          |
+| [`LOCK_PREFIX`](_autosummary/annals.store.html.md#annals.store.LOCK_PREFIX)      | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know) |
+| [`LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.LOCK_STALE_S)     | its work is finished or undone                                                                                                                                                                                                                    |
+| [`SWAP_WAIT_S`](_autosummary/annals.store.html.md#annals.store.SWAP_WAIT_S)      | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
+| [`SWAP_STEP_S`](_autosummary/annals.store.html.md#annals.store.SWAP_STEP_S)      | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
+| [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX)  | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
+| [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)         | the store's bookkeeping lives there                                                                                                                                                                                                               |
+| [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)   | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
+| [`SIDECAR_SUFFIXES`](_autosummary/annals.store.html.md#annals.store.SIDECAR_SUFFIXES) | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
 
 ### Functions
 
-| [`check_artifact_url`](_autosummary/annals.store.html.md#annals.store.check_artifact_url)(url, \*[, hosts])   | `url` if it is an `https` link to one of `hosts` (or a subdomain), else raise.                                      |
-|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
-| [`check_id`](_autosummary/annals.store.html.md#annals.store.check_id)(doc_id)                       | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id). |
-| [`kind_of`](_autosummary/annals.store.html.md#annals.store.kind_of)(filename)                      | The rendering kind of a file, from its extension.                                                                   |
-| [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])               | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                              |
-| [`mk_pending_id`](_autosummary/annals.store.html.md#annals.store.mk_pending_id)(doc_id, \*[, when])      | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                   |
-| [`now_iso`](_autosummary/annals.store.html.md#annals.store.now_iso)()                              | UTC timestamp with second precision, the format every meta.json uses.                                               |
-| [`slugify`](_autosummary/annals.store.html.md#annals.store.slugify)(text, \*[, max_len])           | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                 |
-| [`split_version`](_autosummary/annals.store.html.md#annals.store.split_version)(doc_id)                  | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                           |
-| [`title_and_excerpt`](_autosummary/annals.store.html.md#annals.store.title_and_excerpt)(head, kind)          | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                     |
+| [`check_artifact_url`](_autosummary/annals.store.html.md#annals.store.check_artifact_url)(url, \*[, hosts])   | `url` if it is an `https` link to one of `hosts` (or a subdomain), else raise.                                                                               |
+|-----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`check_id`](_autosummary/annals.store.html.md#annals.store.check_id)(doc_id)                       | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id).                                          |
+| [`is_sidecar_of`](_autosummary/annals.store.html.md#annals.store.is_sidecar_of)(path, media)             | True when `path` is timed text for `media`: `talk.vtt` or `talk.cues.json` for `talk.mp3`, in the same folder (paths compare whole), the suffix in any case. |
+| [`kind_of`](_autosummary/annals.store.html.md#annals.store.kind_of)(filename)                      | The rendering kind of a file, from its extension.                                                                                                            |
+| [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])               | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                                                       |
+| [`mk_pending_id`](_autosummary/annals.store.html.md#annals.store.mk_pending_id)(doc_id, \*[, when])      | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                                                            |
+| [`now_iso`](_autosummary/annals.store.html.md#annals.store.now_iso)()                              | UTC timestamp with second precision, the format every meta.json uses.                                                                                        |
+| [`slugify`](_autosummary/annals.store.html.md#annals.store.slugify)(text, \*[, max_len])           | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                                                          |
+| [`split_version`](_autosummary/annals.store.html.md#annals.store.split_version)(doc_id)                  | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                                                                    |
+| [`title_and_excerpt`](_autosummary/annals.store.html.md#annals.store.title_and_excerpt)(head, kind)          | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                                                              |
 
 ### Classes
 
@@ -3454,6 +3460,14 @@ the store’s bookkeeping lives there
 * **Type:**
   names a document’s own files may not use
 
+### annals.store.SIDECAR_SUFFIXES *= ('.cues.json', '.chapters.vtt', '.vtt', '.srt')*
+
+timed text published beside an audio file, named `<stem><suffix>` in the same folder
+(the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters
+(`.chapters.vtt`). The page plays the audio with them (`app.js`’s `SIDECARS`); a
+document of one audio file and its sidecars is an audio document, not a folder. (Video
+is left out until its page shows them.)
+
 ### annals.store.SWAP_STEP_S *= 0.02*
 
 a reader that misses a document being swapped waits for it this long, in steps
@@ -3491,6 +3505,19 @@ Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosumma
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.store.is_sidecar_of(path, media)
+
+True when `path` is timed text for `media`: `talk.vtt` or `talk.cues.json` for
+`talk.mp3`, in the same folder (paths compare whole), the suffix in any case.
+
+```pycon
+>>> is_sidecar_of("a/talk.CHAPTERS.vtt", "a/talk.mp3"), is_sidecar_of("b/talk.vtt", "a/talk.mp3")
+(True, False)
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 ### annals.store.kind_of(filename)
 
@@ -3962,6 +3989,10 @@ with the package.
 
 Publish one document and print its link; several paths become several documents.
 
+An audio or video file takes its timed text along as one document: `talk.mp3
+talk.vtt talk.chapters.vtt` (or `talk.cues.json`) is one audio document whose page
+shows the transcript and chapters (`annals.store.SIDECAR_SUFFIXES`).
+
 `paths`: files of any kind (markdown, html, images, video, audio, pdf, text), a
 directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`
@@ -4056,18 +4087,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-13 08:38 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/ebb44d5ca21fb5d68f6bb017b3b1c4cfcb4828f3"><code>ebb44d5</code></a> on branch <code>main</code>, for **annals 0.0.42** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-14 08:28 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/c65ad97f80faf441e4d410b3d20965d28dc8c238"><code>c65ad97</code></a> on branch <code>main</code>, for **annals 0.0.43** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.42) is behind the latest release on PyPI (0.0.43): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/ebb44d5ca21fb5d68f6bb017b3b1c4cfcb4828f3"><code>ebb44d5ca21fb5d68f6bb017b3b1c4cfcb4828f3</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/c65ad97f80faf441e4d410b3d20965d28dc8c238"><code>c65ad97f80faf441e4d410b3d20965d28dc8c238</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4078,9 +4107,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43394198912">43394198912</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43575651503">43575651503</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>ebb44d5ca21fb5d68f6bb017b3b1c4cfcb4828f3</code> (in the history of the built commit) |
+| Event commit | <code>c65ad97f80faf441e4d410b3d20965d28dc8c238</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4105,13 +4134,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.43/">0.0.43</a>, newer than the documented version (0.0.42).
+Latest release: <a href="https://pypi.org/project/annals/0.0.43/">0.0.43</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout ebb44d5ca21fb5d68f6bb017b3b1c4cfcb4828f3
+git checkout c65ad97f80faf441e4d410b3d20965d28dc8c238
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

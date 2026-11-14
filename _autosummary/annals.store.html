@@ -134,12 +134,14 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.LOCK_STALE_S"><code class="docutils literal notranslate"><span class="pre">LOCK_STALE_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.PENDING_SEP"><code class="docutils literal notranslate"><span class="pre">PENDING_SEP</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.RESERVED"><code class="docutils literal notranslate"><span class="pre">RESERVED</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.SWAP_STEP_S"><code class="docutils literal notranslate"><span class="pre">SWAP_STEP_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.SWAP_WAIT_S"><code class="docutils literal notranslate"><span class="pre">SWAP_WAIT_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.VERSIONS"><code class="docutils literal notranslate"><span class="pre">VERSIONS</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.VERSION_SEP"><code class="docutils literal notranslate"><span class="pre">VERSION_SEP</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.check_artifact_url"><code class="docutils literal notranslate"><span class="pre">check_artifact_url()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.check_id"><code class="docutils literal notranslate"><span class="pre">check_id()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.is_sidecar_of"><code class="docutils literal notranslate"><span class="pre">is_sidecar_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.kind_of"><code class="docutils literal notranslate"><span class="pre">kind_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.mk_id"><code class="docutils literal notranslate"><span class="pre">mk_id()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.mk_pending_id"><code class="docutils literal notranslate"><span class="pre">mk_pending_id()</span></code></a></li>
@@ -251,6 +253,9 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.store.ARTIFACT_HOSTS" title="annals.store.ARTIFACT_HOSTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ARTIFACT_HOSTS</span></code></a></p></td>
 <td><p>the interactive version of a page lives there, and the document's page links out to it</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES" title="annals.store.SIDECAR_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></p></td>
+<td><p>timed text published beside an audio file, named <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;&lt;suffix&gt;</span></code> in the same folder (the suffix in any case): a transcript (<code class="docutils literal notranslate"><span class="pre">.cues.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">.srt</span></code>) and chapters (<code class="docutils literal notranslate"><span class="pre">.chapters.vtt</span></code>).</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -264,25 +269,28 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.store.check_id" title="annals.store.check_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_id</span></code></a>(doc_id)</p></td>
 <td><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on an id that could not have come from <a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">mk_id()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.kind_of" title="annals.store.kind_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of</span></code></a>(filename)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.is_sidecar_of" title="annals.store.is_sidecar_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_sidecar_of</span></code></a>(path, media)</p></td>
+<td><p>True when <code class="docutils literal notranslate"><span class="pre">path</span></code> is timed text for <code class="docutils literal notranslate"><span class="pre">media</span></code>: <code class="docutils literal notranslate"><span class="pre">talk.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">talk.cues.json</span></code> for <code class="docutils literal notranslate"><span class="pre">talk.mp3</span></code>, in the same folder (paths compare whole), the suffix in any case.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.kind_of" title="annals.store.kind_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of</span></code></a>(filename)</p></td>
 <td><p>The rendering kind of a file, from its extension.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_id</span></code></a>(title, *[, when])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_id</span></code></a>(title, *[, when])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">YYYYMMDD-HHMMSS-&lt;slug&gt;-&lt;4</span> <span class="pre">hex&gt;</span></code>: sortable by time, readable in a URL.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.mk_pending_id" title="annals.store.mk_pending_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_pending_id</span></code></a>(doc_id, *[, when])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.mk_pending_id" title="annals.store.mk_pending_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_pending_id</span></code></a>(doc_id, *[, when])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&lt;id&gt;.r&lt;YYYYMMDDHHMMSSffffff&gt;-&lt;hex&gt;</span></code>: sorts in publication order.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
 <td><p>UTC timestamp with second precision, the format every meta.json uses.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
 <td><p>Lowercase ascii words joined by hyphens; empty input becomes <code class="docutils literal notranslate"><span class="pre">doc</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">n)</span></code> from <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;&#64;&lt;n&gt;</span></code> (version <code class="docutils literal notranslate"><span class="pre">n</span></code>), <code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">None)</span></code> from an id.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
 <td><p>A title (markdown <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">h1</span></code> or html <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>) and a plain-text excerpt of <code class="docutils literal notranslate"><span class="pre">head</span></code>.</p></td>
 </tr>
 </tbody>
@@ -596,6 +604,16 @@ being archived) between renames, and <code class="docutils literal notranslate">
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="annals.store.SIDECAR_SUFFIXES">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">SIDECAR_SUFFIXES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('.cues.json',</span> <span class="pre">'.chapters.vtt',</span> <span class="pre">'.vtt',</span> <span class="pre">'.srt')</span></span><a class="headerlink" href="#annals.store.SIDECAR_SUFFIXES" title="Link to this definition">#</a></dt>
+<dd><p>timed text published beside an audio file, named <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;&lt;suffix&gt;</span></code> in the same folder
+(the suffix in any case): a transcript (<code class="docutils literal notranslate"><span class="pre">.cues.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">.srt</span></code>) and chapters
+(<code class="docutils literal notranslate"><span class="pre">.chapters.vtt</span></code>). The page plays the audio with them (<code class="docutils literal notranslate"><span class="pre">app.js</span></code>’s <code class="docutils literal notranslate"><span class="pre">SIDECARS</span></code>); a
+document of one audio file and its sidecars is an audio document, not a folder. (Video
+is left out until its page shows them.)</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="annals.store.SWAP_STEP_S">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">SWAP_STEP_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.02</span></span><a class="headerlink" href="#annals.store.SWAP_STEP_S" title="Link to this definition">#</a></dt>
 <dd><p>a reader that misses a document being swapped waits for it this long, in steps</p>
@@ -646,6 +664,22 @@ dns labels only, printable ascii without quotes, angle brackets or backslashes.<
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.is_sidecar_of">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">is_sidecar_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">media</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#is_sidecar_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.is_sidecar_of" title="Link to this definition">#</a></dt>
+<dd><p>True when <code class="docutils literal notranslate"><span class="pre">path</span></code> is timed text for <code class="docutils literal notranslate"><span class="pre">media</span></code>: <code class="docutils literal notranslate"><span class="pre">talk.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">talk.cues.json</span></code> for
+<code class="docutils literal notranslate"><span class="pre">talk.mp3</span></code>, in the same folder (paths compare whole), the suffix in any case.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">is_sidecar_of</span><span class="p">(</span><span class="s2">"a/talk.CHAPTERS.vtt"</span><span class="p">,</span> <span class="s2">"a/talk.mp3"</span><span class="p">),</span> <span class="n">is_sidecar_of</span><span class="p">(</span><span class="s2">"b/talk.vtt"</span><span class="p">,</span> <span class="s2">"a/talk.mp3"</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">(True, False)</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -769,7 +803,7 @@ dns labels only, printable ascii without quotes, angle brackets or backslashes.<
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=173d7b4c"></script>
+      <script src="../_static/documentation_options.js?v=b345ff55"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
