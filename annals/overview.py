@@ -61,7 +61,10 @@ ENV_OVERVIEWS = "ANNALS_OVERVIEWS"
 #: in ``ANNALS_OVERVIEWS``, the readers are separated by this; ``*`` alone means every reader
 READERS_SEP, EVERY_READER = ",", "*"
 #: what a person writes in a variable meaning on or off: never read as a reader's name
-_ON, _OFF = frozenset({"*", "true", "1", "yes", "on"}), frozenset({"false", "0", "no", "off"})
+_ON, _OFF = (
+    frozenset({"*", "true", "1", "yes", "on"}),
+    frozenset({"false", "0", "no", "off"}),
+)
 FOLDER = "overviews"
 LOCK_NAME = ".lock"
 SPEND_LOG = "spend.jsonl"

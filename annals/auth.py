@@ -160,7 +160,9 @@ class TrustedHeader:
 
     def __init__(self, header: str, *, allowed_users: list[str] | None = None):
         if not header.strip():
-            raise ValueError("TrustedHeader needs the name of the header the gateway sets")
+            raise ValueError(
+                "TrustedHeader needs the name of the header the gateway sets"
+            )
         self.header = header.strip()
         allowed = {u.strip().lower() for u in allowed_users or () if u.strip()}
         self.allowed = allowed or None

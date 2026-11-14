@@ -1318,7 +1318,9 @@ class _ByReader:
     def _admits(self, request: Request) -> bool:
         try:
             return bool(self.admits(request))
-        except Exception:  # a host's reader or predicate failing: fail closed, not a 500
+        except (
+            Exception
+        ):  # a host's reader or predicate failing: fail closed, not a 500
             return False
 
 
@@ -1480,7 +1482,11 @@ def serve(
     import uvicorn
 
     authorizer = authorizer_from_env()
-    if isinstance(authorizer, TrustedHeader) and not _is_loopback(host) and not allow_open:
+    if (
+        isinstance(authorizer, TrustedHeader)
+        and not _is_loopback(host)
+        and not allow_open
+    ):
         raise ValueError(
             f"refused: host {host!r} is reachable beyond this machine and readers are named by "
             f"the {authorizer.header!r} header, which anyone reaching the port could send. Bind "
