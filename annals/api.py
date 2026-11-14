@@ -35,7 +35,7 @@ import shutil
 import tempfile
 import warnings
 from pathlib import Path
-from collections.abc import Mapping, MutableMapping
+from collections.abc import Iterable, Mapping, MutableMapping
 from html.parser import HTMLParser
 from typing import Callable
 from urllib.parse import quote, urlsplit
@@ -53,7 +53,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 
 from annals import listening as listen_log, overview
-from annals.auth import Authorizer, authorizer_from_env, no_auth
+from annals.auth import Authorizer, TrustedHeader, authorizer_from_env, no_auth
 from annals.media import add_media_relay, media_version
 from annals.overview import Requests
 from annals.target import LocalTarget
@@ -67,7 +67,7 @@ from annals.config import (
     MAX_INLINE_TEXT_BYTES,
     default_data_dir,
 )
-from annals.catalog import Catalog, mk_catalog
+from annals.catalog import Catalog, default_tags, mk_catalog
 from annals.export import (
     aggregate_response,
     markdown_response,
@@ -100,6 +100,7 @@ from annals.references import (
 from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
     DocStore,
+    HidingStore,
     TEXT_KINDS,
     check_artifact_url,
     kind_of,
@@ -279,7 +280,7 @@ def mk_api(
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
     share_base_url: str | None = None,
-    overviews: bool = False,
+    overviews: bool | Iterable[str] | Callable[[str], bool] | str = False,
     listening: listen_log.ForReader | bool | None = True,
     reader: Callable[[Request], str] | None = None,
     title: str = APP_NAME,
@@ -300,30 +301,72 @@ def mk_api(
     neither, shares are made but carry no link, since nothing public serves them here).
     ``overviews`` offers a spoken overview of a document on its page (off by default, since
     making one spends money); it needs a local data root and a worker, see
-    :mod:`annals.overview`.
+    :mod:`annals.overview`. ``True`` offers it to every reader; reader names (or a predicate
+    on the name, or ``"a@x, b@y"``; see :func:`annals.overview.readers_offered`) offer it to
+    those readers only. Every other reader is served the same API over the documents minus
+    the ones overviews made (:func:`annals.overview.made_here`), with overviews off: no
+    Listen button, a 404 from the overview routes, and those documents in no list, search,
+    group, Audio tab or link.
     ``listening`` is where each reader's listening progress lives (:mod:`annals.listening`):
     ``True`` for one JSON file per reader under a local data root, any ``(reader) -> store``
     callable, or ``None`` to keep none. ``reader`` names the caller of a request; by default
     :func:`reader_of` (the login's email, else ``"owner"``).
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
-    if overviews and not isinstance(store.target, LocalTarget):
+    offered = overview.readers_offered(overviews)
+    local = isinstance(store.target, LocalTarget)
+    if offered and not local:
         raise ValueError("overviews need a data root on this machine")
-    requests = Requests(store.target.root) if overviews else None
-    shares = Shares(store)
-    share_base = (
-        share_base_url
-        if share_base_url is not None
-        else os.environ.get(ENV_SHARE_BASE_URL)
-    )
     if thumbnailer is True:
         thumbnailer = default_thumbnailer()
-    catalog = mk_catalog(store, sources=sources, tags=tags)
     if listening is True:
-        local = isinstance(store.target, LocalTarget)
         listening = listen_log.for_reader(store.target.root) if local else None
-    listening = listening or None
-    reader = reader or reader_of
+    if tags is None:  # one tag store, whichever API below answers
+        tags = default_tags(store)
+    if sources is None:
+        sources = parse_sources_spec(os.environ.get(ENV_SOURCES, ""))
+    build = functools.partial(
+        _mk_api,
+        thumbnailer=thumbnailer,
+        sources=sources,
+        tags=tags,
+        share_base=(
+            share_base_url
+            if share_base_url is not None
+            else os.environ.get(ENV_SHARE_BASE_URL)
+        ),
+        listening=listening or None,
+        reader=reader or reader_of,
+        title=title,
+    )
+    requests = Requests(store.target.root) if offered else None
+    api = build(store, requests=requests)
+    if offered is True or not offered:
+        return api
+    others = build(HidingStore(store, hide=overview.made_here), requests=None)
+    who = reader or reader_of
+    api.add_middleware(
+        _ByReader, others=others, admits=lambda request: offered(who(request))
+    )  # pure ASGI, never BaseHTTPMiddleware
+    api.state.others = others
+    return api
+
+
+def _mk_api(
+    store: DocStore,
+    *,
+    requests: Requests | None,
+    thumbnailer: Thumbnailer | None,
+    sources: Mapping[str, Source | Path | str],
+    tags: MutableMapping[str, list[str]],
+    share_base: str | None,
+    listening: listen_log.ForReader | None,
+    reader: Callable[[Request], str],
+    title: str,
+) -> FastAPI:
+    """The API of :func:`mk_api` over ``store``, every default already resolved."""
+    shares = Shares(store)
+    catalog = mk_catalog(store, sources=sources, tags=tags)
     api = FastAPI(title=f"{title} api", docs_url=None, redoc_url=None, openapi_url=None)
     # No swagger: its /docs route would shadow ours.
 
@@ -1256,6 +1299,29 @@ def _wants_html(request: Request) -> bool:
     return request.method == "GET" and "text/html" in request.headers.get("accept", "")
 
 
+class _ByReader:
+    """Pure ASGI middleware: a reader ``admits`` accepts is served by the app, others by ``others``.
+
+    Routing by reader before anything else runs means a route cannot forget the check:
+    the two apps differ only in what they are built over.
+    """
+
+    def __init__(self, app, *, others, admits: Callable[[Request], bool]):
+        self.app, self.others, self.admits = app, others, admits
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http" and not self._admits(Request(scope)):
+            await self.others(scope, receive, send)
+            return
+        await self.app(scope, receive, send)
+
+    def _admits(self, request: Request) -> bool:
+        try:
+            return bool(self.admits(request))
+        except Exception:  # a host's reader or predicate failing: fail closed, not a 500
+            return False
+
+
 class _AuthGate:
     """Pure ASGI middleware: ask the authorizer, deny like enlace_auth does.
 
@@ -1291,11 +1357,13 @@ class _AuthGate:
                 f"{login_url}?login_required=1&next={quote(nxt, safe='')}",
                 status_code=303,
             )
-        headers = (
-            {"WWW-Authenticate": f'Basic realm="{APP_NAME}"'}
+        default = (
+            f'Basic realm="{APP_NAME}"'
             if login_url is None and self.authorizer is not no_auth
-            else {}
+            else None
         )
+        challenge = getattr(self.authorizer, "challenge", default)
+        headers = {"WWW-Authenticate": challenge} if challenge else {}
         return JSONResponse(
             {"detail": "Not authenticated", "auth": "user"},
             status_code=401,
@@ -1311,7 +1379,7 @@ def mk_app(
     base_path: str = DFLT_BASE_PATH,
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
-    overviews: bool = False,
+    overviews: bool | Iterable[str] | Callable[[str], bool] | str | None = None,
     listening: listen_log.ForReader | bool | None = True,
     title: str = APP_NAME,
 ) -> FastAPI:
@@ -1319,13 +1387,17 @@ def mk_app(
 
     Every argument has a working default (the local data dir; auth from the environment,
     which is none on a bare machine, so bind to localhost). ``sources`` and ``tags`` are
-    :func:`mk_api`'s, and so are ``overviews`` and ``listening``. Share links are served, ungated, at ``{base_path}/shared/<token>/``
+    :func:`mk_api`'s, and so are ``overviews`` and ``listening``; ``overviews`` defaults to
+    ``ANNALS_OVERVIEWS`` (unset: off; ``*``: every reader; else the readers offered them,
+    separated by commas), so a server started from a factory can turn them on. Share links are served, ungated, at ``{base_path}/shared/<token>/``
     (:func:`annals.share_api.mk_share_api`).
     """
     from annals.share_api import mk_share_api
 
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
     authorizer = authorizer or authorizer_from_env()
+    if overviews is None:
+        overviews = os.environ.get(overview.ENV_OVERVIEWS, "")
     base = "/" + base_path.strip("/")
     app = FastAPI(title=title, docs_url=None, redoc_url=None, openapi_url=None)
     shell = page_html(base=base, title=title)
@@ -1408,6 +1480,12 @@ def serve(
     import uvicorn
 
     authorizer = authorizer_from_env()
+    if isinstance(authorizer, TrustedHeader) and not _is_loopback(host) and not allow_open:
+        raise ValueError(
+            f"refused: host {host!r} is reachable beyond this machine and readers are named by "
+            f"the {authorizer.header!r} header, which anyone reaching the port could send. Bind "
+            "to 127.0.0.1 behind the gateway that sets it, or pass allow_open=True (--allow-open)."
+        )
     if authorizer is no_auth and not _is_loopback(host) and not allow_open:
         raise ValueError(
             f"refused: host {host!r} is reachable beyond this machine and no auth is configured, "
