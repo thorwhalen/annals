@@ -67,6 +67,8 @@ _ON, _OFF = (
 )
 FOLDER = "overviews"
 LOCK_NAME = ".lock"
+#: request files and the down mark: read by the server and the worker, which may be different users
+REQUEST_FILE_MODE = 0o644
 SPEND_LOG = "spend.jsonl"
 ENV_DAILY_LIMIT = "ANNALS_OVERVIEW_DAILY_LIMIT"
 #: at most this many overviews are started in any 24 hours, whoever asks
@@ -258,8 +260,12 @@ class Requests:
     def _write(self, path: Path, record: dict) -> dict:
         self.folder.mkdir(parents=True, exist_ok=True)
         fd, tmp = tempfile.mkstemp(dir=self.folder, prefix=".tmp-", suffix=".part")
+        # mkstemp makes the file 0600, readable by its writer alone. The worker and the server
+        # can run as different users (a root worker, a sandboxed app), and each must read what
+        # the other wrote; a request holds nothing private.
         with os.fdopen(fd, "w", encoding="utf-8") as f:
             json.dump(record, f)
+        os.chmod(tmp, REQUEST_FILE_MODE)  # by path: os.fchmod is POSIX-only before 3.13
         # A name that ends in .json appears at once and whole, so the worker's watcher fires
         # only for a finished file.
         os.replace(tmp, path)
