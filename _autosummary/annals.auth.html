@@ -108,6 +108,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.auth.BasicAuth"><code class="docutils literal notranslate"><span class="pre">BasicAuth</span></code></a></li>
 <li><a class="reference internal" href="#annals.auth.CookieWhoami"><code class="docutils literal notranslate"><span class="pre">CookieWhoami</span></code></a></li>
 <li><a class="reference internal" href="#annals.auth.RequestLike"><code class="docutils literal notranslate"><span class="pre">RequestLike</span></code></a></li>
+<li><a class="reference internal" href="#annals.auth.TrustedHeader"><code class="docutils literal notranslate"><span class="pre">TrustedHeader</span></code></a></li>
 <li><a class="reference internal" href="#annals.auth.authorizer_from_env"><code class="docutils literal notranslate"><span class="pre">authorizer_from_env()</span></code></a></li>
 <li><a class="reference internal" href="#annals.auth.no_auth"><code class="docutils literal notranslate"><span class="pre">no_auth()</span></code></a></li>
 </ul>
@@ -152,7 +153,7 @@ data-aria-dark="Switch to auto color mode">
 <span id="annals-auth"></span><h1>annals.auth<a class="headerlink" href="#module-annals.auth" title="Link to this heading">#</a></h1>
 <p>The auth seam: who may read the annals.</p>
 <p>A annals is private by construction, so the server asks every request who is calling. The
-answer comes from one of three <code class="docutils literal notranslate"><span class="pre">Authorizer</span></code> callables, chosen by <a class="reference internal" href="#annals.auth.authorizer_from_env" title="annals.auth.authorizer_from_env"><code class="xref py py-func docutils literal notranslate"><span class="pre">authorizer_from_env()</span></code></a>
+answer comes from one of four <code class="docutils literal notranslate"><span class="pre">Authorizer</span></code> callables, chosen by <a class="reference internal" href="#annals.auth.authorizer_from_env" title="annals.auth.authorizer_from_env"><code class="xref py py-func docutils literal notranslate"><span class="pre">authorizer_from_env()</span></code></a>
 (or passed to <code class="xref py py-func docutils literal notranslate"><span class="pre">annals.api.mk_app()</span></code>):</p>
 <ul class="simple">
 <li><p><a class="reference internal" href="#annals.auth.no_auth" title="annals.auth.no_auth"><code class="xref py py-func docutils literal notranslate"><span class="pre">no_auth()</span></code></a>: everyone is the owner. Right for <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code> bound to <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code>,
@@ -164,6 +165,12 @@ session cookie and the logout belong to the platform; the annals only checks the
 Env: <code class="docutils literal notranslate"><span class="pre">ANNALS_WHOAMI_URL</span></code>, <code class="docutils literal notranslate"><span class="pre">ANNALS_ALLOWED_USERS</span></code> (comma separated), <code class="docutils literal notranslate"><span class="pre">ANNALS_LOGIN_URL</span></code>.</p></li>
 <li><p><a class="reference internal" href="#annals.auth.BasicAuth" title="annals.auth.BasicAuth"><code class="xref py py-class docutils literal notranslate"><span class="pre">BasicAuth</span></code></a>: one username and password (HTTP Basic). For a annals with no platform
 login in front of it. Env: <code class="docutils literal notranslate"><span class="pre">ANNALS_BASIC_USER</span></code>, <code class="docutils literal notranslate"><span class="pre">ANNALS_BASIC_PASSWORD</span></code>.</p></li>
+<li><p><a class="reference internal" href="#annals.auth.TrustedHeader" title="annals.auth.TrustedHeader"><code class="xref py py-class docutils literal notranslate"><span class="pre">TrustedHeader</span></code></a>: a gateway in front (a forward-auth proxy) signs people in and names
+them in a request header it sets, replacing any copy a client sent. The annals reads that
+name, so it can tell readers apart (whose listening is whose, who is offered spoken
+overviews) without a login of its own. Only safe when nothing but the gateway can reach
+the server. Env: <code class="docutils literal notranslate"><span class="pre">ANNALS_USER_HEADER</span></code> (e.g. <code class="docutils literal notranslate"><span class="pre">X-Iq-User</span></code>), optionally
+<code class="docutils literal notranslate"><span class="pre">ANNALS_ALLOWED_USERS</span></code>.</p></li>
 </ul>
 <p>An authorizer returns the caller’s identity (a string) or <code class="docutils literal notranslate"><span class="pre">None</span></code>. The API turns <code class="docutils literal notranslate"><span class="pre">None</span></code>
 into a 303 to the login page for a browser GET, and a 401 for anything else, mirroring
@@ -194,6 +201,9 @@ what enlace_auth does so the two are indistinguishable from the phone.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.auth.RequestLike" title="annals.auth.RequestLike"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RequestLike</span></code></a>(*args, **kwargs)</p></td>
 <td><p>The two things an authorizer reads from a request.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.auth.TrustedHeader" title="annals.auth.TrustedHeader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TrustedHeader</span></code></a>(header, *[, allowed_users])</p></td>
+<td><p>The caller is whoever the gateway in front names in <code class="docutils literal notranslate"><span class="pre">header</span></code>; no header, nobody.</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -220,6 +230,19 @@ what enlace_auth does so the two are indistinguishable from the phone.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.auth.</span></span><span class="sig-name descname"><span class="pre">RequestLike</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/auth.html#RequestLike"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.auth.RequestLike" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
 <p>The two things an authorizer reads from a request.</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.auth.TrustedHeader">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.auth.</span></span><span class="sig-name descname"><span class="pre">TrustedHeader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">header</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowed_users</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/auth.html#TrustedHeader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.auth.TrustedHeader" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>The caller is whoever the gateway in front names in <code class="docutils literal notranslate"><span class="pre">header</span></code>; no header, nobody.</p>
+<p>The gateway must set the header on every request it lets through and replace a copy a
+client sent, and the server must be reachable through the gateway only (bound to
+loopback behind it), or anyone could name themselves. <code class="docutils literal notranslate"><span class="pre">allowed_users</span></code>, when given,
+narrows who may read to those names. Names are compared and returned in lower case.</p>
+<dl class="field-list simple">
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -286,7 +309,7 @@ what enlace_auth does so the two are indistinguishable from the phone.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=b345ff55"></script>
+      <script src="../_static/documentation_options.js?v=78cc6f98"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

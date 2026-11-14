@@ -63,8 +63,9 @@ replacement twice and nothing is ever deleted.
 
 ### Classes
 
-| [`DocStore`](#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.   |
-|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| [`DocStore`](#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.              |
+|-----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`HidingStore`](#annals.store.HidingStore)(store, \*, hide)     | The documents of `store` without those `hide(meta)` is true of, on the same target. |
 
 ### annals.store.ARTIFACT_HOSTS *= ('claude.ai',)*
 
@@ -242,6 +243,70 @@ Every version of a document, oldest first, the current one last.
 ### annals.store.HEAD_CHARS *= 4000*
 
 how much of a file is read to find its title and excerpt
+
+### *class* annals.store.HidingStore(store, , hide)
+
+Bases: [`DocStore`](#annals.store.DocStore)
+
+The documents of `store` without those `hide(meta)` is true of, on the same target.
+
+A hidden document is absent, not refused: it is not listed or found, [`meta()`](#annals.store.HidingStore.meta) raises
+`KeyError` for it, its versions and its pending replacements (so whatever reads a
+document through the store, its page, files, versions or a share, answers as for a
+missing one), and groups read through this store leave it out. An API built over this
+store therefore cannot show it anywhere, whichever route asks; [`hides()`](#annals.store.HidingStore.hides) lets what
+keeps records of its own about documents (shares) hide those records too. Reads go
+through `store`, so a subclass’s reading still applies; writes reach the same target,
+and a group is always rewritten from its whole list, so hiding never deletes anything.
+
+#### add_to_group(gid, doc_ids)
+
+Append to the group’s whole list (the hidden ids stay in it).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### group(gid)
+
+One group, by id.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### hides(doc_id)
+
+Whether `doc_id` is a document of the whole store that this one hides.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+#### list(, trash=False)
+
+Every document’s meta, last changed first (`updated`, else `created`).
+
+Pending replacements are applied first (when this store settles). One whose
+document is not here is listed under its own id, so it is never out of sight.
+
+* **Return type:**
+  [`list`](#annals.store.HidingStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### list_groups()
+
+Every group, newest first.
+
+* **Return type:**
+  [`list`](#annals.store.HidingStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### meta(doc_id, , settle=True)
+
+One document’s meta; `in_trash` says which side of the bin it is on.
+
+`<id>@<n>` is version `n`: its own meta, with `version_of` naming the document.
+A pending replacement, read by its own id, says `pending`. `settle=False`
+skips applying pending replacements (for a hot path such as a raw file).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.store.INCOMING_PREFIX *= '.incoming-'*
 

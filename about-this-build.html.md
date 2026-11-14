@@ -2,7 +2,7 @@
 
 # About this build
 
-This documentation was built on **2026-11-14 08:28 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/c65ad97f80faf441e4d410b3d20965d28dc8c238"><code>c65ad97</code></a> on branch <code>main</code>, for **annals 0.0.43** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-14 09:01 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/47bccae5001ff46930c62aa1dd61f72f2c6836c9"><code>47bccae</code></a> on branch <code>main</code>, for **annals 0.0.44** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -11,7 +11,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/c65ad97f80faf441e4d410b3d20965d28dc8c238"><code>c65ad97f80faf441e4d410b3d20965d28dc8c238</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/47bccae5001ff46930c62aa1dd61f72f2c6836c9"><code>47bccae5001ff46930c62aa1dd61f72f2c6836c9</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -22,9 +22,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43575651503">43575651503</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43578217153">43578217153</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>c65ad97f80faf441e4d410b3d20965d28dc8c238</code> (in the history of the built commit) |
+| Event commit | <code>47bccae5001ff46930c62aa1dd61f72f2c6836c9</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -49,13 +49,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.43/">0.0.43</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.44/">0.0.44</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout c65ad97f80faf441e4d410b3d20965d28dc8c238
+git checkout 47bccae5001ff46930c62aa1dd61f72f2c6836c9
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

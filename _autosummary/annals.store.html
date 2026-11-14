@@ -129,6 +129,15 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 </li>
 <li><a class="reference internal" href="#annals.store.HEAD_CHARS"><code class="docutils literal notranslate"><span class="pre">HEAD_CHARS</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.HidingStore"><code class="docutils literal notranslate"><span class="pre">HidingStore</span></code></a><ul>
+<li><a class="reference internal" href="#annals.store.HidingStore.add_to_group"><code class="docutils literal notranslate"><span class="pre">HidingStore.add_to_group()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.HidingStore.group"><code class="docutils literal notranslate"><span class="pre">HidingStore.group()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.HidingStore.hides"><code class="docutils literal notranslate"><span class="pre">HidingStore.hides()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.HidingStore.list"><code class="docutils literal notranslate"><span class="pre">HidingStore.list()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.HidingStore.list_groups"><code class="docutils literal notranslate"><span class="pre">HidingStore.list_groups()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.HidingStore.meta"><code class="docutils literal notranslate"><span class="pre">HidingStore.meta()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#annals.store.INCOMING_PREFIX"><code class="docutils literal notranslate"><span class="pre">INCOMING_PREFIX</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.LOCK_PREFIX"><code class="docutils literal notranslate"><span class="pre">LOCK_PREFIX</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.LOCK_STALE_S"><code class="docutils literal notranslate"><span class="pre">LOCK_STALE_S</span></code></a></li>
@@ -302,6 +311,9 @@ replacement twice and nothing is ever deleted.</p>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.DocStore" title="annals.store.DocStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DocStore</span></code></a>(target, *[, settle])</p></td>
 <td><p>Publish, list, read, trash, restore and group documents on a <code class="xref py py-class docutils literal notranslate"><span class="pre">Target</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.HidingStore" title="annals.store.HidingStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HidingStore</span></code></a>(store, *, hide)</p></td>
+<td><p>The documents of <code class="docutils literal notranslate"><span class="pre">store</span></code> without those <code class="docutils literal notranslate"><span class="pre">hide(meta)</span></code> is true of, on the same target.</p></td>
 </tr>
 </tbody>
 </table>
@@ -561,6 +573,94 @@ document was purged) stays pending and is listed under its own id.</p>
 <dd><p>how much of a file is read to find its title and excerpt</p>
 </dd></dl>
 
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.store.HidingStore">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">HidingStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">hide</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#annals.store.DocStore" title="annals.store.DocStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">DocStore</span></code></a></p>
+<p>The documents of <code class="docutils literal notranslate"><span class="pre">store</span></code> without those <code class="docutils literal notranslate"><span class="pre">hide(meta)</span></code> is true of, on the same target.</p>
+<p>A hidden document is absent, not refused: it is not listed or found, <a class="reference internal" href="#annals.store.HidingStore.meta" title="annals.store.HidingStore.meta"><code class="xref py py-meth docutils literal notranslate"><span class="pre">meta()</span></code></a> raises
+<code class="docutils literal notranslate"><span class="pre">KeyError</span></code> for it, its versions and its pending replacements (so whatever reads a
+document through the store, its page, files, versions or a share, answers as for a
+missing one), and groups read through this store leave it out. An API built over this
+store therefore cannot show it anywhere, whichever route asks; <a class="reference internal" href="#annals.store.HidingStore.hides" title="annals.store.HidingStore.hides"><code class="xref py py-meth docutils literal notranslate"><span class="pre">hides()</span></code></a> lets what
+keeps records of its own about documents (shares) hide those records too. Reads go
+through <code class="docutils literal notranslate"><span class="pre">store</span></code>, so a subclass’s reading still applies; writes reach the same target,
+and a group is always rewritten from its whole list, so hiding never deletes anything.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.HidingStore.add_to_group">
+<span class="sig-name descname"><span class="pre">add_to_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore.add_to_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore.add_to_group" title="Link to this definition">#</a></dt>
+<dd><p>Append to the group’s whole list (the hidden ids stay in it).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.HidingStore.group">
+<span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore.group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore.group" title="Link to this definition">#</a></dt>
+<dd><p>One group, by id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.HidingStore.hides">
+<span class="sig-name descname"><span class="pre">hides</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore.hides"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore.hides" title="Link to this definition">#</a></dt>
+<dd><p>Whether <code class="docutils literal notranslate"><span class="pre">doc_id</span></code> is a document of the whole store that this one hides.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.HidingStore.list">
+<span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore.list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore.list" title="Link to this definition">#</a></dt>
+<dd><p>Every document’s meta, last changed first (<code class="docutils literal notranslate"><span class="pre">updated</span></code>, else <code class="docutils literal notranslate"><span class="pre">created</span></code>).</p>
+<p>Pending replacements are applied first (when this store settles). One whose
+document is not here is listed under its own id, so it is never out of sight.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.store.HidingStore.list" title="annals.store.HidingStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.HidingStore.list_groups">
+<span class="sig-name descname"><span class="pre">list_groups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore.list_groups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore.list_groups" title="Link to this definition">#</a></dt>
+<dd><p>Every group, newest first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.store.HidingStore.list" title="annals.store.HidingStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.HidingStore.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">settle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore.meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore.meta" title="Link to this definition">#</a></dt>
+<dd><p>One document’s meta; <code class="docutils literal notranslate"><span class="pre">in_trash</span></code> says which side of the bin it is on.</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;id&gt;&#64;&lt;n&gt;</span></code> is version <code class="docutils literal notranslate"><span class="pre">n</span></code>: its own meta, with <code class="docutils literal notranslate"><span class="pre">version_of</span></code> naming the document.
+A pending replacement, read by its own id, says <code class="docutils literal notranslate"><span class="pre">pending</span></code>. <code class="docutils literal notranslate"><span class="pre">settle=False</span></code>
+skips applying pending replacements (for a hot path such as a raw file).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="py data">
 <dt class="sig sig-object py" id="annals.store.INCOMING_PREFIX">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">INCOMING_PREFIX</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'.incoming-'</span></span><a class="headerlink" href="#annals.store.INCOMING_PREFIX" title="Link to this definition">#</a></dt>
@@ -803,7 +903,7 @@ dns labels only, printable ascii without quotes, angle brackets or backslashes.<
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=b345ff55"></script>
+      <script src="../_static/documentation_options.js?v=78cc6f98"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

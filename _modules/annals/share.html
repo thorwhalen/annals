@@ -711,63 +711,78 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="545">
 </span><span data-line="546">    <span class="c1"># -- the link itself, delegated to caplinks --</span>
 </span><span data-line="547">
+</span><span data-line="548">    <span class="k">def</span><span class="w"> </span><span class="nf">_in_sight</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="549"><span class="w">        </span><span class="sd">"""Whether the store shows everything a share reaches. Over a store that hides some</span>
+</span><span data-line="550"><span class="sd">        documents (:class:`annals.store.HidingStore`), a share reaching one is hidden too:</span>
+</span><span data-line="551"><span class="sd">        its token would open what the store hides."""</span>
+</span><span data-line="552">        <span class="n">hides</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">,</span> <span class="s2">"hides"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="553">        <span class="k">if</span> <span class="n">hides</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span data-line="554">            <span class="k">return</span> <span class="kc">True</span>
+</span><span data-line="555">        <span class="n">root</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"root"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span data-line="556">        <span class="n">ids</span> <span class="o">=</span> <span class="p">{</span><span class="o">*</span><span class="p">(</span><span class="n">record</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"docs"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}),</span> <span class="n">root</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">)}</span>
+</span><span data-line="557">        <span class="k">return</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">hides</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">str</span><span class="p">))</span>
+</span><span data-line="558">
 <div class="viewcode-block" id="Shares.record">
 <a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.record">[docs]</a>
-</span><span data-line="548">    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="549"><span class="w">        </span><span class="sd">"""The stored record (hash included), revoked or not; ``None`` if there is none."""</span>
-</span><span data-line="550">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
-
-</span><span data-line="551">
-<div class="viewcode-block" id="Shares.status">
-<a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.status">[docs]</a>
-</span><span data-line="552">    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-</span><span data-line="553"><span class="w">        </span><span class="sd">"""``("ok" | "expired" | "missing", record)``; a revoked link is ``missing``."""</span>
-</span><span data-line="554">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
-
-</span><span data-line="555">
-<div class="viewcode-block" id="Shares.list">
-<a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.list">[docs]</a>
-</span><span data-line="556">    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="557"><span class="w">        </span><span class="sd">"""Every share, newest first, without hashes; ``all`` adds revoked and expired."""</span>
-</span><span data-line="558">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">include_inactive</span><span class="o">=</span><span class="nb">all</span><span class="p">)</span></div>
-
-</span><span data-line="559">
-<div class="viewcode-block" id="Shares.revoke">
-<a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.revoke">[docs]</a>
-</span><span data-line="560">    <span class="k">def</span><span class="w"> </span><span class="nf">revoke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="561"><span class="w">        </span><span class="sd">"""End a link now (idempotent). The record stays, as a tombstone, for the list."""</span>
-</span><span data-line="562">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">revoke</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+</span><span data-line="559">    <span class="k">def</span><span class="w"> </span><span class="nf">record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="560"><span class="w">        </span><span class="sd">"""The stored record (hash included), revoked or not; ``None`` if there is none."""</span>
+</span><span data-line="561">        <span class="n">rec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span data-line="562">        <span class="k">return</span> <span class="n">rec</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_sight</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span></div>
 
 </span><span data-line="563">
+<div class="viewcode-block" id="Shares.status">
+<a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.status">[docs]</a>
+</span><span data-line="564">    <span class="k">def</span><span class="w"> </span><span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span data-line="565"><span class="w">        </span><span class="sd">"""``("ok" | "expired" | "missing", record)``; a revoked link is ``missing``."""</span>
+</span><span data-line="566">        <span class="n">state</span><span class="p">,</span> <span class="n">rec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">status</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span data-line="567">        <span class="k">return</span> <span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_sight</span><span class="p">(</span><span class="n">rec</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="s2">"missing"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span></div>
+
+</span><span data-line="568">
+<div class="viewcode-block" id="Shares.list">
+<a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.list">[docs]</a>
+</span><span data-line="569">    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="nb">all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="570"><span class="w">        </span><span class="sd">"""Every share, newest first, without hashes; ``all`` adds revoked and expired."""</span>
+</span><span data-line="571">        <span class="k">return</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="n">include_inactive</span><span class="o">=</span><span class="nb">all</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_sight</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span></div>
+
+</span><span data-line="572">
+<div class="viewcode-block" id="Shares.revoke">
+<a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.revoke">[docs]</a>
+</span><span data-line="573">    <span class="k">def</span><span class="w"> </span><span class="nf">revoke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="574"><span class="w">        </span><span class="sd">"""End a link now (idempotent). The record stays, as a tombstone, for the list."""</span>
+</span><span data-line="575">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_in_sight</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">record</span><span class="p">(</span><span class="n">token</span><span class="p">)):</span>
+</span><span data-line="576">            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+</span><span data-line="577">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">revoke</span><span class="p">(</span><span class="n">token</span><span class="p">)</span></div>
+
+</span><span data-line="578">
 <div class="viewcode-block" id="Shares.check_password">
 <a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.check_password">[docs]</a>
-</span><span data-line="564">    <span class="k">def</span><span class="w"> </span><span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span data-line="565"><span class="w">        </span><span class="sd">"""Whether ``password`` opens ``record``."""</span>
-</span><span data-line="566">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span></div>
+</span><span data-line="579">    <span class="k">def</span><span class="w"> </span><span class="nf">check_password</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">password</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="580"><span class="w">        </span><span class="sd">"""Whether ``password`` opens ``record``."""</span>
+</span><span data-line="581">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">check_password</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">password</span><span class="p">)</span></div>
 
-</span><span data-line="567">
+</span><span data-line="582">
 <div class="viewcode-block" id="Shares.unlock_value">
 <a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.unlock_value">[docs]</a>
-</span><span data-line="568">    <span class="k">def</span><span class="w"> </span><span class="nf">unlock_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="569"><span class="w">        </span><span class="sd">"""The cookie value a correct password earns."""</span>
-</span><span data-line="570">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">unlock_value</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
+</span><span data-line="583">    <span class="k">def</span><span class="w"> </span><span class="nf">unlock_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="584"><span class="w">        </span><span class="sd">"""The cookie value a correct password earns."""</span>
+</span><span data-line="585">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">unlock_value</span><span class="p">(</span><span class="n">record</span><span class="p">)</span></div>
 
-</span><span data-line="571">
+</span><span data-line="586">
 <div class="viewcode-block" id="Shares.unlocked">
 <a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.Shares.unlocked">[docs]</a>
-</span><span data-line="572">    <span class="k">def</span><span class="w"> </span><span class="nf">unlocked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">max_age_s</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-</span><span data-line="573"><span class="w">        </span><span class="sd">"""Whether a cookie value is a live unlock of this record (no password: always)."""</span>
-</span><span data-line="574">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">unlocked</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">max_age_s</span><span class="o">=</span><span class="n">max_age_s</span><span class="p">)</span></div>
+</span><span data-line="587">    <span class="k">def</span><span class="w"> </span><span class="nf">unlocked</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">max_age_s</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="588"><span class="w">        </span><span class="sd">"""Whether a cookie value is a live unlock of this record (no password: always)."""</span>
+</span><span data-line="589">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">unlocked</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">max_age_s</span><span class="o">=</span><span class="n">max_age_s</span><span class="p">)</span></div>
 </div>
 
-</span><span data-line="575">
-</span><span data-line="576">
+</span><span data-line="590">
+</span><span data-line="591">
 <div class="viewcode-block" id="dir_of">
 <a class="viewcode-back" href="../../_autosummary/annals.share.html#annals.share.dir_of">[docs]</a>
-</span><span data-line="577"><span class="k">def</span><span class="w"> </span><span class="nf">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="578"><span class="w">    </span><span class="sd">"""The directory part of a relative path, with its trailing slash (``""`` at the top)."""</span>
-</span><span data-line="579">    <span class="n">i</span> <span class="o">=</span> <span class="n">rel</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
-</span><span data-line="580">    <span class="k">return</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">rel</span><span class="p">[:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span></div>
+</span><span data-line="592"><span class="k">def</span><span class="w"> </span><span class="nf">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="593"><span class="w">    </span><span class="sd">"""The directory part of a relative path, with its trailing slash (``""`` at the top)."""</span>
+</span><span data-line="594">    <span class="n">i</span> <span class="o">=</span> <span class="n">rel</span><span class="o">.</span><span class="n">rfind</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+</span><span data-line="595">    <span class="k">return</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">rel</span><span class="p">[:</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -796,7 +811,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=b345ff55"></script>
+      <script src="../../_static/documentation_options.js?v=78cc6f98"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

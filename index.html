@@ -278,7 +278,11 @@ data-aria-dark="Switch to auto color mode">
 <td><p><code class="docutils literal notranslate"><span class="pre">ANNALS_BASIC_USER</span></code>, <code class="docutils literal notranslate"><span class="pre">ANNALS_BASIC_PASSWORD</span></code></p></td>
 <td><p>HTTP Basic</p></td>
 </tr>
-<tr class="row-even"><td><p>Localhost only</p></td>
+<tr class="row-even"><td><p>Behind a gateway that names the reader in a header (a forward-auth proxy)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">ANNALS_USER_HEADER=X-Iq-User</span></code>, optionally <code class="docutils literal notranslate"><span class="pre">ANNALS_ALLOWED_USERS</span></code></p></td>
+<td><p>the header names the reader, so each one’s listening is their own and overviews can be offered to some; bind to 127.0.0.1 behind the gateway, which must replace any copy a client sends</p></td>
+</tr>
+<tr class="row-odd"><td><p>Localhost only</p></td>
 <td><p>nothing</p></td>
 <td><p>open</p></td>
 </tr>
@@ -302,6 +306,11 @@ data-aria-dark="Switch to auto color mode">
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">app</span> <span class="o">=</span> <span class="n">mk_api</span><span class="p">(</span><span class="n">overviews</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># the button, and POST /docs/{id}/overview</span>
 </span></pre></div>
 </div>
+<p>Or only for some readers. The others see no Listen button, the overview routes answer them 404, and the documents overviews made are in none of their lists, searches, groups or Audio tab:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">app</span> <span class="o">=</span> <span class="n">mk_api</span><span class="p">(</span><span class="n">overviews</span><span class="o">=</span><span class="p">{</span><span class="s2">"me@example.com"</span><span class="p">})</span>  <span class="c1"># names as the login gives them</span>
+</span></pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code> and the <code class="docutils literal notranslate"><span class="pre">annals.api:mk_app</span></code> factory read the same choice from <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code>: unset for off, <code class="docutils literal notranslate"><span class="pre">*</span></code> for every reader, or names separated by commas.</p>
 <p>A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">export</span><span class="w"> </span><span class="nv">ANNALS_OVERVIEW_COMMAND</span><span class="o">=</span><span class="s1">'hailing overview {source} --minutes {minutes} --no-publish --player-to {out}'</span>
 </span><span data-line="2">annals<span class="w"> </span>listen-work<span class="w">                 </span><span class="c1"># fulfils what is queued, one at a time</span>
@@ -458,7 +467,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-14 08:28 UTC from <a href="https://github.com/thorwhalen/annals/commit/c65ad97f80faf441e4d410b3d20965d28dc8c238">c65ad97</a> (main) · annals 0.0.43 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-14 09:01 UTC from <a href="https://github.com/thorwhalen/annals/commit/47bccae5001ff46930c62aa1dd61f72f2c6836c9">47bccae</a> (main) · annals 0.0.44 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -493,7 +502,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=b345ff55"></script>
+      <script src="_static/documentation_options.js?v=78cc6f98"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

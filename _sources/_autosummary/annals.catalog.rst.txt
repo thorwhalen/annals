@@ -8,6 +8,7 @@ annals.catalog
 
    .. autosummary::
    
+      default_tags
       mk_catalog
    
    .. rubric:: Classes

@@ -107,11 +107,12 @@ ANNALS_DATA_DIR=~/.local/share/annals annals serve --host 127.0.0.1 --port 8765
 
 The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Auth is chosen by environment variables:
 
-| Situation                                                 | Set                                                                                                   | Effect                                                                                                                        |
-|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| Behind an existing login that exposes a who-am-I endpoint | `ANNALS_WHOAMI_URL`, `ANNALS_ALLOWED_USERS=me@example.com`, optionally `ANNALS_LOGIN_URL=/auth/login` | the browser’s cookies are forwarded to that endpoint and the listed emails are allowed; anyone else is sent to the login page |
-| No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
-| Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
+| Situation                                                                 | Set                                                                                                   | Effect                                                                                                                                                                                   |
+|---------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Behind an existing login that exposes a who-am-I endpoint                 | `ANNALS_WHOAMI_URL`, `ANNALS_ALLOWED_USERS=me@example.com`, optionally `ANNALS_LOGIN_URL=/auth/login` | the browser’s cookies are forwarded to that endpoint and the listed emails are allowed; anyone else is sent to the login page                                                            |
+| No platform login                                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                                                                               |
+| Behind a gateway that names the reader in a header (a forward-auth proxy) | `ANNALS_USER_HEADER=X-Iq-User`, optionally `ANNALS_ALLOWED_USERS`                                     | the header names the reader, so each one’s listening is their own and overviews can be offered to some; bind to 127.0.0.1 behind the gateway, which must replace any copy a client sends |
+| Localhost only                                                            | nothing                                                                                               | open                                                                                                                                                                                     |
 
 ## Acting on documents: pick, then choose what you want back
 
@@ -130,6 +131,14 @@ A document’s page can offer a Listen button: a few minutes of speech about the
 ```python
 app = mk_api(overviews=True)  # the button, and POST /docs/{id}/overview
 ```
+
+Or only for some readers. The others see no Listen button, the overview routes answer them 404, and the documents overviews made are in none of their lists, searches, groups or Audio tab:
+
+```python
+app = mk_api(overviews={"me@example.com"})  # names as the login gives them
+```
+
+`annals serve` and the `annals.api:mk_app` factory read the same choice from `ANNALS_OVERVIEWS`: unset for off, `*` for every reader, or names separated by commas.
 
 A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:
 

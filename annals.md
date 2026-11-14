@@ -1,4 +1,4 @@
-> built 2026-11-14 08:28 UTC from c65ad97 (main) · annals 0.0.43. Details: build_info.json
+> built 2026-11-14 09:01 UTC from 47bccae (main) · annals 0.0.44. Details: build_info.json
 
 # index.html.md
 
@@ -111,11 +111,12 @@ ANNALS_DATA_DIR=~/.local/share/annals annals serve --host 127.0.0.1 --port 8765
 
 The page is at `http://127.0.0.1:8765/annals/`, its API under `/annals/api/`. Auth is chosen by environment variables:
 
-| Situation                                                 | Set                                                                                                   | Effect                                                                                                                        |
-|-----------------------------------------------------------|-------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| Behind an existing login that exposes a who-am-I endpoint | `ANNALS_WHOAMI_URL`, `ANNALS_ALLOWED_USERS=me@example.com`, optionally `ANNALS_LOGIN_URL=/auth/login` | the browser’s cookies are forwarded to that endpoint and the listed emails are allowed; anyone else is sent to the login page |
-| No platform login                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                    |
-| Localhost only                                            | nothing                                                                                               | open                                                                                                                          |
+| Situation                                                                 | Set                                                                                                   | Effect                                                                                                                                                                                   |
+|---------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Behind an existing login that exposes a who-am-I endpoint                 | `ANNALS_WHOAMI_URL`, `ANNALS_ALLOWED_USERS=me@example.com`, optionally `ANNALS_LOGIN_URL=/auth/login` | the browser’s cookies are forwarded to that endpoint and the listed emails are allowed; anyone else is sent to the login page                                                            |
+| No platform login                                                         | `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`                                                          | HTTP Basic                                                                                                                                                                               |
+| Behind a gateway that names the reader in a header (a forward-auth proxy) | `ANNALS_USER_HEADER=X-Iq-User`, optionally `ANNALS_ALLOWED_USERS`                                     | the header names the reader, so each one’s listening is their own and overviews can be offered to some; bind to 127.0.0.1 behind the gateway, which must replace any copy a client sends |
+| Localhost only                                                            | nothing                                                                                               | open                                                                                                                                                                                     |
 
 ## Acting on documents: pick, then choose what you want back
 
@@ -134,6 +135,14 @@ A document’s page can offer a Listen button: a few minutes of speech about the
 ```python
 app = mk_api(overviews=True)  # the button, and POST /docs/{id}/overview
 ```
+
+Or only for some readers. The others see no Listen button, the overview routes answer them 404, and the documents overviews made are in none of their lists, searches, groups or Audio tab:
+
+```python
+app = mk_api(overviews={"me@example.com"})  # names as the login gives them
+```
+
+`annals serve` and the `annals.api:mk_app` factory read the same choice from `ANNALS_OVERVIEWS`: unset for off, `*` for every reader, or names separated by commas.
 
 A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:
 
@@ -483,7 +492,7 @@ A long sentence.
 The auth seam: who may read the annals.
 
 A annals is private by construction, so the server asks every request who is calling. The
-answer comes from one of three `Authorizer` callables, chosen by [`authorizer_from_env()`](_autosummary/annals.auth.html.md#annals.auth.authorizer_from_env)
+answer comes from one of four `Authorizer` callables, chosen by [`authorizer_from_env()`](_autosummary/annals.auth.html.md#annals.auth.authorizer_from_env)
 (or passed to `annals.api.mk_app()`):
 
 * [`no_auth()`](_autosummary/annals.auth.html.md#annals.auth.no_auth): everyone is the owner. Right for `annals serve` bound to `127.0.0.1`,
@@ -495,6 +504,12 @@ answer comes from one of three `Authorizer` callables, chosen by [`authorizer_fr
   Env: `ANNALS_WHOAMI_URL`, `ANNALS_ALLOWED_USERS` (comma separated), `ANNALS_LOGIN_URL`.
 * [`BasicAuth`](_autosummary/annals.auth.html.md#annals.auth.BasicAuth): one username and password (HTTP Basic). For a annals with no platform
   login in front of it. Env: `ANNALS_BASIC_USER`, `ANNALS_BASIC_PASSWORD`.
+* [`TrustedHeader`](_autosummary/annals.auth.html.md#annals.auth.TrustedHeader): a gateway in front (a forward-auth proxy) signs people in and names
+  them in a request header it sets, replacing any copy a client sent. The annals reads that
+  name, so it can tell readers apart (whose listening is whose, who is offered spoken
+  overviews) without a login of its own. Only safe when nothing but the gateway can reach
+  the server. Env: `ANNALS_USER_HEADER` (e.g. `X-Iq-User`), optionally
+  `ANNALS_ALLOWED_USERS`.
 
 An authorizer returns the caller’s identity (a string) or `None`. The API turns `None`
 into a 303 to the login page for a browser GET, and a 401 for anything else, mirroring
@@ -508,10 +523,11 @@ what enlace_auth does so the two are indistinguishable from the phone.
 
 ### Classes
 
-| [`BasicAuth`](_autosummary/annals.auth.html.md#annals.auth.BasicAuth)(username, password)                      | HTTP Basic with one username and password, compared in constant time.           |
-|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------|
-| [`CookieWhoami`](_autosummary/annals.auth.html.md#annals.auth.CookieWhoami)(whoami_url, allowed_users, \*[, ...]) | Ask an identity endpoint who holds this request's cookies; allow listed emails. |
-| [`RequestLike`](_autosummary/annals.auth.html.md#annals.auth.RequestLike)(\*args, \*\*kwargs)                    | The two things an authorizer reads from a request.                              |
+| [`BasicAuth`](_autosummary/annals.auth.html.md#annals.auth.BasicAuth)(username, password)                      | HTTP Basic with one username and password, compared in constant time.            |
+|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| [`CookieWhoami`](_autosummary/annals.auth.html.md#annals.auth.CookieWhoami)(whoami_url, allowed_users, \*[, ...]) | Ask an identity endpoint who holds this request's cookies; allow listed emails.  |
+| [`RequestLike`](_autosummary/annals.auth.html.md#annals.auth.RequestLike)(\*args, \*\*kwargs)                    | The two things an authorizer reads from a request.                               |
+| [`TrustedHeader`](_autosummary/annals.auth.html.md#annals.auth.TrustedHeader)(header, \*[, allowed_users])         | The caller is whoever the gateway in front names in `header`; no header, nobody. |
 
 ### *class* annals.auth.BasicAuth(username, password)
 
@@ -530,6 +546,17 @@ Ask an identity endpoint who holds this request’s cookies; allow listed emails
 Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
 
 The two things an authorizer reads from a request.
+
+### *class* annals.auth.TrustedHeader(header, , allowed_users=None)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+The caller is whoever the gateway in front names in `header`; no header, nobody.
+
+The gateway must set the header on every request it lets through and replace a copy a
+client sent, and the server must be reachable through the gateway only (bound to
+loopback behind it), or anyone could name themselves. `allowed_users`, when given,
+narrows who may read to those names. Names are compared and returned in lower case.
 
 ### annals.auth.authorizer_from_env(env=None)
 
@@ -568,8 +595,9 @@ query would give.
 
 ### Functions
 
-| [`mk_catalog`](_autosummary/annals.catalog.html.md#annals.catalog.mk_catalog)(store, \*[, sources, tags])   | The published documents first, then the extra sources; the owner's tags beside them.   |
-|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`default_tags`](_autosummary/annals.catalog.html.md#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
+|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`mk_catalog`](_autosummary/annals.catalog.html.md#annals.catalog.mk_catalog)(store, \*[, sources, tags]) | The published documents first, then the extra sources; the owner's tags beside them.                                                                 |
 
 ### Classes
 
@@ -623,6 +651,14 @@ Every tag in use on a listed item, with how many items carry it.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
+
+### annals.catalog.default_tags(store)
+
+Where the owner’s tags live by default: one JSON file under the data root
+(`tags/tags.json`), or a dict when the data root is not on this machine.
+
+* **Return type:**
+  [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
 ### annals.catalog.mk_catalog(store, , sources=None, tags=None)
 
@@ -2127,7 +2163,10 @@ my-overview {source} --minutes {minutes} --player-to {out} --source-url {url}
 ```
 
 The feature is off unless the host turns it on (`mk_api(overviews=True)`), because making
-an overview spends money. For the same reason, a current overview is not made again unless
+an overview spends money. A host can also offer it to some readers only
+(`mk_api(overviews={"me@example.com"})`, or `ANNALS_OVERVIEWS` for `annals.api.mk_app()`;
+see [`readers_offered()`](_autosummary/annals.overview.html.md#annals.overview.readers_offered)): the others get no Listen button, and the documents the feature
+makes ([`made_here()`](_autosummary/annals.overview.html.md#annals.overview.made_here)) are hidden from them. For the same reason, a current overview is not made again unless
 forced, a crash after publishing does not pay twice, `work` stops at a daily limit, and a
 request nobody fulfilled expires rather than spending money whenever a worker next wakes.
 
@@ -2153,38 +2192,43 @@ waited.
 
 ### Module Attributes
 
-| [`DFLT_DAILY_LIMIT`](_autosummary/annals.overview.html.md#annals.overview.DFLT_DAILY_LIMIT)   | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
-|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                                                                                      |
-| [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                                                                                       |
-| [`DOWN_FILE`](_autosummary/annals.overview.html.md#annals.overview.DOWN_FILE)          | the file marking the maker down; not `.json`, because every `.json` here is a request                                                                             |
-| [`DOWN_AFTER`](_autosummary/annals.overview.html.md#annals.overview.DOWN_AFTER)         | the same fast failure from this many documents in a row means the maker is down                                                                                   |
-| [`FAST_FAILURE_S`](_autosummary/annals.overview.html.md#annals.overview.FAST_FAILURE_S)     | the maker could not start                                                                                                                                         |
-| [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.overview.PROBE_EVERY_S)      | while the maker is down, one waiting request is tried this often, to notice it works again                                                                        |
-| [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
-| [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
-| [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
-| [`WAITING`](_autosummary/annals.overview.html.md#annals.overview.WAITING)            | made once it works again, never spent on before                                                                                                                   |
-| [`FAILED_SHOWN_S`](_autosummary/annals.overview.html.md#annals.overview.FAILED_SHOWN_S)     | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
-| [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
+| [`ENV_OVERVIEWS`](_autosummary/annals.overview.html.md#annals.overview.ENV_OVERVIEWS)    | see [`readers_offered()`](_autosummary/annals.overview.html.md#annals.overview.readers_offered)                                                                                            |
+|-------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`READERS_SEP`](_autosummary/annals.overview.html.md#annals.overview.READERS_SEP)      | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
+| [`EVERY_READER`](_autosummary/annals.overview.html.md#annals.overview.EVERY_READER)     | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
+| [`DFLT_DAILY_LIMIT`](_autosummary/annals.overview.html.md#annals.overview.DFLT_DAILY_LIMIT) | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
+| [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)  | nobody is waiting for it now                                                                                                                                      |
+| [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S) | a request still running after this long has lost its worker                                                                                                       |
+| [`DOWN_FILE`](_autosummary/annals.overview.html.md#annals.overview.DOWN_FILE)        | the file marking the maker down; not `.json`, because every `.json` here is a request                                                                             |
+| [`DOWN_AFTER`](_autosummary/annals.overview.html.md#annals.overview.DOWN_AFTER)       | the same fast failure from this many documents in a row means the maker is down                                                                                   |
+| [`FAST_FAILURE_S`](_autosummary/annals.overview.html.md#annals.overview.FAST_FAILURE_S)   | the maker could not start                                                                                                                                         |
+| [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.overview.PROBE_EVERY_S)    | while the maker is down, one waiting request is tried this often, to notice it works again                                                                        |
+| [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)          | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
+| [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE) | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
+| [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)              | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
+| [`WAITING`](_autosummary/annals.overview.html.md#annals.overview.WAITING)          | made once it works again, never spent on before                                                                                                                   |
+| [`FAILED_SHOWN_S`](_autosummary/annals.overview.html.md#annals.overview.FAILED_SHOWN_S)   | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
+| [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)     | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
 
 ### Functions
 
-| [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
-|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.           |
-| [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                     |
-| [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
-| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
-| [`maker_down`](_autosummary/annals.overview.html.md#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.      |
-| [`mark_down`](_autosummary/annals.overview.html.md#annals.overview.mark_down)(requests[, reason, link])                | Say the maker is down, why, and where it is being fixed; keep what is not given.      |
-| [`mark_up`](_autosummary/annals.overview.html.md#annals.overview.mark_up)(requests)                                  | The maker works (again): clear the mark and queue what waited; return those ids.      |
-| [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
-| [`request_combined`](_autosummary/annals.overview.html.md#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.      |
-| [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
-| [`unmade`](_autosummary/annals.overview.html.md#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, waiting, or failed recently.  |
-| [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
-| [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
+| [`choices`](_autosummary/annals.overview.html.md#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                                                               |
+|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.                                                    |
+| [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                                                              |
+| [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.                                          |
+| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                                                     |
+| [`made_here`](_autosummary/annals.overview.html.md#annals.overview.made_here)(meta)                                    | Whether the overview feature made this document: a spoken overview, or the text it combined to speak several documents as one. |
+| [`maker_down`](_autosummary/annals.overview.html.md#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.                                               |
+| [`mark_down`](_autosummary/annals.overview.html.md#annals.overview.mark_down)(requests[, reason, link])                | Say the maker is down, why, and where it is being fixed; keep what is not given.                                               |
+| [`mark_up`](_autosummary/annals.overview.html.md#annals.overview.mark_up)(requests)                                  | The maker works (again): clear the mark and queue what waited; return those ids.                                               |
+| [`readers_offered`](_autosummary/annals.overview.html.md#annals.overview.readers_offered)(spec)                              | Who may ask for and hear overviews: `False` (nobody), `True` (every reader), or a test.                                        |
+| [`request`](_autosummary/annals.overview.html.md#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                                                             |
+| [`request_combined`](_autosummary/annals.overview.html.md#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.                                               |
+| [`state_of`](_autosummary/annals.overview.html.md#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.                                                   |
+| [`unmade`](_autosummary/annals.overview.html.md#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, waiting, or failed recently.                                           |
+| [`valid_minutes`](_autosummary/annals.overview.html.md#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                                                             |
+| [`work`](_autosummary/annals.overview.html.md#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened.                                          |
 
 ### Classes
 
@@ -2215,6 +2259,17 @@ the same fast failure from this many documents in a row means the maker is down
 ### annals.overview.DOWN_FILE *= 'maker-down'*
 
 the file marking the maker down; not `.json`, because every `.json` here is a request
+
+### annals.overview.ENV_OVERVIEWS *= 'ANNALS_OVERVIEWS'*
+
+see [`readers_offered()`](_autosummary/annals.overview.html.md#annals.overview.readers_offered)
+
+* **Type:**
+  who is offered overviews, for a host built from the environment
+
+### annals.overview.EVERY_READER *= '\*'*
+
+in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader
 
 ### annals.overview.FAILED_SHOWN_S *= 604800*
 
@@ -2248,6 +2303,10 @@ nobody is waiting for it now
 
 * **Type:**
   a request still queued after this long is dropped
+
+### annals.overview.READERS_SEP *= ','*
+
+in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader
 
 ### annals.overview.RUNNING_MARGIN_S *= 600*
 
@@ -2350,6 +2409,15 @@ The readable text of a page: no markup, scripts or styles.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.overview.made_here(meta)
+
+Whether the overview feature made this document: a spoken overview, or the text it
+combined to speak several documents as one. These are what a reader who is not offered
+overviews never sees.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 ### annals.overview.maker_down(requests)
 
 Why no overview can be made until someone acts, or `None` while the maker works.
@@ -2379,6 +2447,29 @@ The maker works (again): clear the mark and queue what waited; return those ids.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.overview.readers_offered(spec)
+
+Who may ask for and hear overviews: `False` (nobody), `True` (every reader), or a test.
+
+`spec` is what a host passes as `overviews`: a bool, a predicate on the reader’s name
+(an email, as `annals.api.reader_of()` gives it), a collection of names, or a string as
+`ANNALS_OVERVIEWS` holds it (names separated by commas, `*` for every reader, empty for
+nobody; `true`/`1`/`yes` and `false`/`0`/`no` mean the same as `*` and empty,
+never a reader so named). Names are compared without case.
+
+```pycon
+>>> readers_offered("*"), readers_offered(""), readers_offered(None)
+(True, False, False)
+>>> readers_offered("true"), readers_offered(" No "), readers_offered(["*"])
+(True, False, True)
+>>> may = readers_offered(" Me@Example.com, ")
+>>> may("me@example.com"), may("someone@example.com")
+(True, False)
+```
+
+* **Return type:**
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`bool`](https://docs.python.org/3/builtins/functions.html#bool)], [`bool`](https://docs.python.org/3/builtins/functions.html#bool)]
 
 ### annals.overview.request(store, requests, doc_id, , minutes=5, force=False)
 
@@ -3252,8 +3343,9 @@ replacement twice and nothing is ever deleted.
 
 ### Classes
 
-| [`DocStore`](_autosummary/annals.store.html.md#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.   |
-|-----------------------------------------------------------------------------------|--------------------------------------------------------------------------|
+| [`DocStore`](_autosummary/annals.store.html.md#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.              |
+|-----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
+| [`HidingStore`](_autosummary/annals.store.html.md#annals.store.HidingStore)(store, \*, hide)     | The documents of `store` without those `hide(meta)` is true of, on the same target. |
 
 ### annals.store.ARTIFACT_HOSTS *= ('claude.ai',)*
 
@@ -3431,6 +3523,70 @@ Every version of a document, oldest first, the current one last.
 ### annals.store.HEAD_CHARS *= 4000*
 
 how much of a file is read to find its title and excerpt
+
+### *class* annals.store.HidingStore(store, , hide)
+
+Bases: [`DocStore`](_autosummary/annals.store.html.md#annals.store.DocStore)
+
+The documents of `store` without those `hide(meta)` is true of, on the same target.
+
+A hidden document is absent, not refused: it is not listed or found, [`meta()`](_autosummary/annals.store.html.md#annals.store.HidingStore.meta) raises
+`KeyError` for it, its versions and its pending replacements (so whatever reads a
+document through the store, its page, files, versions or a share, answers as for a
+missing one), and groups read through this store leave it out. An API built over this
+store therefore cannot show it anywhere, whichever route asks; [`hides()`](_autosummary/annals.store.html.md#annals.store.HidingStore.hides) lets what
+keeps records of its own about documents (shares) hide those records too. Reads go
+through `store`, so a subclass’s reading still applies; writes reach the same target,
+and a group is always rewritten from its whole list, so hiding never deletes anything.
+
+#### add_to_group(gid, doc_ids)
+
+Append to the group’s whole list (the hidden ids stay in it).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### group(gid)
+
+One group, by id.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### hides(doc_id)
+
+Whether `doc_id` is a document of the whole store that this one hides.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+#### list(, trash=False)
+
+Every document’s meta, last changed first (`updated`, else `created`).
+
+Pending replacements are applied first (when this store settles). One whose
+document is not here is listed under its own id, so it is never out of sight.
+
+* **Return type:**
+  [`list`](_autosummary/annals.store.html.md#annals.store.HidingStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### list_groups()
+
+Every group, newest first.
+
+* **Return type:**
+  [`list`](_autosummary/annals.store.html.md#annals.store.HidingStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### meta(doc_id, , settle=True)
+
+One document’s meta; `in_trash` says which side of the bin it is on.
+
+`<id>@<n>` is version `n`: its own meta, with `version_of` naming the document.
+A pending replacement, read by its own id, says `pending`. `settle=False`
+skips applying pending replacements (for a hot path such as a raw file).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.store.INCOMING_PREFIX *= '.incoming-'*
 
@@ -4087,7 +4243,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-14 08:28 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/c65ad97f80faf441e4d410b3d20965d28dc8c238"><code>c65ad97</code></a> on branch <code>main</code>, for **annals 0.0.43** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-14 09:01 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/47bccae5001ff46930c62aa1dd61f72f2c6836c9"><code>47bccae</code></a> on branch <code>main</code>, for **annals 0.0.44** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -4096,7 +4252,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/c65ad97f80faf441e4d410b3d20965d28dc8c238"><code>c65ad97f80faf441e4d410b3d20965d28dc8c238</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/47bccae5001ff46930c62aa1dd61f72f2c6836c9"><code>47bccae5001ff46930c62aa1dd61f72f2c6836c9</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4107,9 +4263,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43575651503">43575651503</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43578217153">43578217153</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>c65ad97f80faf441e4d410b3d20965d28dc8c238</code> (in the history of the built commit) |
+| Event commit | <code>47bccae5001ff46930c62aa1dd61f72f2c6836c9</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4134,13 +4290,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.43/">0.0.43</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.44/">0.0.44</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout c65ad97f80faf441e4d410b3d20965d28dc8c238
+git checkout 47bccae5001ff46930c62aa1dd61f72f2c6836c9
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -110,12 +110,15 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.overview.DFLT_DAILY_LIMIT"><code class="docutils literal notranslate"><span class="pre">DFLT_DAILY_LIMIT</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.DOWN_AFTER"><code class="docutils literal notranslate"><span class="pre">DOWN_AFTER</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.DOWN_FILE"><code class="docutils literal notranslate"><span class="pre">DOWN_FILE</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.ENV_OVERVIEWS"><code class="docutils literal notranslate"><span class="pre">ENV_OVERVIEWS</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.EVERY_READER"><code class="docutils literal notranslate"><span class="pre">EVERY_READER</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.FAILED_SHOWN_S"><code class="docutils literal notranslate"><span class="pre">FAILED_SHOWN_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.FAST_FAILURE_S"><code class="docutils literal notranslate"><span class="pre">FAST_FAILURE_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.MINUTES"><code class="docutils literal notranslate"><span class="pre">MINUTES</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.MakerFailed"><code class="docutils literal notranslate"><span class="pre">MakerFailed</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.PROBE_EVERY_S"><code class="docutils literal notranslate"><span class="pre">PROBE_EVERY_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.QUEUED_EXPIRY_S"><code class="docutils literal notranslate"><span class="pre">QUEUED_EXPIRY_S</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.READERS_SEP"><code class="docutils literal notranslate"><span class="pre">READERS_SEP</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.RUNNING_MARGIN_S"><code class="docutils literal notranslate"><span class="pre">RUNNING_MARGIN_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.Requests"><code class="docutils literal notranslate"><span class="pre">Requests</span></code></a><ul>
 <li><a class="reference internal" href="#annals.overview.Requests.ids"><code class="docutils literal notranslate"><span class="pre">Requests.ids()</span></code></a></li>
@@ -132,9 +135,11 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.overview.combined_key"><code class="docutils literal notranslate"><span class="pre">combined_key()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.eligible"><code class="docutils literal notranslate"><span class="pre">eligible()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.html_to_text"><code class="docutils literal notranslate"><span class="pre">html_to_text()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.made_here"><code class="docutils literal notranslate"><span class="pre">made_here()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.maker_down"><code class="docutils literal notranslate"><span class="pre">maker_down()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.mark_down"><code class="docutils literal notranslate"><span class="pre">mark_down()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.mark_up"><code class="docutils literal notranslate"><span class="pre">mark_up()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.readers_offered"><code class="docutils literal notranslate"><span class="pre">readers_offered()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.request"><code class="docutils literal notranslate"><span class="pre">request()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.request_combined"><code class="docutils literal notranslate"><span class="pre">request_combined()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.state_of"><code class="docutils literal notranslate"><span class="pre">state_of()</span></code></a></li>
@@ -194,7 +199,10 @@ page, so the overview can link to what it was based on:</p>
 </span></pre></div>
 </div>
 <p>The feature is off unless the host turns it on (<code class="docutils literal notranslate"><span class="pre">mk_api(overviews=True)</span></code>), because making
-an overview spends money. For the same reason, a current overview is not made again unless
+an overview spends money. A host can also offer it to some readers only
+(<code class="docutils literal notranslate"><span class="pre">mk_api(overviews={&quot;me&#64;example.com&quot;})</span></code>, or <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code> for <code class="xref py py-func docutils literal notranslate"><span class="pre">annals.api.mk_app()</span></code>;
+see <a class="reference internal" href="#annals.overview.readers_offered" title="annals.overview.readers_offered"><code class="xref py py-func docutils literal notranslate"><span class="pre">readers_offered()</span></code></a>): the others get no Listen button, and the documents the feature
+makes (<a class="reference internal" href="#annals.overview.made_here" title="annals.overview.made_here"><code class="xref py py-func docutils literal notranslate"><span class="pre">made_here()</span></code></a>) are hidden from them. For the same reason, a current overview is not made again unless
 forced, a crash after publishing does not pay twice, <code class="docutils literal notranslate"><span class="pre">work</span></code> stops at a daily limit, and a
 request nobody fulfilled expires rather than spending money whenever a worker next wakes.</p>
 <p>Run the worker on a timer. Finished request files stay in the folder and the worker writes
@@ -218,43 +226,52 @@ waited.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.DFLT_DAILY_LIMIT" title="annals.overview.DFLT_DAILY_LIMIT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_DAILY_LIMIT</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.ENV_OVERVIEWS" title="annals.overview.ENV_OVERVIEWS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ENV_OVERVIEWS</span></code></a></p></td>
+<td><p>see <a class="reference internal" href="#annals.overview.readers_offered" title="annals.overview.readers_offered"><code class="xref py py-func docutils literal notranslate"><span class="pre">readers_offered()</span></code></a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.READERS_SEP" title="annals.overview.READERS_SEP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">READERS_SEP</span></code></a></p></td>
+<td><p>in <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code>, the readers are separated by this; <code class="docutils literal notranslate"><span class="pre">*</span></code> alone means every reader</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.EVERY_READER" title="annals.overview.EVERY_READER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EVERY_READER</span></code></a></p></td>
+<td><p>in <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code>, the readers are separated by this; <code class="docutils literal notranslate"><span class="pre">*</span></code> alone means every reader</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.DFLT_DAILY_LIMIT" title="annals.overview.DFLT_DAILY_LIMIT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_DAILY_LIMIT</span></code></a></p></td>
 <td><p>at most this many overviews are started in any 24 hours, whoever asks</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.QUEUED_EXPIRY_S" title="annals.overview.QUEUED_EXPIRY_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QUEUED_EXPIRY_S</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.QUEUED_EXPIRY_S" title="annals.overview.QUEUED_EXPIRY_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QUEUED_EXPIRY_S</span></code></a></p></td>
 <td><p>nobody is waiting for it now</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.RUNNING_MARGIN_S" title="annals.overview.RUNNING_MARGIN_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUNNING_MARGIN_S</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.RUNNING_MARGIN_S" title="annals.overview.RUNNING_MARGIN_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RUNNING_MARGIN_S</span></code></a></p></td>
 <td><p>a request still running after this long has lost its worker</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.DOWN_FILE" title="annals.overview.DOWN_FILE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DOWN_FILE</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.DOWN_FILE" title="annals.overview.DOWN_FILE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DOWN_FILE</span></code></a></p></td>
 <td><p>the file marking the maker down; not <code class="docutils literal notranslate"><span class="pre">.json</span></code>, because every <code class="docutils literal notranslate"><span class="pre">.json</span></code> here is a request</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.DOWN_AFTER" title="annals.overview.DOWN_AFTER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DOWN_AFTER</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.DOWN_AFTER" title="annals.overview.DOWN_AFTER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DOWN_AFTER</span></code></a></p></td>
 <td><p>the same fast failure from this many documents in a row means the maker is down</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.FAST_FAILURE_S" title="annals.overview.FAST_FAILURE_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FAST_FAILURE_S</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.FAST_FAILURE_S" title="annals.overview.FAST_FAILURE_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FAST_FAILURE_S</span></code></a></p></td>
 <td><p>the maker could not start</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.PROBE_EVERY_S" title="annals.overview.PROBE_EVERY_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PROBE_EVERY_S</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.PROBE_EVERY_S" title="annals.overview.PROBE_EVERY_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PROBE_EVERY_S</span></code></a></p></td>
 <td><p>while the maker is down, one waiting request is tried this often, to notice it works again</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.MINUTES" title="annals.overview.MINUTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MINUTES</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.MINUTES" title="annals.overview.MINUTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MINUTES</span></code></a></p></td>
 <td><p>the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.CHARS_PER_MINUTE" title="annals.overview.CHARS_PER_MINUTE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHARS_PER_MINUTE</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.CHARS_PER_MINUTE" title="annals.overview.CHARS_PER_MINUTE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHARS_PER_MINUTE</span></code></a></p></td>
 <td><p>spoken English at about 150 words a minute and 6 characters a word; shown as an estimate</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.TAG" title="annals.overview.TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TAG</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.TAG" title="annals.overview.TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TAG</span></code></a></p></td>
 <td><p>marks a document that is itself an overview, so nobody makes an overview of an overview</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.WAITING" title="annals.overview.WAITING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WAITING</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.WAITING" title="annals.overview.WAITING"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WAITING</span></code></a></p></td>
 <td><p>made once it works again, never spent on before</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.FAILED_SHOWN_S" title="annals.overview.FAILED_SHOWN_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FAILED_SHOWN_S</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.FAILED_SHOWN_S" title="annals.overview.FAILED_SHOWN_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FAILED_SHOWN_S</span></code></a></p></td>
 <td><p>a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.COMBINED_TAG" title="annals.overview.COMBINED_TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMBINED_TAG</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.COMBINED_TAG" title="annals.overview.COMBINED_TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMBINED_TAG</span></code></a></p></td>
 <td><p>marks a document made by putting several documents' text in one, for one review of them all</p></td>
 </tr>
 </tbody>
@@ -279,14 +296,20 @@ waited.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.html_to_text" title="annals.overview.html_to_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_to_text</span></code></a>(html)</p></td>
 <td><p>The readable text of a page: no markup, scripts or styles.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.maker_down" title="annals.overview.maker_down"><code class="xref py py-obj docutils literal notranslate"><span class="pre">maker_down</span></code></a>(requests)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.made_here" title="annals.overview.made_here"><code class="xref py py-obj docutils literal notranslate"><span class="pre">made_here</span></code></a>(meta)</p></td>
+<td><p>Whether the overview feature made this document: a spoken overview, or the text it combined to speak several documents as one.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.maker_down" title="annals.overview.maker_down"><code class="xref py py-obj docutils literal notranslate"><span class="pre">maker_down</span></code></a>(requests)</p></td>
 <td><p>Why no overview can be made until someone acts, or <code class="docutils literal notranslate"><span class="pre">None</span></code> while the maker works.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.mark_down" title="annals.overview.mark_down"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_down</span></code></a>(requests[, reason, link])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.mark_down" title="annals.overview.mark_down"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_down</span></code></a>(requests[, reason, link])</p></td>
 <td><p>Say the maker is down, why, and where it is being fixed; keep what is not given.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.mark_up" title="annals.overview.mark_up"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_up</span></code></a>(requests)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.mark_up" title="annals.overview.mark_up"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mark_up</span></code></a>(requests)</p></td>
 <td><p>The maker works (again): clear the mark and queue what waited; return those ids.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.readers_offered" title="annals.overview.readers_offered"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readers_offered</span></code></a>(spec)</p></td>
+<td><p>Who may ask for and hear overviews: <code class="docutils literal notranslate"><span class="pre">False</span></code> (nobody), <code class="docutils literal notranslate"><span class="pre">True</span></code> (every reader), or a test.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.request" title="annals.overview.request"><code class="xref py py-obj docutils literal notranslate"><span class="pre">request</span></code></a>(store, requests, doc_id, *[, ...])</p></td>
 <td><p>Ask for an overview of a document.</p></td>
@@ -360,6 +383,23 @@ waited.</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.ENV_OVERVIEWS">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">ENV_OVERVIEWS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ANNALS_OVERVIEWS'</span></span><a class="headerlink" href="#annals.overview.ENV_OVERVIEWS" title="Link to this definition">#</a></dt>
+<dd><p>see <a class="reference internal" href="#annals.overview.readers_offered" title="annals.overview.readers_offered"><code class="xref py py-func docutils literal notranslate"><span class="pre">readers_offered()</span></code></a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>who is offered overviews, for a host built from the environment</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.EVERY_READER">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">EVERY_READER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'*'</span></span><a class="headerlink" href="#annals.overview.EVERY_READER" title="Link to this definition">#</a></dt>
+<dd><p>in <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code>, the readers are separated by this; <code class="docutils literal notranslate"><span class="pre">*</span></code> alone means every reader</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="annals.overview.FAILED_SHOWN_S">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">FAILED_SHOWN_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">604800</span></span><a class="headerlink" href="#annals.overview.FAILED_SHOWN_S" title="Link to this definition">#</a></dt>
 <dd><p>a failed request is still listed as unmade for this long, so a retry is offered where
@@ -405,6 +445,12 @@ the reader looks for the overview (the Audio tab), not only on the document</p>
 <dd class="field-odd"><p>a request still queued after this long is dropped</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.READERS_SEP">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">READERS_SEP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">','</span></span><a class="headerlink" href="#annals.overview.READERS_SEP" title="Link to this definition">#</a></dt>
+<dd><p>in <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code>, the readers are separated by this; <code class="docutils literal notranslate"><span class="pre">*</span></code> alone means every reader</p>
 </dd></dl>
 
 <dl class="py data">
@@ -558,6 +604,19 @@ has text to speak, or past <code class="docutils literal notranslate"><span clas
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.made_here">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">made_here</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#made_here"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.made_here" title="Link to this definition">#</a></dt>
+<dd><p>Whether the overview feature made this document: a spoken overview, or the text it
+combined to speak several documents as one. These are what a reader who is not offered
+overviews never sees.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.overview.maker_down">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">maker_down</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">requests</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#maker_down"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.maker_down" title="Link to this definition">#</a></dt>
 <dd><p>Why no overview can be made until someone acts, or <code class="docutils literal notranslate"><span class="pre">None</span></code> while the maker works.</p>
@@ -593,6 +652,31 @@ link that is not a web address.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.readers_offered">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">readers_offered</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spec</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#readers_offered"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.readers_offered" title="Link to this definition">#</a></dt>
+<dd><p>Who may ask for and hear overviews: <code class="docutils literal notranslate"><span class="pre">False</span></code> (nobody), <code class="docutils literal notranslate"><span class="pre">True</span></code> (every reader), or a test.</p>
+<p><code class="docutils literal notranslate"><span class="pre">spec</span></code> is what a host passes as <code class="docutils literal notranslate"><span class="pre">overviews</span></code>: a bool, a predicate on the reader’s name
+(an email, as <code class="xref py py-func docutils literal notranslate"><span class="pre">annals.api.reader_of()</span></code> gives it), a collection of names, or a string as
+<code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code> holds it (names separated by commas, <code class="docutils literal notranslate"><span class="pre">*</span></code> for every reader, empty for
+nobody; <code class="docutils literal notranslate"><span class="pre">true</span></code>/<code class="docutils literal notranslate"><span class="pre">1</span></code>/<code class="docutils literal notranslate"><span class="pre">yes</span></code> and <code class="docutils literal notranslate"><span class="pre">false</span></code>/<code class="docutils literal notranslate"><span class="pre">0</span></code>/<code class="docutils literal notranslate"><span class="pre">no</span></code> mean the same as <code class="docutils literal notranslate"><span class="pre">*</span></code> and empty,
+never a reader so named). Names are compared without case.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">readers_offered</span><span class="p">(</span><span class="s2">"*"</span><span class="p">),</span> <span class="n">readers_offered</span><span class="p">(</span><span class="s2">""</span><span class="p">),</span> <span class="n">readers_offered</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">(True, False, False)</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">readers_offered</span><span class="p">(</span><span class="s2">"true"</span><span class="p">),</span> <span class="n">readers_offered</span><span class="p">(</span><span class="s2">" No "</span><span class="p">),</span> <span class="n">readers_offered</span><span class="p">([</span><span class="s2">"*"</span><span class="p">])</span>
+</span><span data-line="4"><span class="go">(True, False, True)</span>
+</span><span data-line="5"><span class="gp">&gt;&gt;&gt; </span><span class="n">may</span> <span class="o">=</span> <span class="n">readers_offered</span><span class="p">(</span><span class="s2">" Me@Example.com, "</span><span class="p">)</span>
+</span><span data-line="6"><span class="gp">&gt;&gt;&gt; </span><span class="n">may</span><span class="p">(</span><span class="s2">"me@example.com"</span><span class="p">),</span> <span class="n">may</span><span class="p">(</span><span class="s2">"someone@example.com"</span><span class="p">)</span>
+</span><span data-line="7"><span class="go">(True, False)</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Union" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Union</span></code></a>[<a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Callable" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a>]</span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -717,7 +801,7 @@ is tried every <a class="reference internal" href="#annals.overview.PROBE_EVERY_
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=b345ff55"></script>
+      <script src="../_static/documentation_options.js?v=78cc6f98"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

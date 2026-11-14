@@ -8,6 +8,9 @@ annals.overview
 
    .. autosummary::
    
+      ENV_OVERVIEWS
+      READERS_SEP
+      EVERY_READER
       DFLT_DAILY_LIMIT
       QUEUED_EXPIRY_S
       RUNNING_MARGIN_S
@@ -31,9 +34,11 @@ annals.overview
       combined_key
       eligible
       html_to_text
+      made_here
       maker_down
       mark_down
       mark_up
+      readers_offered
       request
       request_combined
       state_of

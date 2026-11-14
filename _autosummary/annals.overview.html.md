@@ -17,7 +17,10 @@ my-overview {source} --minutes {minutes} --player-to {out} --source-url {url}
 ```
 
 The feature is off unless the host turns it on (`mk_api(overviews=True)`), because making
-an overview spends money. For the same reason, a current overview is not made again unless
+an overview spends money. A host can also offer it to some readers only
+(`mk_api(overviews={"me@example.com"})`, or `ANNALS_OVERVIEWS` for `annals.api.mk_app()`;
+see [`readers_offered()`](#annals.overview.readers_offered)): the others get no Listen button, and the documents the feature
+makes ([`made_here()`](#annals.overview.made_here)) are hidden from them. For the same reason, a current overview is not made again unless
 forced, a crash after publishing does not pay twice, `work` stops at a daily limit, and a
 request nobody fulfilled expires rather than spending money whenever a worker next wakes.
 
@@ -43,38 +46,43 @@ waited.
 
 ### Module Attributes
 
-| [`DFLT_DAILY_LIMIT`](#annals.overview.DFLT_DAILY_LIMIT)   | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
-|---------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`QUEUED_EXPIRY_S`](#annals.overview.QUEUED_EXPIRY_S)    | nobody is waiting for it now                                                                                                                                      |
-| [`RUNNING_MARGIN_S`](#annals.overview.RUNNING_MARGIN_S)   | a request still running after this long has lost its worker                                                                                                       |
-| [`DOWN_FILE`](#annals.overview.DOWN_FILE)          | the file marking the maker down; not `.json`, because every `.json` here is a request                                                                             |
-| [`DOWN_AFTER`](#annals.overview.DOWN_AFTER)         | the same fast failure from this many documents in a row means the maker is down                                                                                   |
-| [`FAST_FAILURE_S`](#annals.overview.FAST_FAILURE_S)     | the maker could not start                                                                                                                                         |
-| [`PROBE_EVERY_S`](#annals.overview.PROBE_EVERY_S)      | while the maker is down, one waiting request is tried this often, to notice it works again                                                                        |
-| [`MINUTES`](#annals.overview.MINUTES)            | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
-| [`CHARS_PER_MINUTE`](#annals.overview.CHARS_PER_MINUTE)   | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
-| [`TAG`](#annals.overview.TAG)                | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
-| [`WAITING`](#annals.overview.WAITING)            | made once it works again, never spent on before                                                                                                                   |
-| [`FAILED_SHOWN_S`](#annals.overview.FAILED_SHOWN_S)     | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
-| [`COMBINED_TAG`](#annals.overview.COMBINED_TAG)       | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
+| [`ENV_OVERVIEWS`](#annals.overview.ENV_OVERVIEWS)    | see [`readers_offered()`](#annals.overview.readers_offered)                                                                                            |
+|-------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`READERS_SEP`](#annals.overview.READERS_SEP)      | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
+| [`EVERY_READER`](#annals.overview.EVERY_READER)     | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
+| [`DFLT_DAILY_LIMIT`](#annals.overview.DFLT_DAILY_LIMIT) | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
+| [`QUEUED_EXPIRY_S`](#annals.overview.QUEUED_EXPIRY_S)  | nobody is waiting for it now                                                                                                                                      |
+| [`RUNNING_MARGIN_S`](#annals.overview.RUNNING_MARGIN_S) | a request still running after this long has lost its worker                                                                                                       |
+| [`DOWN_FILE`](#annals.overview.DOWN_FILE)        | the file marking the maker down; not `.json`, because every `.json` here is a request                                                                             |
+| [`DOWN_AFTER`](#annals.overview.DOWN_AFTER)       | the same fast failure from this many documents in a row means the maker is down                                                                                   |
+| [`FAST_FAILURE_S`](#annals.overview.FAST_FAILURE_S)   | the maker could not start                                                                                                                                         |
+| [`PROBE_EVERY_S`](#annals.overview.PROBE_EVERY_S)    | while the maker is down, one waiting request is tried this often, to notice it works again                                                                        |
+| [`MINUTES`](#annals.overview.MINUTES)          | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
+| [`CHARS_PER_MINUTE`](#annals.overview.CHARS_PER_MINUTE) | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
+| [`TAG`](#annals.overview.TAG)              | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
+| [`WAITING`](#annals.overview.WAITING)          | made once it works again, never spent on before                                                                                                                   |
+| [`FAILED_SHOWN_S`](#annals.overview.FAILED_SHOWN_S)   | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
+| [`COMBINED_TAG`](#annals.overview.COMBINED_TAG)     | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
 
 ### Functions
 
-| [`choices`](#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                      |
-|-----------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
-| [`combined_document`](#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.           |
-| [`combined_key`](#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                     |
-| [`eligible`](#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview. |
-| [`html_to_text`](#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                            |
-| [`maker_down`](#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.      |
-| [`mark_down`](#annals.overview.mark_down)(requests[, reason, link])                | Say the maker is down, why, and where it is being fixed; keep what is not given.      |
-| [`mark_up`](#annals.overview.mark_up)(requests)                                  | The maker works (again): clear the mark and queue what waited; return those ids.      |
-| [`request`](#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                    |
-| [`request_combined`](#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.      |
-| [`state_of`](#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.          |
-| [`unmade`](#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, waiting, or failed recently.  |
-| [`valid_minutes`](#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                    |
-| [`work`](#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened. |
+| [`choices`](#annals.overview.choices)()                                          | Each length on offer and what it would cost in voice characters.                                                               |
+|-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
+| [`combined_document`](#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.                                                    |
+| [`combined_key`](#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                                                              |
+| [`eligible`](#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.                                          |
+| [`html_to_text`](#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                                                     |
+| [`made_here`](#annals.overview.made_here)(meta)                                    | Whether the overview feature made this document: a spoken overview, or the text it combined to speak several documents as one. |
+| [`maker_down`](#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.                                               |
+| [`mark_down`](#annals.overview.mark_down)(requests[, reason, link])                | Say the maker is down, why, and where it is being fixed; keep what is not given.                                               |
+| [`mark_up`](#annals.overview.mark_up)(requests)                                  | The maker works (again): clear the mark and queue what waited; return those ids.                                               |
+| [`readers_offered`](#annals.overview.readers_offered)(spec)                              | Who may ask for and hear overviews: `False` (nobody), `True` (every reader), or a test.                                        |
+| [`request`](#annals.overview.request)(store, requests, doc_id, \*[, ...])        | Ask for an overview of a document.                                                                                             |
+| [`request_combined`](#annals.overview.request_combined)(store, requests, docs, \*, title) | Ask for ONE overview of several documents: of the document combining their text.                                               |
+| [`state_of`](#annals.overview.state_of)(store, requests, meta)                    | What a page shows for a document: its request's state and what it can start.                                                   |
+| [`unmade`](#annals.overview.unmade)(store, requests)                            | The overviews asked for and not (yet) made: being made, waiting, or failed recently.                                           |
+| [`valid_minutes`](#annals.overview.valid_minutes)(minutes)                             | Whether this is a length on offer.                                                                                             |
+| [`work`](#annals.overview.work)(store, requests, \*[, command, timeout, ...]) | Fulfil every queued request, one at a time, until none is left; return what happened.                                          |
 
 ### Classes
 
@@ -105,6 +113,17 @@ the same fast failure from this many documents in a row means the maker is down
 ### annals.overview.DOWN_FILE *= 'maker-down'*
 
 the file marking the maker down; not `.json`, because every `.json` here is a request
+
+### annals.overview.ENV_OVERVIEWS *= 'ANNALS_OVERVIEWS'*
+
+see [`readers_offered()`](#annals.overview.readers_offered)
+
+* **Type:**
+  who is offered overviews, for a host built from the environment
+
+### annals.overview.EVERY_READER *= '\*'*
+
+in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader
 
 ### annals.overview.FAILED_SHOWN_S *= 604800*
 
@@ -138,6 +157,10 @@ nobody is waiting for it now
 
 * **Type:**
   a request still queued after this long is dropped
+
+### annals.overview.READERS_SEP *= ','*
+
+in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader
 
 ### annals.overview.RUNNING_MARGIN_S *= 600*
 
@@ -240,6 +263,15 @@ The readable text of a page: no markup, scripts or styles.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.overview.made_here(meta)
+
+Whether the overview feature made this document: a spoken overview, or the text it
+combined to speak several documents as one. These are what a reader who is not offered
+overviews never sees.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 ### annals.overview.maker_down(requests)
 
 Why no overview can be made until someone acts, or `None` while the maker works.
@@ -269,6 +301,29 @@ The maker works (again): clear the mark and queue what waited; return those ids.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.overview.readers_offered(spec)
+
+Who may ask for and hear overviews: `False` (nobody), `True` (every reader), or a test.
+
+`spec` is what a host passes as `overviews`: a bool, a predicate on the reader’s name
+(an email, as `annals.api.reader_of()` gives it), a collection of names, or a string as
+`ANNALS_OVERVIEWS` holds it (names separated by commas, `*` for every reader, empty for
+nobody; `true`/`1`/`yes` and `false`/`0`/`no` mean the same as `*` and empty,
+never a reader so named). Names are compared without case.
+
+```pycon
+>>> readers_offered("*"), readers_offered(""), readers_offered(None)
+(True, False, False)
+>>> readers_offered("true"), readers_offered(" No "), readers_offered(["*"])
+(True, False, True)
+>>> may = readers_offered(" Me@Example.com, ")
+>>> may("me@example.com"), may("someone@example.com")
+(True, False)
+```
+
+* **Return type:**
+  [`Union`](https://docs.python.org/3/library/typing.html#typing.Union)[[`Callable`](https://docs.python.org/3/library/typing.html#typing.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`bool`](https://docs.python.org/3/builtins/functions.html#bool)], [`bool`](https://docs.python.org/3/builtins/functions.html#bool)]
 
 ### annals.overview.request(store, requests, doc_id, , minutes=5, force=False)
 

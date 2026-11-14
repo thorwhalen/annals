@@ -18,8 +18,9 @@ query would give.
 
 ### Functions
 
-| [`mk_catalog`](#annals.catalog.mk_catalog)(store, \*[, sources, tags])   | The published documents first, then the extra sources; the owner's tags beside them.   |
-|-------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| [`default_tags`](#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
+|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`mk_catalog`](#annals.catalog.mk_catalog)(store, \*[, sources, tags]) | The published documents first, then the extra sources; the owner's tags beside them.                                                                 |
 
 ### Classes
 
@@ -73,6 +74,14 @@ Every tag in use on a listed item, with how many items carry it.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
+
+### annals.catalog.default_tags(store)
+
+Where the owner’s tags live by default: one JSON file under the data root
+(`tags/tags.json`), or a dict when the data root is not on this machine.
+
+* **Return type:**
+  [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
 ### annals.catalog.mk_catalog(store, , sources=None, tags=None)
 
