@@ -60,6 +60,8 @@ ENV_COMMAND = "ANNALS_OVERVIEW_COMMAND"
 ENV_OVERVIEWS = "ANNALS_OVERVIEWS"
 #: in ``ANNALS_OVERVIEWS``, the readers are separated by this; ``*`` alone means every reader
 READERS_SEP, EVERY_READER = ",", "*"
+#: what a person writes in a variable meaning on or off: never read as a reader's name
+_ON, _OFF = frozenset({"*", "true", "1", "yes", "on"}), frozenset({"false", "0", "no", "off"})
 FOLDER = "overviews"
 LOCK_NAME = ".lock"
 SPEND_LOG = "spend.jsonl"
@@ -186,10 +188,13 @@ def readers_offered(spec) -> Callable[[str], bool] | bool:
     ``spec`` is what a host passes as ``overviews``: a bool, a predicate on the reader's name
     (an email, as :func:`annals.api.reader_of` gives it), a collection of names, or a string as
     ``ANNALS_OVERVIEWS`` holds it (names separated by commas, ``*`` for every reader, empty for
-    nobody). Names are compared without case.
+    nobody; ``true``/``1``/``yes`` and ``false``/``0``/``no`` mean the same as ``*`` and empty,
+    never a reader so named). Names are compared without case.
 
     >>> readers_offered("*"), readers_offered(""), readers_offered(None)
     (True, False, False)
+    >>> readers_offered("true"), readers_offered(" No "), readers_offered(["*"])
+    (True, False, True)
     >>> may = readers_offered(" Me@Example.com, ")
     >>> may("me@example.com"), may("someone@example.com")
     (True, False)
@@ -197,18 +202,17 @@ def readers_offered(spec) -> Callable[[str], bool] | bool:
     if spec is None or isinstance(spec, bool):
         return bool(spec)
     if isinstance(spec, str):
-        names = [n.strip() for n in spec.split(READERS_SEP) if n.strip()]
-        if names == [EVERY_READER]:
-            return True
-        spec = names
+        spec = spec.split(READERS_SEP)
     if callable(spec):
         return spec
     try:
-        names = frozenset(str(n).strip().lower() for n in spec)
+        names = frozenset(str(n).strip().lower() for n in spec) - {""}
     except TypeError:
         raise TypeError(
             f"overviews must be a bool, reader names or a predicate, not {type(spec).__name__}"
         ) from None
+    if len(names) == 1 and names <= _ON | _OFF:
+        return names <= _ON
     if not names:
         return False
     return lambda reader: str(reader).strip().lower() in names

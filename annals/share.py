@@ -545,20 +545,35 @@ class Shares:
 
     # -- the link itself, delegated to caplinks --
 
+    def _in_sight(self, record: dict | None) -> bool:
+        """Whether the store shows everything a share reaches. Over a store that hides some
+        documents (:class:`annals.store.HidingStore`), a share reaching one is hidden too:
+        its token would open what the store hides."""
+        hides = getattr(self.store, "hides", None)
+        if hides is None or not isinstance(record, dict):
+            return True
+        root = record.get("root") or {}
+        ids = {*(record.get("docs") or {}), root.get("id")}
+        return not any(hides(i) for i in ids if isinstance(i, str))
+
     def record(self, token: str) -> dict | None:
         """The stored record (hash included), revoked or not; ``None`` if there is none."""
-        return self.links.record(token)
+        rec = self.links.record(token)
+        return rec if self._in_sight(rec) else None
 
     def status(self, token: str) -> tuple[str, dict | None]:
         """``("ok" | "expired" | "missing", record)``; a revoked link is ``missing``."""
-        return self.links.status(token)
+        state, rec = self.links.status(token)
+        return (state, rec) if self._in_sight(rec) else ("missing", None)
 
     def list(self, *, all: bool = False) -> list[dict]:
         """Every share, newest first, without hashes; ``all`` adds revoked and expired."""
-        return self.links.list(include_inactive=all)
+        return [r for r in self.links.list(include_inactive=all) if self._in_sight(r)]
 
     def revoke(self, token: str) -> dict:
         """End a link now (idempotent). The record stays, as a tombstone, for the list."""
+        if not self._in_sight(self.links.record(token)):
+            raise KeyError(token)
         return self.links.revoke(token)
 
     def check_password(self, record: dict, password: str) -> bool:

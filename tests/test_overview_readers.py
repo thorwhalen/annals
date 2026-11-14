@@ -211,3 +211,50 @@ def test_the_text_combined_for_an_overview_is_made_here_too():
     assert overview.made_here(combined)
     assert not overview.made_here({"tags": [overview.COMBINED_TAG], "source": {"session": "x"}})
     assert not overview.made_here({"tags": ["report"]})
+
+
+# -- found by review: shares, pending replacements, failing predicates ---------------
+
+
+def test_another_reader_never_sees_or_revokes_a_share_reaching_what_overviews_made(store, docs):
+    owner, other = _client(store, OWNER), _client(store, OTHER)
+    api = "/annals/api"
+    of_made = owner.post(f"{api}/shares", json={"ref": docs["made"]}).json()["token"]
+    of_group = owner.post(f"{api}/shares", json={"ref": docs["group"]}).json()["token"]
+    of_plain = owner.post(f"{api}/shares", json={"ref": docs["plain"]}).json()["token"]
+    seen = {r["token"] for r in other.get(f"{api}/shares", params={"all": 1}).json()["shares"]}
+    assert seen == {of_plain}
+    for token in (of_made, of_group):
+        assert other.get(f"{api}/shares/{token}/sources").status_code == 404
+        assert other.delete(f"{api}/shares/{token}").status_code == 404
+    assert {r["token"] for r in owner.get(f"{api}/shares").json()["shares"]} == {
+        of_made, of_group, of_plain
+    }  # still live: the owner's to revoke
+
+
+def test_a_pending_replacement_of_a_hidden_document_is_hidden_too(tmp_path):
+    store = DocStore(tmp_path / "data", settle=False)  # keep the replacement pending
+    made = store.publish(text="# Listen", title="Listen: x", tags=[overview.TAG])["id"]
+    pending = store.publish(text="# Listen again", title="Listen: x", replace=made)["id"]
+    view = HidingStore(store, hide=overview.made_here)
+    assert view.hides(made) and view.hides(pending)
+    assert view.list() == []
+    with pytest.raises(KeyError):
+        view.meta(pending)
+
+
+def test_a_failing_predicate_serves_the_reader_as_not_offered(store, docs):
+    def broken(who):
+        raise RuntimeError("no directory today")
+
+    c = TestClient(mk_app(store=store, authorizer=TrustedHeader(HEADER), overviews=broken),
+                   headers={HEADER: OWNER})  # fmt: skip
+    r = c.get(f"/annals/api/docs/{docs['plain']}")
+    assert r.status_code == 200 and "listen" not in r.json()
+
+
+@pytest.mark.parametrize("value, offered", [("true", True), ("1", True), ("no", False)])
+def test_an_on_off_word_is_never_a_reader_name(store, docs, monkeypatch, value, offered):
+    monkeypatch.setenv(overview.ENV_OVERVIEWS, value)
+    c = TestClient(mk_app(store=store, authorizer=TrustedHeader(HEADER)), headers={HEADER: OTHER})
+    assert ("listen" in c.get(f"/annals/api/docs/{docs['plain']}").json()) is offered

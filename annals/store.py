@@ -968,50 +968,65 @@ class HidingStore(DocStore):
     """The documents of ``store`` without those ``hide(meta)`` is true of, on the same target.
 
     A hidden document is absent, not refused: it is not listed or found, :meth:`meta` raises
-    ``KeyError`` for it and its versions (so whatever reads a document through the store, its
-    page, files, versions or a share, answers as for a missing one), and groups read through
-    this store leave it out. An API built over this store therefore cannot show it anywhere,
-    whichever route asks. Writes reach the same target, and a group is always rewritten from
-    its whole list, so hiding never deletes anything.
+    ``KeyError`` for it, its versions and its pending replacements (so whatever reads a
+    document through the store, its page, files, versions or a share, answers as for a
+    missing one), and groups read through this store leave it out. An API built over this
+    store therefore cannot show it anywhere, whichever route asks; :meth:`hides` lets what
+    keeps records of its own about documents (shares) hide those records too. Reads go
+    through ``store``, so a subclass's reading still applies; writes reach the same target,
+    and a group is always rewritten from its whole list, so hiding never deletes anything.
     """
 
     def __init__(self, store: DocStore, *, hide: Callable[[dict], bool]):
         super().__init__(store.target, settle=store.auto_settle)
         self.whole, self.hide = store, hide
 
+    def _hidden(self, meta: dict) -> bool:
+        """Hidden itself, or a version or pending replacement of a hidden document."""
+        if self.hide(meta):
+            return True
+        parent = meta.get("version_of") or meta.get("replaces")
+        if not isinstance(parent, str) or parent == meta.get("id"):
+            return False
+        try:
+            return self.hide(self.whole.meta(parent, settle=False))
+        except (KeyError, ValueError):
+            return False
+
+    def hides(self, doc_id: str) -> bool:
+        """Whether ``doc_id`` is a document of the whole store that this one hides."""
+        try:
+            meta = self.whole.meta(doc_id, settle=False)
+        except (KeyError, ValueError):
+            return False
+        return self._hidden(meta)
+
     def list(self, *, trash: bool = False) -> list[dict]:
-        return [m for m in DocStore.list(self, trash=trash) if not self.hide(m)]
+        return [m for m in self.whole.list(trash=trash) if not self._hidden(m)]
 
     def meta(self, doc_id: str, *, settle: bool = True) -> dict:
-        meta = DocStore.meta(self, doc_id, settle=settle)
-        if self.hide(meta):
-            raise KeyError(doc_id)
-        if "version_of" in meta and self.hide(
-            DocStore.meta(self, meta["version_of"], settle=False)
-        ):
+        meta = self.whole.meta(doc_id, settle=settle)
+        if self._hidden(meta):
             raise KeyError(doc_id)
         return meta
 
-    def _hidden_ids(self) -> set[str]:
-        return {
-            m["id"]
-            for trash in (False, True)
-            for m in DocStore.list(self, trash=trash)
-            if self.hide(m)
-        }
+    def _without_hidden(self, groups: list[dict]) -> list[dict]:
+        """The groups with their hidden ids left out; each id is looked at once."""
+        seen: dict[str, bool] = {}
 
-    def _without_hidden(self, group: dict, hidden: set[str]) -> dict:
-        return {**group, "docs": [i for i in group["docs"] if i not in hidden]}
+        def hidden(i: str) -> bool:
+            if i not in seen:
+                seen[i] = self.hides(i)
+            return seen[i]
+
+        return [{**g, "docs": [i for i in g["docs"] if not hidden(i)]} for g in groups]
 
     def group(self, gid: str) -> dict:
-        return self._without_hidden(DocStore.group(self, gid), self._hidden_ids())
+        return self._without_hidden([self.whole.group(gid)])[0]
 
     def list_groups(self) -> list[dict]:
-        hidden = self._hidden_ids()
-        return [self._without_hidden(g, hidden) for g in DocStore.list_groups(self)]
+        return self._without_hidden(self.whole.list_groups())
 
     def add_to_group(self, gid: str, doc_ids: Iterable[str]) -> dict:
         """Append to the group's whole list (the hidden ids stay in it)."""
-        return self._without_hidden(
-            self.whole.add_to_group(gid, doc_ids), self._hidden_ids()
-        )
+        return self._without_hidden([self.whole.add_to_group(gid, doc_ids)])[0]

@@ -1310,10 +1310,16 @@ class _ByReader:
         self.app, self.others, self.admits = app, others, admits
 
     async def __call__(self, scope, receive, send):
-        if scope["type"] == "http" and not self.admits(Request(scope)):
+        if scope["type"] == "http" and not self._admits(Request(scope)):
             await self.others(scope, receive, send)
             return
         await self.app(scope, receive, send)
+
+    def _admits(self, request: Request) -> bool:
+        try:
+            return bool(self.admits(request))
+        except Exception:  # a host's reader or predicate failing: fail closed, not a 500
+            return False
 
 
 class _AuthGate:
