@@ -11,6 +11,7 @@ annals.overview
       ENV_OVERVIEWS
       READERS_SEP
       EVERY_READER
+      REQUEST_FILE_MODE
       DFLT_DAILY_LIMIT
       QUEUED_EXPIRY_S
       RUNNING_MARGIN_S
