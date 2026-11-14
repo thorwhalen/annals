@@ -576,3 +576,13 @@ def test_a_damaged_mark_breaks_no_page(client, doc, requests, junk):
     (requests.folder / overview.DOWN_FILE).write_text(json.dumps(junk))
     assert client.get(f"/docs/{doc}").status_code == 200
     assert client.get("/audio").json()["down"] is None
+
+
+def test_request_files_are_readable_by_another_user(store, doc, requests):
+    """A root worker and a sandboxed server read each other's request files (seen on a server:
+    the page polled a request the worker had rewritten 0600, and got a 500)."""
+    overview.request(store, requests, doc, minutes=3)
+    requests.put_mark({"reason": "x"})
+    for path in requests.folder.iterdir():
+        if path.suffix == ".json" or path.name == overview.DOWN_FILE:
+            assert stat.S_IMODE(path.stat().st_mode) & 0o044 == 0o044, path.name
