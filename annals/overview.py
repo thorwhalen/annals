@@ -13,7 +13,10 @@ page, so the overview can link to what it was based on::
     my-overview {source} --minutes {minutes} --player-to {out} --source-url {url}
 
 The feature is off unless the host turns it on (``mk_api(overviews=True)``), because making
-an overview spends money. For the same reason, a current overview is not made again unless
+an overview spends money. A host can also offer it to some readers only
+(``mk_api(overviews={"me@example.com"})``, or ``ANNALS_OVERVIEWS`` for :func:`annals.api.mk_app`;
+see :func:`readers_offered`): the others get no Listen button, and the documents the feature
+makes (:func:`made_here`) are hidden from them. For the same reason, a current overview is not made again unless
 forced, a crash after publishing does not pay twice, ``work`` stops at a daily limit, and a
 request nobody fulfilled expires rather than spending money whenever a worker next wakes.
 
@@ -53,6 +56,10 @@ from pathlib import Path
 from typing import Callable, Sequence
 
 ENV_COMMAND = "ANNALS_OVERVIEW_COMMAND"
+#: who is offered overviews, for a host built from the environment: see :func:`readers_offered`
+ENV_OVERVIEWS = "ANNALS_OVERVIEWS"
+#: in ``ANNALS_OVERVIEWS``, the readers are separated by this; ``*`` alone means every reader
+READERS_SEP, EVERY_READER = ",", "*"
 FOLDER = "overviews"
 LOCK_NAME = ".lock"
 SPEND_LOG = "spend.jsonl"
@@ -170,6 +177,55 @@ def eligible(meta: dict) -> bool:
         and not meta.get("in_trash")
         and "version_of" not in meta
         and TAG not in (meta.get("tags") or [])
+    )
+
+
+def readers_offered(spec) -> Callable[[str], bool] | bool:
+    """Who may ask for and hear overviews: ``False`` (nobody), ``True`` (every reader), or a test.
+
+    ``spec`` is what a host passes as ``overviews``: a bool, a predicate on the reader's name
+    (an email, as :func:`annals.api.reader_of` gives it), a collection of names, or a string as
+    ``ANNALS_OVERVIEWS`` holds it (names separated by commas, ``*`` for every reader, empty for
+    nobody). Names are compared without case.
+
+    >>> readers_offered("*"), readers_offered(""), readers_offered(None)
+    (True, False, False)
+    >>> may = readers_offered(" Me@Example.com, ")
+    >>> may("me@example.com"), may("someone@example.com")
+    (True, False)
+    """
+    if spec is None or isinstance(spec, bool):
+        return bool(spec)
+    if isinstance(spec, str):
+        names = [n.strip() for n in spec.split(READERS_SEP) if n.strip()]
+        if names == [EVERY_READER]:
+            return True
+        spec = names
+    if callable(spec):
+        return spec
+    try:
+        names = frozenset(str(n).strip().lower() for n in spec)
+    except TypeError:
+        raise TypeError(
+            f"overviews must be a bool, reader names or a predicate, not {type(spec).__name__}"
+        ) from None
+    if not names:
+        return False
+    return lambda reader: str(reader).strip().lower() in names
+
+
+def made_here(meta: dict) -> bool:
+    """Whether the overview feature made this document: a spoken overview, or the text it
+    combined to speak several documents as one. These are what a reader who is not offered
+    overviews never sees."""
+    tags = meta.get("tags") or []
+    if TAG in tags:
+        return True
+    source = meta.get("source")
+    return (
+        COMBINED_TAG in tags
+        and isinstance(source, dict)
+        and source.get("session") == COMBINED_SESSION
     )
 
 

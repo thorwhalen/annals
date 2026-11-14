@@ -1,7 +1,7 @@
 """The auth seam: who may read the annals.
 
 A annals is private by construction, so the server asks every request who is calling. The
-answer comes from one of three ``Authorizer`` callables, chosen by :func:`authorizer_from_env`
+answer comes from one of four ``Authorizer`` callables, chosen by :func:`authorizer_from_env`
 (or passed to :func:`annals.api.mk_app`):
 
 * :func:`no_auth`: everyone is the owner. Right for ``annals serve`` bound to ``127.0.0.1``,
@@ -13,6 +13,12 @@ answer comes from one of three ``Authorizer`` callables, chosen by :func:`author
   Env: ``ANNALS_WHOAMI_URL``, ``ANNALS_ALLOWED_USERS`` (comma separated), ``ANNALS_LOGIN_URL``.
 * :class:`BasicAuth`: one username and password (HTTP Basic). For a annals with no platform
   login in front of it. Env: ``ANNALS_BASIC_USER``, ``ANNALS_BASIC_PASSWORD``.
+* :class:`TrustedHeader`: a gateway in front (a forward-auth proxy) signs people in and names
+  them in a request header it sets, replacing any copy a client sent. The annals reads that
+  name, so it can tell readers apart (whose listening is whose, who is offered spoken
+  overviews) without a login of its own. Only safe when nothing but the gateway can reach
+  the server. Env: ``ANNALS_USER_HEADER`` (e.g. ``X-Iq-User``), optionally
+  ``ANNALS_ALLOWED_USERS``.
 
 An authorizer returns the caller's identity (a string) or ``None``. The API turns ``None``
 into a 303 to the login page for a browser GET, and a 401 for anything else, mirroring
@@ -37,6 +43,7 @@ ENV_ALLOWED_USERS = "ANNALS_ALLOWED_USERS"
 ENV_LOGIN_URL = "ANNALS_LOGIN_URL"
 ENV_BASIC_USER = "ANNALS_BASIC_USER"
 ENV_BASIC_PASSWORD = "ANNALS_BASIC_PASSWORD"
+ENV_USER_HEADER = "ANNALS_USER_HEADER"
 DFLT_LOGIN_URL = "/auth/login"
 WHOAMI_TIMEOUT_S = 3.0
 WHOAMI_CACHE_TTL_S = 30.0  # how long a whoami answer (yes or no) is reused per cookie
@@ -139,6 +146,33 @@ class BasicAuth:
         return user if ok else None
 
 
+class TrustedHeader:
+    """The caller is whoever the gateway in front names in ``header``; no header, nobody.
+
+    The gateway must set the header on every request it lets through and replace a copy a
+    client sent, and the server must be reachable through the gateway only (bound to
+    loopback behind it), or anyone could name themselves. ``allowed_users``, when given,
+    narrows who may read to those names. Names are compared and returned in lower case.
+    """
+
+    login_url = None  # signing in is the gateway's page, not ours
+    challenge = None  # and a Basic prompt would be wrong: there is no password here
+
+    def __init__(self, header: str, *, allowed_users: list[str] | None = None):
+        if not header.strip():
+            raise ValueError("TrustedHeader needs the name of the header the gateway sets")
+        self.header = header.strip()
+        allowed = {u.strip().lower() for u in allowed_users or () if u.strip()}
+        self.allowed = allowed or None
+
+    def __call__(self, request: RequestLike) -> Optional[str]:
+        # lower case, as HTTP header names are and as a plain dict of them is keyed
+        who = (request.headers.get(self.header.lower()) or "").strip().lower()
+        if not who or (self.allowed is not None and who not in self.allowed):
+            return None
+        return who
+
+
 def authorizer_from_env(env=None) -> Authorizer:
     """Pick the authorizer the environment describes; see the module docstring."""
     env = os.environ if env is None else env
@@ -150,4 +184,7 @@ def authorizer_from_env(env=None) -> Authorizer:
     user, pw = env.get(ENV_BASIC_USER), env.get(ENV_BASIC_PASSWORD)
     if user and pw:
         return BasicAuth(user, pw)
+    header = env.get(ENV_USER_HEADER)
+    if header and header.strip():
+        return TrustedHeader(header, allowed_users=(allowed or "").split(","))
     return no_auth

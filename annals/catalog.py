@@ -149,6 +149,13 @@ class Catalog:
         return dict(sorted(counts.items(), key=lambda kv: kv[0].lower()))
 
 
+def default_tags(store: DocStore) -> MutableMapping[str, list[str]]:
+    """Where the owner's tags live by default: one JSON file under the data root
+    (``tags/tags.json``), or a dict when the data root is not on this machine."""
+    root = store.target.local_path(".")
+    return JsonTagStore(root / TAGS_DIR / TAGS_FILE) if root is not None else {}
+
+
 def mk_catalog(
     store: DocStore,
     *,
@@ -165,8 +172,7 @@ def mk_catalog(
     if sources is None:
         sources = parse_sources_spec(os.environ.get(ENV_SOURCES, ""))
     if tags is None:
-        root = store.target.local_path(".")
-        tags = JsonTagStore(root / TAGS_DIR / TAGS_FILE) if root is not None else {}
+        tags = default_tags(store)
     named: dict[str, Source] = {PUBLISHED: PublishedSource(store)}
     for name, spec in sources.items():
         named[check_source_name(name)] = as_source(name, spec)
