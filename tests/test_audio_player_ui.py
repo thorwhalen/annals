@@ -131,26 +131,18 @@ def test_audio_without_timed_text_gets_the_transport_alone(phone, site):
 
 
 def test_it_picks_up_where_the_reader_stopped(phone, site):
+    """Another device stopped at 0:14 (the record its page sends on pause, seeded here so the
+    test does not hang on the machine's audio clock); this one opens the audio there."""
     audio = "document.querySelector('.zs-player audio')"
-    _open(phone, site["base"], site["plain"])
-    phone.locator(".zs-play").tap()
-    phone.wait_for_function(f"!{audio}.paused")
-    phone.evaluate(f"{audio}.playbackRate = 4")  # 3 s heard is what counts as started
-    phone.wait_for_function(f"{audio}.currentTime >= 4")
-    phone.evaluate(f"{audio}.currentTime = 14")
-    phone.wait_for_function(f"{audio}.currentTime >= 14.5")
-    phone.locator(".zs-play").tap()  # pause: where it stopped is saved
-    phone.wait_for_function(f"{audio}.paused")
-    phone.wait_for_function("/stopped at/.test(document.querySelector('.listening [role=status]').textContent)")
+    doc = site["plain"]["id"]
+    saved = phone.request.post(f"{site['base']}/api/listening/{doc}", data={"spans": [[0, 14.6]], "duration": SECONDS, "position": 14.6})
+    assert saved.ok, saved.text()
     _open(phone, site["base"], site["plain"])
     phone.wait_for_function(f"{audio}.currentTime >= 14")
     # the player's readout says so too, whether the seek landed before it came or after
-    # (a slower machine stops later than 0:14: the readout must match the element, not 0:00)
-    phone.wait_for_function(
-        f"(() => {{ const s = Math.floor({audio}.currentTime);"
-        " return document.querySelector('.zs-now').textContent === '0:' + String(s).padStart(2, '0'); }})()"
-    )
+    phone.wait_for_function("document.querySelector('.zs-now').textContent === '0:14'")
     assert phone.locator(".listening").get_by_text("Start over").count() == 1
+    phone.request.delete(f"{site['base']}/api/listening/{doc}")
 
 
 def test_the_transport_stays_in_sight_below_the_masthead(phone, site):
