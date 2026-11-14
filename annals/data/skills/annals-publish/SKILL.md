@@ -17,7 +17,7 @@ It prints the link. Put that link in your reply, on its own line. That is the en
 
 Only if `annals` is not found: `pip install annals`. Do not `pip install -U` it where it is already installed: on a development machine that replaces the editable source install with the PyPI wheel. The publisher config, `~/.config/annals/config.toml`, says where documents go; `annals configure` shows it.
 
-- Markdown is rendered on the page with a toggle to the raw source (so the owner can copy it); its relative images resolve. HTML is rendered as-is in a frame (a page without `<!doctype html>` is served with one, so it renders in standards mode). Images, video, audio and PDFs show inline (video streams and seeks). Anything else is offered as a download.
+- Markdown is rendered on the page with a toggle to the raw source (so the owner can copy it); its relative images resolve. HTML is rendered as-is in a frame (a page without `<!doctype html>` is served with one, so it renders in standards mode). Images, video and PDFs show inline (video streams and seeks). Audio plays in the fleet's player (seek bar, skips, speed, and it remembers where the owner stopped), with its transcript and chapters when you publish them beside it (next section). Anything else is offered as a download.
 - The title is taken from the first `# heading` (markdown) or `<title>` (html); pass `--title "..."` to override.
 - `--tags a,b` adds tags (searchable). `--session <name>` records who published; always pass your session or corpus name when you have one.
 
@@ -63,6 +63,22 @@ annals publish page.html --replace <link-or-id> --artifact <artifact-link>   # l
 ```
 
 The annals page shows the frame as usual plus an "Open the interactive version" button. annals stays the owner's one in-tray; the interactive features live on the artifact. Only `https://claude.ai/...` links are accepted, and `--artifact` takes one path (the page). A `--replace` that omits `--artifact` keeps the document's current link.
+
+## Audio with its transcript and chapters
+
+Whenever you publish audio and have its timed text (a spoken overview, a podcast, a recording you transcribed), publish the timed text beside it. Name each file after the audio's stem:
+
+```bash
+annals publish talk.mp3 talk.vtt talk.chapters.vtt --session <name>    # one document, one link
+```
+
+| File | What the page does with it |
+|---|---|
+| `<stem>.cues.json` | The transcript, with paragraphs, speakers and word timing. Its shape is a list of cues, or `{"cues": [...], "chapters": [...]}`. A cue is `{"start": s, "end": s, "text": "...", "speaker"?: "...", "segment"?: n, "words"?: [[start, end, "word"], ...]}`, in seconds; consecutive cues with the same `segment` form a paragraph. A chapter is `{"start": s, "title": "..."}`. This is `@zodal/speech`'s track shape, so a pipeline that already builds one writes it as is. |
+| `<stem>.vtt` (or `<stem>.srt`) | The transcript, one line per cue; a voice tag `<v Name>` names the speaker. Use it when that is what you have; it carries no paragraphs and no word timing. |
+| `<stem>.chapters.vtt` | Chapters: a WebVTT file with one cue per chapter, whose text is the title. Chapters inside the cues JSON do the same job. |
+
+The page shows the chapters as a list, and the transcript under the player: a tap on a line or a chapter plays from there, and the current line follows the voice. If several are present, the cues JSON wins over `.vtt`, and `.vtt` wins over `.srt`. The audio and its sidecars become ONE document whether you pass them as files (as above) or as a folder that holds nothing else. Audio published without timed text still gets the player, with no transcript.
 
 ## Several documents under one link
 

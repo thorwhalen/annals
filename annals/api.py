@@ -957,10 +957,12 @@ def mk_api(
 
 
 def is_listenable(meta: dict) -> bool:
-    """Whether a document is listed under Audio and its listening is recorded: for now, a
-    spoken overview (tagged :data:`annals.overview.TAG`) in sight. The page reads this
-    answer (``listenable`` on a document), so widening it is a change here only."""
-    return overview.TAG in (meta.get("tags") or []) and not meta.get("in_trash")
+    """Whether a document is listed under Audio and its listening is recorded (where it
+    stopped, what was heard): a spoken overview (tagged :data:`annals.overview.TAG`) or an
+    audio file, in sight. The page reads this answer (``listenable`` on a document), so
+    widening it is a change here only."""
+    spoken = overview.TAG in (meta.get("tags") or []) or meta.get("kind") == "audio"
+    return spoken and not meta.get("in_trash")
 
 
 def reader_of(request: Request) -> str:

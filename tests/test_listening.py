@@ -231,3 +231,10 @@ def test_a_failed_commands_json_answer_is_read_for_its_reason():
     said = overview._last_line("Traceback ...\nRuntimeError: claude -p exited 1: " + envelope + "\n")
     assert said == "RuntimeError: claude -p exited 1: Failed to authenticate: log in again"
     assert overview._last_line("plain failure {not json") == "plain failure {not json"
+
+
+def test_an_audio_file_records_its_listening_too(store, tmp_path):
+    clip = tmp_path / "clip.mp3"
+    clip.write_bytes(b"x")
+    doc = store.publish(clip, title="A clip")
+    assert _client(store).get(f"/docs/{doc['id']}").json()["listenable"] is True

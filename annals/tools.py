@@ -14,7 +14,15 @@ import socket
 from pathlib import Path
 
 from annals.config import Settings, default_data_dir, load_settings, write_config
-from annals.store import DocStore, check_artifact_url, check_id, split_version
+from annals.store import (
+    SIDECAR_MEDIA_KINDS,
+    DocStore,
+    check_artifact_url,
+    check_id,
+    is_sidecar_of,
+    kind_of,
+    split_version,
+)
 from annals.target import SshTarget, check_rel, parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
@@ -60,6 +68,26 @@ def _link_warning(label: str, text: str) -> str | None:
     return f"{label}: {w}" if w else None
 
 
+def _with_sidecars(paths: list[str]) -> list[list[str]]:
+    """The paths as documents: an audio or video file takes its timed text along.
+
+    ``talk.mp3 talk.vtt talk.chapters.vtt notes.md`` is two documents, the audio (with its
+    transcript and chapters, which its page plays with it) and the notes.
+
+    >>> _with_sidecars(["a/talk.mp3", "a/talk.vtt", "notes.md", "a/talk.chapters.vtt"])
+    [['a/talk.mp3', 'a/talk.vtt', 'a/talk.chapters.vtt'], ['notes.md']]
+    """
+    media = [p for p in paths if p != "-" and kind_of(p) in SIDECAR_MEDIA_KINDS]
+    claimed: dict[str, list[str]] = {m: [] for m in media}
+    taken: set[str] = set()
+    for q in paths:  # first, which files are whose timed text, wherever they are listed
+        owner = next((m for m in media if q != m and q != "-" and is_sidecar_of(str(Path(q)), str(Path(m)))), None)
+        if owner is not None and q not in taken:
+            claimed[owner].append(q)
+            taken.add(q)
+    return [[p, *claimed.get(p, [])] for p in paths if p not in taken]
+
+
 def _link_warning_for_file(path: Path) -> str | None:
     """The unlinked-mention warning for a markdown or text file; None for anything else."""
     if path.suffix.lower() not in LINK_CHECKED_SUFFIXES or not path.is_file():
@@ -88,6 +116,10 @@ def publish(
 ) -> dict:
     """Publish one document and print its link; several paths become several documents.
 
+    An audio or video file takes its timed text along as one document: ``talk.mp3
+    talk.vtt talk.chapters.vtt`` (or ``talk.cues.json``) is one audio document whose page
+    shows the transcript and chapters (``annals.store.SIDECAR_SUFFIXES``).
+
     ``paths``: files of any kind (markdown, html, images, video, audio, pdf, text), a
     directory (one document: an ``index.html`` or single page with its assets, else a
     gallery of everything in it), or ``-`` for stdin (markdown). ``tags`` is comma separated. ``group``
@@ -109,7 +141,7 @@ def publish(
     settings = load_settings(target=target, base_url=base_url, to=to)
     if artifact is not None:
         artifact = check_artifact_url(artifact)
-        if len(_as_list(paths)) > 1:
+        if len(_with_sidecars(_as_list(paths))) > 1:
             raise ValueError("--artifact takes one path: the page it is the version of")
     store = _store(settings)
     tag_list = [t for t in tags.split(",") if t.strip()]
@@ -118,17 +150,17 @@ def publish(
         source["session"] = session
     docs = []
     link_warnings = []
-    paths = _as_list(paths)
+    units = _with_sidecars(_as_list(paths))
     replace_id = None
     if replace:
-        if len(paths) > 1:
+        if len(units) > 1:
             raise ValueError(
                 "--replace takes one path: the new version of one document"
             )
         kind, replace_id = _parse_ref(replace)
         if kind == "group":
             raise ValueError("--replace names a document, not a group")
-    for p in paths:
+    for p, *sidecars in units:
         if p == "-":
             import sys
 
@@ -148,7 +180,8 @@ def publish(
                 link_warnings.append(_link_warning_for_file(Path(p)))
             meta = store.publish(
                 Path(p),
-                title=title if len(paths) == 1 else None,
+                *(Path(q) for q in sidecars),
+                title=title if len(units) == 1 else None,
                 tags=tag_list,
                 source=source,
                 replace=replace_id,

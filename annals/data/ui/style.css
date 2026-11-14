@@ -104,6 +104,13 @@ iframe.frame { width: 100%; height: calc(100vh - 190px); min-height: 420px; bord
 .media.video { aspect-ratio: 16 / 9; background: #000; }
 .media.video video { height: 100%; object-fit: contain; }
 .media.audio { background: transparent; min-height: 54px; }
+/* an audio document: @zodal/speech's player, in annals' colours. `overflow: visible` keeps its
+   transport pinned (sticky) while the transcript scrolls; --zs-bar-top is the masthead's height. */
+.media.speech { overflow: visible; border-radius: 0;
+  --zs-ink: var(--fg); --zs-dim: var(--muted); --zs-rule: var(--line); --zs-accent: var(--accent);
+  --zs-paper: var(--bg); --zs-bar: var(--bg); --zs-shadow: rgba(0, 0, 0, .08);
+  --zs-mark: color-mix(in srgb, var(--accent) 22%, transparent); }
+.media.speech .zs-bar-top { z-index: 1; }
 .media.pdf iframe { height: calc(100vh - 210px); min-height: 480px; background: #fff; }
 .media.fill { aspect-ratio: 1 / 1; }
 .media.fill img { height: 100%; object-fit: cover; }
