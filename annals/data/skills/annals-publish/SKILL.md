@@ -158,7 +158,7 @@ annals unshare <link>                                  # turn one off
 
 `annals share` prints the link on stdout and two other forms of it on stderr (`--json` gives all three as `url`, `markdown`, `pdf`). Which to hand over:
 
-- `url`, the page: to a person, and to NotebookLM or any web reader. Its text is in the html, so a fetcher that runs no script reads the whole document (a group: every document), not just the title.
+- `url`, the page: to a person, and to NotebookLM or any web reader. It is the document's text with no script (a group: every document, in order; an html document as itself), so a fetcher reads the content, not just the title. `<link>?viewer` opens the gallery/download viewer.
 - `markdown` (`<link>share.md`): to an agent; the whole share as one text.
 - `pdf` (`<link>share.pdf`): when the images matter in one file, or for an upload.
 

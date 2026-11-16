@@ -1699,7 +1699,7 @@
       var base = url.replace(/\/?$/, "/");
       result.appendChild(h("details", { class: "share-forms" }, [
         h("summary", null, ["Same link as Markdown or PDF"]),
-        h("p", { class: "muted" }, ["The link above already carries its text, so a person or NotebookLM can read it. Markdown suits an agent; the PDF keeps the images."]),
+        h("p", { class: "muted" }, ["The link above opens the text itself, so a person or NotebookLM can read it. Markdown suits an agent; the PDF keeps the images."]),
         copyField(base + "share.md", { name: "Markdown link", copyName: "Copy the Markdown link", copied: "Markdown link copied" }),
         copyField(base + "share.pdf", { name: "PDF link", copyName: "Copy the PDF link", copied: "PDF link copied" })
       ]));

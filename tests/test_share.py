@@ -179,10 +179,13 @@ def test_page_and_scope_isolation(client, shares, report, store):
     link = _link(rec)
     assert client.get(link).status_code == 307
     page = client.get(link + "/")
-    assert page.status_code == 200 and "window.ANNALS" in page.text
+    assert page.status_code == 200 and "window.ANNALS" not in page.text  # script-free
+    viewer = client.get(link + "/?viewer")
+    assert viewer.status_code == 200 and "window.ANNALS" in viewer.text
     assert page.headers["x-robots-tag"].startswith("noindex")
     assert page.headers["referrer-policy"] == "no-referrer"
-    assert "script-src 'self' 'nonce-" in page.headers["content-security-policy"]
+    assert "script-src" not in page.headers["content-security-policy"]
+    assert "script-src 'self' 'nonce-" in viewer.headers["content-security-policy"]
 
     doc = client.get(f"{link}/docs/{meta['id']}").json()
     assert doc["files"] == ["img/a.png", "report.md"]

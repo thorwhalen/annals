@@ -1,11 +1,13 @@
-"""A share link's page with its text in it, for readers that run no script.
+"""A share link's page with its text in it, and no script, so every reader can read it.
 
 A share link used to answer with a shell: a ``<title>`` and an empty ``<div>`` that the
-viewer's script filled. A person's browser ran the script; a fetcher did not. NotebookLM,
-link previews, ``curl`` and most agents saw the title and nothing else, and NotebookLM made
-a twenty-minute audio overview of a title. So the page now carries the shared text itself,
-rendered on the server under the rules every shared text already follows, and the viewer's
-script, when it runs, replaces it with the usual view. One link serves both readers.
+viewer's script filled, with an html document inside a frame. NotebookLM made a
+twenty-minute audio overview of such a link's title. Its fetcher does run script, so it saw
+the viewer's buttons, but a group shows only titles there and a frame is not read. So the
+page a link opens is now the shared text itself, rendered on the server under the rules
+every shared text already follows, and nothing on it runs. The owner asked for exactly that:
+a person only needs the document. The script viewer (galleries, players, downloads) is one
+link away, ``<link>/?viewer``.
 
 The same share also answers as one Markdown file and one PDF, with the same token, expiry
 and revocation (the routes are :mod:`annals.share_api`'s); the page names them in
@@ -16,14 +18,18 @@ and revocation (the routes are :mod:`annals.share_api`'s); the page names them i
     <link>/share.md         the whole share as one Markdown file
     <link>/share.pdf        the whole share as one PDF (images included)
     <link>/d/<id>.md|.pdf   one document of it
+    <link>/?viewer          the script viewer, as before
 
 What goes in the page, per document: its markdown and html files (the notebook sources of
 :mod:`annals.notebook`, numbered files first), markdown rendered with links and images
 made safe by :func:`annals.notebook.render_source_body`, html reduced to its structure and
-words by :func:`annals.combine.html_body` (no script, style or frame); for a document with
-no text, its images; then links to its other files. Past :data:`STATIC_MAX_BYTES` of
-html the remaining documents are links to their own pages, so a large group still answers
-quickly and every document stays reachable.
+words by :func:`annals.combine.html_body` with a link to the page as designed; for a
+document with no text, its images; its audio and video with the browser's own players;
+then links to its other files. Past :data:`STATIC_MAX_BYTES` of html the remaining
+documents are links to their own pages, so a large group still answers quickly and every
+document stays reachable. A document that *is* an html page (:func:`designed_page`) is
+served as itself at its own link, filtered and sandboxed as ``/raw`` serves it, with a
+``<base>`` (:func:`with_base`) so its images and styles load.
 """
 
 from __future__ import annotations
@@ -55,6 +61,10 @@ ALTERNATES = (
 )
 #: the share's whole text, at ``<link>/<SHARE_FILE>.<ext>``
 SHARE_FILE = "share"
+#: ``<link>/?viewer`` opens the script viewer (galleries, players, downloads) instead
+VIEWER_PARAM = "viewer"
+#: media a page plays with the browser's own controls
+_PLAYED = {"audio": "audio", "video": "video"}
 
 
 @dataclass(frozen=True)
@@ -99,6 +109,32 @@ def alternate_links(link: str, doc_id: str | None = None) -> str:
     )
 
 
+def designed_page(meta: Mapping, files: Sequence[str]) -> str | None:
+    """The html file a document's page *is*, when it is one, else ``None``.
+
+    Such a document is served as itself at its link (filtered and sandboxed, as ``/raw``
+    serves it): a person sees it as designed, and a fetcher, even one that runs script,
+    reads it at the top level rather than inside a frame it does not open.
+    """
+    main = meta.get("main") or ""
+    return main if main in files and kind_of(main) == "html" else None
+
+
+def with_base(page: bytes, href: str) -> bytes:
+    """``page`` with ``<base href>`` first in its head, so its relative references (images,
+    styles, its other pages) resolve where the share serves its files."""
+    tag = f'<base href="{html.escape(href, quote=True)}">'.encode()
+    m = re.search(rb"<head\b[^>]*>", page[:65536], re.I)
+    if m:
+        return page[: m.end()] + tag + page[m.end() :]
+    m = re.search(rb"<html\b[^>]*>", page[:65536], re.I)
+    at = m.end() if m else 0
+    if not m:
+        d = re.match(rb"\s*(?:\xef\xbb\xbf)?\s*<!doctype[^>]*>", page, re.I)
+        at = d.end() if d else 0
+    return page[:at] + b"<head>" + tag + b"</head>" + page[at:]
+
+
 def _doc_html(
     meta: Mapping,
     files: Sequence[str],
@@ -138,6 +174,12 @@ def _doc_html(
                 )
             )
         else:
+            designed = scope.shared(doc_id)
+            if designed and rel == designed_page(meta, files):
+                parts.append(
+                    f'<p class="muted"><a href="{html.escape(designed)}">'
+                    "Open the page as designed</a></p>"
+                )
             parts.append(_html_doc(text, doc_id, rel, files, scope=scope, demote=demote))
         shown |= set(references(text, kind_of(rel), from_dir=dir_of(rel))["files"])
     if not shown:
@@ -148,6 +190,13 @@ def _doc_html(
             for f in images
         )
         shown |= set(images)
+    for f in files:
+        tag = _PLAYED.get(kind_of(f))
+        if tag and f not in shown:
+            src = html.escape(scope.raw_url(doc_id, f))
+            parts.append(
+                f'<p>{html.escape(f)}</p><{tag} controls preload="metadata" src="{src}"></{tag}>'
+            )
     rest = [f for f in files if f not in shown]
     if rest:
         items = "".join(
@@ -194,6 +243,7 @@ def page_body(
     read_text: Callable[[str, str], str],
     scope: ShareScope,
     doc_id: str | None = None,
+    viewer_url: str | None = None,
     max_bytes: int | None = None,
 ) -> tuple[str, str]:
     """The page's content and its description: ``(html, plain text of ~280 chars)``.
@@ -201,7 +251,8 @@ def page_body(
     ``docs`` are the ``(meta, files)`` pairs to show, in order (one, for a document's
     page); ``read_text(doc_id, rel)`` reads a file as it is on disk (the shared-text
     filters are applied here). ``doc_id`` names the document a ``/d/<id>`` page is for,
-    which picks the alternates the page offers. ``max_bytes``: :data:`STATIC_MAX_BYTES`.
+    which picks the alternates the page offers; ``viewer_url`` is where the script viewer
+    opens it. ``max_bytes``: :data:`STATIC_MAX_BYTES`.
     """
     max_bytes = STATIC_MAX_BYTES if max_bytes is None else max_bytes
     docs = list(docs)
@@ -210,6 +261,8 @@ def page_body(
         f'<a href="{html.escape(url)}">{label}</a>'
         for url, _, label in alternate_urls(scope.link, doc_id)
     )
+    if viewer_url:
+        alts += f' · <a href="{html.escape(viewer_url)}">open in the viewer</a>'
     out = [
         f"<h1>{html.escape(title)}</h1>",
         f'<p class="muted">Also as {alts}.</p>',

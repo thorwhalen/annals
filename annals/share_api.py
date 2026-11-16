@@ -6,8 +6,10 @@ enlace platform runs it as a separate ``public`` app). Its only key is the link'
 (:mod:`annals.share`); every request re-reads the share record and is checked against it,
 so a revoke, an expiry or a changed password takes effect on the next request::
 
-    GET  /{token}/                  the page, its text in the html (or the password form);
-                                    /{token}/d/{id} one document's (annals.share_page)
+    GET  /{token}/                  the page: the shared text, no script (or the password
+                                    form); /{token}/d/{id} one document's; an html document
+                                    as itself, sandboxed (annals.share_page). ?viewer: the
+                                    script viewer
     GET  /{token}/share.md|.pdf     the whole share as one file; /{token}/d/{id}.md|.pdf one document
     POST /{token}/unlock            a password, form-encoded; a cookie scoped to the link
     GET  /{token}/share             the share: title, root, its documents
@@ -22,10 +24,10 @@ so a revoke, an expiry or a changed password takes effect on the next request::
 Unknown, revoked and out-of-scope all answer 404; an expired link 410; a locked one 401.
 Every response is ``noindex`` and ``no-referrer`` (as heed's review pages are), JSON and
 pages are ``no-store``, and the page runs under a CSP that allows only its own script.
-The page is annals' own ``app.js`` in share mode, so a shared report looks like the
-owner's view of it, without the owner's controls; before the script runs (and for every
-reader that runs none: NotebookLM, a link preview, ``curl``) the page is the shared text
-itself, rendered here.
+The page is the shared text, rendered here with nothing that runs, so a person, NotebookLM,
+a link preview and ``curl`` all read the document. ``?viewer`` opens annals' own ``app.js``
+in share mode instead, so a shared report can also look like the owner's view of it,
+without the owner's controls.
 """
 
 from __future__ import annotations
@@ -82,7 +84,15 @@ from annals.notebook import (
     source_title,
 )
 from annals.share import Shares, dir_of, filter_refs
-from annals.share_page import SHARE_FILE, ShareScope, alternate_links, page_body
+from annals.share_page import (
+    SHARE_FILE,
+    VIEWER_PARAM,
+    ShareScope,
+    alternate_links,
+    designed_page,
+    page_body,
+    with_base,
+)
 from annals.sources import with_thumb
 from annals.store import PAGE_KINDS, TEXT_KINDS, DocStore, kind_of
 
@@ -112,6 +122,11 @@ MAX_FORM_BYTES = 4096
 MAX_SHARED_PAGE_BYTES = 20_000_000
 #: the share as one file, at ``share.<ext>`` and ``d/<id>.<ext>`` (:mod:`annals.share_page`)
 _FILE_FORMATS = ("md", "pdf")
+#: the script-free page: its stylesheet and images, media, nothing that runs
+STATIC_PAGE_CSP = (
+    "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+    "media-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
 
 
 def _csp(nonce: str) -> str:
@@ -292,9 +307,15 @@ def mk_share_api(
 
     # -- the page --------------------------------------------------------------------
 
-    def _static(rec: dict, request: Request, doc_id: str | None) -> tuple[str, str]:
-        """The page's own content (its text, for a reader that runs no script) and its
-        ``<head>`` additions; :mod:`annals.share_page`."""
+    def _static_page(
+        rec: dict, request: Request, doc_id: str | None, ui: str
+    ) -> Response:
+        """The page a link opens: the shared text itself, no script (:mod:`annals.share_page`).
+
+        A document that is an html page is served as itself (filtered, sandboxed, as
+        ``/raw`` serves it), so a reader sees it as designed and a fetcher reads it at the
+        top level, not inside a frame; anything else is rendered here.
+        """
         root = rec["root"]
         link = _link(request, rec["token"])
         scope = ShareScope(
@@ -303,18 +324,18 @@ def mk_share_api(
             root_id=root.get("id", "") if root.get("kind") == "group" else "",
             private_hosts=tuple(sorted(_private_hosts(request))),
         )
-        if doc_id is None and root.get("kind") == "doc":
-            doc_id_shown, alt_id = root["id"], None
-        else:
-            doc_id_shown, alt_id = doc_id, doc_id
-        if doc_id_shown is None:
+        shown = root["id"] if doc_id is None and root.get("kind") == "doc" else doc_id
+        if shown is None:
             docs = shares.included(rec)
             name = rec.get("title") or title
         else:
-            meta, files = _shared_files(rec, doc_id_shown)
+            meta, files = _shared_files(rec, shown)
+            page = designed_page(meta, files)
+            if page is not None:
+                return _designed(rec, request, shown, page, files, scope)
             docs = [(meta, files)]
             name = (
-                meta.get("title") or doc_id_shown
+                meta.get("title") or shown
                 if doc_id is not None
                 else rec.get("title") or meta.get("title") or title
             )
@@ -324,13 +345,44 @@ def mk_share_api(
             return path.read_text(encoding="utf-8", errors="replace")
 
         content, description = page_body(
-            docs, title=name, read_text=read_text, scope=scope, doc_id=alt_id
+            docs,
+            title=name,
+            read_text=read_text,
+            scope=scope,
+            doc_id=doc_id,
+            viewer_url=f"{request.url.path}?{VIEWER_PARAM}",
         )
         extra = (
             f'<meta name="description" content="{html.escape(description)}">\n'
-            + alternate_links(link, alt_id)
+            + alternate_links(link, doc_id)
         )
-        return content, extra
+        body = (
+            _head(name, ui, extra=extra)
+            + '<body>\n<div class="wrap share-static"><main>\n'
+            f"{content}\n</main></div>\n</body>\n</html>\n"
+        )
+        return HTMLResponse(
+            body, headers={**NO_STORE, "Content-Security-Policy": STATIC_PAGE_CSP}
+        )
+
+    def _designed(
+        rec: dict,
+        request: Request,
+        doc_id: str,
+        rel: str,
+        files: list[str],
+        scope: ShareScope,
+    ) -> Response:
+        """An html document as its own page, at the link: filtered, sandboxed, its
+        relative references resolved against its folder (a ``<base>``)."""
+        path = doc_file_path(store, doc_id, rel)
+        if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
+            raise HTTPException(413, "this page is too large to share")
+        text = path.read_text(encoding="utf-8", errors="replace")
+        body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
+        body = with_base(serve_html(body, media_relay=False), scope.raw_url(doc_id, dir_of(rel) + "/" if dir_of(rel) else ""))
+        headers = {**NO_STORE, "Content-Security-Policy": RAW_SANDBOX_CSP}
+        return Response(body, media_type="text/html; charset=utf-8", headers=headers)
 
     def _page(token: str, request: Request, doc_id: str | None = None) -> Response:
         ui = f"{_root(request)}/ui"
@@ -354,6 +406,18 @@ def mk_share_api(
                 f"?{request.url.query}" if request.url.query else ""
             )
             return _password_page(rec.get("title") or title, f"{link}/unlock", nxt, ui)
+        if request.query_params.get(VIEWER_PARAM) is None:
+            try:
+                return _static_page(rec, request, doc_id, ui)
+            except HTTPException as e:
+                if e.status_code != 404:
+                    raise
+                return _message_page(
+                    "Not in this share",
+                    "This document is not part of the link you were given.",
+                    ui,
+                    status=404,
+                )
         nonce = secrets.token_urlsafe(12)
         cfg = {
             "base": link,
@@ -363,19 +427,9 @@ def mk_share_api(
             "share": {"root": rec["root"], "expires": rec.get("expires")},
         }
         cfg_js = json.dumps(cfg).replace("<", "\\u003c")
-        try:
-            content, extra = _static(rec, request, doc_id)
-        except HTTPException:
-            return _message_page(
-                "Not in this share",
-                "This document is not part of the link you were given.",
-                ui,
-                status=404,
-            )
         body = (
-            _head(cfg["title"], ui, extra=extra)
-            + '<body>\n<div id="app" aria-live="polite"><div class="wrap share-static">'
-            f"<main>\n{content}\n</main></div></div>\n"
+            _head(cfg["title"], ui)
+            + '<body>\n<div id="app" aria-live="polite"><p class="muted">Loading…</p></div>\n'
             f'<script nonce="{nonce}">window.ANNALS = {cfg_js};</script>\n'
             f'<script src="{html.escape(ui)}/app.js"></script>\n</body>\n</html>\n'
         )

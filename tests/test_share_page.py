@@ -80,8 +80,12 @@ def test_a_document_share_page_carries_its_text(client, shares, report):
     assert '<meta name="description" content="Findings The capture rate rose' in body
     assert f'<link rel="alternate" type="text/markdown" href="{link}/share.md"' in body
     assert f'href="{link}/share.pdf"' in body
-    # the viewer still runs for a browser
-    assert "window.ANNALS" in page.text and "app.js" in page.text
+    # no script on the page (a fetcher that runs script would replace the text with the
+    # viewer); the viewer is a link away
+    assert "<script" not in page.text and "script-src" not in page.headers["content-security-policy"]
+    assert f'href="{link}/?viewer">open in the viewer</a>' in body
+    viewer = client.get(link + "/?viewer")
+    assert "window.ANNALS" in viewer.text and "app.js" in viewer.text
 
 
 def test_a_group_share_page_carries_every_document_in_order(client, shares, store):
@@ -158,17 +162,39 @@ def test_a_locked_link_shows_no_text_until_unlocked(client, shares, report):
     assert "twelve percent" in client.get(link + "/").text
 
 
-def test_an_html_document_is_its_words_never_its_script(client, shares, store):
-    page = (
-        "<html><head><title>T</title><style>p{color:red}</style></head><body>"
-        "<h1>Heading words</h1><p onclick='steal()'>Body words</p>"
-        "<script>steal()</script></body></html>"
-    )
-    d = store.publish(text=page, title="Page", filename="page.html")
+HTML_PAGE = (
+    "<html><head><title>T</title><style>p{color:red}</style></head><body>"
+    "<h1>Heading words</h1><p onclick='steal()'>Body words</p><img src='img/a.png'>"
+    "<script>steal()</script></body></html>"
+)
+
+
+def test_an_html_document_is_served_as_itself_sandboxed(client, shares, store, tmp_path):
+    src = tmp_path / "site"
+    (src / "img").mkdir(parents=True)
+    (src / "index.html").write_text(HTML_PAGE)
+    (src / "img" / "a.png").write_bytes(b"\x89PNG")
+    d = store.publish(src, title="Site")
     rec = shares.create(d["id"])
-    body = _text(client.get(f"/{rec['token']}/").text)
-    assert "Heading words" in body and "Body words" in body
+    link = f"/{rec['token']}"
+    for path in ("/", f"/d/{d['id']}"):
+        r = client.get(link + path)
+        assert r.status_code == 200 and "Body words" in r.text and "color:red" in r.text
+        assert r.headers["content-security-policy"].startswith("sandbox ")
+        assert "allow-same-origin" not in r.headers["content-security-policy"]
+        assert f'<head><base href="{link}/raw/{d["id"]}/">' in r.text
+    assert client.get(f"{link}/raw/{d['id']}/img/a.png").status_code == 200
+
+
+def test_in_a_group_an_html_document_is_its_words_never_its_script(client, shares, store):
+    md = store.publish(text="# Notes\n\nplain words", title="Notes")
+    page = store.publish(text=HTML_PAGE, title="Page", filename="page.html")
+    rec = shares.create(store.make_group("Mixed", [md["id"], page["id"]])["id"])
+    link = f"/{rec['token']}"
+    body = client.get(link + "/").text
+    assert "plain words" in body and "Heading words" in body and "Body words" in body
     assert "steal" not in body and "onclick" not in body and "color:red" not in body
+    assert f'<a href="{link}/d/{page["id"]}">Open the page as designed</a>' in body
 
 
 def test_a_folder_of_images_shows_them(client, shares, store, tmp_path):
