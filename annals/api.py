@@ -552,26 +552,21 @@ def _mk_api(
         return {"groups": store.list_groups()}
 
     def _doc_ids(body: dict) -> list[str]:
-        """The ``docs`` of a request body: a non-empty list of ids of documents that exist."""
+        """The ``docs`` of a request body, as a list of strings (the store checks them)."""
         ids = body.get("docs")
         if not (
             isinstance(ids, list) and ids and all(isinstance(x, str) and x for x in ids)
         ):
             raise HTTPException(422, "send {'docs': [<document ids>]}")
-        for i in ids:
-            try:
-                store.meta(i)
-            except (KeyError, ValueError):
-                raise HTTPException(422, f"no such document: {i[:60]}")
         return ids
 
     @api.post("/groups", dependencies=[Depends(_require_same_origin)])
     def make_group(body: dict = Body(...)) -> dict:
         """Make a group by hand: ``{"title": str, "docs": [<document ids>]}``; returns it."""
-        title = body.get("title")
-        if not (isinstance(title, str) and title.strip()):
-            raise HTTPException(422, "send {'title': <text>, 'docs': [<document ids>]}")
-        return store.make_group(title.strip(), _doc_ids(body))
+        try:
+            return store.make_group(body.get("title"), _doc_ids(body), live_only=True)
+        except ValueError as e:
+            raise HTTPException(422, str(e)[:200])
 
     @api.post("/groups/{gid}/docs", dependencies=[Depends(_require_same_origin)])
     def add_to_group(gid: str, body: dict = Body(...)) -> dict:
@@ -579,11 +574,17 @@ def _mk_api(
 
         ``{"docs": [<document ids>]}``; returns the group. Nothing is ever removed this way.
         """
+        ids = _doc_ids(body)
         try:
             store.group(gid)
         except (KeyError, ValueError):
             raise HTTPException(404, "no such group")
-        return store.add_to_group(gid, _doc_ids(body))
+        try:
+            return store.add_to_group(gid, ids)
+        except ValueError as e:
+            raise HTTPException(422, str(e)[:200])
+        except RuntimeError as e:  # another writer of this group did not let go in time
+            raise HTTPException(409, str(e))
 
     @api.get("/groups/{gid}")
     def get_group(gid: str) -> dict:

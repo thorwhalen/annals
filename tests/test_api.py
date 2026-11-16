@@ -481,3 +481,57 @@ def test_group_writes_refuse_cross_site_browsers(client, store):
     assert client.post("/annals/api/groups", json={"title": "x", "docs": [first]}, headers=evil).status_code == 403
     assert client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [first]}, headers=evil).status_code == 403
     assert len(store.list_groups()) == 1
+
+
+def test_group_writes_refuse_versions_and_binned_documents(client, store):
+    first = store.list()[0]["id"]
+    binned = store.publish(text="# Gone", title="Gone")["id"]
+    store.trash(binned)
+    g = store.make_group("G", [first])
+    for docs in ([first + "@1"], [binned], [first, binned]):
+        assert client.post("/annals/api/groups", json={"title": "x", "docs": docs}).status_code == 422
+        r = client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": docs})
+        assert r.status_code == 422, docs
+    assert store.group(g["id"])["docs"] == [first]
+
+
+def test_group_titles_are_cleaned_and_repeats_dropped(client, store):
+    first = store.list()[0]["id"]
+    r = client.post("/annals/api/groups", json={"title": "  a\n\tb‮  c\x00 ", "docs": [first, first]})
+    assert r.json()["title"] == "a b c" and r.json()["docs"] == [first]
+    too_long = client.post("/annals/api/groups", json={"title": "x" * 201, "docs": [first]})
+    assert too_long.status_code == 422
+    assert client.post("/annals/api/groups", json={"title": "‮\x01", "docs": [first]}).status_code == 422
+
+
+def test_concurrent_adds_to_one_group_all_land(client, store):
+    import threading
+
+    g = store.make_group("G", [store.list()[0]["id"]])
+    ids = [store.publish(text=f"# D{i}", title=f"D{i}")["id"] for i in range(16)]
+    codes = []
+    threads = [
+        threading.Thread(
+            target=lambda i=i: codes.append(
+                client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [i]}).status_code
+            )
+        )
+        for i in ids
+    ]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert codes == [200] * len(ids)
+    assert set(ids) <= set(store.group(g["id"])["docs"])
+
+
+def test_the_group_tool_adds_to_an_existing_group(tmp_path):
+    from annals.tools import group
+
+    store = DocStore(tmp_path / "data")
+    a = store.publish(text="# A", title="A")["id"]
+    b = store.publish(text="# B", title="B")["id"]
+    made = group("Both", [a], target=str(tmp_path / "data"))
+    added = group("", [b], add_to=made["id"], target=str(tmp_path / "data"))
+    assert added["docs"] == [a, b] and added["id"] == made["id"]
+    with pytest.raises(ValueError):
+        group("x", ["20990101-000000-nope-abcd"], target=str(tmp_path / "data"))

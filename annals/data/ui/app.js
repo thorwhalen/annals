@@ -46,6 +46,7 @@
   var LIST_REUSE_MS = 60000;   /* Back to a list re-filters what was loaded, no refetch */
   var FACET_SHOWN = 8;         /* values shown before "Show all" */
   var FACET_FILTER_AT = 12;    /* a family this long gets a type-ahead box */
+  var ERROR_TOAST_MS = 4000;   /* how long a failure stays up */
 
   /* -------- helpers ------------------------------------------------------------- */
   function h(tag, attrs, children) {
@@ -147,6 +148,8 @@
   }
   function ageEl(iso) { return h("span", { class: "age", title: when(iso) }, [age(iso)]); }
   function size(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(0) + " KB" : (n / 1048576).toFixed(1) + " MB"; }
+  /* says why an action failed; a 401 is already taking the person to the login page */
+  function failToast(e) { if (e.message !== "login") toast("That did not work: " + (e.message || e), ERROR_TOAST_MS); }
   function toast(msg, ms) {
     if (!toastEl) { toastEl = h("div", { class: "toast", role: "status" }); document.body.appendChild(toastEl); }
     toastEl.textContent = msg; toastEl.classList.add("show");
@@ -529,9 +532,12 @@
     var listEl = h("div", { class: "list" });
     /* Select: only the published documents can be picked (a folder source's items are not documents) */
     var canSelect = scope === "published";
-    var selecting = false, picked = {};   /* picked: id -> true */
-    var selBar = h("div", { class: "selbar", role: "toolbar", "aria-label": "Act on the picked documents", hidden: "" });
-    var shownIds = [];
+    var selecting = canSelect && !!(back.sel && back.sel.on), picked = {};   /* picked: id -> true */
+    ((back.sel || {}).ids || []).forEach(function (id) { picked[id] = true; });
+    var shownIds = [], shownSet = {};
+    /* Select mode and the picks live in this history entry, so Back, Forward and a filter change keep them */
+    function selState() { return selecting ? { on: true, ids: Object.keys(picked) } : null; }
+    function keepSel() { history.replaceState(Object.assign({}, history.state, { sel: selState() }), ""); }
 
     function anySelected() { return fams.some(function (f) { return sel[f.key].length; }); }
     function urlFor() {
@@ -542,7 +548,7 @@
       return location.pathname + (qs ? "?" + qs : "");
     }
     /* each filter change is one history entry, so Back undoes it */
-    function commit() { var u = urlFor(); if (u !== location.pathname + location.search) history.pushState({ list: true }, "", u); state.shown = LIST_PAGE; restoreY = 0; render(); }
+    function commit() { var u = urlFor(); if (u !== location.pathname + location.search) history.pushState({ list: true, sel: selState() }, "", u); state.shown = LIST_PAGE; restoreY = 0; render(); }
     function toggle(f, v) {
       var i = sel[f.key].indexOf(v);
       if (i >= 0) sel[f.key].splice(i, 1); else sel[f.key].push(v);
@@ -617,62 +623,66 @@
       applied.appendChild(h("button", { class: "btn link", onclick: function () { fams.forEach(function (f) { sel[f.key] = []; }); commit(); } }, ["Clear all"]));
     }
 
-    function pickedRows() { return rows.filter(function (r) { return picked[r.id]; }); }
-    /* the picked rows need more than a listing row holds (files, review state): fetched when a result is pressed */
+    /* rows seen so far: a pick stays a pick when a search or filter stops showing its row */
+    var known = {};
+    function pickedRows() { return Object.keys(picked).map(function (id) { return known[id]; }).filter(Boolean); }
+    /* Listen and One file need what a listing row lacks (files, review state): fetched when pressed */
     function resolvePick(sc) {
       return Promise.all(sc.items.map(function (m) { return api("/docs/" + m.id); })).then(function (metas) {
         var spoken = metas.filter(function (m) { return !!m.listen; })[0];
         return { kind: "list", items: metas, total: metas.length, listen: spoken ? { choices: spoken.listen.choices } : null };
       });
     }
-    function listScope() { var p = pickedRows(); return { kind: "list", items: p, total: p.length, listen: null }; }
-    function drawBar() {
-      selBar.hidden = !selecting;
-      selBar.innerHTML = "";
-      if (!selecting) return;
-      var n = pickedRows().length;
-      var allBox = h("input", { type: "checkbox", "aria-label": "Pick all shown documents", onchange: function () {
-        picked = {};
-        if (allBox.checked) shownIds.forEach(function (id) { picked[id] = true; });
-        render();
-      } });
-      allBox.checked = n > 0 && shownIds.length > 0 && shownIds.every(function (id) { return picked[id]; });
-      selBar.appendChild(h("div", { class: "sel-row" }, [
-        h("label", { class: "sel-all" }, [allBox, " All"]),
-        h("span", { class: "sel-count", role: "status" }, [n ? n + " picked" : "Tap documents to pick them"]),
-        n ? h("button", { class: "btn link", type: "button", onclick: function () { picked = {}; render(); } }, ["Clear"]) : null
-      ]));
-      selBar.appendChild(h("div", { class: "sel-actions" }, resultButtons(listScope, resolvePick).concat([actionMenu([
-        addToGroupAction(listScope, { onDone: function () { picked = {}; selecting = false; syncSelectBtn(); load(); } })
-      ])])));
+    function afterGroup() { picked = {}; selecting = false; keepSel(); syncSelectBtn(); render(); load(); }
+    /* onDone rides on the scope so Links can run it too */
+    function listScope() { var p = pickedRows(); return { kind: "list", items: p, total: p.length, listen: null, onDone: afterGroup }; }
+    function listState() {
+      var n = pickedRows().length, inShown = pickedRows().filter(function (r) { return shownSet[r.id]; }).length;
+      var all = shownIds.length > 0 && inShown === shownIds.length;
+      return { n: n, checked: all, indeterminate: !all && inShown > 0,
+        text: n ? n + " picked" + (n > inShown ? ", " + (n - inShown) + " not shown" : "") : "Tap documents to pick them" };
     }
-    function setSelecting(on) { selecting = on; if (!on) picked = {}; syncSelectBtn(); render(); }
+    var bar = canSelect && !trash ? pickBar({
+      scope: listScope, resolve: resolvePick, allLabel: "Pick all shown documents",
+      actions: [addToGroupAction(listScope, { onDone: afterGroup })],
+      onAll: function (on) { shownIds.forEach(function (id) { if (on) picked[id] = true; else delete picked[id]; }); keepSel(); render(); },
+      onClear: function () { picked = {}; keepSel(); render(); },
+      state: listState
+    }) : null;
+    function setSelecting(on) { selecting = on; if (!on) picked = {}; keepSel(); syncSelectBtn(); render(); }
     function pickRow(r) {
       var input = h("input", { type: "checkbox", "aria-label": "Pick “" + (r.title || r.id) + "”", onchange: function () { flip(); } });
       var body = h("div", { class: "pick-body" }, [card(r, null, { showSource: scope === "all" })]);
+      var link = body.querySelector("a.card");
+      if (link) { link.setAttribute("tabindex", "-1"); link.setAttribute("aria-hidden", "true"); }   /* one tab stop per row: its box */
       var row = h("div", { class: "pick-row" + (picked[r.id] ? " picked" : "") }, [h("label", { class: "pick" }, [input]), body]);
       input.checked = !!picked[r.id];
       function flip() {
         if (input.checked) picked[r.id] = true; else delete picked[r.id];
         row.classList.toggle("picked", input.checked);
-        drawBar();
+        keepSel(); bar.update();
       }
       /* in select mode a tap on the card ticks it instead of opening it */
       body.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); input.checked = !input.checked; flip(); }, true);
       return row;
     }
 
+    /* the list is drawn by renderList; the bar under it is brought up to date after every draw */
     function render() {
+      shownIds = []; shownSet = {};
+      rows.forEach(function (r) { known[r.id] = r; });
+      renderList();
+      if (bar) { bar.el.hidden = !selecting; bar.update(); }
+    }
+    function renderList() {
       var counts = facetCounts(rows, fams, sel);
       renderFacets(counts); renderApplied();
-      shownIds = [];
-      drawBar();
       listEl.innerHTML = "";
       listEl.setAttribute("aria-busy", String(loading));
       if (loading) { countEl.textContent = ""; listEl.appendChild(h("p", { class: "muted" }, [state.q ? "Searching…" : "Loading…"])); return; }
       if (failed) { listEl.appendChild(h("p", { class: "err" }, [failed])); return; }
       var shown = rows.filter(function (r) { return fams.every(function (f) { return inFamily(r, f, sel[f.key]); }); }).sort(SORTS[state.sort].fn);
-      var gs = scope === "published" && !anySelected() ? groups.filter(function (g) { return !state.q || (g.title || "").toLowerCase().indexOf(state.q.toLowerCase()) >= 0; }) : [];
+      var gs = scope === "published" && !anySelected() && !selecting ? groups.filter(function (g) { return !state.q || (g.title || "").toLowerCase().indexOf(state.q.toLowerCase()) >= 0; }) : [];
       countEl.textContent = shown.length + (shown.length === 1 ? " item" : " items") + (gs.length ? ", " + gs.length + (gs.length === 1 ? " group" : " groups") : "");
       if (!shown.length && !gs.length) { listEl.appendChild(emptyState()); return; }
       var byTime = state.sort === "newest" || state.sort === "oldest";
@@ -680,10 +690,9 @@
       entries.slice(0, state.shown).forEach(function (e) {
         if (e.group) { if (!selecting) listEl.appendChild(groupCard(e.group, e.time)); return; }
         var r = e.doc;
-        if (selecting) { shownIds.push(r.id); return listEl.appendChild(pickRow(r)); }
+        if (selecting) { shownIds.push(r.id); shownSet[r.id] = true; return listEl.appendChild(pickRow(r)); }
         listEl.appendChild(trash ? card(r, trashActions(r)) : card(r, null, { showSource: scope === "all" }));
       });
-      drawBar();
       if (entries.length > state.shown) {
         listEl.appendChild(h("button", { class: "btn more", onclick: function () { state.shown += LIST_PAGE; listShown = state.shown; render(); } },
           ["Show " + Math.min(LIST_PAGE, entries.length - state.shown) + " more of " + (entries.length - state.shown)]));
@@ -736,12 +745,8 @@
       } });
     var sortSel = h("select", { "aria-label": "Sort", onchange: function (e) { state.sort = e.target.value; writePref("sort", state.sort); render(); } },
       Object.keys(SORTS).map(function (k) { var o = h("option", { value: k }, [SORTS[k].label]); if (k === state.sort) o.selected = true; return o; }));
-    var selectBtn = canSelect && !trash ? h("button", { class: "btn select-btn", type: "button", "aria-pressed": "false", onclick: function () { setSelecting(!selecting); } }, ["Select"]) : null;
-    function syncSelectBtn() {
-      if (!selectBtn) return;
-      selectBtn.setAttribute("aria-pressed", String(selecting));
-      selectBtn.textContent = selecting ? "Done" : "Select";
-    }
+    var selectBtn = canSelect && !trash ? h("button", { class: "btn select-btn", type: "button", "aria-pressed": String(selecting), onclick: function () { setSelecting(!selecting); } }, ["Select"]) : null;
+    function syncSelectBtn() { if (selectBtn) selectBtn.setAttribute("aria-pressed", String(selecting)); }
     var title = trash ? "Recycle bin" : scope === "all" ? "Everything" : scope === "published" ? "" : sourceTitle(scope);
     page(title, mainNav(scope), [
       trash ? h("div", { class: "notice" }, ["Documents here stay until you delete them forever."]) : null,
@@ -750,7 +755,7 @@
       famBar, panel, applied,
       h("div", { class: "row", style: "margin-bottom:8px" }, [countEl]),
       listEl,
-      selBar
+      bar ? bar.el : null
     ]);
     /* named when it is left, so it says whether a search or filters were on */
     viewLabel = function () { return (title || sourceTitle(scope)) + (location.search ? ", filtered" : ""); };
@@ -871,14 +876,14 @@
     ];
     return [{ section: "download", label: kind === "file" ? "File" : "Original file", hint: "Save the file as it is", icon: "download", href: downloadUrl(ctx.raw(rel)), download: basename(rel) }];
   }
-  function actionItem(a, close) {
+  function actionItem(a, close, returnTo) {
     var inner = [icon(a.icon), h("span", { class: "lbl" }, [a.label, a.hint ? h("span", { class: "menuhint" }, [a.hint]) : null])];
     var attrs = { role: "menuitem", class: "menuitem" + (a.danger ? " danger" : ""), title: a.hint || null, tabindex: "-1" };
     if (a.href) {
       Object.assign(attrs, { href: a.href, download: a.download || null, target: a.newTab ? "_blank" : null, rel: a.newTab ? "noopener" : null, onclick: close });
       return h("a", attrs, inner);
     }
-    attrs.type = "button"; attrs.onclick = function () { close(); a.run(); };
+    attrs.type = "button"; attrs.onclick = function () { close(); a.run(returnTo); };
     return h("button", attrs, inner);
   }
   function actionMenu(actions) {
@@ -890,7 +895,7 @@
     ACTION_SECTIONS.forEach(function (sec) {
       var rows = actions.filter(function (a) { return a.section === sec[0]; });
       if (!rows.length) return;
-      menu.appendChild(h("div", { class: "menu-group", role: "group", "aria-label": sec[1] }, [h("div", { class: "menu-title", "aria-hidden": "true" }, [sec[1]])].concat(rows.map(function (a) { return actionItem(a, function () { setOpen(false, true); }); }))));
+      menu.appendChild(h("div", { class: "menu-group", role: "group", "aria-label": sec[1] }, [h("div", { class: "menu-title", "aria-hidden": "true" }, [sec[1]])].concat(rows.map(function (a) { return actionItem(a, function () { setOpen(false, true); }, btn); }))));
     });
     function items() { return Array.prototype.slice.call(menu.querySelectorAll("[role=menuitem]")); }
     function setOpen(v, keepFocus) {
@@ -920,7 +925,7 @@
     return function () {
       if (busy) return;
       busy = true;
-      return work().catch(function (e) { if (e.message !== "login") toast("That did not work: " + (e.message || e), 4000); }).then(function () { busy = false; });
+      return work().catch(failToast).then(function () { busy = false; });
     };
   }
   /* view: controls that change how it is shown (Rendered | Source); primary: buttons that
@@ -1320,78 +1325,130 @@
           if (!r.when(full)) return toast(r.id === "file" ? "None of these has files that can be put in one file" : "None of these can be spoken");
           taskSheet({ title: r.title, scope: scopeLabel(full), hint: r.hint(full), body: r.body(full), returnTo: btn });
         }
-        if (!resolve) return open(sc);
+        if (!resolve || r.id === "links") return open(sc);
         btn.setAttribute("aria-busy", "true");
-        resolve(sc).then(open).catch(function (e) { toast("That did not work: " + (e.message || e), 4000); })
+        resolve(sc).then(open).catch(failToast)
           .then(function () { btn.removeAttribute("aria-busy"); });
       } }, [icon(r.icon), h("span", { class: "lbl" }, [r.label])]);
       return btn;
     });
   }
 
+  /* -------- the bar under a pick: one for a group and for the main list -------------------- */
+  /* Its nodes last as long as the page, and update() changes them in place, so a screen reader
+     hears the count change and a focused button keeps focus. o: scope() the pick, resolve(sc)
+     (see resultButtons), actions (the More menu), onAll(on), onClear(), allLabel, and
+     state() -> {n, checked, indeterminate, text}. */
+  function pickBar(o) {
+    var allBox = h("input", { type: "checkbox", "aria-label": o.allLabel, onchange: function () { o.onAll(allBox.checked); } });
+    var count = h("span", { class: "sel-count", role: "status" });
+    var clear = h("button", { class: "btn link", type: "button", onclick: function () { o.onClear(); } }, ["Clear"]);
+    var el = h("div", { class: "selbar", role: "toolbar", "aria-label": "Act on the picked documents" }, [
+      h("div", { class: "sel-row" }, [h("label", { class: "sel-all" }, [allBox, " All"]), count, clear]),
+      h("div", { class: "sel-actions" }, resultButtons(o.scope, o.resolve).concat([actionMenu(o.actions)]))
+    ]);
+    function update() {
+      var st = o.state();
+      allBox.checked = st.checked; allBox.indeterminate = st.indeterminate;
+      if (count.textContent !== st.text) count.textContent = st.text;
+      clear.hidden = !st.n;
+    }
+    return { el: el, update: update };
+  }
+
   /* -------- Add to group…: make a group of the picked documents, or add them to one --- */
   /* The only way groups are made by hand (POST /groups, POST /groups/{gid}/docs). `sc` is the
-     pick; `o.intro` says why the sheet is open when it was not asked for by name; `o.from` is
-     the group the pick is in, left out of the choices; `o.onDone` runs once it is done. */
+     pick. o.intro: why the sheet is open when it was not asked for by name; o.links: the sheet
+     was opened by Links, so once the group exists it becomes that group's Links; o.from: the
+     group the pick is in, left out of the choices; o.onDone(group) runs when it is done. */
   var TITLE_MORE = " and ";
   function dfltGroupTitle(items) {
     var first = (items[0] && (items[0].title || items[0].id)) || "Group";
     return items.length > 1 ? first + TITLE_MORE + (items.length - 1) + " more" : first;
   }
+  /* the form for a new group: Enter makes it, and the suggested name is selected to type over */
+  function newGroupForm(items, make) {
+    var title = h("input", { type: "text", value: dfltGroupTitle(items), autocomplete: "off", "aria-label": "Name of the new group", class: "add-title" });
+    title.addEventListener("focus", function () { title.select(); });
+    var btn = h("button", { class: "btn primary", type: "submit" }, [h("span", { class: "lbl" }, ["Make the group"])]);
+    var form = h("form", { class: "add-new", onsubmit: function (e) {
+      e.preventDefault();
+      if (!title.value.trim()) return toast("Give the group a name");
+      make(title.value, btn);
+    } }, [h("h4", null, ["A new group"]), h("label", { class: "add-label" }, ["Name ", title]), btn]);
+    return form;
+  }
+  /* the groups there are, to add to: a filter when there are many, and "Show more" */
+  function existingGroupList(ids, from, add) {
+    var box = h("div", { class: "add-existing-wrap" }, [h("p", { class: "muted" }, ["Loading groups…"])]);
+    api("/groups").then(function (r) {
+      var all = (r.groups || []).filter(function (g) { return g.id !== from; });
+      var shown = LIST_PAGE, filter = null, list = h("div", { class: "add-existing" });
+      function draw() {
+        var nd = filter ? filter.value.trim().toLowerCase() : "";
+        var gs = all.filter(function (g) { return !nd || (g.title || g.id).toLowerCase().indexOf(nd) >= 0; });
+        list.innerHTML = "";
+        gs.slice(0, shown).forEach(function (g) {
+          var has = ids.every(function (id) { return g.docs.indexOf(id) >= 0; });
+          var b = h("button", { class: "btn add-pick", type: "button", "aria-disabled": has ? "true" : null, onclick: function () { if (!has) add(g.id, b); } },
+            [h("span", { class: "lbl" }, [g.title || g.id]), h("span", { class: "muted" }, [has ? " · already has these" : " · " + g.docs.length])]);
+          list.appendChild(b);
+        });
+        if (gs.length > shown) list.appendChild(h("button", { class: "btn more", type: "button", onclick: function () { shown += LIST_PAGE; draw(); } }, ["Show " + Math.min(LIST_PAGE, gs.length - shown) + " more of " + (gs.length - shown)]));
+        if (!gs.length) list.appendChild(h("p", { class: "muted" }, [all.length ? "None match." : "No other groups yet."]));
+      }
+      box.innerHTML = "";
+      if (all.length > FACET_FILTER_AT) {
+        filter = h("input", { type: "search", class: "add-filter", placeholder: "Find a group", autocomplete: "off", "aria-label": "Find a group", oninput: function () { shown = LIST_PAGE; draw(); } });
+        box.appendChild(filter);
+      }
+      box.appendChild(list);
+      draw();
+    }).catch(function (e) { box.innerHTML = ""; box.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
+    return box;
+  }
   function addToGroupBody(sc, o) {
     o = o || {};
     var ids = sc.items.map(function (m) { return m.id; });
     var wrap = h("div", { class: "add-group" });
-    var status = h("div", { class: "add-status", role: "status" });
-    var form = h("div", { class: "add-form" });
-    var title = h("input", { type: "text", value: dfltGroupTitle(sc.items), autocomplete: "off", "aria-label": "Name of the new group", class: "add-title" });
+    var note = h("div", { class: "add-status", role: "status" });
+    var problem = h("div", { class: "err add-error", role: "alert" });   /* in the sheet: a toast sits behind it */
     var busy = false;
     function done(g, verb) {
-      form.hidden = true;
-      status.innerHTML = "";
-      status.appendChild(h("p", null, [verb + " “" + (g.title || g.id) + "” (" + g.docs.length + (g.docs.length === 1 ? " document" : " documents") + "). "]));
-      status.appendChild(sheetLink(BASE + "/g/" + g.id, "Open the group", "btn primary add-open"));
       lastList = null;
+      if (o.links) {
+        wrap.innerHTML = "";
+        wrap.appendChild(linksBody({ kind: "group", group: g, ref: g.id, items: sc.items, total: g.docs.length, listen: null }));
+      } else {
+        wrap.innerHTML = "";
+        note.innerHTML = "";
+        note.appendChild(h("p", null, [verb + " “" + (g.title || g.id) + "” (" + g.docs.length + (g.docs.length === 1 ? " document" : " documents") + "). "]));
+        note.appendChild(sheetLink(BASE + "/g/" + g.id, "Open the group", "btn primary add-open"));
+        wrap.appendChild(note);
+      }
       if (o.onDone) o.onDone(g);
     }
     function send(path, body, verb, btn) {
       if (busy) return;
-      busy = true; btn.setAttribute("aria-busy", "true");
+      busy = true; btn.setAttribute("aria-busy", "true"); problem.textContent = "";
       api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
         .then(function (g) { done(g, verb); })
-        .catch(function (e) { toast("That did not work: " + (e.message || e), 4000); })
+        .catch(function (e) { if (e.message !== "login") problem.textContent = "That did not work: " + (e.message || e); })
         .then(function () { busy = false; btn.removeAttribute("aria-busy"); });
     }
-    var make = h("button", { class: "btn primary", type: "button", onclick: function () {
-      if (!title.value.trim()) return toast("Give the group a name");
-      send("/groups", { title: title.value.trim(), docs: ids }, "Made", make);
-    } }, [h("span", { class: "lbl" }, ["Make the group"])]);
-    var existing = h("div", { class: "add-existing" }, [h("p", { class: "muted" }, ["Loading groups…"])]);
-    form.appendChild(h("h4", null, ["A new group"]));
-    form.appendChild(h("label", { class: "add-label" }, ["Name ", title]));
-    form.appendChild(make);
-    form.appendChild(h("h4", null, ["Or add to a group you have"]));
-    form.appendChild(existing);
-    api("/groups").then(function (r) {
-      var gs = (r.groups || []).filter(function (g) { return g.id !== o.from; });
-      existing.innerHTML = "";
-      if (!gs.length) return existing.appendChild(h("p", { class: "muted" }, ["No other groups yet."]));
-      gs.forEach(function (g) {
-        var b = h("button", { class: "btn add-pick", type: "button", onclick: function () { send("/groups/" + g.id + "/docs", { docs: ids }, "Added to", b); } },
-          [h("span", { class: "lbl" }, [g.title || g.id]), h("span", { class: "muted" }, [" · " + g.docs.length])]);
-        existing.appendChild(b);
-      });
-    }).catch(function (e) { existing.innerHTML = ""; existing.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
     if (o.intro) wrap.appendChild(h("p", { class: "muted" }, [o.intro]));
-    wrap.appendChild(status); wrap.appendChild(form);
+    wrap.appendChild(problem);
+    wrap.appendChild(newGroupForm(sc.items, function (title, btn) { send("/groups", { title: title, docs: ids }, "Made", btn); }));
+    wrap.appendChild(h("h4", null, ["Or add to a group you have"]));
+    wrap.appendChild(existingGroupList(ids, o.from, function (gid, btn) { send("/groups/" + gid + "/docs", { docs: ids }, "Added to", btn); }));
     return wrap;
   }
   /* The "Add to group…" row of a More menu, acting on the pick `getScope()` gives. */
   function addToGroupAction(getScope, o) {
-    return { section: "manage", label: "Add to group…", hint: "Make a group of these documents, or add them to one", icon: "link", run: function () {
+    return { section: "manage", label: "Add to group…", hint: "Make a group of these documents, or add them to one", icon: "link", run: function (returnTo) {
       var sc = getScope();
       if (!sc.items.length) return toast("Pick at least one document");
-      taskSheet({ title: "Add to group", scope: scopeLabel(sc), body: addToGroupBody(sc, o) });
+      taskSheet({ title: "Add to group", scope: scopeLabel(sc), body: addToGroupBody(sc, o), returnTo: returnTo });
     } };
   }
 
@@ -1471,20 +1528,9 @@
         return { kind: "group", group: g, ref: g.id, items: p.length ? p : items, total: items.length, listen: g.listen || null };
       }
       var boxes = [];
-      var allBox = h("input", { type: "checkbox", "aria-label": "Pick all documents", onchange: function () {
-        var on = allBox.checked; picked = {};
-        if (on) items.forEach(function (m) { picked[m.id] = true; });
-        update();
-      } });
-      var count = h("span", { class: "sel-count", role: "status" });
-      var clear = h("button", { class: "btn link", type: "button", onclick: function () { picked = {}; update(); } }, ["Clear"]);
       function update() {
-        var n = pickedItems().length;
         boxes.forEach(function (b) { b.input.checked = !!picked[b.id]; b.row.classList.toggle("picked", !!picked[b.id]); });
-        allBox.checked = n === items.length && n > 0;
-        allBox.indeterminate = n > 0 && n < items.length;
-        count.textContent = n ? n + " of " + items.length + " picked" : "All " + items.length + (items.length === 1 ? " document" : " documents");
-        clear.hidden = !n;
+        if (bar) bar.update();
       }
       var rows = items.map(function (m) {
         var input = h("input", { type: "checkbox", "aria-label": "Pick “" + (m.title || m.id) + "”", onchange: function () { if (input.checked) picked[m.id] = true; else delete picked[m.id]; update(); } });
@@ -1492,20 +1538,23 @@
         boxes.push({ id: m.id, input: input, row: row });
         return row;
       });
-      var more = actionMenu([
-        COPY_ADDRESS(),
-        addToGroupAction(scope, { from: g.id, onDone: function () { picked = {}; update(); } })
-      ]);
-      var bar = items.length ? h("div", { class: "selbar", role: "toolbar", "aria-label": "Act on the picked documents" }, [
-        h("div", { class: "sel-row" }, [h("label", { class: "sel-all" }, [allBox, " All"]), count, clear]),
-        h("div", { class: "sel-actions" }, resultButtons(scope).concat([more]))
-      ]) : null;
+      var bar = items.length ? pickBar({
+        scope: scope, allLabel: "Pick all documents",
+        actions: [COPY_ADDRESS(), addToGroupAction(scope, { from: g.id, onDone: function () { picked = {}; update(); } })],
+        onAll: function (on) { picked = {}; if (on) items.forEach(function (m) { picked[m.id] = true; }); update(); },
+        onClear: function () { picked = {}; update(); },
+        state: function () {
+          var n = pickedItems().length;
+          return { n: n, checked: n === items.length && n > 0, indeterminate: n > 0 && n < items.length,
+            text: n ? n + " of " + items.length + " picked" : "All " + items.length + (items.length === 1 ? " document" : " documents") };
+        }
+      }) : null;
       page(g.title, mainNav("published"), [
         backLink(BASE + "/", sourceTitle("published")),
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
         items.length ? h("p", { class: "muted pick-help" }, ["Tick documents to act on some of them; with none ticked, the buttons below act on all of them."]) : null,
         h("div", { class: "list picklist" }, items.length ? rows : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])]),
-        bar
+        bar ? bar.el : null
       ]);
       update();
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
@@ -1549,7 +1598,7 @@
   function linksBody(sc) {
     /* a share has one root, a document or a group: a pick from the whole list has neither, so
        it is offered its group first, and the link is made from the group's own page */
-    if (sc.kind === "list") return addToGroupBody(sc, { intro: "A link is made for one document or one group. Make a group of these documents, then press Links on it." });
+    if (sc.kind === "list") return addToGroupBody(sc, { links: true, onDone: sc.onDone, intro: "A link is made for one document or one group, so a group is made of these documents first. Name it, or add them to a group you have; then its links are made here." });
     var ref = sc.ref;
     var mode = readPref("linkmode:" + sc.kind, sc.kind === "doc" ? "one" : "each");
     if (mode !== "one" && mode !== "each") mode = "one";

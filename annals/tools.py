@@ -509,13 +509,24 @@ def group(
     title: str,
     doc_ids: list[str],
     *,
+    add_to: str | None = None,
     target: str | None = None,
     base_url: str | None = None,
     to: str | None = None,
 ) -> dict:
-    """Make a group (one URL for a set of documents) from existing document ids."""
+    """Make a group (one URL for a set of documents) from existing document ids.
+
+    With ``add_to`` (a group id) the documents are added to that group instead, and ``title``
+    is ignored. The documents must exist and not be in the bin; the title is cleaned (see
+    :func:`annals.store.clean_title`).
+    """
     settings = load_settings(target=target, base_url=base_url, to=to)
-    g = _store(settings).make_group(title, _as_list(doc_ids))
+    store = _store(settings)
+    g = (
+        store.add_to_group(add_to, _as_list(doc_ids))
+        if add_to
+        else store.make_group(title, _as_list(doc_ids), live_only=True)
+    )
     return {
         "id": g["id"],
         "title": g["title"],
