@@ -566,7 +566,9 @@ class DocStore:
     @staticmethod
     def _stale(info: dict) -> bool:
         """Old, or held by a process of this host that is gone."""
-        if time.time() - float(info.get("since", 0)) >= float(info.get("ttl", LOCK_STALE_S)):
+        if time.time() - float(info.get("since", 0)) >= float(
+            info.get("ttl", LOCK_STALE_S)
+        ):
             return True
         if info.get("host") == socket.gethostname() and info.get("pid"):
             try:

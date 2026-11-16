@@ -337,10 +337,18 @@ def publish(
     if group or add_to:
         ids = [d["id"] for d in docs]
         try:
-            g = store.add_to_group(add_to, ids) if add_to else store.make_group(group, ids)
-        except RuntimeError as e:  # the group is busy: the documents are published, say which
+            g = (
+                store.add_to_group(add_to, ids)
+                if add_to
+                else store.make_group(group, ids)
+            )
+        except (
+            RuntimeError
+        ) as e:  # the group is busy: the documents are published, say which
             note = f"published {', '.join(ids)} but not grouped ({e})"
-            result["warning"] = (result["warning"] + "\nannals: warning: " if "warning" in result else "") + note
+            result["warning"] = (
+                result["warning"] + "\nannals: warning: " if "warning" in result else ""
+            ) + note
             return result
         result["group_id"] = g["id"]
         result["group_url"] = _group_url(settings, g["id"])
