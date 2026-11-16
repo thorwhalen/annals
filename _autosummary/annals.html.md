@@ -11,7 +11,7 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 | [`configure`](#annals.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
 |-------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`group`](#annals.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
+| [`group`](#annals.group)(title, doc_ids, \*[, add_to, target, ...])     | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
 | [`groups`](#annals.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                                                                                                        |
 | [`load_settings`](#annals.load_settings)(\*[, target, base_url, to, ...])       | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
 | [`ls`](#annals.ls)([q, trash, limit, target, base_url, to, ...])     | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
@@ -37,7 +37,10 @@ Publish, list, read, trash, restore and group documents on a `Target`.
 
 #### add_to_group(gid, doc_ids)
 
-Append ids to an existing group, keeping order and skipping duplicates.
+Append documents to an existing group, keeping order and skipping ones it has.
+
+Each document must exist and not be in the bin; `KeyError` for a group that is not
+there.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -87,9 +90,15 @@ Every group, newest first.
 * **Return type:**
   [`list`](#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
-#### make_group(title, doc_ids, , gid=None)
+#### make_group(title, doc_ids, , gid=None, live_only=True)
 
-Create (or overwrite) a group: a titled, ordered list of document ids.
+Create (or overwrite) a group: a titled, ordered list of documents.
+
+The title is cleaned (control characters dropped, whitespace collapsed, at most
+`MAX_GROUP_TITLE` long, not blank); repeats are dropped, keeping the first; each
+document must exist and not be in the bin unless `live_only=False` (a bundle that
+keeps a document later binned). `ValueError` says which rule failed. An explicit
+`gid` rewrites that group, under its lock.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -253,9 +262,13 @@ public app). With no arguments, shows the resolved settings without writing.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.group(title, doc_ids, , target=None, base_url=None, to=None)
+### annals.group(title, doc_ids, , add_to=None, target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
+
+With `add_to` (a group id) the documents are added to that group instead, and `title`
+is ignored. The documents must exist and not be in the bin; the title is cleaned (see
+[`annals.store.clean_title()`](annals.store.html.md#annals.store.clean_title)).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

@@ -209,7 +209,7 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.copy" title="annals.tools.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>(refs, *, to[, source, target, base_url])</p></td>
 <td><p>Copy documents or groups to a named target, keeping their ids; print the new link.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.group" title="annals.tools.group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group</span></code></a>(title, doc_ids, *[, target, base_url, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.group" title="annals.tools.group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group</span></code></a>(title, doc_ids, *[, add_to, target, ...])</p></td>
 <td><p>Make a group (one URL for a set of documents) from existing document ids.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.groups" title="annals.tools.groups"><code class="xref py py-obj docutils literal notranslate"><span class="pre">groups</span></code></a>(*[, target, base_url, to])</p></td>
@@ -364,8 +364,11 @@ copy. The source must be readable from this machine (a directory, or <code class
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.tools.group">
-<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.group" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.group" title="Link to this definition">#</a></dt>
 <dd><p>Make a group (one URL for a set of documents) from existing document ids.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">add_to</span></code> (a group id) the documents are added to that group instead, and <code class="docutils literal notranslate"><span class="pre">title</span></code>
+is ignored. The documents must exist and not be in the bin; the title is cleaned (see
+<a class="reference internal" href="annals.store.html#annals.store.clean_title" title="annals.store.clean_title"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.store.clean_title()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -686,7 +689,7 @@ outbox or a remote target. <code class="docutils literal notranslate"><span clas
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=73f2ab08"></script>
+      <script src="../_static/documentation_options.js?v=d78a2f11"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

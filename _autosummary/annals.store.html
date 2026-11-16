@@ -129,6 +129,8 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.DocStore.versions"><code class="docutils literal notranslate"><span class="pre">DocStore.versions()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#annals.store.GROUP_LOCK_STALE_S"><code class="docutils literal notranslate"><span class="pre">GROUP_LOCK_STALE_S</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.GROUP_LOCK_WAIT_S"><code class="docutils literal notranslate"><span class="pre">GROUP_LOCK_WAIT_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.HEAD_CHARS"><code class="docutils literal notranslate"><span class="pre">HEAD_CHARS</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.HidingStore"><code class="docutils literal notranslate"><span class="pre">HidingStore</span></code></a><ul>
 <li><a class="reference internal" href="#annals.store.HidingStore.add_to_group"><code class="docutils literal notranslate"><span class="pre">HidingStore.add_to_group()</span></code></a></li>
@@ -142,6 +144,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.INCOMING_PREFIX"><code class="docutils literal notranslate"><span class="pre">INCOMING_PREFIX</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.LOCK_PREFIX"><code class="docutils literal notranslate"><span class="pre">LOCK_PREFIX</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.LOCK_STALE_S"><code class="docutils literal notranslate"><span class="pre">LOCK_STALE_S</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.MAX_GROUP_TITLE"><code class="docutils literal notranslate"><span class="pre">MAX_GROUP_TITLE</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.PENDING_SEP"><code class="docutils literal notranslate"><span class="pre">PENDING_SEP</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.RESERVED"><code class="docutils literal notranslate"><span class="pre">RESERVED</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></li>
@@ -151,6 +154,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.VERSION_SEP"><code class="docutils literal notranslate"><span class="pre">VERSION_SEP</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.check_artifact_url"><code class="docutils literal notranslate"><span class="pre">check_artifact_url()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.check_id"><code class="docutils literal notranslate"><span class="pre">check_id()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.clean_title"><code class="docutils literal notranslate"><span class="pre">clean_title()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.is_sidecar_of"><code class="docutils literal notranslate"><span class="pre">is_sidecar_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.kind_of"><code class="docutils literal notranslate"><span class="pre">kind_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.mk_id"><code class="docutils literal notranslate"><span class="pre">mk_id()</span></code></a></li>
@@ -248,22 +252,31 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.LOCK_STALE_S" title="annals.store.LOCK_STALE_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LOCK_STALE_S</span></code></a></p></td>
 <td><p>its work is finished or undone</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.SWAP_WAIT_S" title="annals.store.SWAP_WAIT_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SWAP_WAIT_S</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.GROUP_LOCK_WAIT_S" title="annals.store.GROUP_LOCK_WAIT_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GROUP_LOCK_WAIT_S</span></code></a></p></td>
+<td><p>how long a group write waits for another writer of the same group, and how often it looks</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.GROUP_LOCK_STALE_S" title="annals.store.GROUP_LOCK_STALE_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GROUP_LOCK_STALE_S</span></code></a></p></td>
+<td><p>a group lock is held for milliseconds, so one older than this is a dead holder's (the lock's note carries it, so recovery on another machine knows)</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.MAX_GROUP_TITLE" title="annals.store.MAX_GROUP_TITLE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_GROUP_TITLE</span></code></a></p></td>
+<td><p>the longest title a group may have (a longer one is refused, not cut)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.SWAP_WAIT_S" title="annals.store.SWAP_WAIT_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SWAP_WAIT_S</span></code></a></p></td>
 <td><p>a reader that misses a document being swapped waits for it this long, in steps</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.SWAP_STEP_S" title="annals.store.SWAP_STEP_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SWAP_STEP_S</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.SWAP_STEP_S" title="annals.store.SWAP_STEP_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SWAP_STEP_S</span></code></a></p></td>
 <td><p>a reader that misses a document being swapped waits for it this long, in steps</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.INCOMING_PREFIX" title="annals.store.INCOMING_PREFIX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">INCOMING_PREFIX</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.INCOMING_PREFIX" title="annals.store.INCOMING_PREFIX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">INCOMING_PREFIX</span></code></a></p></td>
 <td><p>a replacement is written under this hidden name, then renamed into place whole</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.RESERVED" title="annals.store.RESERVED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RESERVED</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.RESERVED" title="annals.store.RESERVED"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RESERVED</span></code></a></p></td>
 <td><p>the store's bookkeeping lives there</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.ARTIFACT_HOSTS" title="annals.store.ARTIFACT_HOSTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ARTIFACT_HOSTS</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.ARTIFACT_HOSTS" title="annals.store.ARTIFACT_HOSTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ARTIFACT_HOSTS</span></code></a></p></td>
 <td><p>the interactive version of a page lives there, and the document's page links out to it</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES" title="annals.store.SIDECAR_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES" title="annals.store.SIDECAR_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></p></td>
 <td><p>timed text published beside an audio file, named <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;&lt;suffix&gt;</span></code> in the same folder (the suffix in any case): a transcript (<code class="docutils literal notranslate"><span class="pre">.cues.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">.srt</span></code>) and chapters (<code class="docutils literal notranslate"><span class="pre">.chapters.vtt</span></code>).</p></td>
 </tr>
 </tbody>
@@ -279,28 +292,31 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.store.check_id" title="annals.store.check_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_id</span></code></a>(doc_id)</p></td>
 <td><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on an id that could not have come from <a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">mk_id()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.is_sidecar_of" title="annals.store.is_sidecar_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_sidecar_of</span></code></a>(path, media)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.clean_title" title="annals.store.clean_title"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clean_title</span></code></a>(title)</p></td>
+<td><p>A title as the page shows it: control and invisible format characters dropped, whitespace collapsed.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.is_sidecar_of" title="annals.store.is_sidecar_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">is_sidecar_of</span></code></a>(path, media)</p></td>
 <td><p>True when <code class="docutils literal notranslate"><span class="pre">path</span></code> is timed text for <code class="docutils literal notranslate"><span class="pre">media</span></code>: <code class="docutils literal notranslate"><span class="pre">talk.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">talk.cues.json</span></code> for <code class="docutils literal notranslate"><span class="pre">talk.mp3</span></code>, in the same folder (paths compare whole), the suffix in any case.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.kind_of" title="annals.store.kind_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of</span></code></a>(filename)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.kind_of" title="annals.store.kind_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">kind_of</span></code></a>(filename)</p></td>
 <td><p>The rendering kind of a file, from its extension.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_id</span></code></a>(title, *[, when])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_id</span></code></a>(title, *[, when])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">YYYYMMDD-HHMMSS-&lt;slug&gt;-&lt;4</span> <span class="pre">hex&gt;</span></code>: sortable by time, readable in a URL.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.mk_pending_id" title="annals.store.mk_pending_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_pending_id</span></code></a>(doc_id, *[, when])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.mk_pending_id" title="annals.store.mk_pending_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_pending_id</span></code></a>(doc_id, *[, when])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&lt;id&gt;.r&lt;YYYYMMDDHHMMSSffffff&gt;-&lt;hex&gt;</span></code>: sorts in publication order.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
 <td><p>UTC timestamp with second precision, the format every meta.json uses.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
 <td><p>Lowercase ascii words joined by hyphens; empty input becomes <code class="docutils literal notranslate"><span class="pre">doc</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">n)</span></code> from <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;&#64;&lt;n&gt;</span></code> (version <code class="docutils literal notranslate"><span class="pre">n</span></code>), <code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">None)</span></code> from an id.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
 <td><p>A title (markdown <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">h1</span></code> or html <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>) and a plain-text excerpt of <code class="docutils literal notranslate"><span class="pre">head</span></code>.</p></td>
 </tr>
 </tbody>
@@ -352,7 +368,9 @@ version of a page lives there, and the document’s page links out to it</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.store.DocStore.add_to_group">
 <span class="sig-name descname"><span class="pre">add_to_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.add_to_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.add_to_group" title="Link to this definition">#</a></dt>
-<dd><p>Append ids to an existing group, keeping order and skipping duplicates.</p>
+<dd><p>Append documents to an existing group, keeping order and skipping ones it has.</p>
+<p>Each document must exist and not be in the bin; <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> for a group that is not
+there.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -430,8 +448,13 @@ document is not here is listed under its own id, so it is never out of sight.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.store.DocStore.make_group">
-<span class="sig-name descname"><span class="pre">make_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">gid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.make_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.make_group" title="Link to this definition">#</a></dt>
-<dd><p>Create (or overwrite) a group: a titled, ordered list of document ids.</p>
+<span class="sig-name descname"><span class="pre">make_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">gid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.make_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.make_group" title="Link to this definition">#</a></dt>
+<dd><p>Create (or overwrite) a group: a titled, ordered list of documents.</p>
+<p>The title is cleaned (control characters dropped, whitespace collapsed, at most
+<code class="docutils literal notranslate"><span class="pre">MAX_GROUP_TITLE</span></code> long, not blank); repeats are dropped, keeping the first; each
+document must exist and not be in the bin unless <code class="docutils literal notranslate"><span class="pre">live_only=False</span></code> (a bundle that
+keeps a document later binned). <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> says which rule failed. An explicit
+<code class="docutils literal notranslate"><span class="pre">gid</span></code> rewrites that group, under its lock.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -569,6 +592,19 @@ document was purged) stays pending and is listed under its own id.</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="annals.store.GROUP_LOCK_STALE_S">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">GROUP_LOCK_STALE_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">30</span></span><a class="headerlink" href="#annals.store.GROUP_LOCK_STALE_S" title="Link to this definition">#</a></dt>
+<dd><p>a group lock is held for milliseconds, so one older than this is a dead holder’s (the
+lock’s note carries it, so recovery on another machine knows)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.store.GROUP_LOCK_WAIT_S">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">GROUP_LOCK_WAIT_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">10</span></span><a class="headerlink" href="#annals.store.GROUP_LOCK_WAIT_S" title="Link to this definition">#</a></dt>
+<dd><p>how long a group write waits for another writer of the same group, and how often it looks</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="annals.store.HEAD_CHARS">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">HEAD_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">4000</span></span><a class="headerlink" href="#annals.store.HEAD_CHARS" title="Link to this definition">#</a></dt>
 <dd><p>how much of a file is read to find its title and excerpt</p>
@@ -592,7 +628,8 @@ and a group is always rewritten from its whole list, so hiding never deletes any
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.store.HidingStore.add_to_group">
 <span class="sig-name descname"><span class="pre">add_to_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#HidingStore.add_to_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.HidingStore.add_to_group" title="Link to this definition">#</a></dt>
-<dd><p>Append to the group’s whole list (the hidden ids stay in it).</p>
+<dd><p>Append to the group’s whole list (the hidden ids stay in it); a hidden document
+is refused as a missing one.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -688,6 +725,12 @@ being archived) between renames, and <code class="docutils literal notranslate">
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="annals.store.MAX_GROUP_TITLE">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">MAX_GROUP_TITLE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">200</span></span><a class="headerlink" href="#annals.store.MAX_GROUP_TITLE" title="Link to this definition">#</a></dt>
+<dd><p>the longest title a group may have (a longer one is refused, not cut)</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="annals.store.PENDING_SEP">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">PENDING_SEP</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'.r'</span></span><a class="headerlink" href="#annals.store.PENDING_SEP" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">&lt;id&gt;.r&lt;stamp&gt;-&lt;hex&gt;</span></code> is a pending replacement of <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;</span></code></p>
@@ -762,6 +805,18 @@ dns labels only, printable ascii without quotes, angle brackets or backslashes.<
 <dt class="sig sig-object py" id="annals.store.check_id">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">check_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#check_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.check_id" title="Link to this definition">#</a></dt>
 <dd><p>Raise <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> on an id that could not have come from <a class="reference internal" href="#annals.store.mk_id" title="annals.store.mk_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">mk_id()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.clean_title">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">clean_title</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#clean_title"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.clean_title" title="Link to this definition">#</a></dt>
+<dd><p>A title as the page shows it: control and invisible format characters dropped,
+whitespace collapsed. <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when blank or longer than <code class="docutils literal notranslate"><span class="pre">MAX_GROUP_TITLE</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -904,7 +959,7 @@ dns labels only, printable ascii without quotes, angle brackets or backslashes.<
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=73f2ab08"></script>
+      <script src="../_static/documentation_options.js?v=d78a2f11"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

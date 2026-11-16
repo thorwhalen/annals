@@ -189,7 +189,7 @@ directory as a private page with search, sort, groups and a recycle bin.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.configure" title="annals.configure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">configure</span></code></a>(*[, target, base_url, to, outbox, ...])</p></td>
 <td><p>Write the publisher config (where to publish, what link to print) and show it.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.group" title="annals.group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group</span></code></a>(title, doc_ids, *[, target, base_url, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.group" title="annals.group"><code class="xref py py-obj docutils literal notranslate"><span class="pre">group</span></code></a>(title, doc_ids, *[, add_to, target, ...])</p></td>
 <td><p>Make a group (one URL for a set of documents) from existing document ids.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.groups" title="annals.groups"><code class="xref py py-obj docutils literal notranslate"><span class="pre">groups</span></code></a>(*[, target, base_url, to])</p></td>
@@ -248,7 +248,9 @@ directory as a private page with search, sort, groups and a recycle bin.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.DocStore.add_to_group">
 <span class="sig-name descname"><span class="pre">add_to_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.add_to_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.DocStore.add_to_group" title="Link to this definition">#</a></dt>
-<dd><p>Append ids to an existing group, keeping order and skipping duplicates.</p>
+<dd><p>Append documents to an existing group, keeping order and skipping ones it has.</p>
+<p>Each document must exist and not be in the bin; <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> for a group that is not
+there.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -326,8 +328,13 @@ document is not here is listed under its own id, so it is never out of sight.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.DocStore.make_group">
-<span class="sig-name descname"><span class="pre">make_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">gid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.make_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.DocStore.make_group" title="Link to this definition">#</a></dt>
-<dd><p>Create (or overwrite) a group: a titled, ordered list of document ids.</p>
+<span class="sig-name descname"><span class="pre">make_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">gid</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">live_only</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.make_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.DocStore.make_group" title="Link to this definition">#</a></dt>
+<dd><p>Create (or overwrite) a group: a titled, ordered list of documents.</p>
+<p>The title is cleaned (control characters dropped, whitespace collapsed, at most
+<code class="docutils literal notranslate"><span class="pre">MAX_GROUP_TITLE</span></code> long, not blank); repeats are dropped, keeping the first; each
+document must exist and not be in the bin unless <code class="docutils literal notranslate"><span class="pre">live_only=False</span></code> (a bundle that
+keeps a document later binned). <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> says which rule failed. An explicit
+<code class="docutils literal notranslate"><span class="pre">gid</span></code> rewrites that group, under its lock.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -559,8 +566,11 @@ public app). With no arguments, shows the resolved settings without writing.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.group">
-<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.group" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">add_to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.group" title="Link to this definition">#</a></dt>
 <dd><p>Make a group (one URL for a set of documents) from existing document ids.</p>
+<p>With <code class="docutils literal notranslate"><span class="pre">add_to</span></code> (a group id) the documents are added to that group instead, and <code class="docutils literal notranslate"><span class="pre">title</span></code>
+is ignored. The documents must exist and not be in the bin; the title is cleaned (see
+<a class="reference internal" href="annals.store.html#annals.store.clean_title" title="annals.store.clean_title"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.store.clean_title()</span></code></a>).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -813,7 +823,7 @@ links. To read the text, use <code class="docutils literal notranslate"><span cl
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=73f2ab08"></script>
+      <script src="../_static/documentation_options.js?v=d78a2f11"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

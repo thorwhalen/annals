@@ -15,6 +15,9 @@ annals.store
       PENDING_SEP
       LOCK_PREFIX
       LOCK_STALE_S
+      GROUP_LOCK_WAIT_S
+      GROUP_LOCK_STALE_S
+      MAX_GROUP_TITLE
       SWAP_WAIT_S
       SWAP_STEP_S
       INCOMING_PREFIX
@@ -28,6 +31,7 @@ annals.store
    
       check_artifact_url
       check_id
+      clean_title
       is_sidecar_of
       kind_of
       mk_id

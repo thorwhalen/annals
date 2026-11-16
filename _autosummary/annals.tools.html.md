@@ -21,7 +21,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 |-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.                            |
 | [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.                        |
-| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.                                 |
+| [`group`](#annals.tools.group)(title, doc_ids, \*[, add_to, target, ...])   | Make a group (one URL for a set of documents) from existing document ids.                                 |
 | [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                                |
 | [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                                |
 | [`listen_down`](#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.                      |
@@ -116,9 +116,13 @@ copy. The source must be readable from this machine (a directory, or `host:/path
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.group(title, doc_ids, , target=None, base_url=None, to=None)
+### annals.tools.group(title, doc_ids, , add_to=None, target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
+
+With `add_to` (a group id) the documents are added to that group instead, and `title`
+is ignored. The documents must exist and not be in the bin; the title is cleaned (see
+[`annals.store.clean_title()`](annals.store.html.md#annals.store.clean_title)).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

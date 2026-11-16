@@ -1,4 +1,4 @@
-> built 2026-11-16 02:30 UTC from 50b8d76 (main) · annals 0.0.52. Details: build_info.json
+> built 2026-11-16 03:07 UTC from d7068bc (main) · annals 0.0.53. Details: build_info.json
 
 # index.html.md
 
@@ -1157,7 +1157,7 @@ directory as a private page with search, sort, groups and a recycle bin.
 
 | [`configure`](_autosummary/annals.html.md#annals.configure)(\*[, target, base_url, to, outbox, ...])   | Write the publisher config (where to publish, what link to print) and show it.                                                                                    |
 |-------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`group`](_autosummary/annals.html.md#annals.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
+| [`group`](_autosummary/annals.html.md#annals.group)(title, doc_ids, \*[, add_to, target, ...])     | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
 | [`groups`](_autosummary/annals.html.md#annals.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                                                                                                        |
 | [`load_settings`](_autosummary/annals.html.md#annals.load_settings)(\*[, target, base_url, to, ...])       | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
 | [`ls`](_autosummary/annals.html.md#annals.ls)([q, trash, limit, target, base_url, to, ...])     | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
@@ -1183,7 +1183,10 @@ Publish, list, read, trash, restore and group documents on a `Target`.
 
 #### add_to_group(gid, doc_ids)
 
-Append ids to an existing group, keeping order and skipping duplicates.
+Append documents to an existing group, keeping order and skipping ones it has.
+
+Each document must exist and not be in the bin; `KeyError` for a group that is not
+there.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1233,9 +1236,15 @@ Every group, newest first.
 * **Return type:**
   [`list`](_autosummary/annals.html.md#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
-#### make_group(title, doc_ids, , gid=None)
+#### make_group(title, doc_ids, , gid=None, live_only=True)
 
-Create (or overwrite) a group: a titled, ordered list of document ids.
+Create (or overwrite) a group: a titled, ordered list of documents.
+
+The title is cleaned (control characters dropped, whitespace collapsed, at most
+`MAX_GROUP_TITLE` long, not blank); repeats are dropped, keeping the first; each
+document must exist and not be in the bin unless `live_only=False` (a bundle that
+keeps a document later binned). `ValueError` says which rule failed. An explicit
+`gid` rewrites that group, under its lock.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1399,9 +1408,13 @@ public app). With no arguments, shows the resolved settings without writing.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.group(title, doc_ids, , target=None, base_url=None, to=None)
+### annals.group(title, doc_ids, , add_to=None, target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
+
+With `add_to` (a group id) the documents are added to that group instead, and `title`
+is ignored. The documents must exist and not be in the bin; the title is cleaned (see
+[`annals.store.clean_title()`](_autosummary/annals.store.html.md#annals.store.clean_title)).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3511,26 +3524,30 @@ replacement twice and nothing is ever deleted.
 
 ### Module Attributes
 
-| [`HEAD_CHARS`](_autosummary/annals.store.html.md#annals.store.HEAD_CHARS)       | how much of a file is read to find its title and excerpt                                                                                                                                                                                          |
-|-------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE)     | hidden files, caches, compiled python                                                                                                                                                                                                             |
-| [`VERSIONS`](_autosummary/annals.store.html.md#annals.store.VERSIONS)         | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                           |
-| [`VERSION_SEP`](_autosummary/annals.store.html.md#annals.store.VERSION_SEP)      | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                            |
-| [`PENDING_SEP`](_autosummary/annals.store.html.md#annals.store.PENDING_SEP)      | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                          |
-| [`LOCK_PREFIX`](_autosummary/annals.store.html.md#annals.store.LOCK_PREFIX)      | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know) |
-| [`LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.LOCK_STALE_S)     | its work is finished or undone                                                                                                                                                                                                                    |
-| [`SWAP_WAIT_S`](_autosummary/annals.store.html.md#annals.store.SWAP_WAIT_S)      | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`SWAP_STEP_S`](_autosummary/annals.store.html.md#annals.store.SWAP_STEP_S)      | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX)  | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
-| [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)         | the store's bookkeeping lives there                                                                                                                                                                                                               |
-| [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)   | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
-| [`SIDECAR_SUFFIXES`](_autosummary/annals.store.html.md#annals.store.SIDECAR_SUFFIXES) | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
+| [`HEAD_CHARS`](_autosummary/annals.store.html.md#annals.store.HEAD_CHARS)         | how much of a file is read to find its title and excerpt                                                                                                                                                                                          |
+|---------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE)       | hidden files, caches, compiled python                                                                                                                                                                                                             |
+| [`VERSIONS`](_autosummary/annals.store.html.md#annals.store.VERSIONS)           | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                           |
+| [`VERSION_SEP`](_autosummary/annals.store.html.md#annals.store.VERSION_SEP)        | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                            |
+| [`PENDING_SEP`](_autosummary/annals.store.html.md#annals.store.PENDING_SEP)        | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                          |
+| [`LOCK_PREFIX`](_autosummary/annals.store.html.md#annals.store.LOCK_PREFIX)        | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know) |
+| [`LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.LOCK_STALE_S)       | its work is finished or undone                                                                                                                                                                                                                    |
+| [`GROUP_LOCK_WAIT_S`](_autosummary/annals.store.html.md#annals.store.GROUP_LOCK_WAIT_S)  | how long a group write waits for another writer of the same group, and how often it looks                                                                                                                                                         |
+| [`GROUP_LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.GROUP_LOCK_STALE_S) | a group lock is held for milliseconds, so one older than this is a dead holder's (the lock's note carries it, so recovery on another machine knows)                                                                                               |
+| [`MAX_GROUP_TITLE`](_autosummary/annals.store.html.md#annals.store.MAX_GROUP_TITLE)    | the longest title a group may have (a longer one is refused, not cut)                                                                                                                                                                             |
+| [`SWAP_WAIT_S`](_autosummary/annals.store.html.md#annals.store.SWAP_WAIT_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
+| [`SWAP_STEP_S`](_autosummary/annals.store.html.md#annals.store.SWAP_STEP_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
+| [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX)    | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
+| [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)           | the store's bookkeeping lives there                                                                                                                                                                                                               |
+| [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
+| [`SIDECAR_SUFFIXES`](_autosummary/annals.store.html.md#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
 
 ### Functions
 
 | [`check_artifact_url`](_autosummary/annals.store.html.md#annals.store.check_artifact_url)(url, \*[, hosts])   | `url` if it is an `https` link to one of `hosts` (or a subdomain), else raise.                                                                               |
 |-----------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`check_id`](_autosummary/annals.store.html.md#annals.store.check_id)(doc_id)                       | Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id).                                          |
+| [`clean_title`](_autosummary/annals.store.html.md#annals.store.clean_title)(title)                     | A title as the page shows it: control and invisible format characters dropped, whitespace collapsed.                                                         |
 | [`is_sidecar_of`](_autosummary/annals.store.html.md#annals.store.is_sidecar_of)(path, media)             | True when `path` is timed text for `media`: `talk.vtt` or `talk.cues.json` for `talk.mp3`, in the same folder (paths compare whole), the suffix in any case. |
 | [`kind_of`](_autosummary/annals.store.html.md#annals.store.kind_of)(filename)                      | The rendering kind of a file, from its extension.                                                                                                            |
 | [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])               | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                                                       |
@@ -3569,7 +3586,10 @@ Publish, list, read, trash, restore and group documents on a `Target`.
 
 #### add_to_group(gid, doc_ids)
 
-Append ids to an existing group, keeping order and skipping duplicates.
+Append documents to an existing group, keeping order and skipping ones it has.
+
+Each document must exist and not be in the bin; `KeyError` for a group that is not
+there.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3619,9 +3639,15 @@ Every group, newest first.
 * **Return type:**
   [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
-#### make_group(title, doc_ids, , gid=None)
+#### make_group(title, doc_ids, , gid=None, live_only=True)
 
-Create (or overwrite) a group: a titled, ordered list of document ids.
+Create (or overwrite) a group: a titled, ordered list of documents.
+
+The title is cleaned (control characters dropped, whitespace collapsed, at most
+`MAX_GROUP_TITLE` long, not blank); repeats are dropped, keeping the first; each
+document must exist and not be in the bin unless `live_only=False` (a bundle that
+keeps a document later binned). `ValueError` says which rule failed. An explicit
+`gid` rewrites that group, under its lock.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3719,6 +3745,15 @@ Every version of a document, oldest first, the current one last.
 * **Return type:**
   [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+### annals.store.GROUP_LOCK_STALE_S *= 30*
+
+a group lock is held for milliseconds, so one older than this is a dead holder’s (the
+lock’s note carries it, so recovery on another machine knows)
+
+### annals.store.GROUP_LOCK_WAIT_S *= 10*
+
+how long a group write waits for another writer of the same group, and how often it looks
+
 ### annals.store.HEAD_CHARS *= 4000*
 
 how much of a file is read to find its title and excerpt
@@ -3740,7 +3775,8 @@ and a group is always rewritten from its whole list, so hiding never deletes any
 
 #### add_to_group(gid, doc_ids)
 
-Append to the group’s whole list (the hidden ids stay in it).
+Append to the group’s whole list (the hidden ids stay in it); a hidden document
+is refused as a missing one.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -3804,6 +3840,10 @@ its work is finished or undone
 * **Type:**
   a lock older than this was left by a crash
 
+### annals.store.MAX_GROUP_TITLE *= 200*
+
+the longest title a group may have (a longer one is refused, not cut)
+
 ### annals.store.PENDING_SEP *= '.r'*
 
 `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`
@@ -3857,6 +3897,14 @@ dns labels only, printable ascii without quotes, angle brackets or backslashes.
 ### annals.store.check_id(doc_id)
 
 Raise `ValueError` on an id that could not have come from [`mk_id()`](_autosummary/annals.store.html.md#annals.store.mk_id).
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.store.clean_title(title)
+
+A title as the page shows it: control and invisible format characters dropped,
+whitespace collapsed. `ValueError` when blank or longer than `MAX_GROUP_TITLE`.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -4206,7 +4254,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 |-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.                            |
 | [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.                        |
-| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.                                 |
+| [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, add_to, target, ...])   | Make a group (one URL for a set of documents) from existing document ids.                                 |
 | [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                                |
 | [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                                |
 | [`listen_down`](_autosummary/annals.tools.html.md#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.                      |
@@ -4301,9 +4349,13 @@ copy. The source must be readable from this machine (a directory, or `host:/path
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.group(title, doc_ids, , target=None, base_url=None, to=None)
+### annals.tools.group(title, doc_ids, , add_to=None, target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
+
+With `add_to` (a group id) the documents are added to that group instead, and `title`
+is ignored. The documents must exist and not be in the bin; the title is cleaned (see
+[`annals.store.clean_title()`](_autosummary/annals.store.html.md#annals.store.clean_title)).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -4527,18 +4579,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 02:30 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/50b8d760023e5265fc51318aa7dcf757fc7463c7"><code>50b8d76</code></a> on branch <code>main</code>, for **annals 0.0.52** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 03:07 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/d7068bc8f2971e128f1617b0a443edb19328224e"><code>d7068bc</code></a> on branch <code>main</code>, for **annals 0.0.53** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.52) is behind the latest release on PyPI (0.0.53): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/50b8d760023e5265fc51318aa7dcf757fc7463c7"><code>50b8d760023e5265fc51318aa7dcf757fc7463c7</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/d7068bc8f2971e128f1617b0a443edb19328224e"><code>d7068bc8f2971e128f1617b0a443edb19328224e</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4549,9 +4599,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43792153546">43792153546</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43795766808">43795766808</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>50b8d760023e5265fc51318aa7dcf757fc7463c7</code> (in the history of the built commit) |
+| Event commit | <code>d7068bc8f2971e128f1617b0a443edb19328224e</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4576,13 +4626,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.53/">0.0.53</a>, newer than the documented version (0.0.52).
+Latest release: <a href="https://pypi.org/project/annals/0.0.53/">0.0.53</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 50b8d760023e5265fc51318aa7dcf757fc7463c7
+git checkout d7068bc8f2971e128f1617b0a443edb19328224e
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
