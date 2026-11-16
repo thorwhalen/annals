@@ -566,20 +566,58 @@ def test_export_a_markdown_file_and_what_a_share_can_offer(tmp_path, monkeypatch
     assert res["main"] == "r.md" and [x["rel"] for x in res["files"]] == ["r.md"]
 
 
-def test_export_makes_a_pdf_when_the_extra_is_installed(tmp_path, monkeypatch):
+def test_export_pdf_opens_only_the_documents_own_files_and_links_nowhere(tmp_path, monkeypatch):
+    from annals import render
+
+    _env(tmp_path, monkeypatch)
+    folder = tmp_path / "doc"
+    folder.mkdir()
+    (folder / "index.md").write_text("# Report\n\n![p](pic.png)\n")
+    (folder / "pic.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    doc = _json(["publish", str(folder), "--json"])["id"]
+    seen = {}
+
+    def fake_pdf(text, *, title, rel, files, open_file, file_url, created):
+        seen["image"] = open_file("pic.png").read_bytes()[:4]
+        seen["link"] = file_url("pic.png")
+        return b"%PDF-fake"
+
+    monkeypatch.setattr(render, "markdown_to_pdf", fake_pdf)
+    dst = tmp_path / "r.pdf"
+    assert _json(["export", doc, "--output", str(dst)])["bytes"] == 9
+    assert dst.read_bytes() == b"%PDF-fake" and seen == {"image": b"\x89PNG", "link": None}
+
+
+def test_a_link_out_of_the_document_is_not_followed_by_export(tmp_path, monkeypatch):
+    from annals import render
+    from annals.tools import _file_opener
+    from annals.store import DocStore
+
+    _env(tmp_path, monkeypatch)
+    secret = tmp_path / "secret.txt"
+    secret.write_text("TOP SECRET")
+    store = DocStore(tmp_path / "data")
+    doc = store.publish(text="# R\n\nx", title="R")["id"]
+    doc_dir = store.target.local_path(store.doc_rel(doc))
+    (doc_dir / "leak.png").symlink_to(secret)
     import pytest
 
-    try:
-        import weasyprint  # noqa: F401
-    except (ImportError, OSError) as e:  # not installed, or its system library is missing
-        pytest.skip(str(e)[:80])
+    with pytest.raises(FileNotFoundError):
+        _file_opener(store, tmp_path / "scratch")(doc, "leak.png")
+
+
+def test_export_errors_are_one_line(tmp_path, monkeypatch):
     _env(tmp_path, monkeypatch)
     f = tmp_path / "r.md"
-    f.write_text("# Report\n\nbody\n")
+    f.write_text("# R\n\nx")
     doc = _json(["publish", str(f), "--json"])["id"]
-    dst = tmp_path / "r.pdf"
-    try:
-        _json(["export", doc, "--output", str(dst)])
-    except OSError as e:  # the system library behind it is missing on this machine
-        pytest.skip(str(e))
-    assert dst.read_bytes().startswith(b"%PDF")
+    for argv, said in [
+        (["export", doc, "--format", "md", "--output", str(tmp_path)], "folder"),
+        (["export", "zzz-none", "--format", "md"], "no such document"),
+        (["shareable", "zzz-none"], "no such document"),
+    ]:
+        err = io.StringIO()
+        assert run(argv, out=io.StringIO(), err=err) == 1 and said in err.getvalue(), argv
+    _json(["trash", doc])
+    err = io.StringIO()
+    assert run(["shareable", doc], out=io.StringIO(), err=err) == 1 and "restore" in err.getvalue()

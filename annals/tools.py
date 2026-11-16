@@ -52,15 +52,39 @@ def _default_source() -> dict:
     return src
 
 
+def _document_meta(store: DocStore, ref: str) -> dict:
+    """The meta of the document ``ref`` names (id or link); a group or a missing id is a plain error."""
+    kind, name = _parse_ref(ref)
+    if kind == "group":
+        raise ValueError("this names a group, not a document")
+    try:
+        return store.meta(name)
+    except (KeyError, ValueError):
+        raise ValueError(f"no such document: {name}") from None
+
+
+def _checked_output(output: str | None) -> Path | None:
+    """``output`` as a path (``~`` expanded), refused before any work if it cannot be written."""
+    if not output:
+        return None
+    dest = Path(output).expanduser()
+    if dest.is_dir() or not dest.parent.is_dir():
+        raise ValueError(f"cannot write {output}: it is a folder, or its folder does not exist")
+    return dest
+
+
 def _file_opener(store: DocStore, scratch: Path):
-    """``(doc_id, rel) -> Path`` of a document's file: in place for a local store, else the document is fetched once into ``scratch``."""
+    """``(doc_id, rel) -> Path`` of a document's file: in place for a local store (refusing a link out of the document's folder, as the page's raw route does), else the document is fetched once into ``scratch``."""
     fetched: dict[str, Path] = {}
 
     def open_path(doc_id: str, rel: str) -> Path:
         check_rel(rel)
         doc_rel = store.doc_rel(doc_id)
-        here = store.target.local_path(f"{doc_rel}/{rel}")
-        if here is not None:
+        doc_dir = store.target.local_path(doc_rel)
+        if doc_dir is not None:  # a local store: in place, but never out of the document's folder
+            here = store.target.local_path(f"{doc_rel}/{rel}")
+            if here is None or not here.is_relative_to(doc_dir) or not here.is_file():
+                raise FileNotFoundError(f"{rel}: not a file of this document")
             return here
         if doc_id not in fetched:
             dst = scratch / doc_id
@@ -619,7 +643,7 @@ def export(
     import tempfile
 
     from annals.config import MAX_INLINE_TEXT_BYTES
-    from annals.export import FORMATS, file_url_builder
+    from annals.export import FORMATS
     from annals.render import PDF_MAX_TEXT_BYTES, markdown_to_pdf
 
     if format not in FORMATS:
@@ -628,7 +652,8 @@ def export(
         raise ValueError("a PDF is a binary file: name it with --output FILE")
     settings = _readable(load_settings(target=target, to=to))
     store = _store(settings)
-    meta = store.meta(_parse_ref(doc_id)[1])
+    dest = _checked_output(output)
+    meta = _document_meta(store, doc_id)
     rel = file or meta["main"]
     if rel not in meta["files"] or kind_of(rel) != "md":
         raise ValueError(f"no markdown file to export: {rel}")
@@ -636,10 +661,10 @@ def export(
         raise ValueError("this file is too large to export")
     text = store.read_text(meta["id"], rel)
     if format == "md":
-        if not output:
+        if dest is None:
             return text
-        Path(output).write_text(text, encoding="utf-8")
-        return {"output": output, "bytes": len(text.encode("utf-8"))}
+        dest.write_text(text, encoding="utf-8")
+        return {"output": str(dest), "bytes": len(text.encode("utf-8"))}
     if len(text.encode("utf-8")) > PDF_MAX_TEXT_BYTES:
         raise ValueError("this page is too large to make a PDF of")
     with tempfile.TemporaryDirectory(prefix="annals-export-") as scratch:
@@ -650,11 +675,11 @@ def export(
             rel=rel,
             files=meta["files"],
             open_file=lambda r: open_path(meta["id"], r),
-            file_url=file_url_builder(settings.base_url, meta["id"]),
+            file_url=lambda r: None,  # a PDF made here links to nothing: the raw route's address is the server's
             created=meta.get("created", ""),
         )
-    Path(output).write_bytes(pdf)
-    return {"output": output, "bytes": len(pdf)}
+    dest.write_bytes(pdf)
+    return {"output": str(dest), "bytes": len(pdf)}
 
 
 def shareable(
@@ -667,7 +692,7 @@ def shareable(
     """
     settings = _readable(load_settings(target=target, to=to))
     store = _store(settings)
-    return _shares(settings).resources(store.meta(_parse_ref(doc_id)[1])["id"])
+    return _shares(settings).resources(_document_meta(store, doc_id)["id"])
 
 
 def references(

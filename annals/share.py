@@ -358,6 +358,8 @@ class Shares:
         links; ``pages`` are the other annals documents its text links to.
         """
         meta = self.store.meta(doc_id)
+        if meta.get("in_trash"):
+            raise ValueError("restore it before sharing")
         refs = {"files": [], "ids": []}
         if meta["kind"] in ("md", "html"):
             try:
