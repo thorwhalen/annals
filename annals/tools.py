@@ -51,9 +51,8 @@ def _default_source() -> dict:
     return src
 
 
-#: the ``source`` keys ``--meta`` writes, written down once: a document's provenance.
-#: ``host``, ``cwd`` and ``session`` are filled in by ``publish``; any other key is kept too
-META_KEYS = ("corpus", "repo", "issue", "item", "kind")
+#: provenance annals fills in itself; ``--meta`` cannot overwrite it
+RESERVED_META = frozenset({"host", "cwd", "session"})
 
 
 def _parse_meta(meta) -> dict[str, str]:
@@ -67,12 +66,20 @@ def _parse_meta(meta) -> dict[str, str]:
     Traceback (most recent call last):
     ...
     ValueError: --meta takes key=value (for example corpus=annals), got 'oops'
+    >>> _parse_meta(["host=h"])
+    Traceback (most recent call last):
+    ...
+    ValueError: --meta cannot set 'host': annals records it (use --session for the session)
     """
     out = {}
     for item in [meta] if isinstance(meta, str) else list(meta or ()):
         key, eq, value = item.partition("=")
         if not eq or not key.strip():
             raise ValueError(f"--meta takes key=value (for example corpus=annals), got {item!r}")
+        if key.strip() in RESERVED_META:
+            raise ValueError(
+                f"--meta cannot set {key.strip()!r}: annals records it (use --session for the session)"
+            )
         out[key.strip()] = value
     return out
 
@@ -80,33 +87,40 @@ def _parse_meta(meta) -> dict[str, str]:
 _SINCE_UNITS = {"m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
 
 
-def parse_since(since: str, *, now: datetime | None = None) -> datetime:
-    """A moment, as an aware datetime: an ISO date or time (UTC when it has no offset), or an age.
+def _parse_iso(text: str) -> datetime:
+    """An ISO date or time as an aware datetime; one with no offset is local time."""
+    dt = datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+    return dt if dt.tzinfo else dt.astimezone()
 
-    >>> parse_since("2026-11-12").isoformat()
-    '2026-11-12T00:00:00+00:00'
+
+def parse_since(since: str, *, now: datetime | None = None) -> datetime:
+    """A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.
+
+    >>> parse_since("2026-11-12T09:00+00:00").isoformat()
+    '2026-11-12T09:00:00+00:00'
     >>> parse_since("2d", now=datetime(2026, 11, 14, tzinfo=timezone.utc)).date().isoformat()
     '2026-11-12'
     """
-    m = re.fullmatch(r"(\d+)\s*([mhdw])", since.strip())
-    if m:
-        age = timedelta(**{_SINCE_UNITS[m.group(2)]: int(m.group(1))})
-        return (now or datetime.now(timezone.utc)) - age
+    bad = ValueError(
+        f"--since takes an ISO date or time (2026-11-12, 2026-11-12T09:00; local time unless it has an offset) "
+        f"or an age (6h, 2d), got {since!r}"
+    )
+    m = re.fullmatch(r"(\d+)\s*([mhdw])", since.strip().lower())
     try:
-        dt = datetime.fromisoformat(since.strip().replace("Z", "+00:00"))
-    except ValueError:
-        raise ValueError(
-            f"--since takes an ISO date or time (2026-11-12, 2026-11-12T09:00) or an age (6h, 2d), got {since!r}"
-        ) from None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
+        if m:
+            age = timedelta(**{_SINCE_UNITS[m.group(2)]: int(m.group(1))})
+            return (now or datetime.now(timezone.utc)) - age
+        return _parse_iso(since)
+    except (ValueError, OverflowError):
+        raise bad from None
 
 
-def _created_at(meta: dict) -> datetime | None:
+def _changed_at(meta: dict) -> datetime | None:
+    """When a document last changed: a replaced one counts from its newest version."""
     try:
-        dt = datetime.fromisoformat(str(meta.get("created", "")).replace("Z", "+00:00"))
+        return _parse_iso(str(meta.get("updated") or meta.get("created", "")))
     except ValueError:
         return None
-    return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
 def _as_list(x) -> list[str]:
@@ -316,10 +330,10 @@ def ls(
 
     ``to`` lists a named target instead of the default one. The rest are exact filters,
     all of which must hold, for tools that poll: ``since`` (an ISO date or time, or an age
-    like ``6h`` or ``2d``: published at or after it), ``session`` (the publishing session's
+    like ``6h`` or ``2d``: published or replaced at or after it), ``session`` (the publishing session's
     name, whole, case-sensitive), ``tag`` (one tag, whole) and ``meta`` (``key=value``,
     several allowed, against the document's ``source``: ``corpus=annals``). A row is
-    ``{id, title, kind, tags, created, source, url}``; with ``--json`` that is the contract
+    ``{id, title, kind, tags, created, updated, source, url}``; with ``--json`` that is the contract
     (``misc/docs/design.md``), and ``total`` counts the matches before ``limit``.
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
@@ -330,7 +344,7 @@ def ls(
         wanted["session"] = session
     if since:
         cutoff = parse_since(since)
-        docs = [m for m in docs if (t := _created_at(m)) and t >= cutoff]
+        docs = [m for m in docs if (t := _changed_at(m)) and t >= cutoff]
     if tag:
         docs = [m for m in docs if tag in m.get("tags", [])]
     docs = [
@@ -346,6 +360,7 @@ def ls(
                 "kind": m["kind"],
                 "tags": m.get("tags", []),
                 "created": m.get("created"),
+                "updated": m.get("updated"),
                 "source": m.get("source", {}),
                 "url": _doc_url(settings, m["id"]),
             }

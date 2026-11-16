@@ -28,6 +28,14 @@ EXPECTED_ERRORS = (
 JSON_FLAG = "--json"
 
 
+def _decode(param, hint):
+    """cw's usual decoding, except ``--meta`` repeats (``--meta a=1 --meta b=2``) instead of
+    taking the values after one flag, so a path may follow it and no earlier one is lost."""
+    if param.name == "meta":
+        return {"action": "extend", "nargs": 1}
+    return cw.convention.argh_decode(param, hint)
+
+
 def _egress(result, *, out=None, err=None, as_json: bool = False) -> int:
     """Print a link when there is one (that is what an agent wants back), else JSON.
 
@@ -72,6 +80,7 @@ def run(argv=None, *, out=None, err=None) -> int:
             argv,
             prog="annals",
             convention=cw.MODERN,
+            decode=_decode,
             egress=lambda result, **kw: _egress(result, as_json=as_json, **kw),
             out=out,
             err=err,
