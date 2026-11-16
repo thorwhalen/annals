@@ -541,6 +541,8 @@ def request(
 COMBINED_TAG = "combined"
 COMBINED_SESSION = "annals combine"
 COMBINE_LOCK = ".combine.lock"
+#: a queued combination is filed under this plus its :func:`combined_key`, until it has a document
+COMBINED_REQUEST_PREFIX = "combined-"
 
 
 def combined_key(docs: Sequence[dict]) -> str:
@@ -643,12 +645,8 @@ def combined_document(
     docs = _members(store, docs)
     key = combined_key(docs)
     with _combine_lock(store):
-        for meta in store.list():
-            src = meta.get("source") or {}
-            if src.get("combines_key") == key and COMBINED_TAG in (
-                meta.get("tags") or []
-            ):
-                return meta
+        if meta := find_combined(store, key):
+            return meta
         try:
             pairs = list(_combined_pairs(store, docs, max_bytes=max_bytes))
         except TooLarge as e:
@@ -673,6 +671,20 @@ def combined_document(
         return meta
 
 
+def find_combined(store, key: str) -> dict | None:
+    """The combined document made for ``key`` (:func:`combined_key`), if there is one."""
+    for meta in store.list():
+        src = meta.get("source") or {}
+        if src.get("combines_key") == key and COMBINED_TAG in (meta.get("tags") or []):
+            return meta
+    return None
+
+
+def combined_request_id(key: str) -> str:
+    """The id a queued combination is filed under, before its document exists."""
+    return f"{COMBINED_REQUEST_PREFIX}{key}"
+
+
 def request_combined(
     store,
     requests: Requests,
@@ -685,16 +697,65 @@ def request_combined(
 ) -> dict:
     """Ask for ONE overview of several documents: of the document combining their text.
 
-    Returns ``{"doc": <combined document id>, "listen": <its overview state>}``. Raises
-    ``ValueError`` as :func:`request` does, or when there is nothing to speak.
+    Nothing is published here. When the documents were combined before, that document gets
+    an ordinary request. Otherwise the request is queued under :func:`combined_request_id`
+    with the document ids, and the worker makes the combined document (see
+    :func:`combined_document`) when it starts the job, so a request nobody works leaves no
+    document behind. Returns ``{"doc": <combined document id, or None until the worker has
+    made it>, "listen": <the overview's state>}``. Raises ``ValueError`` as :func:`request`
+    does, or when there is nothing to speak or too much of it.
     """
+    from annals.aggregate import TooLarge
+
     if not valid_minutes(minutes):
         raise ValueError(f"minutes must be one of {list(MINUTES)}")
-    meta = combined_document(store, docs, title=title, group=group)
-    return {
-        "doc": meta["id"],
-        "listen": request(store, requests, meta["id"], minutes=minutes),
-    }
+    members = _members(store, docs)
+    key = combined_key(members)
+    if meta := find_combined(store, key):
+        return {
+            "doc": meta["id"],
+            "listen": request(store, requests, meta["id"], minutes=minutes),
+        }
+    try:  # refused now, not after the request has waited for a worker
+        if not any(True for _ in _combined_pairs(store, members, max_bytes=max_bytes)):
+            raise ValueError("none of these documents has text to speak")
+    except TooLarge as e:
+        raise ValueError(str(e)) from None
+    rid = combined_request_id(key)
+    pseudo = {"id": rid, "version": None}
+    current = state_of(store, requests, pseudo)
+    if current["state"] not in ACTIVE:
+        requests.put(
+            rid,
+            {
+                "state": WAITING if maker_down(requests) else QUEUED,
+                "minutes": minutes,
+                "requested": _now(),
+                "combine": {
+                    "docs": [m["id"] for m in members],
+                    "title": title,
+                    "group": group,
+                    "max_bytes": max_bytes,
+                },
+            },
+        )
+        current = state_of(store, requests, pseudo)
+    return {"doc": None, "listen": current}
+
+
+def _make_combined(store, record: dict) -> str:
+    """The worker's first step for a queued combination: make its document; return its id."""
+    spec = record["combine"]
+    docs = []
+    for i in spec.get("docs") or []:
+        try:
+            docs.append(store.meta(i))
+        except (KeyError, ValueError, OSError):
+            continue  # gone since it was asked for: combine what is left
+    return combined_document(
+        store, docs, title=spec.get("title") or "Combined", group=spec.get("group"),
+        max_bytes=spec.get("max_bytes"),
+    )["id"]  # fmt: skip
 
 
 #: where a command that answers in JSON (``claude -p --output-format json``) says what went wrong
@@ -934,9 +995,12 @@ def _step(
     requests.put(doc_id, {**record, "state": RUNNING, "started": _now()})
     began = time.monotonic()
     try:
+        target = doc_id
+        if record.get("combine"):  # a combination: its document is made now, not when asked for
+            target = _make_combined(store, record)
         made, version = _fulfil(
             store,
-            doc_id,
+            target,
             minutes=minutes,
             command=argv,
             timeout=timeout,
@@ -953,16 +1017,17 @@ def _step(
         ):
             return wait(why)
         return wait(why) if down else fail(why)  # a failed probe keeps its place
-    requests.put(
-        doc_id,
-        {
-            **record,
-            "state": DONE,
-            "overview": made,
-            "version": version,
-            "finished": _now(),
-        },
-    )
+    done = {
+        **record,
+        "state": DONE,
+        "overview": made,
+        "version": version,
+        "finished": _now(),
+    }
+    if target != doc_id:  # a combination: its document now has the request, as any other does
+        requests.put(target, {k: v for k, v in done.items() if k != "combine"})
+        done["doc"] = target
+    requests.put(doc_id, done)
     mark_up(requests)  # it works: whatever waited for it is queued again
     return {"doc": doc_id, "state": DONE, "overview": made}
 

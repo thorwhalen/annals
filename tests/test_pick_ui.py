@@ -117,9 +117,9 @@ def test_one_review_of_several_from_a_group(phone, site):
     phone.get_by_role("button", name="Make it").click()
     phone.get_by_text("their combined document").wait_for()
     store = site["store"]
-    combined = [m for m in store.list() if COMBINED_TAG in (m.get("tags") or [])]
-    assert len(combined) == 1
-    assert combined[0]["id"] in store.group(site["group"]["id"])["docs"]
+    # asking only queues it: the combined document is made when a worker starts the job
+    assert not [m for m in store.list() if COMBINED_TAG in (m.get("tags") or [])]
+    assert "made when the review starts" in phone.locator(".sheet").inner_text()
 
 
 def test_pick_targets_are_thumb_sized(phone, site):

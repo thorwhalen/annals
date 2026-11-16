@@ -365,13 +365,18 @@ def test_a_group_says_nothing_of_reviews_when_they_are_off(store, trio):
     assert off.post("/overviews", json={"docs": ["x"]}).status_code == 404
 
 
-def test_one_review_of_several_combines_them_into_one_document(client, store, trio, requests):
+def test_one_review_of_several_combines_them_into_one_document(client, store, trio, requests, tmp_path):
     group, ids = trio
     r = client.post("/overviews", json={"docs": ids[:2], "group": group["id"], "minutes": 3})
     assert r.status_code == 200, r.text
     out = r.json()
     assert out["listen"]["state"] == "queued" and out["listen"]["minutes"] == 3
-    combined = store.meta(out["doc"])
+    # asking publishes nothing: the worker makes the combined document when it starts
+    assert out["doc"] is None and not _combined(store)
+    assert store.group(group["id"])["docs"] == ids
+    _work(store, requests, tmp_path)
+    (combined,) = _combined(store)
+    out = {"doc": combined["id"]}
     assert overview.COMBINED_TAG in combined["tags"]
     assert combined["source"]["combines"] == ids[:2]
     text = store.read_text(out["doc"])
@@ -380,15 +385,45 @@ def test_one_review_of_several_combines_them_into_one_document(client, store, tr
     assert out["doc"] in store.group(group["id"])["docs"]
     # asking again for the same documents reuses it: one document, one request
     again = client.post("/overviews", json={"docs": ids[1::-1], "group": group["id"], "minutes": 3}).json()
-    assert again["doc"] == out["doc"]
+    assert again["doc"] == out["doc"] and again["listen"]["state"] == "done"
+    assert len(_combined(store)) == 1
 
 
-def test_a_changed_document_makes_a_new_combination(client, store, trio):
+def _combined(store):
+    return [m for m in store.list() if overview.COMBINED_TAG in (m.get("tags") or [])]
+
+
+def _work(store, requests, tmp_path):
+    return overview.work(store, requests, command=_maker(tmp_path, GOOD))
+
+
+def test_no_worker_means_no_combined_document(client, store, trio, requests):
     group, ids = trio
-    first = client.post("/overviews", json={"docs": ids[:2], "group": group["id"]}).json()["doc"]
+    out = client.post("/overviews", json={"docs": ids, "group": group["id"]}).json()
+    assert out["doc"] is None and out["listen"]["state"] == "queued"
+    assert not _combined(store) and store.group(group["id"])["docs"] == ids
+    # the request is the same one when asked again, and expires without leaving a document
+    again = client.post("/overviews", json={"docs": ids, "group": group["id"]}).json()
+    assert again["listen"]["state"] == "queued" and len(requests.ids()) == 1
+    (rid,) = requests.ids()
+    record = requests.get(rid)
+    requests.put(rid, {**record, "requested": "2000-01-01T00:00:00Z"})
+    state = client.post("/overviews", json={"docs": ids, "group": group["id"]}).json()["listen"]
+    assert state["state"] == "queued"  # asked again: a fresh request, still no document
+    assert not _combined(store)
+
+
+def test_a_changed_document_makes_a_new_combination(client, store, trio, requests, tmp_path):
+    group, ids = trio
+    body = {"docs": ids[:2], "group": group["id"]}
+    client.post("/overviews", json=body)
+    _work(store, requests, tmp_path)
+    (first,) = _combined(store)
     store.publish(text="# Bees\n\nNow about wasps too.", replace=ids[0])
-    second = client.post("/overviews", json={"docs": ids[:2], "group": group["id"]}).json()["doc"]
-    assert second != first
+    out = client.post("/overviews", json=body).json()
+    assert out["doc"] is None  # not the old one: the documents changed
+    _work(store, requests, tmp_path)
+    assert len(_combined(store)) == 2 and first["id"] in [m["id"] for m in _combined(store)]
 
 
 def test_a_selection_must_belong_to_the_group(client, store, trio):
@@ -406,9 +441,11 @@ def test_another_site_cannot_spend_on_a_group(client, trio, store):
     assert not any(overview.COMBINED_TAG in (m.get("tags") or []) for m in store.list())
 
 
-def test_a_combined_document_counts_as_what_it_combines(client, store, trio):
+def test_a_combined_document_counts_as_what_it_combines(client, store, trio, requests, tmp_path):
     group, ids = trio
-    first = client.post("/overviews", json={"docs": ids, "group": group["id"]}).json()["doc"]
+    client.post("/overviews", json={"docs": ids, "group": group["id"]})
+    _work(store, requests, tmp_path)
+    (first,) = [m["id"] for m in _combined(store)]
     # the group's "all" now includes the combined document: still the same three, reused
     everything = store.group(group["id"])["docs"]
     assert first in everything
@@ -417,14 +454,16 @@ def test_a_combined_document_counts_as_what_it_combines(client, store, trio):
     assert store.read_text(first).count("About bees.") == 1
 
 
-def test_documents_from_anywhere_can_be_reviewed_together(client, store, trio):
+def test_documents_from_anywhere_can_be_reviewed_together(client, store, trio, requests, tmp_path):
     _, ids = trio
     out = client.post("/overviews", json={"docs": [ids[0], ids[2]]}).json()
     assert out["listen"]["state"] == "queued"
-    assert not any(out["doc"] in g["docs"] for g in store.list_groups())
+    _work(store, requests, tmp_path)
+    (combined,) = _combined(store)
+    assert not any(combined["id"] in g["docs"] for g in store.list_groups())
 
 
-def test_presses_at_once_make_one_combined_document(client, store, trio):
+def test_presses_at_once_make_one_combined_document(client, store, trio, requests, tmp_path):
     from concurrent.futures import ThreadPoolExecutor
 
     group, ids = trio
@@ -432,9 +471,11 @@ def test_presses_at_once_make_one_combined_document(client, store, trio):
     with ThreadPoolExecutor(6) as pool:
         outs = list(pool.map(lambda _: client.post("/overviews", json=body), range(6)))
     assert {r.status_code for r in outs} == {200}
-    assert len({r.json()["doc"] for r in outs}) == 1
-    combined = [m for m in store.list() if overview.COMBINED_TAG in (m.get("tags") or [])]
-    assert len(combined) == 1
+    assert len(requests.ids()) == 1 and not _combined(store)
+    _work(store, requests, tmp_path)
+    again = client.post("/overviews", json=body).json()
+    combined = _combined(store)
+    assert len(combined) == 1 and again["doc"] == combined[0]["id"]
     assert store.group(group["id"])["docs"].count(combined[0]["id"]) == 1
 
 

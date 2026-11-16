@@ -1648,12 +1648,12 @@
         if (sc.group) body.group = sc.group.id;
         done = api("/overviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
           .then(function (out) {
-            var s = out.listen || {}, where = sheetLink(BASE + "/d/" + out.doc, "their combined document");
+            var s = out.listen || {}, where = out.doc ? sheetLink(BASE + "/d/" + out.doc, "their combined document") : "their combined document";
             status.innerHTML = "";
             if (s.state === "done" && s.overview) {
               status.appendChild(h("p", { role: "status" }, ["One review of all " + n + " already exists (" + s.minutes + " min). ", sheetLink(BASE + "/d/" + s.overview, "▶ Play it", "btn primary")]));
             } else {
-              status.appendChild(h("p", { role: "status" }, [(s.state === "waiting" ? "One " + (s.minutes || minutes) + " minute review of all " + n + " is waiting, and will be made once listening works again. It will be on " : "Preparing one " + (s.minutes || minutes) + " minute review of all " + n + ". It takes about 2 minutes, and you can leave. It will be on "), where, sc.group ? ", now in this group." : "."]));
+              status.appendChild(h("p", { role: "status" }, [(s.state === "waiting" ? "One " + (s.minutes || minutes) + " minute review of all " + n + " is waiting, and will be made once listening works again. It will be on " : "Preparing one " + (s.minutes || minutes) + " minute review of all " + n + ". It takes about 2 minutes, and you can leave. It will be on "), where, out.doc ? (sc.group ? ", now in this group." : ".") : (sc.group ? ", which is made when the review starts and joins this group." : ", which is made when the review starts.")]));
             }
             start.hidden = true; modeSeg.hidden = true; lenSeg.hidden = true; cost.hidden = true;
           });
