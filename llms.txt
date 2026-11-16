@@ -20,6 +20,7 @@
 - [annals.media](_autosummary/annals.media.html.md): The media relay for published html pages: what a framed page plays, told to the page around it.
 - [annals.notebook](_autosummary/annals.notebook.html.md): A share’s documents as separate notebook sources: one plain web page per text file.
 - [annals.overview](_autosummary/annals.overview.html.md): Spoken overviews of a document: the request a page makes, and the worker that fulfils it.
+- [annals.records](_autosummary/annals.records.html.md): The published documents as records for a retrieval index, so an agent can find one by meaning.
 - [annals.references](_autosummary/annals.references.html.md): The references of documents, extracted and combined, in three forms.
 - [annals.render](_autosummary/annals.render.html.md): Render markdown (and other page-like files) to html and PDF, with their images inside.
 - [annals.requirements](_autosummary/annals.requirements.html.md): Optional dependencies, checked where they are needed and explained when they are missing.
@@ -31,7 +32,7 @@
 - [annals.target](_autosummary/annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
 - [annals.tools](_autosummary/annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 - [For AI agents](ai-agents.html.md): &#96;annals&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-16 02:04 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-16 02:09 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

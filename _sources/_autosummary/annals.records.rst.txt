@@ -1,0 +1,21 @@
+annals.records
+==============
+
+.. automodule:: annals.records
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      DFLT_SKIP_TAGS
+      DERIVED_TAGS
+      METADATA_KEYS
+      MAX_TEXT_CHARS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      records
+   

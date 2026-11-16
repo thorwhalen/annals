@@ -1,4 +1,4 @@
-> built 2026-11-16 02:04 UTC from b2c46fc (main) · annals 0.0.50. Details: build_info.json
+> built 2026-11-16 02:09 UTC from 7cf677b (main) · annals 0.0.51. Details: build_info.json
 
 # index.html.md
 
@@ -1522,6 +1522,7 @@ Move documents to the recycle bin (restorable).
 | [`media`](_autosummary/annals.media.html.md#module-annals.media)               | The media relay for published html pages: what a framed page plays, told to the page around it.                                                    |
 | [`notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook)         | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
 | [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)         | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
+| [`records`](_autosummary/annals.records.html.md#module-annals.records)           | The published documents as records for a retrieval index, so an agent can find one by meaning.                                                     |
 | [`references`](_autosummary/annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`render`](_autosummary/annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
 | [`requirements`](_autosummary/annals.requirements.html.md#module-annals.requirements) | Optional dependencies, checked where they are needed and explained when they are missing.                                                          |
@@ -2599,6 +2600,89 @@ is tried every [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.ove
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+
+# _autosummary/annals.records.html.md
+
+# annals.records
+
+The published documents as records for a retrieval index, so an agent can find one by meaning.
+
+annals keeps its own substring search for the page’s filter box. Searching by meaning (“the
+report comparing local TTS engines”) is `ir`’s job, and `ir` takes any package’s records
+through a named callable: register this one once and `ir` rebuilds from it on its own:
+
+```default
+ir register annals --records annals.records:records      # the exact command is ir's
+ir discover annals "the report comparing local TTS engines"
+```
+
+One record per current document (the bin and earlier versions are not indexed). A markdown,
+text or html document brings its text (html without its markup); a folder or a document of
+several markdown files brings them as one text, as `annals aggregate` makes it; any other
+kind (an image, a PDF) brings its title and excerpt, so it can still be found. Overviews and
+combined documents duplicate their sources, so they are left out unless asked for. A document
+the owner or the publisher tagged `noindex` or `private` (any case) is never yielded.
+
+Run it where the documents are: it refuses an outbox and a remote target, because the
+owner’s tags (the privacy gate) live beside the documents, and an index built from a partial
+view would drop the rest. Two things belong to the index, not to this function: `ir` decides
+a record changed by hashing its `text`, so a retag or retitle reaches the index’s filters
+only on a rebuild that is `full` (which also prunes a document trashed, purged or newly
+tagged `noindex`; register with full builds). `url` uses this machine’s `base_url`.
+
+```pycon
+>>> import tempfile, pathlib
+>>> from annals.store import DocStore
+>>> root = pathlib.Path(tempfile.mkdtemp())
+>>> store = DocStore(root)
+>>> _ = store.publish(text="# Local TTS engines\n\nPiper and Kokoro compared.", title="TTS", tags=["research"])
+>>> _ = store.publish(text="# Secret\n\nnot for an index", title="S", tags=["noindex"])
+>>> [(r["title"], r["tags"], "Kokoro" in r["text"]) for r in records(target=str(root))]
+[('TTS', 'research', True)]
+```
+
+### Module Attributes
+
+| [`DFLT_SKIP_TAGS`](_autosummary/annals.records.html.md#annals.records.DFLT_SKIP_TAGS)   | a document with one of these tags (any case) is never indexed                     |
+|-------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`DERIVED_TAGS`](_autosummary/annals.records.html.md#annals.records.DERIVED_TAGS)     | overviews and combined files                                                      |
+| [`METADATA_KEYS`](_autosummary/annals.records.html.md#annals.records.METADATA_KEYS)    | the record fields that are filters in the index (`ir`'s `metadata_keys`)          |
+| [`MAX_TEXT_CHARS`](_autosummary/annals.records.html.md#annals.records.MAX_TEXT_CHARS)   | a text is cut to this many characters, so one huge document cannot swamp an index |
+
+### Functions
+
+| [`records`](_autosummary/annals.records.html.md#annals.records.records)(\*[, target, to, skip_tags, ...])   | One dict per indexable document: `id`, `text` and the [`METADATA_KEYS`](_autosummary/annals.records.html.md#annals.records.METADATA_KEYS).   |
+|----------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+
+### annals.records.DERIVED_TAGS *= frozenset({'combined', 'overview'})*
+
+overviews and combined files
+
+* **Type:**
+  the tags of documents made from other documents
+
+### annals.records.DFLT_SKIP_TAGS *= frozenset({'noindex', 'private'})*
+
+a document with one of these tags (any case) is never indexed
+
+### annals.records.MAX_TEXT_CHARS *= 2000000*
+
+a text is cut to this many characters, so one huge document cannot swamp an index
+
+### annals.records.METADATA_KEYS *= ('title', 'url', 'kind', 'session', 'tags', 'created', 'updated')*
+
+the record fields that are filters in the index (`ir`’s `metadata_keys`)
+
+### annals.records.records(, target=None, to=None, skip_tags=frozenset({'noindex', 'private'}), include_derived=False)
+
+One dict per indexable document: `id`, `text` and the [`METADATA_KEYS`](_autosummary/annals.records.html.md#annals.records.METADATA_KEYS).
+
+`target` / `to` choose the store as `annals ls` does (default: the configured one).
+`tags` is one comma-separated string, since an index filters on scalars.
+
+* **Return type:**
+  [`Iterator`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Iterator)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 
 # _autosummary/annals.references.html.md
@@ -4399,18 +4483,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 02:04 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/b2c46fc0a59e54dcba39297caff91df586639ede"><code>b2c46fc</code></a> on branch <code>main</code>, for **annals 0.0.50** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 02:09 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/7cf677b3b5b8dbedd2e99f03f10264cef343b878"><code>7cf677b</code></a> on branch <code>main</code>, for **annals 0.0.51** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.50) is behind the latest release on PyPI (0.0.51): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.51) is behind the latest release on PyPI (0.0.52): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/b2c46fc0a59e54dcba39297caff91df586639ede"><code>b2c46fc0a59e54dcba39297caff91df586639ede</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/7cf677b3b5b8dbedd2e99f03f10264cef343b878"><code>7cf677b3b5b8dbedd2e99f03f10264cef343b878</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4421,9 +4505,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43789495405">43789495405</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43789984582">43789984582</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>b2c46fc0a59e54dcba39297caff91df586639ede</code> (in the history of the built commit) |
+| Event commit | <code>7cf677b3b5b8dbedd2e99f03f10264cef343b878</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4448,13 +4532,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.51/">0.0.51</a>, newer than the documented version (0.0.50).
+Latest release: <a href="https://pypi.org/project/annals/0.0.52/">0.0.52</a>, newer than the documented version (0.0.51).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout b2c46fc0a59e54dcba39297caff91df586639ede
+git checkout 7cf677b3b5b8dbedd2e99f03f10264cef343b878
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

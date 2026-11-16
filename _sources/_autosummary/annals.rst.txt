@@ -48,6 +48,7 @@
    media
    notebook
    overview
+   records
    references
    render
    requirements
