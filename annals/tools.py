@@ -52,6 +52,35 @@ def _default_source() -> dict:
     return src
 
 
+def _resolve_selection(store: DocStore, ref: str, *, also=None) -> tuple[str, list[dict]]:
+    """A title and the meta of what ``ref`` names: a group's documents, or a document (``also``: more documents).
+
+    ``ref`` is a group's or a document's id or link; a bare id may be either. Raises a
+    ``KeyError``/``ValueError`` for what does not exist, in words of "no such document or group".
+    """
+    kind, name = _parse_ref(ref)
+    try:
+        if kind == "doc":
+            raise KeyError(name)  # named as a document: no group to look for
+        g, metas = store.group_docs(name)
+        title = g.get("title") or g["id"]
+    except (KeyError, ValueError):
+        if kind == "group":
+            raise ValueError(f"no such group: {name}") from None
+        try:
+            meta = store.meta(name)  # a bare id may be a document's
+        except (KeyError, ValueError):
+            raise ValueError(f"no such document or group: {name}") from None
+        title, metas = meta.get("title") or meta["id"], [meta]
+    if also:
+        if kind == "group":
+            raise ValueError("--also adds documents to a document, not to a group")
+        extra = [store.meta(_parse_ref(i)[1]) for i in _as_list(also)]
+        metas = list({m["id"]: m for m in [*metas, *extra]}.values())
+        title = f"{len(metas)} documents"
+    return title, metas
+
+
 def _as_list(x) -> list[str]:
     items = [x] if isinstance(x, str) else list(x)
     if not items:
@@ -513,17 +542,7 @@ def aggregate(
     if format == "pdf" and not output:
         raise ValueError("a PDF is a binary file: name it with --output FILE")
     store = _store(_readable(load_settings(target=target, to=to)))
-    kind, ref = _parse_ref(group_id)
-    try:
-        if kind == "doc":
-            raise KeyError(ref)  # named as a document: no group to look for
-        g, metas = store.group_docs(ref)
-        title = g.get("title") or g["id"]
-    except (KeyError, ValueError):
-        if kind == "group":
-            raise
-        meta = store.meta(ref)  # a bare id may be a document's
-        title, metas = meta.get("title") or meta["id"], [meta]
+    title, metas = _resolve_selection(store, group_id)
     with tempfile.TemporaryDirectory(prefix="annals-aggregate-") as scratch:
         fetched: dict[str, Path] = {}
 
@@ -573,6 +592,39 @@ def aggregate(
             "skipped": len(result.skipped),
         }
     return result.data.decode("utf-8")
+
+
+def references(
+    ref: str,
+    *,
+    form: str = "grouped",
+    also: list[str] | None = None,
+    target: str | None = None,
+    to: str | None = None,
+) -> str:
+    """The references of a document or a group, as its page's References action gives them.
+
+    ``ref`` is a group's or a document's id or link. ``form``: ``grouped`` (each document's
+    references section as it is), ``deduped`` (every entry once, numbers removed) or ``urls``
+    (one address per line, nothing else: what a notebook takes as pasted sources). Documents
+    with no references section are left out; none at all is an error. ``also`` (more document
+    ids) takes the references of those documents together, as a pick on the page does.
+    """
+    from annals import references as refs
+
+    if form not in refs.FORMS:
+        raise ValueError(f"form must be one of {', '.join(refs.FORMS)}, not {form!r}")
+    store = _store(_readable(load_settings(target=target, to=to)))
+    title, docs = _resolve_selection(store, ref, also=also)
+    found = refs.collect(
+        [m for m in docs if not m.get("in_trash")],
+        read=store.read_text,
+        title=title,
+        form=form,
+    )
+    if not found["text"]:
+        raise ValueError(f"no references section in {title!r}")
+    return found["text"]
 
 
 def configure(
@@ -958,14 +1010,52 @@ def listen(
     *,
     minutes: int = 5,
     force: bool = False,
+    also: list[str] | None = None,
     target: str | None = None,
     to: str | None = None,
 ) -> dict:
-    """Ask for a spoken overview of a document, as its page's Listen button does. Spends money."""
+    """Ask for a spoken overview of a document, as its page's Listen button does. Spends money.
+
+    ``also`` (more document ids) asks for ONE overview of all of them together, as the page
+    does for a pick: their text is put in one document (made when the worker starts the job),
+    and the same documents at the same versions reuse it. ``force`` then does not apply.
+    """
+    from annals import overview
+    from annals.config import MAX_AGGREGATE_BYTES
+
+    store, requests = _overviews_here(target=target, to=to)
+    if not also:
+        return overview.request(store, requests, doc_id, minutes=minutes, force=force)
+    if force:
+        raise ValueError("--force asks again for one document's overview; it does not apply to --also")
+    ids = list(dict.fromkeys(_parse_ref(i)[1] for i in [doc_id, *_as_list(also)]))
+    docs = [store.meta(i) for i in ids]
+    if binned := [m["id"] for m in docs if m.get("in_trash")]:
+        raise ValueError(f"in the bin, so not combined: {', '.join(binned)}")
+    if len(docs) == 1:  # the same document twice: the ordinary overview, reused
+        return overview.request(store, requests, ids[0], minutes=minutes)
+    return overview.request_combined(
+        store,
+        requests,
+        docs,
+        title=f"{len(docs)} documents together",
+        minutes=minutes,
+        max_bytes=MAX_AGGREGATE_BYTES,
+    )
+
+
+def overview_state(
+    doc_id: str, *, target: str | None = None, to: str | None = None
+) -> dict:
+    """Where a document's spoken overview stands (not asked for, queued, made, failed), without asking for one.
+
+    Poll this after ``annals listen``. For a combined overview (``listen --also``) give the
+    combined document's id once the worker has made it; until then ``listen`` returns the state.
+    """
     from annals import overview
 
     store, requests = _overviews_here(target=target, to=to)
-    return overview.request(store, requests, doc_id, minutes=minutes, force=force)
+    return overview.state_of(store, requests, store.meta(_parse_ref(doc_id)[1]))
 
 
 def listen_work(
@@ -1027,6 +1117,7 @@ _dispatch_funcs[:] = [
     group,
     groups,
     aggregate,
+    references,
     copy,
     share,
     shares,
@@ -1035,6 +1126,7 @@ _dispatch_funcs[:] = [
     serve,
     page_shell,
     listen,
+    overview_state,
     listen_work,
     listen_down,
 ]
@@ -1056,6 +1148,7 @@ EFFECTS = {
     "group": "write",
     "groups": "read",
     "aggregate": "file",
+    "references": "read",
     "copy": "write",
     "share": "write",
     "shares": "read",
@@ -1064,6 +1157,7 @@ EFFECTS = {
     "serve": "server",
     "page_shell": "server",
     "listen": "spend",
+    "overview_state": "read",
     "listen_work": "server",
     "listen_down": "spend",
 }
@@ -1075,6 +1169,6 @@ def tools_with(effects=DFLT_EFFECTS) -> list:
     """The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.
 
     >>> [f.__name__ for f in tools_with({"read"})]
-    ['ls', 'show', 'groups', 'shares']
+    ['ls', 'show', 'groups', 'references', 'shares', 'overview_state']
     """
     return [f for f in _dispatch_funcs if EFFECTS[f.__name__] in effects]
