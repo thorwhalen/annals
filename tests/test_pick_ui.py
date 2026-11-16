@@ -510,3 +510,11 @@ def test_picks_of_documents_since_binned_are_dropped(phone, site):
     phone.reload()
     phone.locator(".pick-row").first.wait_for()
     assert phone.locator(".sel-count").inner_text() == "Tap documents to pick them"
+
+
+def test_a_long_title_without_spaces_does_not_scroll_the_list_sideways(phone, serve, tmp_path):
+    store = DocStore(tmp_path / "data")
+    store.publish(text="# x\n\nbody", title="W" * 300, filename="w.md")
+    phone.goto(f"{serve(store)}/")
+    phone.locator(".card").first.wait_for()
+    assert _no_sideways_scroll(phone)
