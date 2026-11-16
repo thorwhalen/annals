@@ -21,8 +21,17 @@ def test_slugify_and_id_shape():
 
 def test_kind_of():
     assert kind_of("a.md") == "md" and kind_of("x.HTML") == "html"
-    assert kind_of("notes.txt") == "text" and kind_of("img.png") == "image" and kind_of("x.bin") == "file"
-    assert [kind_of(f) for f in ("a.mp4", "b.MP3", "c.pdf", "d.webp")] == ["video", "audio", "pdf", "image"]
+    assert (
+        kind_of("notes.txt") == "text"
+        and kind_of("img.png") == "image"
+        and kind_of("x.bin") == "file"
+    )
+    assert [kind_of(f) for f in ("a.mp4", "b.MP3", "c.pdf", "d.webp")] == [
+        "video",
+        "audio",
+        "pdf",
+        "image",
+    ]
 
 
 @pytest.fixture
@@ -32,13 +41,17 @@ def store(tmp_path):
 
 def test_publish_markdown_infers_title_and_excerpt(store, tmp_path):
     src = tmp_path / "report.md"
-    src.write_text("# Quarterly report\n\nSome **bold** findings here.\n", encoding="utf-8")
+    src.write_text(
+        "# Quarterly report\n\nSome **bold** findings here.\n", encoding="utf-8"
+    )
     meta = store.publish(src, tags=["q3", " finance "])
     assert meta["title"] == "Quarterly report"
     assert meta["kind"] == "md" and meta["main"] == "report.md"
     assert meta["tags"] == ["finance", "q3"]
     assert "bold findings" in meta["excerpt"]
-    on_disk = json.loads((store.target.root / "docs" / meta["id"] / "meta.json").read_text())
+    on_disk = json.loads(
+        (store.target.root / "docs" / meta["id"] / "meta.json").read_text()
+    )
     assert on_disk["id"] == meta["id"]
     assert store.read_text(meta["id"]).startswith("# Quarterly")
 
@@ -46,11 +59,16 @@ def test_publish_markdown_infers_title_and_excerpt(store, tmp_path):
 def test_publish_html_directory_picks_index(store, tmp_path):
     d = tmp_path / "site"
     d.mkdir()
-    (d / "index.html").write_text("<html><head><title>My artifact</title></head><body>hi</body></html>")
+    (d / "index.html").write_text(
+        "<html><head><title>My artifact</title></head><body>hi</body></html>"
+    )
     (d / "style.css").write_text("body{}")
     meta = store.publish(d)
     assert meta["title"] == "My artifact" and meta["kind"] == "html"
-    assert meta["main"] == "index.html" and sorted(meta["files"]) == ["index.html", "style.css"]
+    assert meta["main"] == "index.html" and sorted(meta["files"]) == [
+        "index.html",
+        "style.css",
+    ]
 
 
 def test_publish_text_and_list_order(store):

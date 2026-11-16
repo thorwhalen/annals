@@ -152,7 +152,7 @@ def test_filter_refs_removes_what_is_not_shared():
     shared = {"20261001-000000-ok-aaaa": "/t/d/20261001-000000-ok-aaaa"}.get
     text = (
         "![in](img/a.png) ![out](img/b.png) [kept words](private.txt) "
-        "[web](https://example.org) <img src=\"img/b.png\"> "
+        '[web](https://example.org) <img src="img/b.png"> '
         "[ok](https://h/annals/d/20261001-000000-ok-aaaa) "
         "[no](/annals/d/20261002-000000-no-bbbb) 20261002-000000-no-bbbb "
         "https://h/annals/g/20261003-000000-grp-cccc"
@@ -196,7 +196,10 @@ def test_page_and_scope_isolation(client, shares, report, store):
     assert client.get(f"{link}/raw/{meta['id']}/private.txt").status_code == 404
     assert client.get(f"{link}/docs/{other['id']}").status_code == 404
     assert client.get(f"{link}/raw/{other['id']}/document.md").status_code == 404
-    assert client.get(f"{link}/raw/{meta['id']}/../{other['id']}/document.md").status_code == 404
+    assert (
+        client.get(f"{link}/raw/{meta['id']}/../{other['id']}/document.md").status_code
+        == 404
+    )
     raw_md = client.get(f"{link}/raw/{meta['id']}/report.md").text
     assert "img/b.png" not in raw_md and "private.txt" not in raw_md
     info = client.get(f"{link}/share").json()
@@ -271,7 +274,9 @@ def test_password_attempts_are_limited(shares, report):
     rec = shares.create(meta["id"], password="right-one")
     hdr = {"content-type": "application/x-www-form-urlencoded"}
     codes = [
-        client.post(f"/{rec['token']}/unlock", content=b"password=x", headers=hdr).status_code
+        client.post(
+            f"/{rec['token']}/unlock", content=b"password=x", headers=hdr
+        ).status_code
         for _ in range(4)
     ]
     assert codes == [401, 401, 401, 429]
@@ -300,7 +305,9 @@ def test_group_share(client, shares, store):
     b = store.publish(text="# B", title="B")
     g = store.make_group("Pair", [a["id"], b["id"]])
     rec = shares.create(g["id"], include=[a["id"]])
-    assert rec["root"] == {"kind": "group", "id": g["id"]} and list(rec["docs"]) == [a["id"]]
+    assert rec["root"] == {"kind": "group", "id": g["id"]} and list(rec["docs"]) == [
+        a["id"]
+    ]
     info = client.get(f"{_link(rec)}/share").json()
     assert [d["id"] for d in info["docs"]] == [a["id"]]
     assert client.get(f"{_link(rec)}/docs/{b['id']}").status_code == 404
@@ -321,7 +328,12 @@ def test_owner_api_and_gate(store, report):
     assert {f["rel"] for f in res["files"]} == set(meta["files"])
     made = owner.post(
         "/annals/api/shares",
-        json={"ref": meta["id"], "include": ["img/a.png"], "expires": "7d", "password": "pw-for-x"},
+        json={
+            "ref": meta["id"],
+            "include": ["img/a.png"],
+            "expires": "7d",
+            "password": "pw-for-x",
+        },
     )
     assert made.status_code == 200
     rec = made.json()
@@ -344,7 +356,12 @@ def test_owner_api_and_gate(store, report):
     assert [s["token"] for s in listed] == [rec["token"]]
     assert owner.delete(f"/annals/api/shares/{rec['token']}").json()["revoked"]
     assert anon.get(rec["url"] + "share").status_code == 404
-    assert owner.post("/annals/api/shares", json={"ref": meta["id"], "expires": "1999-01-01"}).status_code == 422
+    assert (
+        owner.post(
+            "/annals/api/shares", json={"ref": meta["id"], "expires": "1999-01-01"}
+        ).status_code
+        == 422
+    )
     assert owner.post("/annals/api/shares", json={"ref": "nope"}).status_code == 404
 
 
@@ -364,8 +381,12 @@ def test_plain_text_and_svg_are_filtered_too(client, shares, store, tmp_path):
     private = store.publish(text="# P", title="Private thing")
     src = tmp_path / "t"
     src.mkdir()
-    (src / "notes.txt").write_text(f"see https://h/annals/d/{private['id']} and secret.png")
-    (src / "pic.svg").write_text(f'<svg><image href="/annals/raw/{private["id"]}/x.png"/></svg>')
+    (src / "notes.txt").write_text(
+        f"see https://h/annals/d/{private['id']} and secret.png"
+    )
+    (src / "pic.svg").write_text(
+        f'<svg><image href="/annals/raw/{private["id"]}/x.png"/></svg>'
+    )
     meta = store.publish(src, title="Notes")
     rec = shares.create(meta["id"])
     link = _link(rec)
@@ -425,7 +446,12 @@ def test_one_guesser_does_not_lock_out_the_recipient(shares, report):
         body = f"password={pw}".encode()
         return client.post(f"/{rec['token']}/unlock", content=body, headers=headers)
 
-    assert [attempt("x", "6.6.6.6").status_code for _ in range(4)] == [401, 401, 401, 429]
+    assert [attempt("x", "6.6.6.6").status_code for _ in range(4)] == [
+        401,
+        401,
+        401,
+        429,
+    ]
     assert attempt("right-one", "1.2.3.4").status_code == 303
 
 
@@ -441,8 +467,16 @@ def test_wrong_passwords_from_everywhere_lock_the_link_for_a_while(shares, repor
     hdr = {"content-type": "application/x-www-form-urlencoded"}
     c = TestClient(app, follow_redirects=False)
     for i in range(3):
-        c.post(f"/{rec['token']}/unlock", content=b"password=x", headers={**hdr, "x-forwarded-for": f"9.9.9.{i}"})
-    r = c.post(f"/{rec['token']}/unlock", content=b"password=right-one", headers={**hdr, "x-forwarded-for": "1.1.1.1"})
+        c.post(
+            f"/{rec['token']}/unlock",
+            content=b"password=x",
+            headers={**hdr, "x-forwarded-for": f"9.9.9.{i}"},
+        )
+    r = c.post(
+        f"/{rec['token']}/unlock",
+        content=b"password=right-one",
+        headers={**hdr, "x-forwarded-for": "1.1.1.1"},
+    )
     assert r.status_code == 429
 
 

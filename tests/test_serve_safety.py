@@ -9,7 +9,12 @@ from annals import api
 from annals.sources import PublishedSource
 from annals.store import DocStore
 
-AUTH_VARS = ("ANNALS_WHOAMI_URL", "ANNALS_ALLOWED_USERS", "ANNALS_BASIC_USER", "ANNALS_BASIC_PASSWORD")
+AUTH_VARS = (
+    "ANNALS_WHOAMI_URL",
+    "ANNALS_ALLOWED_USERS",
+    "ANNALS_BASIC_USER",
+    "ANNALS_BASIC_PASSWORD",
+)
 
 
 @pytest.fixture
@@ -29,7 +34,9 @@ def test_a_reachable_host_without_auth_is_refused(ran, host) -> None:
     assert ran == []
 
 
-@pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1", "[::1]", "::ffff:127.0.0.1"])
+@pytest.mark.parametrize(
+    "host", ["127.0.0.1", "localhost", "::1", "[::1]", "::ffff:127.0.0.1"]
+)
 def test_loopback_without_auth_is_fine(ran, host) -> None:
     api.serve(host=host)
     assert ran[0]["host"] == host

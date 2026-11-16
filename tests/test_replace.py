@@ -33,9 +33,13 @@ def _write(path, text):
 
 
 def test_replace_a_file_keeps_the_id_and_the_old_version(store, tmp_path):
-    first = store.publish(_write(tmp_path / "g.md", "# Guide\n\nv1 text"), tags=["guide"])
+    first = store.publish(
+        _write(tmp_path / "g.md", "# Guide\n\nv1 text"), tags=["guide"]
+    )
     doc_id = first["id"]
-    second = store.publish(_write(tmp_path / "g2.md", "# Guide\n\nv2 text"), replace=doc_id)
+    second = store.publish(
+        _write(tmp_path / "g2.md", "# Guide\n\nv2 text"), replace=doc_id
+    )
     assert second["id"] == doc_id and second["version"] == 2
     assert second["created"] == first["created"] and second["updated"]
     assert second["tags"] == ["guide"]  # inherited when the replacement names none
@@ -46,7 +50,9 @@ def test_replace_a_file_keeps_the_id_and_the_old_version(store, tmp_path):
     assert store.read_text(f"{doc_id}@1").endswith("v1 text")
     assert [m["id"] for m in store.list()] == [doc_id]  # one document, not two
     root = store.target.root / "docs"
-    assert sorted(p.name for p in root.iterdir()) == [doc_id]  # nothing pending, no claims
+    assert sorted(p.name for p in root.iterdir()) == [
+        doc_id
+    ]  # nothing pending, no claims
 
 
 def test_replace_a_folder_and_list_versions(store, tmp_path):
@@ -60,7 +66,10 @@ def test_replace_a_folder_and_list_versions(store, tmp_path):
     store.publish(site, replace=doc_id)
     _write(site / "index.html", "<title>Site</title>v3")
     meta = store.publish(site, replace=doc_id)
-    assert meta["version"] == 3 and sorted(meta["files"]) == ["img/new.css", "index.html"]
+    assert meta["version"] == 3 and sorted(meta["files"]) == [
+        "img/new.css",
+        "index.html",
+    ]
     assert [v["n"] for v in store.versions(doc_id)] == [1, 2, 3]
     assert store.versions(doc_id)[-1]["current"] is True
     assert store.meta(f"{doc_id}@1")["files"] == ["index.html", "old.css"]
@@ -109,7 +118,9 @@ def test_replace_on_a_settling_store_needs_the_document(store):
         store.publish(text="x", replace="20261020-010101-nope-ab12")
 
 
-def test_two_replacements_apply_in_order_and_concurrent_readers_apply_each_once(tmp_path):
+def test_two_replacements_apply_in_order_and_concurrent_readers_apply_each_once(
+    tmp_path,
+):
     root = tmp_path / "data"
     doc_id = DocStore(root).publish(text="# D\n\nv1", title="D")["id"]
     outbox = DocStore(root, settle=False)
@@ -125,7 +136,11 @@ def test_two_replacements_apply_in_order_and_concurrent_readers_apply_each_once(
     store = DocStore(root)
     assert store.pending() == []
     assert store.meta(doc_id)["version"] == 4
-    assert [store.read_text(f"{doc_id}@{n}")[-2:] for n in (1, 2, 3)] == ["v1", "v2", "v3"]
+    assert [store.read_text(f"{doc_id}@{n}")[-2:] for n in (1, 2, 3)] == [
+        "v1",
+        "v2",
+        "v3",
+    ]
     assert store.read_text(doc_id).endswith("v4")
     assert sorted(p.name for p in (root / "docs").iterdir()) == [doc_id]
 
@@ -163,7 +178,9 @@ def test_replace_refuses_bad_ids_and_reserved_names(store, tmp_path):
 
 def test_api_serves_versions_with_the_right_caching(store, tmp_path):
     doc_id = store.publish(_write(tmp_path / "p.html", "<p>one</p>"))["id"]
-    store.publish(_write(tmp_path / "p.html", "<!doctype html><p>two</p>"), replace=doc_id)
+    store.publish(
+        _write(tmp_path / "p.html", "<!doctype html><p>two</p>"), replace=doc_id
+    )
     client = TestClient(mk_app(store=store, authorizer=no_auth))
     cur = client.get(f"/annals/api/docs/{doc_id}").json()
     assert cur["version"] == 2 and [v["n"] for v in cur["versions"]] == [1]
@@ -181,7 +198,9 @@ def test_api_serves_versions_with_the_right_caching(store, tmp_path):
 
 def test_doctype_guard():
     assert doctype_guard(b"<!DOCTYPE html><p>x") == b"<!DOCTYPE html><p>x"
-    assert doctype_guard(b"\xef\xbb\xbf <!-- c --> <!doctype html>") .startswith(b"\xef\xbb\xbf")
+    assert doctype_guard(b"\xef\xbb\xbf <!-- c --> <!doctype html>").startswith(
+        b"\xef\xbb\xbf"
+    )
     out = doctype_guard(b"<html><head><meta charset=latin1></head><p>x</p></html>")
     assert out.startswith(b"<!doctype html>\n") and out.count(b"charset") == 1
     assert b'name="viewport"' in out and out.endswith(b"</html>")
@@ -202,26 +221,49 @@ def test_cli_replace_prints_the_same_link(tmp_path, monkeypatch):
     assert run(["publish", str(src), "--replace", url], out=out, err=io.StringIO()) == 0
     assert out.getvalue().strip() == url
     err = io.StringIO()
-    assert run(["publish", str(src), str(src), "--replace", url], out=io.StringIO(), err=err) == 1
+    assert (
+        run(
+            ["publish", str(src), str(src), "--replace", url],
+            out=io.StringIO(),
+            err=err,
+        )
+        == 1
+    )
     assert "one path" in err.getvalue()
 
 
-def test_configure_outbox_is_saved_and_makes_replacements_pending(tmp_path, monkeypatch):
+def test_configure_outbox_is_saved_and_makes_replacements_pending(
+    tmp_path, monkeypatch
+):
     monkeypatch.delenv("ANNALS_TARGET", raising=False)
     monkeypatch.delenv("ANNALS_BASE_URL", raising=False)
     monkeypatch.delenv("ANNALS_OUTBOX", raising=False)
     monkeypatch.delenv("ANNALS_CONFIG", raising=False)
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
     data = tmp_path / "outbox"
-    args = ["configure", "--target", str(data), "--base-url", "https://x.example/annals"]
+    args = [
+        "configure",
+        "--target",
+        str(data),
+        "--base-url",
+        "https://x.example/annals",
+    ]
     assert run([*args, "--outbox"], out=io.StringIO(), err=io.StringIO()) == 0
     out = io.StringIO()
     run(["configure"], out=out, err=io.StringIO())
     assert json.loads(out.getvalue())["outbox"] is True
     out = io.StringIO()
     monkeypatch.setattr("sys.stdin", io.StringIO("# Far\n\nv2"))
-    rc = run(["publish", "-", "--replace", "20261020-010101-far-ab12"], out=out, err=io.StringIO())
-    assert rc == 0 and out.getvalue().strip() == "https://x.example/annals/d/20261020-010101-far-ab12"
+    rc = run(
+        ["publish", "-", "--replace", "20261020-010101-far-ab12"],
+        out=out,
+        err=io.StringIO(),
+    )
+    assert (
+        rc == 0
+        and out.getvalue().strip()
+        == "https://x.example/annals/d/20261020-010101-far-ab12"
+    )
     assert len(DocStore(data, settle=False).pending()) == 1
 
 
@@ -324,7 +366,9 @@ def test_a_replacement_pulled_twice_is_applied_once(tmp_path):
     shutil.copytree(copy, pend)  # a retried pull lands the same directory again
     store.settle()
     assert store.meta(doc_id)["version"] == 2 and store.pending() == []
-    assert [p.name.startswith(pend.name) for p in (root / "trash").iterdir()] == [True]  # set aside
+    assert [p.name.startswith(pend.name) for p in (root / "trash").iterdir()] == [
+        True
+    ]  # set aside
     (dup,) = [m["id"] for m in store.list(trash=True)]
     store.purge(dup)  # and it can be emptied from the bin
     assert list((root / "trash").iterdir()) == []
@@ -340,12 +384,16 @@ def test_a_stale_lock_left_by_a_crash_is_recovered(tmp_path, monkeypatch):
     # the crash: the replacement was claimed and the document moved aside, then nothing
     lock = root / "docs" / f".lock-{doc_id}"
     lock.mkdir()
-    (lock / "lock.json").write_text(json.dumps({"since": 0, "pending": pend.name, "n": 1}))
+    (lock / "lock.json").write_text(
+        json.dumps({"since": 0, "pending": pend.name, "n": 1})
+    )
     pend.rename(lock / "next")
     (root / "docs" / doc_id).rename(lock / "old")
     monkeypatch.setattr(st, "SWAP_WAIT_S", 0.05)
     assert store.settle() == [doc_id]  # recovered (put back), then applied
-    assert store.read_text(doc_id).endswith("v2") and store.read_text(f"{doc_id}@1").endswith("v1")
+    assert store.read_text(doc_id).endswith("v2") and store.read_text(
+        f"{doc_id}@1"
+    ).endswith("v1")
     assert sorted(p.name for p in (root / "docs").iterdir()) == [doc_id]
 
 
@@ -372,7 +420,10 @@ def test_html_revalidates_with_an_etag(store, tmp_path):
     doc_id = store.publish(_write(tmp_path / "e.html", "<p>x</p>"))["id"]
     client = TestClient(mk_app(store=store, authorizer=no_auth))
     first = client.get(f"/annals/api/raw/{doc_id}/e.html")
-    again = client.get(f"/annals/api/raw/{doc_id}/e.html", headers={"If-None-Match": first.headers["etag"]})
+    again = client.get(
+        f"/annals/api/raw/{doc_id}/e.html",
+        headers={"If-None-Match": first.headers["etag"]},
+    )
     assert again.status_code == 304
 
 
@@ -383,18 +434,24 @@ def test_a_crash_after_going_live_but_before_the_meta_is_rolled_back(tmp_path):
     pend = _queue(root, doc_id, "# L\n\nv2")
     lock = root / "docs" / f".lock-{doc_id}"
     lock.mkdir()
-    (lock / "lock.json").write_text(json.dumps({"since": 0, "pending": pend.name, "n": 1}))
+    (lock / "lock.json").write_text(
+        json.dumps({"since": 0, "pending": pend.name, "n": 1})
+    )
     (root / "docs" / doc_id).rename(lock / "old")
     pend.rename(root / "docs" / doc_id)  # live, still carrying the replacement's meta
     assert store.settle() == [doc_id]
-    assert store.meta(doc_id)["version"] == 2 and store.read_text(f"{doc_id}@1").endswith("v1")
+    assert store.meta(doc_id)["version"] == 2 and store.read_text(
+        f"{doc_id}@1"
+    ).endswith("v1")
 
 
 def test_locks_are_exclusive_and_block_trash_while_held(tmp_path):
     store = DocStore(tmp_path / "data")
     doc_id = store.publish(text="# X\n\nv1", title="X")["id"]
     lock = store._lock("docs", doc_id)
-    assert lock and json.loads((tmp_path / "data" / lock / "lock.json").read_text())["pid"]
+    assert (
+        lock and json.loads((tmp_path / "data" / lock / "lock.json").read_text())["pid"]
+    )
     assert store._lock("docs", doc_id) is None  # held by a live process: not stale
     with pytest.raises(RuntimeError):
         store.trash(doc_id)
@@ -406,7 +463,9 @@ def test_locks_are_exclusive_and_block_trash_while_held(tmp_path):
 def test_ssh_lock_is_created_with_its_note(tmp_path, loopback_ssh):
     t = SshTarget("loop", str(tmp_path / "remote"))
     t.make_lock("docs/.lock-a", '{"since": 1}')
-    assert (tmp_path / "remote" / "docs" / ".lock-a" / "lock.json").read_text() == '{"since": 1}'
+    assert (
+        tmp_path / "remote" / "docs" / ".lock-a" / "lock.json"
+    ).read_text() == '{"since": 1}'
     with pytest.raises(RuntimeError):
         t.make_lock("docs/.lock-a", "{}")
     (tmp_path / "remote" / "docs" / "f").mkdir()
@@ -420,14 +479,20 @@ ARTIFACT = "https://claude.ai/artifact/0123abcd"
 
 
 def test_artifact_link_is_stored_and_kept_by_a_replace(store, tmp_path):
-    first = store.publish(_write(tmp_path / "p.html", "<title>P</title>v1"), artifact=ARTIFACT)
+    first = store.publish(
+        _write(tmp_path / "p.html", "<title>P</title>v1"), artifact=ARTIFACT
+    )
     assert first["artifact"] == ARTIFACT
     doc_id = first["id"]
-    second = store.publish(_write(tmp_path / "p.html", "<title>P</title>v2"), replace=doc_id)
+    second = store.publish(
+        _write(tmp_path / "p.html", "<title>P</title>v2"), replace=doc_id
+    )
     assert second["artifact"] == ARTIFACT  # kept when the replacement names none
     other = "https://claude.ai/code/artifact/9f9f"
     third = store.publish(
-        _write(tmp_path / "p.html", "<title>P</title>v3"), replace=doc_id, artifact=other
+        _write(tmp_path / "p.html", "<title>P</title>v3"),
+        replace=doc_id,
+        artifact=other,
     )
     assert third["artifact"] == other
     plain = store.publish(_write(tmp_path / "q.md", "# Q"))
@@ -468,12 +533,17 @@ def test_artifact_link_reaches_the_api_and_the_cli(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
     src = _write(tmp_path / "page.html", "<!doctype html><title>Page</title>hi")
     out, err = io.StringIO(), io.StringIO()
-    assert run(["publish", str(src), "--artifact", ARTIFACT], out=out, err=err) == 0, err.getvalue()
+    assert run(["publish", str(src), "--artifact", ARTIFACT], out=out, err=err) == 0, (
+        err.getvalue()
+    )
     doc_id = out.getvalue().strip().rsplit("/", 1)[-1]
     client = TestClient(mk_app(store=DocStore(data), authorizer=no_auth))
     assert client.get(f"/annals/api/docs/{doc_id}").json()["artifact"] == ARTIFACT
     err = io.StringIO()
-    assert run(["publish", str(src), "--artifact", "http://x"], out=io.StringIO(), err=err) == 1
+    assert (
+        run(["publish", str(src), "--artifact", "http://x"], out=io.StringIO(), err=err)
+        == 1
+    )
     assert "artifact" in err.getvalue()
 
 

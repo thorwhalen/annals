@@ -25,7 +25,9 @@ def test_links_to_other_sites_open_apart():
     assert '<area target="_blank" href="http://map.org"' in out
     assert 'target="_self">kept' in out and out.count('target="_blank"') == 3
     assert '<a href="page2.html">' in out and '<a href="#top">' in out
-    assert "<script>var s = '<a href=\"https://not.a.tag\">';</script>" in out  # not a tag
+    assert (
+        "<script>var s = '<a href=\"https://not.a.tag\">';</script>" in out
+    )  # not a tag
 
 
 def test_link_rewrite_leaves_alone_what_it_should():

@@ -174,7 +174,9 @@ def test_read_metas_takes_a_pattern_for_groups(tmp_path):
     assert t.read_metas("groups", pattern="*.json") == [{"id": "g1"}]
 
 
-@pytest.mark.parametrize("pattern", ["*.json; rm -rf ~", "../*.json", ".*", "a b", "$(x)", "**/*.json"])
+@pytest.mark.parametrize(
+    "pattern", ["*.json; rm -rf ~", "../*.json", ".*", "a b", "$(x)", "**/*.json"]
+)
 def test_read_metas_refuses_a_pattern_a_shell_would_run(pattern, ssh_calls, tmp_path):
     with pytest.raises(ValueError):
         SshTarget("tw", "/srv/a").read_metas("groups", pattern=pattern)
@@ -187,7 +189,9 @@ def test_ssh_shares_one_connection_across_calls(ssh_calls, tmp_path, monkeypatch
     """Each new connection to a far host costs seconds; consecutive calls reuse one."""
     monkeypatch.setattr(target_mod.Path, "home", lambda: tmp_path)
     (tmp_path / ".ssh").mkdir()
-    monkeypatch.setattr(target_mod, "_SOCKET_MAX", 10_000)  # tmp_path itself may be deep
+    monkeypatch.setattr(
+        target_mod, "_SOCKET_MAX", 10_000
+    )  # tmp_path itself may be deep
     t = SshTarget("tw", "/srv/a")
     t.exists("docs")
     t.get_tree("docs/d1", tmp_path / "out")

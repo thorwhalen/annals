@@ -138,7 +138,9 @@ def test_closing_a_sheet_keeps_the_picks(phone, site, close):
     phone.get_by_label("Pick “Bees”").check()
     phone.get_by_role("button", name="One file").click()
     phone.locator(".sheet").wait_for()
-    phone.evaluate("window.__samePage = true")  # gone if the page is drawn again from scratch
+    phone.evaluate(
+        "window.__samePage = true"
+    )  # gone if the page is drawn again from scratch
     if close == "back button":
         phone.locator(".sheet-back").click()
     elif close == "escape":
@@ -172,11 +174,15 @@ def test_the_interactive_version_leaves_room_for_the_buttons(chromium, site):
         filename="p.md",
         artifact="https://claude.ai/public/artifacts/abc",
     )
-    ctx = chromium.new_context(viewport={"width": 360, "height": 780}, has_touch=True, is_mobile=True)
+    ctx = chromium.new_context(
+        viewport={"width": 360, "height": 780}, has_touch=True, is_mobile=True
+    )
     page = ctx.new_page()
     page.goto(f"{site['base']}/d/{doc['id']}")
     page.locator(".actionbar button.result").first.wait_for()
-    for el in page.locator(".actionbar button.result, .actionbar .menu-btn, .actionbar .view-toggle").all():
+    for el in page.locator(
+        ".actionbar button.result, .actionbar .menu-btn, .actionbar .view-toggle"
+    ).all():
         assert el.bounding_box()["width"] >= 44
     ctx.close()
 
@@ -204,11 +210,17 @@ def test_the_links_sheet_hands_own_agents_the_private_address(chromium, site):
         page.locator(".pick input").first.check()
         page.locator(".selbar").get_by_role("button", name="Links").click()
         btn = page.locator(".agent-note .copy-btn")
-        assert btn.inner_text().strip() == "Copy the address"  # one picked: that document's
+        assert (
+            btn.inner_text().strip() == "Copy the address"
+        )  # one picked: that document's
         btn.click()
-        page.wait_for_function("b => b.getAttribute('data-state') === 'copied'", arg=btn.element_handle())
+        page.wait_for_function(
+            "b => b.getAttribute('data-state') === 'copied'", arg=btn.element_handle()
+        )
         copied = page.evaluate("navigator.clipboard.readText()")
-        assert re.fullmatch(rf".*/d/({site['bees']['id']}|{site['tides']['id']})", copied)
+        assert re.fullmatch(
+            rf".*/d/({site['bees']['id']}|{site['tides']['id']})", copied
+        )
         assert "/shared/" not in copied
     finally:
         ctx.close()

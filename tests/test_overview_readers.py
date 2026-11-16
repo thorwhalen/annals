@@ -58,12 +58,18 @@ def _ids(rows):
 
 def test_the_reader_offered_overviews_sees_them(store, docs):
     c = _client(store, OWNER.upper())  # names compare without case
-    assert {docs["plain"], docs["made"]} <= _ids(c.get("/annals/api/docs").json()["docs"])
+    assert {docs["plain"], docs["made"]} <= _ids(
+        c.get("/annals/api/docs").json()["docs"]
+    )
     page = c.get(f"/annals/api/docs/{docs['plain']}").json()
-    assert page["listen"]["state"] == "done" and page["listen"]["overview"] == docs["made"]
+    assert (
+        page["listen"]["state"] == "done" and page["listen"]["overview"] == docs["made"]
+    )
     assert c.get(f"/annals/api/docs/{docs['made']}").status_code == 200
     assert docs["made"] in _ids(c.get("/annals/api/audio").json()["docs"])
-    r = c.post(f"/annals/api/docs/{docs['plain']}/overview", json={"minutes": 5, "force": True})
+    r = c.post(
+        f"/annals/api/docs/{docs['plain']}/overview", json={"minutes": 5, "force": True}
+    )
     assert r.status_code == 200 and r.json()["state"] == "queued"
 
 
@@ -77,7 +83,9 @@ def test_another_reader_has_no_listen_and_cannot_ask(store, docs):
     r = c.post("/annals/api/overviews", json={"docs": [docs["plain"]]})
     assert r.status_code == 404
     assert "listen" not in c.get(f"/annals/api/groups/{docs['group']}").json()
-    assert Requests(store.target.root).get(docs["plain"])["minutes"] == 3  # nothing queued
+    assert (
+        Requests(store.target.root).get(docs["plain"])["minutes"] == 3
+    )  # nothing queued
 
 
 def test_another_reader_never_sees_what_overviews_made(store, docs):
@@ -114,7 +122,9 @@ def test_another_reader_never_sees_what_overviews_made(store, docs):
 
 def test_offered_to_everyone_is_unchanged(store, docs):
     c = _client(store, OTHER, overviews=True)
-    assert c.get(f"/annals/api/docs/{docs['plain']}").json()["listen"]["state"] == "done"
+    assert (
+        c.get(f"/annals/api/docs/{docs['plain']}").json()["listen"]["state"] == "done"
+    )
     assert docs["made"] in _ids(c.get("/annals/api/docs").json()["docs"])
 
 
@@ -207,35 +217,49 @@ def test_hiding_never_deletes_from_a_group(store, docs):
 
 
 def test_the_text_combined_for_an_overview_is_made_here_too():
-    combined = {"tags": [overview.COMBINED_TAG], "source": {"session": overview.COMBINED_SESSION}}
+    combined = {
+        "tags": [overview.COMBINED_TAG],
+        "source": {"session": overview.COMBINED_SESSION},
+    }
     assert overview.made_here(combined)
-    assert not overview.made_here({"tags": [overview.COMBINED_TAG], "source": {"session": "x"}})
+    assert not overview.made_here(
+        {"tags": [overview.COMBINED_TAG], "source": {"session": "x"}}
+    )
     assert not overview.made_here({"tags": ["report"]})
 
 
 # -- found by review: shares, pending replacements, failing predicates ---------------
 
 
-def test_another_reader_never_sees_or_revokes_a_share_reaching_what_overviews_made(store, docs):
+def test_another_reader_never_sees_or_revokes_a_share_reaching_what_overviews_made(
+    store, docs
+):
     owner, other = _client(store, OWNER), _client(store, OTHER)
     api = "/annals/api"
     of_made = owner.post(f"{api}/shares", json={"ref": docs["made"]}).json()["token"]
     of_group = owner.post(f"{api}/shares", json={"ref": docs["group"]}).json()["token"]
     of_plain = owner.post(f"{api}/shares", json={"ref": docs["plain"]}).json()["token"]
-    seen = {r["token"] for r in other.get(f"{api}/shares", params={"all": 1}).json()["shares"]}
+    seen = {
+        r["token"]
+        for r in other.get(f"{api}/shares", params={"all": 1}).json()["shares"]
+    }
     assert seen == {of_plain}
     for token in (of_made, of_group):
         assert other.get(f"{api}/shares/{token}/sources").status_code == 404
         assert other.delete(f"{api}/shares/{token}").status_code == 404
     assert {r["token"] for r in owner.get(f"{api}/shares").json()["shares"]} == {
-        of_made, of_group, of_plain
+        of_made,
+        of_group,
+        of_plain,
     }  # still live: the owner's to revoke
 
 
 def test_a_pending_replacement_of_a_hidden_document_is_hidden_too(tmp_path):
     store = DocStore(tmp_path / "data", settle=False)  # keep the replacement pending
     made = store.publish(text="# Listen", title="Listen: x", tags=[overview.TAG])["id"]
-    pending = store.publish(text="# Listen again", title="Listen: x", replace=made)["id"]
+    pending = store.publish(text="# Listen again", title="Listen: x", replace=made)[
+        "id"
+    ]
     view = HidingStore(store, hide=overview.made_here)
     assert view.hides(made) and view.hides(pending)
     assert view.list() == []
@@ -254,7 +278,11 @@ def test_a_failing_predicate_serves_the_reader_as_not_offered(store, docs):
 
 
 @pytest.mark.parametrize("value, offered", [("true", True), ("1", True), ("no", False)])
-def test_an_on_off_word_is_never_a_reader_name(store, docs, monkeypatch, value, offered):
+def test_an_on_off_word_is_never_a_reader_name(
+    store, docs, monkeypatch, value, offered
+):
     monkeypatch.setenv(overview.ENV_OVERVIEWS, value)
-    c = TestClient(mk_app(store=store, authorizer=TrustedHeader(HEADER)), headers={HEADER: OTHER})
+    c = TestClient(
+        mk_app(store=store, authorizer=TrustedHeader(HEADER)), headers={HEADER: OTHER}
+    )
     assert ("listen" in c.get(f"/annals/api/docs/{docs['plain']}").json()) is offered
