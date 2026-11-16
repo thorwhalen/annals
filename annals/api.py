@@ -391,14 +391,18 @@ def _mk_api(
         since: str = "",
         session: str = "",
         tag: str = "",
+        meta: list[str] = Query(default=[]),
     ) -> dict:
         """All documents (or the bin), newest first; ``q`` filters by words.
 
-        ``since`` (an ISO date or time, or an age such as ``6h``), ``session`` and ``tag``
-        are the exact filters of ``annals ls`` (:mod:`annals.docfilter`), tags as the owner left them.
+        ``since`` (an ISO date or time, or an age such as ``6h``), ``session``, ``tag`` and
+        ``meta`` (``key=value``, repeatable, against the document's source) are the exact
+        filters of ``annals ls`` (:mod:`annals.docfilter`), tags as the owner left them. A time
+        without an offset is the server's local time, so send ``Z`` or an offset (``%2B`` for
+        ``+`` in a query string). A bad value is a 422.
         """
         try:
-            wanted = DocFilter.of(since=since, session=session, tag=tag)
+            wanted = DocFilter.of(since=since, session=session, tag=tag, meta=meta)
         except ValueError as e:
             raise HTTPException(422, str(e))
         docs = store.search(q, trash=trash) if q else store.list(trash=trash)

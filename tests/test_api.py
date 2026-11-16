@@ -639,3 +639,11 @@ def test_docs_take_the_same_exact_filters_as_ls(client, store):
     assert ids(session="s1") == [a["id"]] and ids(tag="x") == [a["id"]]
     assert {a["id"], b["id"]} <= set(ids(since="1h")) and ids(since="2999-01-01") == []
     assert client.get("/annals/api/docs", params={"since": "soon"}).status_code == 422
+
+
+def test_since_survives_an_unencoded_plus_and_meta_filters(client, store):
+    a = store.publish(text="# A\n\nx", title="A", source={"corpus": "c1"})
+    got = lambda **q: [d["id"] for d in client.get("/annals/api/docs", params=q).json()["docs"]]  # noqa: E731
+    assert a["id"] in got(since="2020-01-01T00:00:00 00:00")  # "+" arrives as a space in a raw query
+    assert got(meta=["corpus=c1"]) == [a["id"]] and got(meta=["corpus=zz"]) == []
+    assert client.get("/annals/api/docs", params={"meta": "oops"}).status_code == 422

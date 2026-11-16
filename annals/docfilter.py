@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterable, Mapping
+from types import MappingProxyType
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
@@ -64,7 +65,8 @@ SINCE_UNITS = {"m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
 
 def parse_iso(text: str) -> datetime:
     """An ISO date or time as an aware datetime; one with no offset is local time."""
-    dt = datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+    text = re.sub(r"(?<=\d) (?=\d\d:\d\d$)", "+", text.strip())  # a "+" in a URL query arrives as a space
+    dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
     return dt if dt.tzinfo else dt.astimezone()
 
 
@@ -77,7 +79,7 @@ def parse_since(since: str, *, now: datetime | None = None) -> datetime:
     '2026-11-12'
     """
     bad = ValueError(
-        f"--since takes an ISO date or time (2026-11-12, 2026-11-12T09:00; local time unless it has an offset) "
+        f"since takes an ISO date or time (2026-11-12, 2026-11-12T09:00; local time unless it has an offset) "
         f"or an age (6h, 2d), got {since!r}"
     )
     m = re.fullmatch(r"(\d+)\s*([mhdw])", since.strip().lower())
@@ -94,7 +96,7 @@ def changed_at(meta: dict) -> datetime | None:
     """When a document last changed: a replaced one counts from its newest version."""
     try:
         return parse_iso(str(meta.get("updated") or meta.get("created", "")))
-    except ValueError:
+    except (ValueError, OverflowError):
         return None
 
 
@@ -105,7 +107,7 @@ class DocFilter:
     since: datetime | None = None
     session: str | None = None
     tag: str | None = None
-    source: Mapping[str, str] = field(default_factory=dict)
+    source: Mapping[str, str] = field(default_factory=dict, hash=False)
 
     @classmethod
     def of(
@@ -118,11 +120,15 @@ class DocFilter:
     ) -> "DocFilter":
         """From the CLI's spelling: ``since`` text, ``meta`` as ``key=value`` strings."""
         source = parse_meta(meta, reserved=frozenset())
+        if session and source.get("session", session) != session:
+            raise ValueError(
+                f"session given twice, differently: {session!r} and {source['session']!r}"
+            )
         return cls(
             since=parse_since(since) if since else None,
             session=session or None,
             tag=tag or None,
-            source=source,
+            source=MappingProxyType(source),
         )
 
     def matches(self, doc: dict) -> bool:
@@ -131,10 +137,10 @@ class DocFilter:
             changed = changed_at(doc)
             if changed is None or changed < self.since:
                 return False
-        if self.tag is not None and self.tag not in doc.get("tags", []):
+        if self.tag is not None and self.tag not in (doc.get("tags") or ()):
             return False
         wanted = {**self.source, **({"session": self.session} if self.session else {})}
-        have = doc.get("source", {})
+        have = doc.get("source") or {}
         return all(have.get(k) == v for k, v in wanted.items())
 
     def apply(self, docs: Iterable[dict]) -> list[dict]:

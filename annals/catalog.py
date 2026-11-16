@@ -181,7 +181,7 @@ def with_owner_tags(metas: list[dict], tags: Mapping[str, list[str]]) -> list[di
     [{'id': 'a', 'tags': ['z']}, {'id': 'b', 'tags': ['y']}]
     """
     return [
-        {**m, "tags": tags.get(mk_key(PUBLISHED, m["id"]), m.get("tags", []))}
+        {**m, "tags": list(tags.get(mk_key(PUBLISHED, m["id"]), m.get("tags", [])))}
         for m in metas
     ]
 
