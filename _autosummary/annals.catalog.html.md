@@ -16,11 +16,6 @@ Facets (kind, session, date, tag) are not computed here: the page counts them ov
 it received, so every toggle is instant and the counts are always the ones the current
 query would give.
 
-### Module Attributes
-
-| [`THUMB_CACHE`](#annals.catalog.THUMB_CACHE)   | where the page's thumbnails are cached, under the data root   |
-|----------------------------------------------------------------|---------------------------------------------------------------|
-
 ### Functions
 
 | [`default_tags`](#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
@@ -82,10 +77,6 @@ Every tag in use on a listed item, with how many items carry it.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
-
-### annals.catalog.THUMB_CACHE *= 'cache/thumbs'*
-
-where the page’s thumbnails are cached, under the data root
 
 ### annals.catalog.default_tags(store)
 

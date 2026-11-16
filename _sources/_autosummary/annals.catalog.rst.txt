@@ -4,12 +4,6 @@ annals.catalog
 .. automodule:: annals.catalog
 
    
-   .. rubric:: Module Attributes
-
-   .. autosummary::
-   
-      THUMB_CACHE
-   
    .. rubric:: Functions
 
    .. autosummary::

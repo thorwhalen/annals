@@ -151,6 +151,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.SWAP_STEP_S"><code class="docutils literal notranslate"><span class="pre">SWAP_STEP_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.SWAP_WAIT_S"><code class="docutils literal notranslate"><span class="pre">SWAP_WAIT_S</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.THUMB_CACHE"><code class="docutils literal notranslate"><span class="pre">THUMB_CACHE</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.VERSIONS"><code class="docutils literal notranslate"><span class="pre">VERSIONS</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.VERSION_SEP"><code class="docutils literal notranslate"><span class="pre">VERSION_SEP</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.check_artifact_url"><code class="docutils literal notranslate"><span class="pre">check_artifact_url()</span></code></a></li>
@@ -277,7 +278,10 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.ARTIFACT_HOSTS" title="annals.store.ARTIFACT_HOSTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ARTIFACT_HOSTS</span></code></a></p></td>
 <td><p>the interactive version of a page lives there, and the document's page links out to it</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES" title="annals.store.SIDECAR_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.THUMB_CACHE" title="annals.store.THUMB_CACHE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">THUMB_CACHE</span></code></a></p></td>
+<td><p>where the page's thumbnails are cached, under the data root (beside the documents, never inside one)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES" title="annals.store.SIDECAR_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></p></td>
 <td><p>timed text published beside an audio file, named <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;&lt;suffix&gt;</span></code> in the same folder (the suffix in any case): a transcript (<code class="docutils literal notranslate"><span class="pre">.cues.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">.srt</span></code>) and chapters (<code class="docutils literal notranslate"><span class="pre">.chapters.vtt</span></code>).</p></td>
 </tr>
 </tbody>
@@ -771,6 +775,12 @@ is left out until its page shows them.)</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="annals.store.THUMB_CACHE">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">THUMB_CACHE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cache/thumbs'</span></span><a class="headerlink" href="#annals.store.THUMB_CACHE" title="Link to this definition">#</a></dt>
+<dd><p>where the page’s thumbnails are cached, under the data root (beside the documents, never inside one)</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="annals.store.VERSIONS">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">VERSIONS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'.versions'</span></span><a class="headerlink" href="#annals.store.VERSIONS" title="Link to this definition">#</a></dt>
 <dd><p>a published folder’s own content
@@ -960,7 +970,7 @@ whitespace collapsed. <code class="docutils literal notranslate"><span class="pr
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=b87b3bc5"></script>
+      <script src="../_static/documentation_options.js?v=8f83b1af"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

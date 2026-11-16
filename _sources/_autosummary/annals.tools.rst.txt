@@ -19,18 +19,22 @@ annals.tools
       aggregate
       configure
       copy
+      export
       group
       groups
       listen
       listen_down
       listen_work
       ls
+      overview_state
       page_shell
       publish
       purge
+      references
       restore
       serve
       share
+      shareable
       shares
       show
       tag

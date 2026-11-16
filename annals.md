@@ -1,4 +1,4 @@
-> built 2026-11-16 03:24 UTC from dce849b (main) · annals 0.0.55. Details: build_info.json
+> built 2026-11-16 03:56 UTC from 5f5ad67 (main) · annals 0.0.56. Details: build_info.json
 
 # index.html.md
 
@@ -593,11 +593,6 @@ Facets (kind, session, date, tag) are not computed here: the page counts them ov
 it received, so every toggle is instant and the counts are always the ones the current
 query would give.
 
-### Module Attributes
-
-| [`THUMB_CACHE`](_autosummary/annals.catalog.html.md#annals.catalog.THUMB_CACHE)   | where the page's thumbnails are cached, under the data root   |
-|----------------------------------------------------------------|---------------------------------------------------------------|
-
 ### Functions
 
 | [`default_tags`](_autosummary/annals.catalog.html.md#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
@@ -659,10 +654,6 @@ Every tag in use on a listed item, with how many items carry it.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
-
-### annals.catalog.THUMB_CACHE *= 'cache/thumbs'*
-
-where the page’s thumbnails are cached, under the data root
 
 ### annals.catalog.default_tags(store)
 
@@ -2934,18 +2925,31 @@ later, a share can use it alike.
 
 ### Functions
 
-| [`combine_references`](_autosummary/annals.references.html.md#annals.references.combine_references)(items, \*, title[, form])   | `items` (a title and the texts of its pages) as their references in `form`.                  |
-|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| [`doc_reference_texts`](_autosummary/annals.references.html.md#annals.references.doc_reference_texts)(docs, \*, read[, skip])    | `(title, texts)` for each of `docs` (`(meta, files)` pairs): its markdown pages' text.       |
-| [`reference_entries`](_autosummary/annals.references.html.md#annals.references.reference_entries)(section)                     | The entries of a references section: each numbered or bulleted item, with its wrapped lines. |
-| [`reference_sections`](_autosummary/annals.references.html.md#annals.references.reference_sections)(text)                       | The body of each references section of a markdown text, as written (blank edges trimmed).    |
-| [`strip_citation_number`](_autosummary/annals.references.html.md#annals.references.strip_citation_number)(entry)                   | `entry` without its leading number or bullet (`1.`, `[1]`, `-`).                             |
-| [`url_key`](_autosummary/annals.references.html.md#annals.references.url_key)(url)                                   | What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.   |
-| [`urls_of`](_autosummary/annals.references.html.md#annals.references.urls_of)(text)                                  | The web addresses in `text`, in order of appearance, each once as written.                   |
+| [`collect`](_autosummary/annals.references.html.md#annals.references.collect)(docs, \*, read, title[, form])       | The references of `docs` (their meta) in `form`, with the counts the page shows.             |
+|-----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| [`combine_references`](_autosummary/annals.references.html.md#annals.references.combine_references)(items, \*, title[, form]) | `items` (a title and the texts of its pages) as their references in `form`.                  |
+| [`doc_reference_texts`](_autosummary/annals.references.html.md#annals.references.doc_reference_texts)(docs, \*, read[, skip])  | `(title, texts)` for each of `docs` (`(meta, files)` pairs): its markdown pages' text.       |
+| [`reference_entries`](_autosummary/annals.references.html.md#annals.references.reference_entries)(section)                   | The entries of a references section: each numbered or bulleted item, with its wrapped lines. |
+| [`reference_sections`](_autosummary/annals.references.html.md#annals.references.reference_sections)(text)                     | The body of each references section of a markdown text, as written (blank edges trimmed).    |
+| [`strip_citation_number`](_autosummary/annals.references.html.md#annals.references.strip_citation_number)(entry)                 | `entry` without its leading number or bullet (`1.`, `[1]`, `-`).                             |
+| [`url_key`](_autosummary/annals.references.html.md#annals.references.url_key)(url)                                 | What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.   |
+| [`urls_of`](_autosummary/annals.references.html.md#annals.references.urls_of)(text)                                | The web addresses in `text`, in order of appearance, each once as written.                   |
 
 ### annals.references.REFERENCE_HEADINGS *= ('references', 'sources', 'bibliography', 'works cited', 'citations')*
 
 section names that hold references (a heading’s text starts with one of them)
+
+### annals.references.collect(docs, , read, title, form='grouped')
+
+The references of `docs` (their meta) in `form`, with the counts the page shows.
+
+`{text, items, without, count}`: `items` documents had references, `without` had none,
+`count` lines of references (`grouped`: entries; the others: output lines or addresses).
+`text` is empty when none had any. Every surface (the HTTP route, `annals references`,
+MCP) reads references through here.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.references.combine_references(items, , title, form='grouped')
 
@@ -3686,6 +3690,7 @@ replacement twice and nothing is ever deleted.
 | [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX)    | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
 | [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)           | the store's bookkeeping lives there                                                                                                                                                                                                               |
 | [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
+| [`THUMB_CACHE`](_autosummary/annals.store.html.md#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                              |
 | [`SIDECAR_SUFFIXES`](_autosummary/annals.store.html.md#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
 
 ### Functions
@@ -4016,6 +4021,10 @@ a reader that misses a document being swapped waits for it this long, in steps
 ### annals.store.SWAP_WAIT_S *= 2.0*
 
 a reader that misses a document being swapped waits for it this long, in steps
+
+### annals.store.THUMB_CACHE *= 'cache/thumbs'*
+
+where the page’s thumbnails are cached, under the data root (beside the documents, never inside one)
 
 ### annals.store.VERSIONS *= '.versions'*
 
@@ -4399,18 +4408,22 @@ in parity. Nothing here prints or exits; the surfaces do that.
 |-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | [`configure`](_autosummary/annals.tools.html.md#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.                            |
 | [`copy`](_autosummary/annals.tools.html.md#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.                        |
+| [`export`](_autosummary/annals.tools.html.md#annals.tools.export)(doc_id, \*[, format, file, output, ...])    | One markdown file of a document as a `.md` or a titled `.pdf`, as the page's Export gives it.             |
 | [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, add_to, target, ...])   | Make a group (one URL for a set of documents) from existing document ids.                                 |
 | [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                                |
-| [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                                |
+| [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, also, ...])    | Ask for a spoken overview of a document, as its page's Listen button does.                                |
 | [`listen_down`](_autosummary/annals.tools.html.md#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.                      |
 | [`listen_work`](_autosummary/annals.tools.html.md#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).                     |
 | [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to, ...])   | List documents (newest first), optionally filtered by words or showing the bin.                           |
+| [`overview_state`](_autosummary/annals.tools.html.md#annals.tools.overview_state)(doc_id, \*[, target, to])           | Where a document's spoken overview stands (not asked for, queued, made, failed), without asking for one.  |
 | [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                               |
 | [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                          |
 | [`purge`](_autosummary/annals.tools.html.md#annals.tools.purge)(doc_ids, \*[, target, to])                   | Delete documents that are in the bin for good (not restorable).                                           |
+| [`references`](_autosummary/annals.tools.html.md#annals.tools.references)(ref, \*[, form, also, target, to])      | The references of a document or a group, as its page's References action gives them.                      |
 | [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                                |
 | [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                                     |
 | [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.                    |
+| [`shareable`](_autosummary/annals.tools.html.md#annals.tools.shareable)(doc_id, \*[, target, to])                | What the Share dialog offers for a document: its files, and the other annals documents its text links to. |
 | [`shares`](_autosummary/annals.tools.html.md#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                                     |
 | [`show`](_autosummary/annals.tools.html.md#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, and the groups it is in (`to`: on a named target).                           |
 | [`tag`](_autosummary/annals.tools.html.md#annals.tools.tag)(doc_id, tags, \*[, target, to])                | Set a document's tags (comma separated; "" clears them), as the page's tag editor does.                   |
@@ -4422,7 +4435,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 what an agent or a tool is offered unless its host asks for more (MCP reads this)
 
-### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
+### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
 
 a surface serves the levels its caller
 allows. `read` changes nothing; `write` changes the store or a setting and can be undone
@@ -4489,6 +4502,18 @@ copy. The source must be readable from this machine (a directory, or `host:/path
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.tools.export(doc_id, , format='pdf', file=None, output=None, target=None, to=None)
+
+One markdown file of a document as a `.md` or a titled `.pdf`, as the page’s Export gives it.
+
+`file` names another markdown file of a folder document (default: the main one). A PDF
+(images inside; needs the `annals[pdf]` extra) is a binary file, so name it with
+`--output FILE`; `md` prints the text or writes it to `output`. For several documents
+as one file, with a table of contents, use `annals aggregate`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.tools.group(title, doc_ids, , add_to=None, target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
@@ -4507,9 +4532,13 @@ List groups, newest first.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.listen(doc_id, , minutes=5, force=False, target=None, to=None)
+### annals.tools.listen(doc_id, , minutes=5, force=False, also=None, target=None, to=None)
 
 Ask for a spoken overview of a document, as its page’s Listen button does. Spends money.
+
+`also` (more document ids) asks for ONE overview of all of them together, as the page
+does for a pick: their text is put in one document (made when the worker starts the job),
+and the same documents at the same versions reuse it. `force` then does not apply.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -4548,6 +4577,16 @@ name, whole, case-sensitive), `tag` (one tag, whole: the owner’s own tags, set
 several allowed, against the document’s `source`: `corpus=annals`). A row is
 `{id, title, kind, tags, created, updated, source, url}`; with `--json` that is the contract
 (`misc/docs/design.md`), and `total` counts the matches before `limit`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.overview_state(doc_id, , target=None, to=None)
+
+Where a document’s spoken overview stands (not asked for, queued, made, failed), without asking for one.
+
+Poll this after `annals listen`. For a combined overview (`listen --also`) give the
+combined document’s id once the worker has made it; until then `listen` returns the state.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -4609,6 +4648,19 @@ Delete documents that are in the bin for good (not restorable). One that is not 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.tools.references(ref, , form='grouped', also=None, target=None, to=None)
+
+The references of a document or a group, as its page’s References action gives them.
+
+`ref` is a group’s or a document’s id or link. `form`: `grouped` (each document’s
+references section as it is), `deduped` (every entry once, numbers removed) or `urls`
+(one address per line, nothing else: what a notebook takes as pasted sources). Documents
+with no references section are left out; none at all is an error. `also` (more document
+ids) takes the references of those documents together, as a pick on the page does.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### annals.tools.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
@@ -4640,6 +4692,16 @@ is), or ids of other annals pages it links to; by default every file of the docu
 files. `expires` (7 days unless told): `12h`, `30d`, `2w`, a date (`2026-11-01`,
 through that day, UTC), an ISO time, or `never`. `password` gates the link (stored hashed; `-` reads it from
 stdin, so it stays out of the shell history).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.shareable(doc_id, , target=None, to=None)
+
+What the Share dialog offers for a document: its files, and the other annals documents its text links to.
+
+`{main, files: [{rel, kind, size, referenced}], pages: [{id, title, kind}]}`: the
+choices `annals share` takes for what a link may show.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -4678,7 +4740,7 @@ The operations whose effect is in `effects`, in the CLI’s order: the list a ca
 
 ```pycon
 >>> [f.__name__ for f in tools_with({"read"})]
-['ls', 'show', 'groups', 'shares']
+['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']
 ```
 
 * **Return type:**
@@ -4705,16 +4767,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 03:24 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/dce849b903ef2137340e184585f8c16cce062198"><code>dce849b</code></a> on branch <code>main</code>, for **annals 0.0.55** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 03:56 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/5f5ad672cd8a5ecf522aa534a617a9ce92f65f14"><code>5f5ad67</code></a> on branch <code>main</code>, for **annals 0.0.56** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.56) is behind the latest release on PyPI (0.0.57): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/dce849b903ef2137340e184585f8c16cce062198"><code>dce849b903ef2137340e184585f8c16cce062198</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/5f5ad672cd8a5ecf522aa534a617a9ce92f65f14"><code>5f5ad672cd8a5ecf522aa534a617a9ce92f65f14</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4725,9 +4789,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43797575703">43797575703</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43800664899">43800664899</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>dce849b903ef2137340e184585f8c16cce062198</code> (in the history of the built commit) |
+| Event commit | <code>5f5ad672cd8a5ecf522aa534a617a9ce92f65f14</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4752,13 +4816,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.55/">0.0.55</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.57/">0.0.57</a>, newer than the documented version (0.0.56).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout dce849b903ef2137340e184585f8c16cce062198
+git checkout 5f5ad672cd8a5ecf522aa534a617a9ce92f65f14
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -108,6 +108,7 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#annals.references.REFERENCE_HEADINGS"><code class="docutils literal notranslate"><span class="pre">REFERENCE_HEADINGS</span></code></a></li>
+<li><a class="reference internal" href="#annals.references.collect"><code class="docutils literal notranslate"><span class="pre">collect()</span></code></a></li>
 <li><a class="reference internal" href="#annals.references.combine_references"><code class="docutils literal notranslate"><span class="pre">combine_references()</span></code></a></li>
 <li><a class="reference internal" href="#annals.references.doc_reference_texts"><code class="docutils literal notranslate"><span class="pre">doc_reference_texts()</span></code></a></li>
 <li><a class="reference internal" href="#annals.references.reference_entries"><code class="docutils literal notranslate"><span class="pre">reference_entries()</span></code></a></li>
@@ -201,25 +202,28 @@ later, a share can use it alike.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.combine_references" title="annals.references.combine_references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_references</span></code></a>(items, *, title[, form])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.collect" title="annals.references.collect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">collect</span></code></a>(docs, *, read, title[, form])</p></td>
+<td><p>The references of <code class="docutils literal notranslate"><span class="pre">docs</span></code> (their meta) in <code class="docutils literal notranslate"><span class="pre">form</span></code>, with the counts the page shows.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.combine_references" title="annals.references.combine_references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combine_references</span></code></a>(items, *, title[, form])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">items</span></code> (a title and the texts of its pages) as their references in <code class="docutils literal notranslate"><span class="pre">form</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.doc_reference_texts" title="annals.references.doc_reference_texts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">doc_reference_texts</span></code></a>(docs, *, read[, skip])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.doc_reference_texts" title="annals.references.doc_reference_texts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">doc_reference_texts</span></code></a>(docs, *, read[, skip])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(title,</span> <span class="pre">texts)</span></code> for each of <code class="docutils literal notranslate"><span class="pre">docs</span></code> (<code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> pairs): its markdown pages' text.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.reference_entries" title="annals.references.reference_entries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reference_entries</span></code></a>(section)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.reference_entries" title="annals.references.reference_entries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reference_entries</span></code></a>(section)</p></td>
 <td><p>The entries of a references section: each numbered or bulleted item, with its wrapped lines.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.reference_sections" title="annals.references.reference_sections"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reference_sections</span></code></a>(text)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.reference_sections" title="annals.references.reference_sections"><code class="xref py py-obj docutils literal notranslate"><span class="pre">reference_sections</span></code></a>(text)</p></td>
 <td><p>The body of each references section of a markdown text, as written (blank edges trimmed).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.strip_citation_number" title="annals.references.strip_citation_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_citation_number</span></code></a>(entry)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.strip_citation_number" title="annals.references.strip_citation_number"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_citation_number</span></code></a>(entry)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">entry</span></code> without its leading number or bullet (<code class="docutils literal notranslate"><span class="pre">1.</span></code>, <code class="docutils literal notranslate"><span class="pre">[1]</span></code>, <code class="docutils literal notranslate"><span class="pre">-</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.url_key" title="annals.references.url_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">url_key</span></code></a>(url)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.url_key" title="annals.references.url_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">url_key</span></code></a>(url)</p></td>
 <td><p>What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.references.urls_of" title="annals.references.urls_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">urls_of</span></code></a>(text)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.references.urls_of" title="annals.references.urls_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">urls_of</span></code></a>(text)</p></td>
 <td><p>The web addresses in <code class="docutils literal notranslate"><span class="pre">text</span></code>, in order of appearance, each once as written.</p></td>
 </tr>
 </tbody>
@@ -229,6 +233,21 @@ later, a share can use it alike.</p>
 <dt class="sig sig-object py" id="annals.references.REFERENCE_HEADINGS">
 <span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">REFERENCE_HEADINGS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('references',</span> <span class="pre">'sources',</span> <span class="pre">'bibliography',</span> <span class="pre">'works</span> <span class="pre">cited',</span> <span class="pre">'citations')</span></span><a class="headerlink" href="#annals.references.REFERENCE_HEADINGS" title="Link to this definition">#</a></dt>
 <dd><p>section names that hold references (a heading’s text starts with one of them)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.references.collect">
+<span class="sig-prename descclassname"><span class="pre">annals.references.</span></span><span class="sig-name descname"><span class="pre">collect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">docs</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">read</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">form</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'grouped'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/references.html#collect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.references.collect" title="Link to this definition">#</a></dt>
+<dd><p>The references of <code class="docutils literal notranslate"><span class="pre">docs</span></code> (their meta) in <code class="docutils literal notranslate"><span class="pre">form</span></code>, with the counts the page shows.</p>
+<p><code class="docutils literal notranslate"><span class="pre">{text,</span> <span class="pre">items,</span> <span class="pre">without,</span> <span class="pre">count}</span></code>: <code class="docutils literal notranslate"><span class="pre">items</span></code> documents had references, <code class="docutils literal notranslate"><span class="pre">without</span></code> had none,
+<code class="docutils literal notranslate"><span class="pre">count</span></code> lines of references (<code class="docutils literal notranslate"><span class="pre">grouped</span></code>: entries; the others: output lines or addresses).
+<code class="docutils literal notranslate"><span class="pre">text</span></code> is empty when none had any. Every surface (the HTTP route, <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">references</span></code>,
+MCP) reads references through here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py function">
@@ -355,7 +374,7 @@ list markers at all is one entry per non-blank line.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=b87b3bc5"></script>
+      <script src="../_static/documentation_options.js?v=8f83b1af"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

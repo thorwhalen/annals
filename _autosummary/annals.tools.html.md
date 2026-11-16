@@ -20,18 +20,22 @@ in parity. Nothing here prints or exits; the surfaces do that.
 |-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
 | [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.                            |
 | [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.                        |
+| [`export`](#annals.tools.export)(doc_id, \*[, format, file, output, ...])    | One markdown file of a document as a `.md` or a titled `.pdf`, as the page's Export gives it.             |
 | [`group`](#annals.tools.group)(title, doc_ids, \*[, add_to, target, ...])   | Make a group (one URL for a set of documents) from existing document ids.                                 |
 | [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                                |
-| [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                                |
+| [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, also, ...])    | Ask for a spoken overview of a document, as its page's Listen button does.                                |
 | [`listen_down`](#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.                      |
 | [`listen_work`](#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).                     |
 | [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to, ...])   | List documents (newest first), optionally filtered by words or showing the bin.                           |
+| [`overview_state`](#annals.tools.overview_state)(doc_id, \*[, target, to])           | Where a document's spoken overview stands (not asked for, queued, made, failed), without asking for one.  |
 | [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                               |
 | [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                          |
 | [`purge`](#annals.tools.purge)(doc_ids, \*[, target, to])                   | Delete documents that are in the bin for good (not restorable).                                           |
+| [`references`](#annals.tools.references)(ref, \*[, form, also, target, to])      | The references of a document or a group, as its page's References action gives them.                      |
 | [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                                |
 | [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                                     |
 | [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.                    |
+| [`shareable`](#annals.tools.shareable)(doc_id, \*[, target, to])                | What the Share dialog offers for a document: its files, and the other annals documents its text links to. |
 | [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                                     |
 | [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, and the groups it is in (`to`: on a named target).                           |
 | [`tag`](#annals.tools.tag)(doc_id, tags, \*[, target, to])                | Set a document's tags (comma separated; "" clears them), as the page's tag editor does.                   |
@@ -43,7 +47,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 what an agent or a tool is offered unless its host asks for more (MCP reads this)
 
-### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
+### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
 
 a surface serves the levels its caller
 allows. `read` changes nothing; `write` changes the store or a setting and can be undone
@@ -110,6 +114,18 @@ copy. The source must be readable from this machine (a directory, or `host:/path
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.tools.export(doc_id, , format='pdf', file=None, output=None, target=None, to=None)
+
+One markdown file of a document as a `.md` or a titled `.pdf`, as the page’s Export gives it.
+
+`file` names another markdown file of a folder document (default: the main one). A PDF
+(images inside; needs the `annals[pdf]` extra) is a binary file, so name it with
+`--output FILE`; `md` prints the text or writes it to `output`. For several documents
+as one file, with a table of contents, use `annals aggregate`.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.tools.group(title, doc_ids, , add_to=None, target=None, base_url=None, to=None)
 
 Make a group (one URL for a set of documents) from existing document ids.
@@ -128,9 +144,13 @@ List groups, newest first.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.listen(doc_id, , minutes=5, force=False, target=None, to=None)
+### annals.tools.listen(doc_id, , minutes=5, force=False, also=None, target=None, to=None)
 
 Ask for a spoken overview of a document, as its page’s Listen button does. Spends money.
+
+`also` (more document ids) asks for ONE overview of all of them together, as the page
+does for a pick: their text is put in one document (made when the worker starts the job),
+and the same documents at the same versions reuse it. `force` then does not apply.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -169,6 +189,16 @@ name, whole, case-sensitive), `tag` (one tag, whole: the owner’s own tags, set
 several allowed, against the document’s `source`: `corpus=annals`). A row is
 `{id, title, kind, tags, created, updated, source, url}`; with `--json` that is the contract
 (`misc/docs/design.md`), and `total` counts the matches before `limit`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.overview_state(doc_id, , target=None, to=None)
+
+Where a document’s spoken overview stands (not asked for, queued, made, failed), without asking for one.
+
+Poll this after `annals listen`. For a combined overview (`listen --also`) give the
+combined document’s id once the worker has made it; until then `listen` returns the state.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -230,6 +260,19 @@ Delete documents that are in the bin for good (not restorable). One that is not 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.tools.references(ref, , form='grouped', also=None, target=None, to=None)
+
+The references of a document or a group, as its page’s References action gives them.
+
+`ref` is a group’s or a document’s id or link. `form`: `grouped` (each document’s
+references section as it is), `deduped` (every entry once, numbers removed) or `urls`
+(one address per line, nothing else: what a notebook takes as pasted sources). Documents
+with no references section are left out; none at all is an error. `also` (more document
+ids) takes the references of those documents together, as a pick on the page does.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### annals.tools.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
@@ -261,6 +304,16 @@ is), or ids of other annals pages it links to; by default every file of the docu
 files. `expires` (7 days unless told): `12h`, `30d`, `2w`, a date (`2026-11-01`,
 through that day, UTC), an ISO time, or `never`. `password` gates the link (stored hashed; `-` reads it from
 stdin, so it stays out of the shell history).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.shareable(doc_id, , target=None, to=None)
+
+What the Share dialog offers for a document: its files, and the other annals documents its text links to.
+
+`{main, files: [{rel, kind, size, referenced}], pages: [{id, title, kind}]}`: the
+choices `annals share` takes for what a link may show.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -299,7 +352,7 @@ The operations whose effect is in `effects`, in the CLI’s order: the list a ca
 
 ```pycon
 >>> [f.__name__ for f in tools_with({"read"})]
-['ls', 'show', 'groups', 'shares']
+['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']
 ```
 
 * **Return type:**

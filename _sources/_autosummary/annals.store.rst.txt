@@ -23,6 +23,7 @@ annals.store
       INCOMING_PREFIX
       RESERVED
       ARTIFACT_HOSTS
+      THUMB_CACHE
       SIDECAR_SUFFIXES
    
    .. rubric:: Functions

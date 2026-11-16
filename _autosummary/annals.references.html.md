@@ -42,18 +42,31 @@ later, a share can use it alike.
 
 ### Functions
 
-| [`combine_references`](#annals.references.combine_references)(items, \*, title[, form])   | `items` (a title and the texts of its pages) as their references in `form`.                  |
-|-------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
-| [`doc_reference_texts`](#annals.references.doc_reference_texts)(docs, \*, read[, skip])    | `(title, texts)` for each of `docs` (`(meta, files)` pairs): its markdown pages' text.       |
-| [`reference_entries`](#annals.references.reference_entries)(section)                     | The entries of a references section: each numbered or bulleted item, with its wrapped lines. |
-| [`reference_sections`](#annals.references.reference_sections)(text)                       | The body of each references section of a markdown text, as written (blank edges trimmed).    |
-| [`strip_citation_number`](#annals.references.strip_citation_number)(entry)                   | `entry` without its leading number or bullet (`1.`, `[1]`, `-`).                             |
-| [`url_key`](#annals.references.url_key)(url)                                   | What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.   |
-| [`urls_of`](#annals.references.urls_of)(text)                                  | The web addresses in `text`, in order of appearance, each once as written.                   |
+| [`collect`](#annals.references.collect)(docs, \*, read, title[, form])       | The references of `docs` (their meta) in `form`, with the counts the page shows.             |
+|-----------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| [`combine_references`](#annals.references.combine_references)(items, \*, title[, form]) | `items` (a title and the texts of its pages) as their references in `form`.                  |
+| [`doc_reference_texts`](#annals.references.doc_reference_texts)(docs, \*, read[, skip])  | `(title, texts)` for each of `docs` (`(meta, files)` pairs): its markdown pages' text.       |
+| [`reference_entries`](#annals.references.reference_entries)(section)                   | The entries of a references section: each numbered or bulleted item, with its wrapped lines. |
+| [`reference_sections`](#annals.references.reference_sections)(text)                     | The body of each references section of a markdown text, as written (blank edges trimmed).    |
+| [`strip_citation_number`](#annals.references.strip_citation_number)(entry)                 | `entry` without its leading number or bullet (`1.`, `[1]`, `-`).                             |
+| [`url_key`](#annals.references.url_key)(url)                                 | What makes two addresses the same page: no fragment, no trailing slash, host in lowercase.   |
+| [`urls_of`](#annals.references.urls_of)(text)                                | The web addresses in `text`, in order of appearance, each once as written.                   |
 
 ### annals.references.REFERENCE_HEADINGS *= ('references', 'sources', 'bibliography', 'works cited', 'citations')*
 
 section names that hold references (a heading’s text starts with one of them)
+
+### annals.references.collect(docs, , read, title, form='grouped')
+
+The references of `docs` (their meta) in `form`, with the counts the page shows.
+
+`{text, items, without, count}`: `items` documents had references, `without` had none,
+`count` lines of references (`grouped`: entries; the others: output lines or addresses).
+`text` is empty when none had any. Every surface (the HTTP route, `annals references`,
+MCP) reads references through here.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.references.combine_references(items, , title, form='grouped')
 

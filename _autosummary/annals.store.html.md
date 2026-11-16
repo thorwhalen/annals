@@ -48,6 +48,7 @@ replacement twice and nothing is ever deleted.
 | [`INCOMING_PREFIX`](#annals.store.INCOMING_PREFIX)    | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
 | [`RESERVED`](#annals.store.RESERVED)           | the store's bookkeeping lives there                                                                                                                                                                                                               |
 | [`ARTIFACT_HOSTS`](#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
+| [`THUMB_CACHE`](#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                              |
 | [`SIDECAR_SUFFIXES`](#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
 
 ### Functions
@@ -378,6 +379,10 @@ a reader that misses a document being swapped waits for it this long, in steps
 ### annals.store.SWAP_WAIT_S *= 2.0*
 
 a reader that misses a document being swapped waits for it this long, in steps
+
+### annals.store.THUMB_CACHE *= 'cache/thumbs'*
+
+where the page’s thumbnails are cached, under the data root (beside the documents, never inside one)
 
 ### annals.store.VERSIONS *= '.versions'*
 

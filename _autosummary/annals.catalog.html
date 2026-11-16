@@ -116,7 +116,6 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.catalog.Catalog.tag_counts"><code class="docutils literal notranslate"><span class="pre">Catalog.tag_counts()</span></code></a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#annals.catalog.THUMB_CACHE"><code class="docutils literal notranslate"><span class="pre">THUMB_CACHE</span></code></a></li>
 <li><a class="reference internal" href="#annals.catalog.default_tags"><code class="docutils literal notranslate"><span class="pre">default_tags()</span></code></a></li>
 <li><a class="reference internal" href="#annals.catalog.mk_catalog"><code class="docutils literal notranslate"><span class="pre">mk_catalog()</span></code></a></li>
 <li><a class="reference internal" href="#annals.catalog.owner_tags"><code class="docutils literal notranslate"><span class="pre">owner_tags()</span></code></a></li>
@@ -176,16 +175,6 @@ store, never in the item), <a class="reference internal" href="#annals.catalog.C
 <p>Facets (kind, session, date, tag) are not computed here: the page counts them over the rows
 it received, so every toggle is instant and the counts are always the ones the current
 query would give.</p>
-<p class="rubric">Module Attributes</p>
-<div class="table-wrapper autosummary longtable docutils container">
-<table class="autosummary longtable docutils align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.catalog.THUMB_CACHE" title="annals.catalog.THUMB_CACHE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">THUMB_CACHE</span></code></a></p></td>
-<td><p>where the page's thumbnails are cached, under the data root</p></td>
-</tr>
-</tbody>
-</table>
-</div>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
@@ -291,12 +280,6 @@ query would give.</p>
 </dl>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="annals.catalog.THUMB_CACHE">
-<span class="sig-prename descclassname"><span class="pre">annals.catalog.</span></span><span class="sig-name descname"><span class="pre">THUMB_CACHE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cache/thumbs'</span></span><a class="headerlink" href="#annals.catalog.THUMB_CACHE" title="Link to this definition">#</a></dt>
-<dd><p>where the page’s thumbnails are cached, under the data root</p>
 </dd></dl>
 
 <dl class="py function">
@@ -406,7 +389,7 @@ The API, and any CLI or agent tool that tags items, build their catalog here.</p
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=b87b3bc5"></script>
+      <script src="../_static/documentation_options.js?v=8f83b1af"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
