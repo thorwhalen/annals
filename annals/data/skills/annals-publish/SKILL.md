@@ -20,6 +20,7 @@ Only if `annals` is not found: `pip install annals`. Do not `pip install -U` it 
 - Markdown is rendered on the page with a toggle to the raw source (so the owner can copy it); its relative images resolve. HTML is rendered as-is in a frame (a page without `<!doctype html>` is served with one, so it renders in standards mode). Images, video and PDFs show inline (video streams and seeks). Audio plays in the fleet's player (seek bar, skips, speed, and it remembers where the owner stopped), with its transcript and chapters when you publish them beside it (next section). Anything else is offered as a download.
 - The title is taken from the first `# heading` (markdown) or `<title>` (html); pass `--title "..."` to override.
 - `--tags a,b` adds tags (searchable). `--session <name>` records who published; always pass your session or corpus name when you have one.
+- `--meta corpus=<repo> issue=<n> kind=report` records what the document belongs to (also `repo`, `item`). `--json` prints `{id, title, url, ...}` instead of bare links, for a program calling this command. `annals ls --session <name> --since 6h --tag t --json` lists what a session published, matching whole values.
 
 ## Reading an annals link you are given
 

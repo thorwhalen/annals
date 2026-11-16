@@ -257,3 +257,49 @@ def test_an_audio_file_takes_its_timed_text_along_as_one_document(tmp_path, monk
     shown = json.loads(out.getvalue())
     assert shown["kind"] == "audio" and shown["main"] == "talk.mp3"
     assert sorted(shown["files"]) == ["talk.chapters.vtt", "talk.mp3", "talk.vtt"]
+
+
+def _env(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://example.com/annals/")
+    monkeypatch.delenv("ANNALS_CONFIG", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+
+
+def _json(argv):
+    out = io.StringIO()
+    assert _run(argv, out) == 0
+    return json.loads(out.getvalue())
+
+
+def test_publish_json_is_the_contract_and_meta_lands_in_source(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nbody")
+    res = _json(["publish", str(src), "--json", "--meta", "corpus=annals", "issue=64", "--group", "G"])
+    assert set(res) == {"id", "title", "url", "group_id", "group_url"}
+    got = _json(["show", res["id"]])
+    assert got["source"]["corpus"] == "annals" and got["source"]["issue"] == "64"
+
+
+def test_publish_json_with_a_warning_keeps_stdout_pure(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nFixed in #4.")
+    out, err = io.StringIO(), io.StringIO()
+    assert run(["publish", str(src), "--json"], out=out, err=err) == 0
+    assert "url" in json.loads(out.getvalue()) and "warning" in err.getvalue()
+
+
+def test_ls_filters_are_exact(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    for name, session, tags in [("a", "sess-1", "x"), ("b", "sess-10", "xy")]:
+        f = tmp_path / f"{name}.md"
+        f.write_text(f"# {name}\n\nbody")
+        _json(["publish", str(f), "--json", "--session", session, "--tags", tags, "--meta", f"kind={name}"])
+    assert [d["title"] for d in _json(["ls", "--session", "sess-1"])["docs"]] == ["a"]
+    assert [d["title"] for d in _json(["ls", "--tag", "x"])["docs"]] == ["a"]
+    assert [d["title"] for d in _json(["ls", "--meta", "kind=b"])["docs"]] == ["b"]
+    assert _json(["ls", "--since", "1h"])["total"] == 2
+    assert _json(["ls", "--since", "2999-01-01"])["total"] == 0
+    assert _json(["ls"])["docs"][0]["source"]["session"] in {"sess-1", "sess-10"}
