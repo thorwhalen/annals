@@ -621,3 +621,18 @@ def test_export_errors_are_one_line(tmp_path, monkeypatch):
     _json(["trash", doc])
     err = io.StringIO()
     assert run(["shareable", doc], out=io.StringIO(), err=err) == 1 and "restore" in err.getvalue()
+
+
+def test_serve_can_turn_overviews_on(monkeypatch):
+    import annals.api as api
+
+    seen = {}
+    monkeypatch.setattr(api, "mk_app", lambda **kw: seen.update(kw) or object())
+    monkeypatch.setitem(__import__("sys").modules, "uvicorn", type("U", (), {"run": staticmethod(lambda *a, **k: None)}))
+    from annals.tools import serve
+
+    serve(overviews="*")
+    assert seen["overviews"] == "*"
+    seen.clear()
+    serve()
+    assert seen["overviews"] is None  # unset: ANNALS_OVERVIEWS decides, else off

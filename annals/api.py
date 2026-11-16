@@ -1505,8 +1505,13 @@ def serve(
     data_dir: str | None = None,
     base_path: str = DFLT_BASE_PATH,
     allow_open: bool = False,
+    overviews: str | None = None,
 ) -> None:
-    """Run the standalone server with uvicorn (``pip install 'annals[server]'``).
+    """Run the standalone server with uvicorn (needs the ``annals[server]`` extra).
+
+    ``overviews`` turns spoken overviews on, as ``ANNALS_OVERVIEWS`` does (which it overrides):
+    ``*`` for every reader, or reader names separated by commas. It spends money, so it is
+    off unless asked for.
 
     Refuses (``ValueError``) a non-loopback ``host`` while no auth is configured in the
     environment, because everyone reaching the port would be the owner. ``allow_open=True``
@@ -1536,5 +1541,6 @@ def serve(
         data_dir=data_dir or os.environ.get(ENV_DATA_DIR),
         base_path=base_path,
         authorizer=authorizer,
+        overviews=overviews,
     )
     uvicorn.run(app, host=host, port=port, log_level="info")

@@ -741,3 +741,51 @@ def test_a_failed_combination_is_dropped_when_its_retry_succeeds_in_being_asked(
     store.publish(text="# Bees\n\nChanged.", replace=ids[0])  # the retry is a new key
     client.post("/overviews", json=body)
     assert len(requests.ids()) == 1 and requests.ids() != [rid]
+
+
+def _maker_with_url(tmp_path, body):
+    script = tmp_path / "maker_url.py"
+    script.write_text(f"import sys, os\nsource, minutes, out, url = sys.argv[1:5]\n{body}\n")
+    return [sys.executable, str(script), "{source}", "{minutes}", "{out}", "{url}"]
+
+
+def test_the_engine_contract(client, store, doc, requests, tmp_path):
+    """misc/docs/design.md "The overview engine contract": what an engine may rely on and owes."""
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    seen = tmp_path / "seen.txt"
+    probe = (
+        "import sys\n"
+        f"open({str(seen)!r}, 'w').write(repr(dict(\n"
+        "    source_text=open(source).read(), minutes=minutes, url=url,\n"
+        "    cwd_files=sorted(os.listdir('.')), stdin=sys.stdin.read())))\n"
+        "open(out, 'w').write('<!doctype html><title>P</title>')\n"
+    )
+    overview.work(store, requests, command=_maker_with_url(tmp_path, probe), doc_url=lambda i: f"https://h/annals/d/{i}")
+    got = eval(seen.read_text())
+    assert got["source_text"].startswith("# Hello\n\n") and "The parser landed." in got["source_text"]
+    assert got["minutes"] == "3" and got["url"] == f"https://h/annals/d/{doc}"
+    assert got["stdin"] == "" and "overview.html" not in got["cwd_files"]  # stdin closed, an empty scratch dir
+    assert client.get(f"/docs/{doc}/overview").json()["state"] == "done"
+
+
+def test_the_engine_failure_contract(client, store, doc, requests, tmp_path):
+    other = store.publish(text="# Other\n\nMore.", title="Other")["id"]
+    third = store.publish(text="# Third\n\nEvenmore.", title="Third")["id"]
+    for d in (doc, other, third):
+        client.post(f"/docs/{d}/overview", json={"minutes": 3})
+    # exit 0 without a page is a failure; the last non-empty line of stdout+stderr is the reason
+    noisy = "print('progress 10%'); print('still working', file=sys.stderr); print('the voice ran out'); print('')\nsys.exit(3)"
+    overview.work(store, requests, command=_maker(tmp_path, "import sys\n" + noisy))
+    assert client.get(f"/docs/{doc}/overview").json()["error"] == "the voice ran out"
+
+
+def test_a_long_failure_reason_is_cut(client, store, doc, requests, tmp_path):
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    long_reason = "x" * (overview.MAX_ERROR_CHARS + 100)
+    overview.work(store, requests, command=_maker(tmp_path, f"import sys\nsys.exit({long_reason!r})"))
+    assert len(client.get(f"/docs/{doc}/overview").json()["error"]) <= overview.MAX_ERROR_CHARS
+
+
+def test_a_command_must_name_source_and_out():
+    with pytest.raises(ValueError, match="source"):
+        overview.work(None, None, command=["maker", "{minutes}"])
