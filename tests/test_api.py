@@ -630,3 +630,12 @@ def test_adds_from_many_processes_all_land(tmp_path):
     ]
     assert [p.wait(timeout=60) for p in procs] == [0] * len(ids)
     assert set(ids) <= set(store.group(g["id"])["docs"])
+
+
+def test_docs_take_the_same_exact_filters_as_ls(client, store):
+    a = store.publish(text="# A\n\nx", title="A", tags=["x"], source={"session": "s1"})
+    b = store.publish(text="# B\n\ny", title="B", tags=["y"], source={"session": "s10"})
+    ids = lambda **q: [d["id"] for d in client.get("/annals/api/docs", params=q).json()["docs"]]  # noqa: E731
+    assert ids(session="s1") == [a["id"]] and ids(tag="x") == [a["id"]]
+    assert {a["id"], b["id"]} <= set(ids(since="1h")) and ids(since="2999-01-01") == []
+    assert client.get("/annals/api/docs", params={"since": "soon"}).status_code == 422
