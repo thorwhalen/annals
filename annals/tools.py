@@ -861,6 +861,13 @@ def _same_place(a: str, b: str) -> bool:
     return False
 
 
+def _binned(store: DocStore, doc_id: str) -> bool:
+    try:
+        return bool(store.meta(doc_id).get("in_trash"))
+    except (KeyError, ValueError):
+        return True  # missing: nothing to copy
+
+
 def _copy_doc(
     src: DocStore, dst: DocStore, doc_id: str, *, redact: bool = False
 ) -> dict:
@@ -871,6 +878,10 @@ def _copy_doc(
             f"{doc_id} is a version; copy the document (it keeps its versions)"
         )
     meta = src.meta(doc_id)
+    if redact and meta.get("in_trash"):
+        raise ValueError(
+            f"{doc_id} is in the bin; restore it before copying it to a room"
+        )
     rel = src.doc_rel(doc_id)
     with tempfile.TemporaryDirectory(prefix="annals-copy-") as td:
         src.target.get_tree(rel, Path(td) / "doc")
@@ -885,6 +896,10 @@ def _copy_doc(
             for mp in (Path(td) / "doc").rglob(META):
                 m = json.loads(mp.read_text(encoding="utf-8"))
                 mp.write_text(json.dumps(without_provenance(m)), encoding="utf-8")
+            if dst.target.exists(
+                f"docs/{doc_id}"
+            ):  # no earlier copy's files left behind
+                dst.target.remove_tree(f"docs/{doc_id}")
         dst.target.put_tree(Path(td) / "doc", f"docs/{doc_id}")
     return meta
 
@@ -926,6 +941,8 @@ def copy(
         if kind == "group":
             g = src.group(ident)
             check_id(g["id"])
+            if dst_settings.room:  # what the owner binned stays out of a room
+                g = {**g, "docs": [i for i in g["docs"] if not _binned(src, i)]}
             for doc_id in g["docs"]:
                 m = _copy_doc(src, dst, doc_id, redact=dst_settings.room)
                 copied.append(

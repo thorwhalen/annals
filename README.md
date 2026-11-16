@@ -80,7 +80,7 @@ A config file can name more places: `annals configure --to team --target host:/p
 
 ### A room for an outside audience (`--room`)
 
-A room is an annals for people outside (a client, a team): `annals configure --to client --target host:/path --base-url https://.../client_files --room`, then `annals copy <link> --to client` or `annals publish f.pdf --to client`, and nothing written there carries provenance (host, cwd, session, `--meta`). Serve it with `mk_api(data_dir=..., room=True)` behind the host's login: read only, no bin, no ledgers, listening, overviews or shares, and no provenance in any page or API answer even for documents written by other means. Withdraw a document with `annals trash <id> --to client`.
+A room is an annals for people outside (a client, a team): `annals configure --to client --target host:/path --base-url https://.../client_files --room`, then `annals copy <link> --to client` or `annals publish f.pdf --to client`, and nothing written there carries provenance (host, cwd, session, `--meta`). Serve it with `mk_api(data_dir=..., room=True)` behind the host's login: read only, no bin, no ledgers, listening, overviews or shares, and only the meta fields a reader needs (no provenance) in any page or API answer, even for documents written by other means. Withdraw a document with `annals trash <id> --to client`.
 
 ## Hosting the page
 

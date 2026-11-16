@@ -318,7 +318,8 @@ def mk_api(
     :func:`reader_of` (the login's email, else ``"owner"``).
     ``room`` serves the documents to an outside audience (a client, a team) rather than to
     the owner: read only (the routes in :data:`ROOM_ROUTES`, ``GET`` alone), nothing in the
-    bin, and no provenance (see :class:`annals.store.RoomStore`); no sources beside the
+    bin, and only the meta fields a reader needs, so no provenance (see
+    :class:`annals.store.RoomStore`); who may read is the host's login. No sources beside the
     documents, no overviews, no listening, no shares. Asking for any of those with it is an
     error. The documents still arrive as files (``annals publish/copy --to <room target>``).
     """
@@ -329,6 +330,7 @@ def mk_api(
             "overviews": bool(overviews),
             "share_base_url": bool(share_base_url),
             "listening": callable(listening),
+            "reader": reader is not None,
         }
         if any(asked.values()):
             raise ValueError(
@@ -1434,7 +1436,7 @@ class _ByReader:
 
 
 class _RoomGate:
-    """Pure ASGI middleware: answer only ``GET``/``HEAD`` on the ``allowed`` route paths.
+    """Pure ASGI middleware: answer only ``GET`` on the ``allowed`` route paths.
 
     The route is found the way the router finds it (``route.matches``), so a mount prefix
     is handled exactly as routing handles it; an unknown path or route is a 404 and any

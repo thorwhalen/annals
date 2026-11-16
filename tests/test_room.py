@@ -186,3 +186,41 @@ def test_copy_to_a_room_strips_every_meta(env, tmp_path):
     copied = _metas_on_disk(room)
     assert len(copied) >= 2  # the document and its earlier version
     assert all("source" not in m for m in copied)
+
+
+def test_only_named_fields_reach_a_reader(store, client, docs):
+    path = store.target.local_path(f"docs/{docs['a']}/meta.json")
+    meta = json.loads(path.read_text())
+    path.write_text(json.dumps({**meta, "publisher_box": "the-mac"}))
+    _no_provenance(client.get(f"/docs/{docs['a']}").json())
+    _no_provenance(client.get("/docs").json())
+
+
+def test_a_group_with_nothing_to_show_is_absent(store, client, docs):
+    doc = store.publish(title="Plan", text="# Plan", source=SECRET)
+    hidden = store.make_group("Secret plans", [doc["id"]])
+    store.trash(doc["id"])
+    assert client.get(f"/groups/{hidden['id']}").status_code == 404
+    assert "Secret plans" not in client.get("/groups").text
+
+
+def test_a_room_takes_no_reader_of_its_own(store):
+    with pytest.raises(ValueError, match="reader"):
+        mk_api(store=store, room=True, reader=lambda request: "x")
+
+
+def test_copying_a_group_to_a_room_leaves_the_bin_behind(env, tmp_path):
+    main, room = env
+    links = []
+    for name in ("keep", "binned"):
+        f = tmp_path / f"{name}.md"
+        f.write_text(f"# {name}\n\nbody")
+        links.append(_run(["publish", str(f)]))
+    ids = [link.rsplit("/", 1)[1] for link in links]
+    group_link = DocStore(main).make_group("Pack", ids)["id"]
+    _run(["trash", links[1].rsplit("/", 1)[1]])
+    _run(["copy", group_link, "--to", "client"])
+    titles = {m["title"] for m in _metas_on_disk(room)}
+    assert titles == {"keep"}
+    with pytest.raises(AssertionError):  # a single binned document is refused
+        _run(["copy", links[1], "--to", "client"])
