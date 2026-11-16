@@ -133,6 +133,17 @@ def test_a_share_link_and_its_password_each_copy(phone, site):
     assert _clipboard(phone) == "tide-pool-2026"
 
 
+
+def test_the_share_sheet_offers_the_link_as_markdown_and_pdf(phone, site):
+    phone.goto(f"{site['base']}/d/{site['cmd']['id']}")
+    phone.get_by_role("button", name="Links").click()
+    phone.get_by_role("button", name=re.compile("^One link")).click()
+    phone.get_by_role("button", name="Make the link").click()
+    phone.locator(".share-result .copy-field").first.wait_for()
+    url = phone.locator(".share-result .copy-field").first.locator("input").input_value()
+    phone.get_by_text("Same link as Markdown or PDF").click()
+    assert phone.get_by_role("textbox", name="Markdown link").input_value() == url + "share.md"
+    assert phone.get_by_role("textbox", name="PDF link").input_value() == url + "share.pdf"
 def test_when_the_device_refuses_the_links_are_selected_for_its_own_copy(phone, site):
     _links_per_document(phone, site)
     phone.locator(".link-list li").first.wait_for()

@@ -6,7 +6,11 @@ enlace platform runs it as a separate ``public`` app). Its only key is the link'
 (:mod:`annals.share`); every request re-reads the share record and is checked against it,
 so a revoke, an expiry or a changed password takes effect on the next request::
 
-    GET  /{token}/                  the page (or the password form); /{token}/d/{id} too
+    GET  /{token}/                  the page: the shared text, no script (or the password
+                                    form); /{token}/d/{id} one document's; an html document
+                                    as itself, sandboxed (annals.share_page). ?viewer: the
+                                    script viewer
+    GET  /{token}/share.md|.pdf     the whole share as one file; /{token}/d/{id}.md|.pdf one document
     POST /{token}/unlock            a password, form-encoded; a cookie scoped to the link
     GET  /{token}/share             the share: title, root, its documents
     GET  /{token}/docs/{id}         one shared document: its included files, its text
@@ -20,8 +24,10 @@ so a revoke, an expiry or a changed password takes effect on the next request::
 Unknown, revoked and out-of-scope all answer 404; an expired link 410; a locked one 401.
 Every response is ``noindex`` and ``no-referrer`` (as heed's review pages are), JSON and
 pages are ``no-store``, and the page runs under a CSP that allows only its own script.
-The page is annals' own ``app.js`` in share mode, so a shared report looks like the
-owner's view of it, without the owner's controls.
+The page is the shared text, rendered here with nothing that runs, so a person, NotebookLM,
+a link preview and ``curl`` all read the document. ``?viewer`` opens annals' own ``app.js``
+in share mode instead, so a shared report can also look like the owner's view of it,
+without the owner's controls.
 """
 
 from __future__ import annotations
@@ -30,6 +36,7 @@ import functools
 import html
 import json
 import secrets
+import threading
 from pathlib import Path
 from typing import Callable
 from urllib.parse import parse_qs
@@ -78,6 +85,16 @@ from annals.notebook import (
     source_title,
 )
 from annals.share import Shares, dir_of, filter_refs
+from annals.share_page import (
+    SHARE_FILE,
+    STATIC_FILE_MAX_BYTES,
+    VIEWER_PARAM,
+    ShareScope,
+    alternate_links,
+    designed_page,
+    page_body,
+    with_base,
+)
 from annals.sources import with_thumb
 from annals.store import PAGE_KINDS, TEXT_KINDS, DocStore, kind_of
 
@@ -105,6 +122,42 @@ DFLT_TRUSTED_PROXIES = ("127.0.0.1", "::1")
 MAX_FORM_BYTES = 4096
 #: a shared page is filtered whole in memory before it is sent; larger ones are refused
 MAX_SHARED_PAGE_BYTES = 20_000_000
+#: the share as one file, at ``share.<ext>`` and ``d/<id>.<ext>`` (:mod:`annals.share_page`)
+_FILE_FORMATS = ("md", "pdf")
+#: script-free pages made at once, and per link; one more is told to retry at once (each
+#: holds a server thread), so one link held open cannot stall every other link's page
+STATIC_CONCURRENCY = 8
+STATIC_CONCURRENCY_PER_LINK = 2
+#: the script-free page: its stylesheet and images, media, nothing that runs
+STATIC_PAGE_CSP = (
+    "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; "
+    "media-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
+
+
+class RenderSlots:
+    """At most ``total`` jobs at once, and at most ``per_key`` of them for one key; a job
+    over either limit is refused at once rather than queued."""
+
+    def __init__(self, total: int, *, per_key: int):
+        self.total, self.per_key = total, per_key
+        self._lock = threading.Lock()
+        self._busy: dict[str, int] = {}
+
+    def acquire(self, key: str) -> bool:
+        with self._lock:
+            if sum(self._busy.values()) >= self.total or self._busy.get(key, 0) >= self.per_key:
+                return False
+            self._busy[key] = self._busy.get(key, 0) + 1
+            return True
+
+    def release(self, key: str) -> None:
+        with self._lock:
+            n = self._busy.get(key, 0) - 1
+            if n > 0:
+                self._busy[key] = n
+            else:
+                self._busy.pop(key, None)
 
 
 def _csp(nonce: str) -> str:
@@ -116,14 +169,15 @@ def _csp(nonce: str) -> str:
     )
 
 
-def _head(title: str, ui: str) -> str:
+def _head(title: str, ui: str, *, extra: str = "") -> str:
+    """The page's ``<head>``; ``extra`` is html added to it (a description, alternates)."""
     return (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<meta name="robots" content="noindex, nofollow">\n'
         '<meta name="referrer" content="no-referrer">\n'
         '<meta name="color-scheme" content="light dark">\n'
-        f"<title>{html.escape(title)}</title>\n"
+        f"<title>{html.escape(title)}</title>\n{extra}"
         f'<link rel="stylesheet" href="{html.escape(ui)}/style.css">\n</head>\n'
     )
 
@@ -196,6 +250,7 @@ def mk_share_api(
     if thumbnailer is True:
         thumbnailer = default_thumbnailer()
     thumbs = ThumbServer(store, thumbnailer)
+    _renders = RenderSlots(STATIC_CONCURRENCY, per_key=STATIC_CONCURRENCY_PER_LINK)
     app = FastAPI(
         title=f"{title} share", docs_url=None, redoc_url=None, openapi_url=None
     )
@@ -284,7 +339,105 @@ def mk_share_api(
 
     # -- the page --------------------------------------------------------------------
 
-    def _page(token: str, request: Request) -> Response:
+    def _static_page(
+        rec: dict, request: Request, doc_id: str | None, ui: str
+    ) -> Response:
+        """The page a link opens: the shared text itself, no script (:mod:`annals.share_page`).
+
+        A document that is an html page is served as itself (filtered, sandboxed, as
+        ``/raw`` serves it), so a reader sees it as designed and a fetcher reads it at the
+        top level, not inside a frame; anything else is rendered here.
+        """
+        root = rec["root"]
+        link = _link(request, rec["token"])
+        scope = ShareScope(
+            link=link,
+            shared_ids=tuple(rec["docs"]),
+            root_id=root.get("id", "") if root.get("kind") == "group" else "",
+            private_hosts=tuple(sorted(_private_hosts(request))),
+        )
+        shown = root["id"] if doc_id is None and root.get("kind") == "doc" else doc_id
+        if shown is None:
+            docs = shares.included(rec)
+            name = rec.get("title") or title
+        else:
+            meta, files = _shared_files(rec, shown)
+            page = designed_page(meta, files)
+            if page is not None:
+                return _designed(rec, request, shown, page, files, scope)
+            docs = [(meta, files)]
+            name = (
+                meta.get("title") or shown
+                if doc_id is not None
+                else rec.get("title") or meta.get("title") or title
+            )
+
+        def read_text(i: str, rel: str) -> str:
+            try:
+                path = doc_file_path(store, i, rel)
+            except HTTPException as e:  # gone from disk, or a store with no local files
+                raise OSError(e.detail) from e
+            if path.stat().st_size > STATIC_FILE_MAX_BYTES:
+                raise ValueError(f"{rel} is too large to show in the page")
+            return path.read_text(encoding="utf-8", errors="replace")
+
+        content, description = page_body(
+            docs,
+            title=name,
+            read_text=read_text,
+            scope=scope,
+            doc_id=doc_id,
+            viewer_url=f"{request.url.path}?{VIEWER_PARAM}",
+        )
+        extra = (
+            f'<meta name="description" content="{html.escape(description)}">\n'
+            + alternate_links(link, doc_id)
+        )
+        body = (
+            _head(name, ui, extra=extra)
+            + '<body>\n<div class="wrap share-static"><main>\n'
+            f"{content}\n</main></div>\n</body>\n</html>\n"
+        )
+        return HTMLResponse(
+            body, headers={**NO_STORE, "Content-Security-Policy": STATIC_PAGE_CSP}
+        )
+
+    def _designed(
+        rec: dict,
+        request: Request,
+        doc_id: str,
+        rel: str,
+        files: list[str],
+        scope: ShareScope,
+    ) -> Response:
+        """An html document as its own page, at the link: filtered, sandboxed, its
+        relative references resolved against its folder (a ``<base>``)."""
+        path = doc_file_path(store, doc_id, rel)
+        if path.stat().st_size > MAX_SHARED_PAGE_BYTES:
+            raise HTTPException(413, "this page is too large to share")
+        text = path.read_text(encoding="utf-8", errors="replace")
+        body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
+        body = with_base(serve_html(body, media_relay=False), scope.raw_url(doc_id, dir_of(rel) + "/" if dir_of(rel) else ""))
+        csp = f"{RAW_SANDBOX_CSP}; frame-ancestors 'none'"
+        headers = {**NO_STORE, "Content-Security-Policy": csp}
+        return Response(body, media_type="text/html; charset=utf-8", headers=headers)
+
+    def _locked_form(token: str, request: Request) -> Response | None:
+        """The password form, when the link is live but locked for this request."""
+        state, rec = shares.status(token)
+        if state != "ok" or shares.unlocked(
+            rec, request.cookies.get(COOKIE_NAME), max_age_s=unlock_max_age_s
+        ):
+            return None
+        link = _link(request, token)
+        return _password_page(
+            rec.get("title") or title,
+            f"{link}/unlock",
+            request.url.path,
+            f"{_root(request)}/ui",
+        )
+
+    def _page(token: str, request: Request, doc_id: str | None = None) -> Response:
         ui = f"{_root(request)}/ui"
         state, rec = shares.status(token)
         if state == "missing":
@@ -306,6 +459,29 @@ def mk_share_api(
                 f"?{request.url.query}" if request.url.query else ""
             )
             return _password_page(rec.get("title") or title, f"{link}/unlock", nxt, ui)
+        # ``?f=`` is the viewer's own address for one file of a document
+        viewer = VIEWER_PARAM in request.query_params or "f" in request.query_params
+        if not viewer:
+            if not _renders.acquire(token):
+                return _message_page(
+                    "Busy",
+                    "Many people are opening shared pages right now. Try again in a moment.",
+                    ui,
+                    status=503,
+                )
+            try:
+                return _static_page(rec, request, doc_id, ui)
+            except HTTPException as e:
+                if e.status_code != 404:
+                    raise
+                return _message_page(
+                    "Not in this share",
+                    "This document is not part of the link you were given.",
+                    ui,
+                    status=404,
+                )
+            finally:
+                _renders.release(token)
         nonce = secrets.token_urlsafe(12)
         cfg = {
             "base": link,
@@ -334,8 +510,26 @@ def mk_share_api(
         return _page(token, request)
 
     @app.get("/{token}/d/{doc_id}", include_in_schema=False)
-    def doc_page(token: str, doc_id: str, request: Request) -> Response:
-        return _page(token, request)
+    async def doc_page(token: str, doc_id: str, request: Request) -> Response:
+        """One document's page, or, as ``<id>.md`` / ``<id>.pdf``, that document as a file."""
+        stem, dot, ext = doc_id.rpartition(".")
+        if dot and ext in _FILE_FORMATS:
+            return await _as_file(
+                token, request, ext, only=stem, form_when_locked=True
+            )
+        return await anyio.to_thread.run_sync(_page, token, request, doc_id)
+
+    @app.get(f"/{{token}}/{SHARE_FILE}.{{ext}}")
+    async def share_file(token: str, ext: str, request: Request) -> Response:
+        """The whole share as one Markdown file (``share.md``) or PDF (``share.pdf``).
+
+        The same token, expiry, password and revocation as the page; the same text the
+        recipient could open one file at a time (it is ``/aggregate``, by a name a reader
+        recognises).
+        """
+        if ext not in _FILE_FORMATS:
+            raise HTTPException(404, "no such representation of this share")
+        return await _as_file(token, request, ext, form_when_locked=True)
 
     @app.post("/{token}/unlock", include_in_schema=False)
     async def unlock(token: str, request: Request) -> Response:
@@ -557,8 +751,32 @@ def mk_share_api(
         Only files the share includes are read, text through the same filter, so the
         combined file shows nothing the recipient could not already open one file at a time.
         """
-        rec = _open(token, request)
+        return await _as_file(token, request, format, download=download)
+
+    async def _as_file(
+        token: str,
+        request: Request,
+        format: str,
+        *,
+        download: bool = False,
+        only: str | None = None,
+        form_when_locked: bool = False,
+    ) -> Response:
+        """The share (or its document ``only``) combined into one ``format`` file.
+
+        ``form_when_locked``: a locked link answers with its password form, not a JSON 401
+        (the file links a person may open first, before the page).
+        """
+        if form_when_locked:
+            locked = await anyio.to_thread.run_sync(_locked_form, token, request)
+            if locked is not None:
+                return locked
+        rec = await anyio.to_thread.run_sync(_open, token, request)
         docs = await anyio.to_thread.run_sync(shares.included, rec)
+        if only is not None:
+            docs = [(m, f) for m, f in docs if m["id"] == only]
+            if not docs:
+                raise HTTPException(404, "no such document in this share")
         allowed = {meta["id"]: files for meta, files in docs}
 
         def read(doc_id: str, rel: str) -> str:
@@ -583,7 +801,11 @@ def mk_share_api(
                 read=read,
                 open_path=functools.partial(doc_file_path, store),
                 read_bytes=read_bytes,
-                title=rec.get("title") or title,
+                title=(
+                    docs[0][0].get("title") or only
+                    if only is not None
+                    else rec.get("title") or title
+                ),
                 download=download,
                 fmt=format,
             )

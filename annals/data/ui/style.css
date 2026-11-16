@@ -397,3 +397,9 @@ html.sheet-open { overflow: hidden; }
 .add-error { margin: 8px 0; }
 .add-filter { width: 100%; box-sizing: border-box; min-height: 44px; font-size: 16px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); }
 .add-pick[aria-disabled="true"] { opacity: .55; }
+
+/* A share link's own text, before (or without) the script: annals.share_page */
+.share-static main { max-width: 46rem; margin: 0 auto; line-height: 1.6; overflow-wrap: anywhere; }
+.share-static img { max-width: 100%; height: auto; }
+.share-static article + article { border-top: 1px solid var(--line); margin-top: 2em; padding-top: 1em; }
+.share-static pre { white-space: pre-wrap; }

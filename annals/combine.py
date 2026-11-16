@@ -515,13 +515,15 @@ def html_body(
     text: str,
     *,
     rewrite_src: Callable[[str], str | None] = lambda src: None,
+    rewrite_href: Callable[[str], str | None] | None = None,
     demote: int = 0,
 ) -> str:
     """The content of an html page as a safe fragment: its structure and words, nothing live.
 
     Only a fixed set of tags survives, with a few plain attributes: no script, style, frame,
     form, event handler, ``class`` or ``id``; a link keeps only an ``http(s)`` or ``mailto``
-    address. ``rewrite_src(src)`` decides each image: the url to show it from, or ``None``
+    address, which ``rewrite_href(href)``, when given, may change or refuse (``None``: the
+    link keeps its words, loses its address). ``rewrite_src(src)`` decides each image: the url to show it from, or ``None``
     for its alt text instead (an image is never loaded from where the page says). ``demote``
     pushes headings that many levels down. Unbalanced tags are closed, so a fragment can
     never swallow what is joined after it.
@@ -563,6 +565,12 @@ def html_body(
                         or urlsplit(value.strip()).scheme not in _SAFE_LINK_SCHEMES
                     ):
                         continue
+                    if rewrite_href is not None:
+                        value = rewrite_href(value)
+                        if value is None or (
+                            urlsplit(value.strip()).scheme not in _SAFE_LINK_SCHEMES
+                        ):
+                            continue
                 if attr in ("colspan", "rowspan"):
                     if not (value or "").strip().isdigit():
                         continue

@@ -989,12 +989,13 @@ def _split(x) -> list[str]:
 
 
 def _share_out(settings: Settings, rec: dict) -> dict:
-    from annals.share import share_url
+    from annals.share import share_links, share_url
 
     return {
         "id": rec["token"],
         "title": rec.get("title"),
         "url": share_url(settings.share_base_url, rec["token"]),
+        "links": share_links(settings.share_base_url, rec["token"]),
         "root": rec["root"],
         "files": {d: len(fs) for d, fs in rec.get("docs", {}).items()},
         "expires": rec.get("expires"),
@@ -1017,6 +1018,12 @@ def share(
     to: str | None = None,
 ) -> dict:
     """Make a public link to ONE document (or group) and print it; nothing else is reachable.
+
+    Returns three forms of the one link (the CLI prints the first on stdout, the others
+    on stderr): ``url``, the page, whose text is in the html (a
+    person, NotebookLM or any fetcher reads it without running script); ``markdown``, the
+    whole share as one text, for an agent; ``pdf``, the same with its images. All three end
+    with the link's expiry or revocation.
 
     ``ref`` is a document or group id, or its link. The link opens without a login, shows
     only that page and the files chosen, and can be revoked (``annals unshare``).
@@ -1048,6 +1055,8 @@ def share(
     notes.append(f"{n} file{'s' if n != 1 else ''} shared")
     result = {
         "url": out["url"],
+        "markdown": out["links"].get("markdown"),
+        "pdf": out["links"].get("pdf"),
         "id": out["id"],
         "title": out["title"],
         "note": ", ".join(notes),

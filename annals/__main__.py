@@ -12,7 +12,12 @@ from annals.tools import _dispatch_funcs
 
 #: the shape ``publish`` (or ``share``) returns for one link; only that shape prints bare
 PUBLISH_KEYS = frozenset(
-    {"id", "title", "url", "group_id", "group_url", "warning", "note"}
+    {"id", "title", "url", "group_id", "group_url", "warning", "note", "markdown", "pdf"}
+)
+#: a share's other forms, said on stderr beside the bare link: (key, what it is for)
+LINK_FORMS = (
+    ("markdown", "as Markdown, for an agent"),
+    ("pdf", "as PDF, images inside"),
 )
 #: expected failures: one line on stderr and exit 1, no traceback
 EXPECTED_ERRORS = (
@@ -57,6 +62,9 @@ def _egress(result, *, out=None, err=None, as_json: bool = False) -> int:
         return 0
     if isinstance(result, dict) and "url" in result and set(result) <= PUBLISH_KEYS:
         print(result["url"], file=out)
+        for key, what in LINK_FORMS:
+            if result.get(key):
+                print(f"annals: {what}: {result[key]}", file=err or sys.stderr)
         if "group_url" in result and result["group_url"] != result["url"]:
             print(result["group_url"], file=out)
         return 0

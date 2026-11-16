@@ -95,7 +95,16 @@
      so the page can offer its own Back: a home-screen app or a tab opened from a link has
      no browser Back button. A replaced entry keeps the origin of the one it replaces. */
   var viewLabel = "";
+  /* A share link's plain page is its text; the viewer is ?viewer (annals.share_page), so
+     the viewer's own addresses keep it, and a reload or a copied address stays in it. */
+  function inViewer(path) {
+    if (!SHARE || /[?&]viewer(=|&|$)/.test(path)) return path;
+    var hash = path.indexOf("#") < 0 ? "" : path.slice(path.indexOf("#"));
+    path = hash ? path.slice(0, path.indexOf("#")) : path;
+    return path + (path.indexOf("?") < 0 ? "?" : "&") + "viewer" + hash;
+  }
   function go(path, replace) {
+    path = inViewer(path);
     if (path === location.pathname + location.search) return route();
     /* Back to a list returns to the same place in it: remember the scroll and how many
        rows were shown on the entry being left */
@@ -1695,6 +1704,14 @@
         result.appendChild(h("p", { class: "muted" }, ["Send the password separately:"]));
         result.appendChild(copyField(sentPw, { name: "Password", copyName: "Copy the password", copied: "Password copied" }));
       }
+      /* the same link as one file (annals.share_page): text for an agent, a PDF with the images */
+      var base = url.replace(/\/?$/, "/");
+      result.appendChild(h("details", { class: "share-forms" }, [
+        h("summary", null, ["Same link as Markdown or PDF"]),
+        h("p", { class: "muted" }, ["The link above opens the text itself, so a person or NotebookLM can read it. Markdown suits an agent; the PDF keeps the images."]),
+        copyField(base + "share.md", { name: "Markdown link", copyName: "Copy the Markdown link", copied: "Markdown link copied" }),
+        copyField(base + "share.pdf", { name: "PDF link", copyName: "Copy the PDF link", copied: "PDF link copied" })
+      ]));
       result.appendChild(turnOff(s, "Turn this link off", "Link turned off."));
       result.querySelector(".copy-btn").focus();
     }

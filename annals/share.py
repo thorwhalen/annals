@@ -285,6 +285,16 @@ def share_url(base: str | None, token: str) -> str | None:
     return f"{base.rstrip('/')}/{token}/" if base else None
 
 
+def share_links(base: str | None, token: str) -> dict[str, str]:
+    """The forms of one share link: ``page`` (people, and fetchers that run no script),
+    ``markdown`` (agents: the whole share as one text) and ``pdf`` (images inside, or for an
+    upload); empty when no share server is configured. :mod:`annals.share_page`."""
+    page = share_url(base, token)
+    if page is None:
+        return {}
+    return {"page": page, "markdown": f"{page}share.md", "pdf": f"{page}share.pdf"}
+
+
 class _TargetTexts(MutableMapping):
     """The files of ``shares/`` under the data root as a mapping of text, through the
     store's :class:`~annals.target.Target` (so it works over ssh). Reading a file that
