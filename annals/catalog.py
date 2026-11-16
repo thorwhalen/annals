@@ -36,7 +36,7 @@ from annals.sources import (
     parse_sources_spec,
     split_key,
 )
-from annals.store import DocStore
+from annals.store import THUMB_CACHE, DocStore
 from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore, normalize_tags
 
 SNIPPET_CHARS = 90
@@ -148,10 +148,6 @@ class Catalog:
         """Every tag in use on a listed item, with how many items carry it."""
         counts = Counter(t for r in self.rows() for t in r.get("tags", []))
         return dict(sorted(counts.items(), key=lambda kv: kv[0].lower()))
-
-
-#: where the page's thumbnails are cached, under the data root
-THUMB_CACHE = "cache/thumbs"
 
 
 def purge_document(store: DocStore, catalog: Catalog, doc_id: str) -> dict:

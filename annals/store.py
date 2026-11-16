@@ -102,6 +102,8 @@ _EXTS = {
     "pdf": ".pdf",
 }
 KINDS = {ext: kind for kind, exts in _EXTS.items() for ext in exts.split()}
+#: where the page's thumbnails are cached, under the data root (beside the documents, never inside one)
+THUMB_CACHE = "cache/thumbs"
 TEXT_KINDS = frozenset({"md", "text"})
 MEDIA_KINDS = frozenset({"image", "video", "audio", "pdf"})
 PAGE_KINDS = frozenset({"md", "html"})
