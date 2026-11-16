@@ -549,3 +549,37 @@ def test_references_of_several_documents_and_unknown_refs(tmp_path, monkeypatch)
     assert out.getvalue().split() == ["https://example.com/one", "https://example.com/two"]
     err = io.StringIO()
     assert run(["references", "nope-nope"], out=io.StringIO(), err=err) == 1 and "no such document or group" in err.getvalue()
+
+
+def test_export_a_markdown_file_and_what_a_share_can_offer(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    f = tmp_path / "r.md"
+    f.write_text("# Report\n\nSee [other](https://x.example/y).\n")
+    doc = _json(["publish", str(f), "--json"])["id"]
+    out = io.StringIO()
+    assert _run(["export", doc, "--format", "md"], out) == 0 and "# Report" in out.getvalue()
+    dst = tmp_path / "out.md"
+    assert _json(["export", doc, "--format", "md", "--output", str(dst)])["bytes"] > 0 and dst.exists()
+    err = io.StringIO()
+    assert run(["export", doc], out=io.StringIO(), err=err) == 1 and "--output" in err.getvalue()
+    res = _json(["shareable", doc])
+    assert res["main"] == "r.md" and [x["rel"] for x in res["files"]] == ["r.md"]
+
+
+def test_export_makes_a_pdf_when_the_extra_is_installed(tmp_path, monkeypatch):
+    import pytest
+
+    try:
+        import weasyprint  # noqa: F401
+    except (ImportError, OSError) as e:  # not installed, or its system library is missing
+        pytest.skip(str(e)[:80])
+    _env(tmp_path, monkeypatch)
+    f = tmp_path / "r.md"
+    f.write_text("# Report\n\nbody\n")
+    doc = _json(["publish", str(f), "--json"])["id"]
+    dst = tmp_path / "r.pdf"
+    try:
+        _json(["export", doc, "--output", str(dst)])
+    except OSError as e:  # the system library behind it is missing on this machine
+        pytest.skip(str(e))
+    assert dst.read_bytes().startswith(b"%PDF")

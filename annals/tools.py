@@ -52,6 +52,25 @@ def _default_source() -> dict:
     return src
 
 
+def _file_opener(store: DocStore, scratch: Path):
+    """``(doc_id, rel) -> Path`` of a document's file: in place for a local store, else the document is fetched once into ``scratch``."""
+    fetched: dict[str, Path] = {}
+
+    def open_path(doc_id: str, rel: str) -> Path:
+        check_rel(rel)
+        doc_rel = store.doc_rel(doc_id)
+        here = store.target.local_path(f"{doc_rel}/{rel}")
+        if here is not None:
+            return here
+        if doc_id not in fetched:
+            dst = scratch / doc_id
+            store.target.get_tree(doc_rel, dst)
+            fetched[doc_id] = dst
+        return fetched[doc_id] / rel
+
+    return open_path
+
+
 def _resolve_selection(store: DocStore, ref: str, *, also=None) -> tuple[str, list[dict]]:
     """A title and the meta of what ``ref`` names: a group's documents, or a document (``also``: more documents).
 
@@ -544,20 +563,7 @@ def aggregate(
     store = _store(_readable(load_settings(target=target, to=to)))
     title, metas = _resolve_selection(store, group_id)
     with tempfile.TemporaryDirectory(prefix="annals-aggregate-") as scratch:
-        fetched: dict[str, Path] = {}
-
-        def open_path(doc_id: str, rel: str) -> Path:
-            """The file on disk: in place for a local store, else the document is fetched once."""
-            check_rel(rel)
-            doc_rel = store.doc_rel(doc_id)
-            here = store.target.local_path(f"{doc_rel}/{rel}")
-            if here is not None:
-                return here
-            if doc_id not in fetched:
-                dst = Path(scratch) / doc_id
-                store.target.get_tree(doc_rel, dst)
-                fetched[doc_id] = dst
-            return fetched[doc_id] / rel
+        open_path = _file_opener(store, Path(scratch))
 
         sources = [
             Source(
@@ -592,6 +598,76 @@ def aggregate(
             "skipped": len(result.skipped),
         }
     return result.data.decode("utf-8")
+
+
+def export(
+    doc_id: str,
+    *,
+    format: str = "pdf",
+    file: str | None = None,
+    output: str | None = None,
+    target: str | None = None,
+    to: str | None = None,
+) -> str | dict:
+    """One markdown file of a document as a ``.md`` or a titled ``.pdf``, as the page's Export gives it.
+
+    ``file`` names another markdown file of a folder document (default: the main one). A PDF
+    (images inside; needs the ``annals[pdf]`` extra) is a binary file, so name it with
+    ``--output FILE``; ``md`` prints the text or writes it to ``output``. For several documents
+    as one file, with a table of contents, use ``annals aggregate``.
+    """
+    import tempfile
+
+    from annals.config import MAX_INLINE_TEXT_BYTES
+    from annals.export import FORMATS, file_url_builder
+    from annals.render import PDF_MAX_TEXT_BYTES, markdown_to_pdf
+
+    if format not in FORMATS:
+        raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
+    if format == "pdf" and not output:
+        raise ValueError("a PDF is a binary file: name it with --output FILE")
+    settings = _readable(load_settings(target=target, to=to))
+    store = _store(settings)
+    meta = store.meta(_parse_ref(doc_id)[1])
+    rel = file or meta["main"]
+    if rel not in meta["files"] or kind_of(rel) != "md":
+        raise ValueError(f"no markdown file to export: {rel}")
+    if (meta.get("sizes") or {}).get(rel, 0) > MAX_INLINE_TEXT_BYTES:
+        raise ValueError("this file is too large to export")
+    text = store.read_text(meta["id"], rel)
+    if format == "md":
+        if not output:
+            return text
+        Path(output).write_text(text, encoding="utf-8")
+        return {"output": output, "bytes": len(text.encode("utf-8"))}
+    if len(text.encode("utf-8")) > PDF_MAX_TEXT_BYTES:
+        raise ValueError("this page is too large to make a PDF of")
+    with tempfile.TemporaryDirectory(prefix="annals-export-") as scratch:
+        open_path = _file_opener(store, Path(scratch))
+        pdf = markdown_to_pdf(
+            text,
+            title=meta.get("title") or meta["id"],
+            rel=rel,
+            files=meta["files"],
+            open_file=lambda r: open_path(meta["id"], r),
+            file_url=file_url_builder(settings.base_url, meta["id"]),
+            created=meta.get("created", ""),
+        )
+    Path(output).write_bytes(pdf)
+    return {"output": output, "bytes": len(pdf)}
+
+
+def shareable(
+    doc_id: str, *, target: str | None = None, to: str | None = None
+) -> dict:
+    """What the Share dialog offers for a document: its files, and the other annals documents its text links to.
+
+    ``{main, files: [{rel, kind, size, referenced}], pages: [{id, title, kind}]}``: the
+    choices ``annals share`` takes for what a link may show.
+    """
+    settings = _readable(load_settings(target=target, to=to))
+    store = _store(settings)
+    return _shares(settings).resources(store.meta(_parse_ref(doc_id)[1])["id"])
 
 
 def references(
@@ -1117,7 +1193,9 @@ _dispatch_funcs[:] = [
     group,
     groups,
     aggregate,
+    export,
     references,
+    shareable,
     copy,
     share,
     shares,
@@ -1149,6 +1227,8 @@ EFFECTS = {
     "groups": "read",
     "aggregate": "file",
     "references": "read",
+    "export": "file",
+    "shareable": "read",
     "copy": "write",
     "share": "write",
     "shares": "read",
@@ -1169,6 +1249,6 @@ def tools_with(effects=DFLT_EFFECTS) -> list:
     """The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.
 
     >>> [f.__name__ for f in tools_with({"read"})]
-    ['ls', 'show', 'groups', 'references', 'shares', 'overview_state']
+    ['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']
     """
     return [f for f in _dispatch_funcs if EFFECTS[f.__name__] in effects]

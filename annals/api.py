@@ -68,7 +68,6 @@ from annals.config import (
     default_data_dir,
 )
 from annals.catalog import (
-    THUMB_CACHE,
     Catalog,
     default_tags,
     mk_catalog,
@@ -103,6 +102,7 @@ from annals.references import (
 from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
     DocStore,
+    THUMB_CACHE,
     HidingStore,
     TEXT_KINDS,
     check_artifact_url,
