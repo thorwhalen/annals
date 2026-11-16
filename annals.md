@@ -1,4 +1,4 @@
-> built 2026-11-16 01:51 UTC from 57bdc90 (main) · annals 0.0.48. Details: build_info.json
+> built 2026-11-16 01:59 UTC from 3164914 (main) · annals 0.0.49. Details: build_info.json
 
 # index.html.md
 
@@ -4315,18 +4315,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 01:51 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/57bdc9045aa29226081c298b99ca2b9513ad2382"><code>57bdc90</code></a> on branch <code>main</code>, for **annals 0.0.48** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 01:59 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/31649142517ad45e7d86c8675c33aa93388900d6"><code>3164914</code></a> on branch <code>main</code>, for **annals 0.0.49** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.48) is ahead of the latest release on PyPI (0.0.47): these docs describe unreleased code.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/57bdc9045aa29226081c298b99ca2b9513ad2382"><code>57bdc9045aa29226081c298b99ca2b9513ad2382</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/31649142517ad45e7d86c8675c33aa93388900d6"><code>31649142517ad45e7d86c8675c33aa93388900d6</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4337,9 +4335,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43788343539">43788343539</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43788973325">43788973325</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>57bdc9045aa29226081c298b99ca2b9513ad2382</code> (in the history of the built commit) |
+| Event commit | <code>31649142517ad45e7d86c8675c33aa93388900d6</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4364,13 +4362,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.47/">0.0.47</a>, older than the documented version (0.0.48).
+Latest release: <a href="https://pypi.org/project/annals/0.0.49/">0.0.49</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 57bdc9045aa29226081c298b99ca2b9513ad2382
+git checkout 31649142517ad45e7d86c8675c33aa93388900d6
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
