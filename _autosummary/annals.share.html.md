@@ -40,14 +40,15 @@ password or revoking the link ends every open session.
 
 ### Functions
 
-| [`dir_of`](#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).   |
-|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
-| [`filter_refs`](#annals.share.filter_refs)(text, kind, \*, files, shared[, ...]) | `text` with every reference outside the share removed (or rewritten).               |
-| [`ref_decider`](#annals.share.ref_decider)(\*, from_dir, files, shared[, ...])   | `url -> new url` (often the same) or `None` (remove it).                            |
-| [`references`](#annals.share.references)(text, kind, \*[, from_dir])            | What a page points at: files of its document, and annals pages (by id).             |
-| [`remove_unshared_ids`](#annals.share.remove_unshared_ids)(text, shared)                 | `text` with every annals id that `shared` does not map replaced by a marker.        |
-| [`resolve_rel`](#annals.share.resolve_rel)(url[, from_dir])                      | A relative url as a file path inside the document, or `None` if it is not one.      |
-| [`share_url`](#annals.share.share_url)(base, token)                            | The link a recipient opens, or `None` when no share server is configured.           |
+| [`dir_of`](#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).                                                                                                                                      |
+|----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`filter_refs`](#annals.share.filter_refs)(text, kind, \*, files, shared[, ...]) | `text` with every reference outside the share removed (or rewritten).                                                                                                                                                  |
+| [`ref_decider`](#annals.share.ref_decider)(\*, from_dir, files, shared[, ...])   | `url -> new url` (often the same) or `None` (remove it).                                                                                                                                                               |
+| [`references`](#annals.share.references)(text, kind, \*[, from_dir])            | What a page points at: files of its document, and annals pages (by id).                                                                                                                                                |
+| [`remove_unshared_ids`](#annals.share.remove_unshared_ids)(text, shared)                 | `text` with every annals id that `shared` does not map replaced by a marker.                                                                                                                                           |
+| [`resolve_rel`](#annals.share.resolve_rel)(url[, from_dir])                      | A relative url as a file path inside the document, or `None` if it is not one.                                                                                                                                         |
+| [`share_links`](#annals.share.share_links)(base, token)                          | The forms of one share link: `page` (people, and fetchers that run no script), `markdown` (agents: the whole share as one text) and `pdf` (images inside, or for an upload); empty when no share server is configured. |
+| [`share_url`](#annals.share.share_url)(base, token)                            | The link a recipient opens, or `None` when no share server is configured.                                                                                                                                              |
 
 ### Classes
 
@@ -221,6 +222,15 @@ A relative url as a file path inside the document, or `None` if it is not one.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.share.share_links(base, token)
+
+The forms of one share link: `page` (people, and fetchers that run no script),
+`markdown` (agents: the whole share as one text) and `pdf` (images inside, or for an
+upload); empty when no share server is configured. [`annals.share_page`](annals.share_page.html.md#module-annals.share_page).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### annals.share.share_url(base, token)
 

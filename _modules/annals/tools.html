@@ -81,6 +81,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share_page.html">annals.share_page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.store.html">annals.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tables.html">annals.tables</a></li>
@@ -1173,371 +1174,380 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="989">
 </span><span data-line="990">
 </span><span data-line="991"><span class="k">def</span><span class="w"> </span><span class="nf">_share_out</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span> <span class="n">rec</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="992">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.share</span><span class="w"> </span><span class="kn">import</span> <span class="n">share_url</span>
+</span><span data-line="992">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.share</span><span class="w"> </span><span class="kn">import</span> <span class="n">share_links</span><span class="p">,</span> <span class="n">share_url</span>
 </span><span data-line="993">
 </span><span data-line="994">    <span class="k">return</span> <span class="p">{</span>
 </span><span data-line="995">        <span class="s2">"id"</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"token"</span><span class="p">],</span>
 </span><span data-line="996">        <span class="s2">"title"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">),</span>
 </span><span data-line="997">        <span class="s2">"url"</span><span class="p">:</span> <span class="n">share_url</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"token"</span><span class="p">]),</span>
-</span><span data-line="998">        <span class="s2">"root"</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"root"</span><span class="p">],</span>
-</span><span data-line="999">        <span class="s2">"files"</span><span class="p">:</span> <span class="p">{</span><span class="n">d</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span><span class="p">,</span> <span class="n">fs</span> <span class="ow">in</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"docs"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
-</span><span data-line="1000">        <span class="s2">"expires"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"expires"</span><span class="p">),</span>
-</span><span data-line="1001">        <span class="s2">"protected"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"protected"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
-</span><span data-line="1002">        <span class="s2">"revoked"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"revoked"</span><span class="p">),</span>
-</span><span data-line="1003">        <span class="s2">"created"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">),</span>
-</span><span data-line="1004">    <span class="p">}</span>
-</span><span data-line="1005">
+</span><span data-line="998">        <span class="s2">"links"</span><span class="p">:</span> <span class="n">share_links</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span><span class="p">,</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"token"</span><span class="p">]),</span>
+</span><span data-line="999">        <span class="s2">"root"</span><span class="p">:</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"root"</span><span class="p">],</span>
+</span><span data-line="1000">        <span class="s2">"files"</span><span class="p">:</span> <span class="p">{</span><span class="n">d</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">fs</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span><span class="p">,</span> <span class="n">fs</span> <span class="ow">in</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"docs"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+</span><span data-line="1001">        <span class="s2">"expires"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"expires"</span><span class="p">),</span>
+</span><span data-line="1002">        <span class="s2">"protected"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"protected"</span><span class="p">,</span> <span class="kc">False</span><span class="p">),</span>
+</span><span data-line="1003">        <span class="s2">"revoked"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"revoked"</span><span class="p">),</span>
+</span><span data-line="1004">        <span class="s2">"created"</span><span class="p">:</span> <span class="n">rec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">),</span>
+</span><span data-line="1005">    <span class="p">}</span>
 </span><span data-line="1006">
+</span><span data-line="1007">
 <div class="viewcode-block" id="share">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.share">[docs]</a>
-</span><span data-line="1007"><span class="k">def</span><span class="w"> </span><span class="nf">share</span><span class="p">(</span>
-</span><span data-line="1008">    <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="1009">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="1010">    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1011">    <span class="n">expires</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"7d"</span><span class="p">,</span>
-</span><span data-line="1012">    <span class="n">include</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1013">    <span class="n">exclude</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1014">    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1015">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1016">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1017">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1018"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="1019"><span class="w">    </span><span class="sd">"""Make a public link to ONE document (or group) and print it; nothing else is reachable.</span>
-</span><span data-line="1020">
-</span><span data-line="1021"><span class="sd">    ``ref`` is a document or group id, or its link. The link opens without a login, shows</span>
-</span><span data-line="1022"><span class="sd">    only that page and the files chosen, and can be revoked (``annals unshare``).</span>
-</span><span data-line="1023"><span class="sd">    ``include``: comma separated files of the document to share (the page itself always</span>
-</span><span data-line="1024"><span class="sd">    is), or ids of other annals pages it links to; by default every file of the document</span>
-</span><span data-line="1025"><span class="sd">    (for a group: every document; ``include`` then picks documents). ``exclude`` drops</span>
-</span><span data-line="1026"><span class="sd">    files. ``expires`` (7 days unless told): ``12h``, ``30d``, ``2w``, a date (``2026-11-01``,</span>
-</span><span data-line="1027"><span class="sd">    through that day, UTC), an ISO time, or ``never``. ``password`` gates the link (stored hashed; ``-`` reads it from</span>
-</span><span data-line="1028"><span class="sd">    stdin, so it stays out of the shell history).</span>
-</span><span data-line="1029"><span class="sd">    """</span>
-</span><span data-line="1030">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1031">    <span class="k">if</span> <span class="n">password</span> <span class="o">==</span> <span class="s2">"-"</span><span class="p">:</span>
-</span><span data-line="1032">        <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
-</span><span data-line="1033">
-</span><span data-line="1034">        <span class="n">password</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="1035">    <span class="n">rec</span> <span class="o">=</span> <span class="n">_shares</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
-</span><span data-line="1036">        <span class="n">_parse_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span>
-</span><span data-line="1037">        <span class="n">include</span><span class="o">=</span><span class="n">_split</span><span class="p">(</span><span class="n">include</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1038">        <span class="n">exclude</span><span class="o">=</span><span class="n">_split</span><span class="p">(</span><span class="n">exclude</span><span class="p">),</span>
-</span><span data-line="1039">        <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">,</span>
-</span><span data-line="1040">        <span class="n">expires</span><span class="o">=</span><span class="n">expires</span><span class="p">,</span>
-</span><span data-line="1041">        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
-</span><span data-line="1042">    <span class="p">)</span>
-</span><span data-line="1043">    <span class="n">out</span> <span class="o">=</span> <span class="n">_share_out</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span>
-</span><span data-line="1044">    <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"expires </span><span class="si">{</span><span class="n">out</span><span class="p">[</span><span class="s1">'expires'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="s2">"expires"</span><span class="p">]</span> <span class="k">else</span> <span class="s2">"never expires"</span><span class="p">]</span>
-</span><span data-line="1045">    <span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="s2">"protected"</span><span class="p">]:</span>
-</span><span data-line="1046">        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"password-protected"</span><span class="p">)</span>
-</span><span data-line="1047">    <span class="n">n</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">"files"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
-</span><span data-line="1048">    <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> file</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> shared"</span><span class="p">)</span>
-</span><span data-line="1049">    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="1050">        <span class="s2">"url"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"url"</span><span class="p">],</span>
-</span><span data-line="1051">        <span class="s2">"id"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="1052">        <span class="s2">"title"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
-</span><span data-line="1053">        <span class="s2">"note"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span>
-</span><span data-line="1054">    <span class="p">}</span>
-</span><span data-line="1055">    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlsplit</span>
-</span><span data-line="1056">
-</span><span data-line="1057">    <span class="n">local</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="p">)</span><span class="o">.</span><span class="n">hostname</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"127.0.0.1"</span><span class="p">,</span> <span class="s2">"localhost"</span><span class="p">,</span> <span class="s2">"::1"</span><span class="p">)</span>
-</span><span data-line="1058">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span> <span class="o">==</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/shared"</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">local</span><span class="p">:</span>
-</span><span data-line="1059">        <span class="n">result</span><span class="p">[</span><span class="s2">"warning"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="1060">            <span class="s2">"this link assumes the annals server serves shares at &lt;base_url&gt;/shared, "</span>
-</span><span data-line="1061">            <span class="s2">"as `annals serve` does; inside an app platform the share server runs as its "</span>
-</span><span data-line="1062">            <span class="s2">"own public app: set its address with `annals configure --share-base-url ...`"</span>
-</span><span data-line="1063">        <span class="p">)</span>
-</span><span data-line="1064">    <span class="k">return</span> <span class="n">result</span></div>
-
+</span><span data-line="1008"><span class="k">def</span><span class="w"> </span><span class="nf">share</span><span class="p">(</span>
+</span><span data-line="1009">    <span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="1010">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1011">    <span class="n">password</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1012">    <span class="n">expires</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"7d"</span><span class="p">,</span>
+</span><span data-line="1013">    <span class="n">include</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1014">    <span class="n">exclude</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1015">    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1016">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1017">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1018">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1019"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1020"><span class="w">    </span><span class="sd">"""Make a public link to ONE document (or group) and print it; nothing else is reachable.</span>
+</span><span data-line="1021">
+</span><span data-line="1022"><span class="sd">    Returns three forms of the one link (the CLI prints the first on stdout, the others</span>
+</span><span data-line="1023"><span class="sd">    on stderr): ``url``, the page, whose text is in the html (a</span>
+</span><span data-line="1024"><span class="sd">    person, NotebookLM or any fetcher reads it without running script); ``markdown``, the</span>
+</span><span data-line="1025"><span class="sd">    whole share as one text, for an agent; ``pdf``, the same with its images. All three end</span>
+</span><span data-line="1026"><span class="sd">    with the link's expiry or revocation.</span>
+</span><span data-line="1027">
+</span><span data-line="1028"><span class="sd">    ``ref`` is a document or group id, or its link. The link opens without a login, shows</span>
+</span><span data-line="1029"><span class="sd">    only that page and the files chosen, and can be revoked (``annals unshare``).</span>
+</span><span data-line="1030"><span class="sd">    ``include``: comma separated files of the document to share (the page itself always</span>
+</span><span data-line="1031"><span class="sd">    is), or ids of other annals pages it links to; by default every file of the document</span>
+</span><span data-line="1032"><span class="sd">    (for a group: every document; ``include`` then picks documents). ``exclude`` drops</span>
+</span><span data-line="1033"><span class="sd">    files. ``expires`` (7 days unless told): ``12h``, ``30d``, ``2w``, a date (``2026-11-01``,</span>
+</span><span data-line="1034"><span class="sd">    through that day, UTC), an ISO time, or ``never``. ``password`` gates the link (stored hashed; ``-`` reads it from</span>
+</span><span data-line="1035"><span class="sd">    stdin, so it stays out of the shell history).</span>
+</span><span data-line="1036"><span class="sd">    """</span>
+</span><span data-line="1037">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1038">    <span class="k">if</span> <span class="n">password</span> <span class="o">==</span> <span class="s2">"-"</span><span class="p">:</span>
+</span><span data-line="1039">        <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+</span><span data-line="1040">
+</span><span data-line="1041">        <span class="n">password</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdin</span><span class="o">.</span><span class="n">readline</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="1042">    <span class="n">rec</span> <span class="o">=</span> <span class="n">_shares</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+</span><span data-line="1043">        <span class="n">_parse_ref</span><span class="p">(</span><span class="n">ref</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span>
+</span><span data-line="1044">        <span class="n">include</span><span class="o">=</span><span class="n">_split</span><span class="p">(</span><span class="n">include</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1045">        <span class="n">exclude</span><span class="o">=</span><span class="n">_split</span><span class="p">(</span><span class="n">exclude</span><span class="p">),</span>
+</span><span data-line="1046">        <span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="p">,</span>
+</span><span data-line="1047">        <span class="n">expires</span><span class="o">=</span><span class="n">expires</span><span class="p">,</span>
+</span><span data-line="1048">        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+</span><span data-line="1049">    <span class="p">)</span>
+</span><span data-line="1050">    <span class="n">out</span> <span class="o">=</span> <span class="n">_share_out</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">rec</span><span class="p">)</span>
+</span><span data-line="1051">    <span class="n">notes</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"expires </span><span class="si">{</span><span class="n">out</span><span class="p">[</span><span class="s1">'expires'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="s2">"expires"</span><span class="p">]</span> <span class="k">else</span> <span class="s2">"never expires"</span><span class="p">]</span>
+</span><span data-line="1052">    <span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="s2">"protected"</span><span class="p">]:</span>
+</span><span data-line="1053">        <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"password-protected"</span><span class="p">)</span>
+</span><span data-line="1054">    <span class="n">n</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="s2">"files"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+</span><span data-line="1055">    <span class="n">notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> file</span><span class="si">{</span><span class="s1">'s'</span><span class="w"> </span><span class="k">if</span><span class="w"> </span><span class="n">n</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="mi">1</span><span class="w"> </span><span class="k">else</span><span class="w"> </span><span class="s1">''</span><span class="si">}</span><span class="s2"> shared"</span><span class="p">)</span>
+</span><span data-line="1056">    <span class="n">result</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="1057">        <span class="s2">"url"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"url"</span><span class="p">],</span>
+</span><span data-line="1058">        <span class="s2">"markdown"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"links"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"markdown"</span><span class="p">),</span>
+</span><span data-line="1059">        <span class="s2">"pdf"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"links"</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pdf"</span><span class="p">),</span>
+</span><span data-line="1060">        <span class="s2">"id"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="1061">        <span class="s2">"title"</span><span class="p">:</span> <span class="n">out</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+</span><span data-line="1062">        <span class="s2">"note"</span><span class="p">:</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">notes</span><span class="p">),</span>
+</span><span data-line="1063">    <span class="p">}</span>
+</span><span data-line="1064">    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlsplit</span>
 </span><span data-line="1065">
-</span><span data-line="1066">
+</span><span data-line="1066">    <span class="n">local</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="p">)</span><span class="o">.</span><span class="n">hostname</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"127.0.0.1"</span><span class="p">,</span> <span class="s2">"localhost"</span><span class="p">,</span> <span class="s2">"::1"</span><span class="p">)</span>
+</span><span data-line="1067">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span> <span class="o">==</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/shared"</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">local</span><span class="p">:</span>
+</span><span data-line="1068">        <span class="n">result</span><span class="p">[</span><span class="s2">"warning"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="1069">            <span class="s2">"this link assumes the annals server serves shares at &lt;base_url&gt;/shared, "</span>
+</span><span data-line="1070">            <span class="s2">"as `annals serve` does; inside an app platform the share server runs as its "</span>
+</span><span data-line="1071">            <span class="s2">"own public app: set its address with `annals configure --share-base-url ...`"</span>
+</span><span data-line="1072">        <span class="p">)</span>
+</span><span data-line="1073">    <span class="k">return</span> <span class="n">result</span></div>
+
+</span><span data-line="1074">
+</span><span data-line="1075">
 <div class="viewcode-block" id="shares">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.shares">[docs]</a>
-</span><span data-line="1067"><span class="k">def</span><span class="w"> </span><span class="nf">shares</span><span class="p">(</span>
-</span><span data-line="1068">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="1069">    <span class="nb">all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="1070">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1071">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1072">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1073"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="1074"><span class="w">    </span><span class="sd">"""List share links, newest first (``all``: revoked and expired ones too)."""</span>
-</span><span data-line="1075">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1076">    <span class="n">recs</span> <span class="o">=</span> <span class="n">_shares</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="nb">all</span><span class="p">)</span>
-</span><span data-line="1077">    <span class="k">return</span> <span class="p">{</span><span class="s2">"shares"</span><span class="p">:</span> <span class="p">[</span><span class="n">_share_out</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recs</span><span class="p">]}</span></div>
+</span><span data-line="1076"><span class="k">def</span><span class="w"> </span><span class="nf">shares</span><span class="p">(</span>
+</span><span data-line="1077">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1078">    <span class="nb">all</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="1079">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1080">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1081">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1082"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1083"><span class="w">    </span><span class="sd">"""List share links, newest first (``all``: revoked and expired ones too)."""</span>
+</span><span data-line="1084">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1085">    <span class="n">recs</span> <span class="o">=</span> <span class="n">_shares</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span><span class="o">.</span><span class="n">list</span><span class="p">(</span><span class="nb">all</span><span class="o">=</span><span class="nb">all</span><span class="p">)</span>
+</span><span data-line="1086">    <span class="k">return</span> <span class="p">{</span><span class="s2">"shares"</span><span class="p">:</span> <span class="p">[</span><span class="n">_share_out</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">recs</span><span class="p">]}</span></div>
 
-</span><span data-line="1078">
-</span><span data-line="1079">
+</span><span data-line="1087">
+</span><span data-line="1088">
 <div class="viewcode-block" id="unshare">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.unshare">[docs]</a>
-</span><span data-line="1080"><span class="k">def</span><span class="w"> </span><span class="nf">unshare</span><span class="p">(</span>
-</span><span data-line="1081">    <span class="n">links</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-</span><span data-line="1082">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="1083">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1084">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1085"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="1086"><span class="w">    </span><span class="sd">"""Revoke share links (their token or full link): they stop working at once."""</span>
-</span><span data-line="1087">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1088">    <span class="n">s</span> <span class="o">=</span> <span class="n">_shares</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
-</span><span data-line="1089">    <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">links</span><span class="p">)]</span>
-</span><span data-line="1090">    <span class="k">return</span> <span class="p">{</span><span class="s2">"revoked"</span><span class="p">:</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">revoke</span><span class="p">(</span><span class="n">t</span><span class="p">)[</span><span class="s2">"token"</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]}</span></div>
+</span><span data-line="1089"><span class="k">def</span><span class="w"> </span><span class="nf">unshare</span><span class="p">(</span>
+</span><span data-line="1090">    <span class="n">links</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="1091">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1092">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1093">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1094"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1095"><span class="w">    </span><span class="sd">"""Revoke share links (their token or full link): they stop working at once."""</span>
+</span><span data-line="1096">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1097">    <span class="n">s</span> <span class="o">=</span> <span class="n">_shares</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</span><span data-line="1098">    <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">_as_list</span><span class="p">(</span><span class="n">links</span><span class="p">)]</span>
+</span><span data-line="1099">    <span class="k">return</span> <span class="p">{</span><span class="s2">"revoked"</span><span class="p">:</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">revoke</span><span class="p">(</span><span class="n">t</span><span class="p">)[</span><span class="s2">"token"</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]}</span></div>
 
-</span><span data-line="1091">
-</span><span data-line="1092">
+</span><span data-line="1100">
+</span><span data-line="1101">
 <div class="viewcode-block" id="serve">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.serve">[docs]</a>
-</span><span data-line="1093"><span class="k">def</span><span class="w"> </span><span class="nf">serve</span><span class="p">(</span>
-</span><span data-line="1094">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="1095">    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"127.0.0.1"</span><span class="p">,</span>
-</span><span data-line="1096">    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8765</span><span class="p">,</span>
-</span><span data-line="1097">    <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1098">    <span class="n">base_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span>
-</span><span data-line="1099">    <span class="n">allow_open</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="1100">    <span class="n">overviews</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1101"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="1102"><span class="w">    </span><span class="sd">"""Serve the annals page and API (needs ``pip install 'annals[server]'``).</span>
-</span><span data-line="1103">
-</span><span data-line="1104"><span class="sd">    Auth comes from the environment: ``ANNALS_WHOAMI_URL`` + ``ANNALS_ALLOWED_USERS`` to sit</span>
-</span><span data-line="1105"><span class="sd">    behind an existing login, ``ANNALS_BASIC_USER`` + ``ANNALS_BASIC_PASSWORD`` for HTTP Basic,</span>
-</span><span data-line="1106"><span class="sd">    nothing for an open server on localhost. A host reachable beyond this machine with no auth</span>
-</span><span data-line="1107"><span class="sd">    configured is refused unless ``allow_open`` (``--allow-open``) says something else gates it.</span>
-</span><span data-line="1108"><span class="sd">    ``overviews`` (``--overviews '*'``, or reader names separated by commas) offers the Listen</span>
-</span><span data-line="1109"><span class="sd">    button to those the login lets in (unset: ``ANNALS_OVERVIEWS`` decides, and unset it is</span>
-</span><span data-line="1110"><span class="sd">    off; ``--overviews ''`` forces it off). It spends money, needs ``ANNALS_OVERVIEW_COMMAND``</span>
-</span><span data-line="1111"><span class="sd">    and a worker (``annals listen-work`` on a timer), and a server with no login serves it</span>
-</span><span data-line="1112"><span class="sd">    only on this machine.</span>
-</span><span data-line="1113"><span class="sd">    """</span>
-</span><span data-line="1114">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">serve</span> <span class="k">as</span> <span class="n">_serve</span>
-</span><span data-line="1115">
-</span><span data-line="1116">    <span class="n">_serve</span><span class="p">(</span>
-</span><span data-line="1117">        <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
-</span><span data-line="1118">        <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
-</span><span data-line="1119">        <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
-</span><span data-line="1120">        <span class="n">base_path</span><span class="o">=</span><span class="n">base_path</span><span class="p">,</span>
-</span><span data-line="1121">        <span class="n">allow_open</span><span class="o">=</span><span class="n">allow_open</span><span class="p">,</span>
-</span><span data-line="1122">        <span class="n">overviews</span><span class="o">=</span><span class="n">overviews</span><span class="p">,</span>
-</span><span data-line="1123">    <span class="p">)</span></div>
-
+</span><span data-line="1102"><span class="k">def</span><span class="w"> </span><span class="nf">serve</span><span class="p">(</span>
+</span><span data-line="1103">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1104">    <span class="n">host</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"127.0.0.1"</span><span class="p">,</span>
+</span><span data-line="1105">    <span class="n">port</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8765</span><span class="p">,</span>
+</span><span data-line="1106">    <span class="n">data_dir</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1107">    <span class="n">base_path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span>
+</span><span data-line="1108">    <span class="n">allow_open</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="1109">    <span class="n">overviews</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1110"><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="1111"><span class="w">    </span><span class="sd">"""Serve the annals page and API (needs ``pip install 'annals[server]'``).</span>
+</span><span data-line="1112">
+</span><span data-line="1113"><span class="sd">    Auth comes from the environment: ``ANNALS_WHOAMI_URL`` + ``ANNALS_ALLOWED_USERS`` to sit</span>
+</span><span data-line="1114"><span class="sd">    behind an existing login, ``ANNALS_BASIC_USER`` + ``ANNALS_BASIC_PASSWORD`` for HTTP Basic,</span>
+</span><span data-line="1115"><span class="sd">    nothing for an open server on localhost. A host reachable beyond this machine with no auth</span>
+</span><span data-line="1116"><span class="sd">    configured is refused unless ``allow_open`` (``--allow-open``) says something else gates it.</span>
+</span><span data-line="1117"><span class="sd">    ``overviews`` (``--overviews '*'``, or reader names separated by commas) offers the Listen</span>
+</span><span data-line="1118"><span class="sd">    button to those the login lets in (unset: ``ANNALS_OVERVIEWS`` decides, and unset it is</span>
+</span><span data-line="1119"><span class="sd">    off; ``--overviews ''`` forces it off). It spends money, needs ``ANNALS_OVERVIEW_COMMAND``</span>
+</span><span data-line="1120"><span class="sd">    and a worker (``annals listen-work`` on a timer), and a server with no login serves it</span>
+</span><span data-line="1121"><span class="sd">    only on this machine.</span>
+</span><span data-line="1122"><span class="sd">    """</span>
+</span><span data-line="1123">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">serve</span> <span class="k">as</span> <span class="n">_serve</span>
 </span><span data-line="1124">
-</span><span data-line="1125">
+</span><span data-line="1125">    <span class="n">_serve</span><span class="p">(</span>
+</span><span data-line="1126">        <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span>
+</span><span data-line="1127">        <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
+</span><span data-line="1128">        <span class="n">data_dir</span><span class="o">=</span><span class="n">data_dir</span><span class="p">,</span>
+</span><span data-line="1129">        <span class="n">base_path</span><span class="o">=</span><span class="n">base_path</span><span class="p">,</span>
+</span><span data-line="1130">        <span class="n">allow_open</span><span class="o">=</span><span class="n">allow_open</span><span class="p">,</span>
+</span><span data-line="1131">        <span class="n">overviews</span><span class="o">=</span><span class="n">overviews</span><span class="p">,</span>
+</span><span data-line="1132">    <span class="p">)</span></div>
+
+</span><span data-line="1133">
+</span><span data-line="1134">
 <div class="viewcode-block" id="page_shell">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.page_shell">[docs]</a>
-</span><span data-line="1126"><span class="k">def</span><span class="w"> </span><span class="nf">page_shell</span><span class="p">(</span>
-</span><span data-line="1127">    <span class="o">*</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/api/annals"</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"annals"</span>
-</span><span data-line="1128"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="1129"><span class="w">    </span><span class="sd">"""The page's html shell, for a host that serves the API under its own prefix.</span>
-</span><span data-line="1130">
-</span><span data-line="1131"><span class="sd">    An enlace app writes it once as its frontend:</span>
-</span><span data-line="1132"><span class="sd">    ``annals page-shell --api /api/annals --base /annals &gt; frontend/index.html``.</span>
-</span><span data-line="1133"><span class="sd">    The shell only names the two paths; the page's code loads from the API, so it upgrades</span>
-</span><span data-line="1134"><span class="sd">    with the package.</span>
-</span><span data-line="1135"><span class="sd">    """</span>
-</span><span data-line="1136">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">page_html</span>
-</span><span data-line="1137">
-</span><span data-line="1138">    <span class="k">return</span> <span class="n">page_html</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">api</span><span class="o">=</span><span class="n">api</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">)</span></div>
-
+</span><span data-line="1135"><span class="k">def</span><span class="w"> </span><span class="nf">page_shell</span><span class="p">(</span>
+</span><span data-line="1136">    <span class="o">*</span><span class="p">,</span> <span class="n">api</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/api/annals"</span><span class="p">,</span> <span class="n">base</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"/annals"</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"annals"</span>
+</span><span data-line="1137"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="1138"><span class="w">    </span><span class="sd">"""The page's html shell, for a host that serves the API under its own prefix.</span>
 </span><span data-line="1139">
-</span><span data-line="1140">
-</span><span data-line="1141"><span class="k">def</span><span class="w"> </span><span class="nf">_overviews_here</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="p">):</span>
-</span><span data-line="1142"><span class="w">    </span><span class="sd">"""The store and the request files, or an error saying this is the wrong machine."""</span>
-</span><span data-line="1143">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.overview</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requests</span>
-</span><span data-line="1144">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.target</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalTarget</span>
-</span><span data-line="1145">
-</span><span data-line="1146">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1147">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
-</span><span data-line="1148">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">LocalTarget</span><span class="p">):</span>
-</span><span data-line="1149">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="1150">            <span class="s2">"spoken overviews run where the documents are: this target is not local"</span>
-</span><span data-line="1151">        <span class="p">)</span>
-</span><span data-line="1152">    <span class="k">return</span> <span class="n">store</span><span class="p">,</span> <span class="n">Requests</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
-</span><span data-line="1153">
+</span><span data-line="1140"><span class="sd">    An enlace app writes it once as its frontend:</span>
+</span><span data-line="1141"><span class="sd">    ``annals page-shell --api /api/annals --base /annals &gt; frontend/index.html``.</span>
+</span><span data-line="1142"><span class="sd">    The shell only names the two paths; the page's code loads from the API, so it upgrades</span>
+</span><span data-line="1143"><span class="sd">    with the package.</span>
+</span><span data-line="1144"><span class="sd">    """</span>
+</span><span data-line="1145">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.api</span><span class="w"> </span><span class="kn">import</span> <span class="n">page_html</span>
+</span><span data-line="1146">
+</span><span data-line="1147">    <span class="k">return</span> <span class="n">page_html</span><span class="p">(</span><span class="n">base</span><span class="o">=</span><span class="n">base</span><span class="p">,</span> <span class="n">api</span><span class="o">=</span><span class="n">api</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">)</span></div>
+
+</span><span data-line="1148">
+</span><span data-line="1149">
+</span><span data-line="1150"><span class="k">def</span><span class="w"> </span><span class="nf">_overviews_here</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="p">):</span>
+</span><span data-line="1151"><span class="w">    </span><span class="sd">"""The store and the request files, or an error saying this is the wrong machine."""</span>
+</span><span data-line="1152">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.overview</span><span class="w"> </span><span class="kn">import</span> <span class="n">Requests</span>
+</span><span data-line="1153">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.target</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalTarget</span>
 </span><span data-line="1154">
+</span><span data-line="1155">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1156">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</span><span data-line="1157">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">LocalTarget</span><span class="p">):</span>
+</span><span data-line="1158">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="1159">            <span class="s2">"spoken overviews run where the documents are: this target is not local"</span>
+</span><span data-line="1160">        <span class="p">)</span>
+</span><span data-line="1161">    <span class="k">return</span> <span class="n">store</span><span class="p">,</span> <span class="n">Requests</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="p">)</span>
+</span><span data-line="1162">
+</span><span data-line="1163">
 <div class="viewcode-block" id="listen">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.listen">[docs]</a>
-</span><span data-line="1155"><span class="k">def</span><span class="w"> </span><span class="nf">listen</span><span class="p">(</span>
-</span><span data-line="1156">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-</span><span data-line="1157">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="1158">    <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
-</span><span data-line="1159">    <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="1160">    <span class="n">also</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1161">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1162">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1163"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="1164"><span class="w">    </span><span class="sd">"""Ask for a spoken overview of a document, as its page's Listen button does. Spends money.</span>
-</span><span data-line="1165">
-</span><span data-line="1166"><span class="sd">    ``also`` (more document ids) asks for ONE overview of all of them together, as the page</span>
-</span><span data-line="1167"><span class="sd">    does for a pick: their text is put in one document (made when the worker starts the job),</span>
-</span><span data-line="1168"><span class="sd">    and the same documents at the same versions reuse it. ``force`` then does not apply.</span>
-</span><span data-line="1169"><span class="sd">    """</span>
-</span><span data-line="1170">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
-</span><span data-line="1171">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_AGGREGATE_BYTES</span>
-</span><span data-line="1172">
-</span><span data-line="1173">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1174">    <span class="k">if</span> <span class="ow">not</span> <span class="n">also</span><span class="p">:</span>
-</span><span data-line="1175">        <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
-</span><span data-line="1176">    <span class="k">if</span> <span class="n">force</span><span class="p">:</span>
-</span><span data-line="1177">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="1178">            <span class="s2">"--force asks again for one document's overview; it does not apply to --also"</span>
-</span><span data-line="1179">        <span class="p">)</span>
-</span><span data-line="1180">    <span class="n">ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">_parse_ref</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="n">doc_id</span><span class="p">,</span> <span class="o">*</span><span class="n">_as_list</span><span class="p">(</span><span class="n">also</span><span class="p">)]))</span>
-</span><span data-line="1181">    <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">store</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">]</span>
-</span><span data-line="1182">    <span class="k">if</span> <span class="n">binned</span> <span class="o">:=</span> <span class="p">[</span><span class="n">m</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"in_trash"</span><span class="p">)]:</span>
-</span><span data-line="1183">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"in the bin, so not combined: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">binned</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="1184">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># the same document twice: the ordinary overview, reused</span>
-</span><span data-line="1185">        <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">)</span>
-</span><span data-line="1186">    <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">request_combined</span><span class="p">(</span>
-</span><span data-line="1187">        <span class="n">store</span><span class="p">,</span>
-</span><span data-line="1188">        <span class="n">requests</span><span class="p">,</span>
-</span><span data-line="1189">        <span class="n">docs</span><span class="p">,</span>
-</span><span data-line="1190">        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span><span class="si">}</span><span class="s2"> documents together"</span><span class="p">,</span>
-</span><span data-line="1191">        <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span>
-</span><span data-line="1192">        <span class="n">max_bytes</span><span class="o">=</span><span class="n">MAX_AGGREGATE_BYTES</span><span class="p">,</span>
-</span><span data-line="1193">    <span class="p">)</span></div>
+</span><span data-line="1164"><span class="k">def</span><span class="w"> </span><span class="nf">listen</span><span class="p">(</span>
+</span><span data-line="1165">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="1166">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1167">    <span class="n">minutes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+</span><span data-line="1168">    <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="1169">    <span class="n">also</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1170">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1171">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1172"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1173"><span class="w">    </span><span class="sd">"""Ask for a spoken overview of a document, as its page's Listen button does. Spends money.</span>
+</span><span data-line="1174">
+</span><span data-line="1175"><span class="sd">    ``also`` (more document ids) asks for ONE overview of all of them together, as the page</span>
+</span><span data-line="1176"><span class="sd">    does for a pick: their text is put in one document (made when the worker starts the job),</span>
+</span><span data-line="1177"><span class="sd">    and the same documents at the same versions reuse it. ``force`` then does not apply.</span>
+</span><span data-line="1178"><span class="sd">    """</span>
+</span><span data-line="1179">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
+</span><span data-line="1180">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_AGGREGATE_BYTES</span>
+</span><span data-line="1181">
+</span><span data-line="1182">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1183">    <span class="k">if</span> <span class="ow">not</span> <span class="n">also</span><span class="p">:</span>
+</span><span data-line="1184">        <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="n">force</span><span class="p">)</span>
+</span><span data-line="1185">    <span class="k">if</span> <span class="n">force</span><span class="p">:</span>
+</span><span data-line="1186">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="1187">            <span class="s2">"--force asks again for one document's overview; it does not apply to --also"</span>
+</span><span data-line="1188">        <span class="p">)</span>
+</span><span data-line="1189">    <span class="n">ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">_parse_ref</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="n">doc_id</span><span class="p">,</span> <span class="o">*</span><span class="n">_as_list</span><span class="p">(</span><span class="n">also</span><span class="p">)]))</span>
+</span><span data-line="1190">    <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">store</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">]</span>
+</span><span data-line="1191">    <span class="k">if</span> <span class="n">binned</span> <span class="o">:=</span> <span class="p">[</span><span class="n">m</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"in_trash"</span><span class="p">)]:</span>
+</span><span data-line="1192">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"in the bin, so not combined: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">binned</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="1193">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>  <span class="c1"># the same document twice: the ordinary overview, reused</span>
+</span><span data-line="1194">        <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">request</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">)</span>
+</span><span data-line="1195">    <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">request_combined</span><span class="p">(</span>
+</span><span data-line="1196">        <span class="n">store</span><span class="p">,</span>
+</span><span data-line="1197">        <span class="n">requests</span><span class="p">,</span>
+</span><span data-line="1198">        <span class="n">docs</span><span class="p">,</span>
+</span><span data-line="1199">        <span class="n">title</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span><span class="si">}</span><span class="s2"> documents together"</span><span class="p">,</span>
+</span><span data-line="1200">        <span class="n">minutes</span><span class="o">=</span><span class="n">minutes</span><span class="p">,</span>
+</span><span data-line="1201">        <span class="n">max_bytes</span><span class="o">=</span><span class="n">MAX_AGGREGATE_BYTES</span><span class="p">,</span>
+</span><span data-line="1202">    <span class="p">)</span></div>
 
-</span><span data-line="1194">
-</span><span data-line="1195">
+</span><span data-line="1203">
+</span><span data-line="1204">
 <div class="viewcode-block" id="overview_state">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.overview_state">[docs]</a>
-</span><span data-line="1196"><span class="k">def</span><span class="w"> </span><span class="nf">overview_state</span><span class="p">(</span>
-</span><span data-line="1197">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="1198"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="1199"><span class="w">    </span><span class="sd">"""Where a document's spoken overview stands (not asked for, queued, made, failed), without asking for one.</span>
-</span><span data-line="1200">
-</span><span data-line="1201"><span class="sd">    Poll this after ``annals listen``. For a combined overview (``listen --also``) give the</span>
-</span><span data-line="1202"><span class="sd">    combined document's id once the worker has made it; until then ``listen`` returns the state.</span>
-</span><span data-line="1203"><span class="sd">    """</span>
-</span><span data-line="1204">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
-</span><span data-line="1205">
-</span><span data-line="1206">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1207">    <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">state_of</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">store</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">_parse_ref</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)[</span><span class="mi">1</span><span class="p">]))</span></div>
-
-</span><span data-line="1208">
+</span><span data-line="1205"><span class="k">def</span><span class="w"> </span><span class="nf">overview_state</span><span class="p">(</span>
+</span><span data-line="1206">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="1207"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1208"><span class="w">    </span><span class="sd">"""Where a document's spoken overview stands (not asked for, queued, made, failed), without asking for one.</span>
 </span><span data-line="1209">
+</span><span data-line="1210"><span class="sd">    Poll this after ``annals listen``. For a combined overview (``listen --also``) give the</span>
+</span><span data-line="1211"><span class="sd">    combined document's id once the worker has made it; until then ``listen`` returns the state.</span>
+</span><span data-line="1212"><span class="sd">    """</span>
+</span><span data-line="1213">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
+</span><span data-line="1214">
+</span><span data-line="1215">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1216">    <span class="k">return</span> <span class="n">overview</span><span class="o">.</span><span class="n">state_of</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">requests</span><span class="p">,</span> <span class="n">store</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">_parse_ref</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)[</span><span class="mi">1</span><span class="p">]))</span></div>
+
+</span><span data-line="1217">
+</span><span data-line="1218">
 <div class="viewcode-block" id="listen_work">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.listen_work">[docs]</a>
-</span><span data-line="1210"><span class="k">def</span><span class="w"> </span><span class="nf">listen_work</span><span class="p">(</span>
-</span><span data-line="1211">    <span class="o">*</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span data-line="1212"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="1213"><span class="w">    </span><span class="sd">"""Fulfil the queued overview requests, one at a time (a timer runs this on the server).</span>
-</span><span data-line="1214">
-</span><span data-line="1215"><span class="sd">    ``command`` makes one overview, with {source}, {minutes}, {out} and {url} filled in; by default,</span>
-</span><span data-line="1216"><span class="sd">    ``$ANNALS_OVERVIEW_COMMAND``.</span>
-</span><span data-line="1217"><span class="sd">    """</span>
-</span><span data-line="1218">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
-</span><span data-line="1219">
-</span><span data-line="1220">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1221">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1222">    <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="1223">        <span class="s2">"results"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">work</span><span class="p">(</span>
-</span><span data-line="1224">            <span class="n">store</span><span class="p">,</span>
-</span><span data-line="1225">            <span class="n">requests</span><span class="p">,</span>
-</span><span data-line="1226">            <span class="n">command</span><span class="o">=</span><span class="n">command</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1227">            <span class="n">doc_url</span><span class="o">=</span><span class="k">lambda</span> <span class="n">doc_id</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">),</span>
-</span><span data-line="1228">        <span class="p">)</span>
-</span><span data-line="1229">    <span class="p">}</span></div>
+</span><span data-line="1219"><span class="k">def</span><span class="w"> </span><span class="nf">listen_work</span><span class="p">(</span>
+</span><span data-line="1220">    <span class="o">*</span><span class="p">,</span> <span class="n">command</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span data-line="1221"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1222"><span class="w">    </span><span class="sd">"""Fulfil the queued overview requests, one at a time (a timer runs this on the server).</span>
+</span><span data-line="1223">
+</span><span data-line="1224"><span class="sd">    ``command`` makes one overview, with {source}, {minutes}, {out} and {url} filled in; by default,</span>
+</span><span data-line="1225"><span class="sd">    ``$ANNALS_OVERVIEW_COMMAND``.</span>
+</span><span data-line="1226"><span class="sd">    """</span>
+</span><span data-line="1227">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
+</span><span data-line="1228">
+</span><span data-line="1229">    <span class="n">store</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1230">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1231">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="1232">        <span class="s2">"results"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">work</span><span class="p">(</span>
+</span><span data-line="1233">            <span class="n">store</span><span class="p">,</span>
+</span><span data-line="1234">            <span class="n">requests</span><span class="p">,</span>
+</span><span data-line="1235">            <span class="n">command</span><span class="o">=</span><span class="n">command</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1236">            <span class="n">doc_url</span><span class="o">=</span><span class="k">lambda</span> <span class="n">doc_id</span><span class="p">:</span> <span class="n">_doc_url</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">),</span>
+</span><span data-line="1237">        <span class="p">)</span>
+</span><span data-line="1238">    <span class="p">}</span></div>
 
-</span><span data-line="1230">
-</span><span data-line="1231">
+</span><span data-line="1239">
+</span><span data-line="1240">
 <div class="viewcode-block" id="listen_down">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.listen_down">[docs]</a>
-</span><span data-line="1232"><span class="k">def</span><span class="w"> </span><span class="nf">listen_down</span><span class="p">(</span>
-</span><span data-line="1233">    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-</span><span data-line="1234">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="1235">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
-</span><span data-line="1236">    <span class="n">clear</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="1237">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1238">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="1239"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="1240"><span class="w">    </span><span class="sd">"""Say why spoken overviews cannot be made, and where that is being fixed; or clear it.</span>
-</span><span data-line="1241">
-</span><span data-line="1242"><span class="sd">    With nothing given, shows the current state. The Audio tab then shows the reason and the</span>
-</span><span data-line="1243"><span class="sd">    link instead of a Try again that cannot work, e.g.</span>
-</span><span data-line="1244"><span class="sd">    ``annals listen-down "the server's login expired" --link &lt;issue url&gt;``. The worker finds</span>
-</span><span data-line="1245"><span class="sd">    out by itself too, and clears it on the next success; ``--clear`` clears it now and</span>
-</span><span data-line="1246"><span class="sd">    queues every request that waited.</span>
-</span><span data-line="1247"><span class="sd">    """</span>
-</span><span data-line="1248">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
-</span><span data-line="1249">
-</span><span data-line="1250">    <span class="n">_</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="1251">    <span class="k">if</span> <span class="n">clear</span><span class="p">:</span>
-</span><span data-line="1252">        <span class="k">return</span> <span class="p">{</span><span class="s2">"down"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"queued"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">mark_up</span><span class="p">(</span><span class="n">requests</span><span class="p">)}</span>
-</span><span data-line="1253">    <span class="k">if</span> <span class="n">reason</span> <span class="ow">or</span> <span class="n">link</span><span class="p">:</span>
-</span><span data-line="1254">        <span class="n">overview</span><span class="o">.</span><span class="n">mark_down</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="n">reason</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">link</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
-</span><span data-line="1255">    <span class="k">return</span> <span class="p">{</span><span class="s2">"down"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">maker_down</span><span class="p">(</span><span class="n">requests</span><span class="p">)}</span></div>
+</span><span data-line="1241"><span class="k">def</span><span class="w"> </span><span class="nf">listen_down</span><span class="p">(</span>
+</span><span data-line="1242">    <span class="n">reason</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="1243">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1244">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="1245">    <span class="n">clear</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="1246">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1247">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1248"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1249"><span class="w">    </span><span class="sd">"""Say why spoken overviews cannot be made, and where that is being fixed; or clear it.</span>
+</span><span data-line="1250">
+</span><span data-line="1251"><span class="sd">    With nothing given, shows the current state. The Audio tab then shows the reason and the</span>
+</span><span data-line="1252"><span class="sd">    link instead of a Try again that cannot work, e.g.</span>
+</span><span data-line="1253"><span class="sd">    ``annals listen-down "the server's login expired" --link &lt;issue url&gt;``. The worker finds</span>
+</span><span data-line="1254"><span class="sd">    out by itself too, and clears it on the next success; ``--clear`` clears it now and</span>
+</span><span data-line="1255"><span class="sd">    queues every request that waited.</span>
+</span><span data-line="1256"><span class="sd">    """</span>
+</span><span data-line="1257">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">overview</span>
+</span><span data-line="1258">
+</span><span data-line="1259">    <span class="n">_</span><span class="p">,</span> <span class="n">requests</span> <span class="o">=</span> <span class="n">_overviews_here</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1260">    <span class="k">if</span> <span class="n">clear</span><span class="p">:</span>
+</span><span data-line="1261">        <span class="k">return</span> <span class="p">{</span><span class="s2">"down"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"queued"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">mark_up</span><span class="p">(</span><span class="n">requests</span><span class="p">)}</span>
+</span><span data-line="1262">    <span class="k">if</span> <span class="n">reason</span> <span class="ow">or</span> <span class="n">link</span><span class="p">:</span>
+</span><span data-line="1263">        <span class="n">overview</span><span class="o">.</span><span class="n">mark_down</span><span class="p">(</span><span class="n">requests</span><span class="p">,</span> <span class="n">reason</span><span class="p">,</span> <span class="n">link</span><span class="o">=</span><span class="n">link</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="1264">    <span class="k">return</span> <span class="p">{</span><span class="s2">"down"</span><span class="p">:</span> <span class="n">overview</span><span class="o">.</span><span class="n">maker_down</span><span class="p">(</span><span class="n">requests</span><span class="p">)}</span></div>
 
-</span><span data-line="1256">
-</span><span data-line="1257">
-</span><span data-line="1258"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="1259">    <span class="n">publish</span><span class="p">,</span>
-</span><span data-line="1260">    <span class="n">ls</span><span class="p">,</span>
-</span><span data-line="1261">    <span class="n">show</span><span class="p">,</span>
-</span><span data-line="1262">    <span class="n">trash</span><span class="p">,</span>
-</span><span data-line="1263">    <span class="n">restore</span><span class="p">,</span>
-</span><span data-line="1264">    <span class="n">purge</span><span class="p">,</span>
-</span><span data-line="1265">    <span class="n">tag</span><span class="p">,</span>
-</span><span data-line="1266">    <span class="n">group</span><span class="p">,</span>
-</span><span data-line="1267">    <span class="n">groups</span><span class="p">,</span>
-</span><span data-line="1268">    <span class="n">aggregate</span><span class="p">,</span>
-</span><span data-line="1269">    <span class="n">export</span><span class="p">,</span>
-</span><span data-line="1270">    <span class="n">references</span><span class="p">,</span>
-</span><span data-line="1271">    <span class="n">shareable</span><span class="p">,</span>
-</span><span data-line="1272">    <span class="n">copy</span><span class="p">,</span>
-</span><span data-line="1273">    <span class="n">share</span><span class="p">,</span>
-</span><span data-line="1274">    <span class="n">shares</span><span class="p">,</span>
-</span><span data-line="1275">    <span class="n">unshare</span><span class="p">,</span>
-</span><span data-line="1276">    <span class="n">configure</span><span class="p">,</span>
-</span><span data-line="1277">    <span class="n">serve</span><span class="p">,</span>
-</span><span data-line="1278">    <span class="n">page_shell</span><span class="p">,</span>
-</span><span data-line="1279">    <span class="n">listen</span><span class="p">,</span>
-</span><span data-line="1280">    <span class="n">overview_state</span><span class="p">,</span>
-</span><span data-line="1281">    <span class="n">listen_work</span><span class="p">,</span>
-</span><span data-line="1282">    <span class="n">listen_down</span><span class="p">,</span>
-</span><span data-line="1283"><span class="p">]</span>
-</span><span data-line="1284">
-</span><span data-line="1285">
-</span><span data-line="1286"><span class="c1">#: what a function does to the world, least to most: a surface serves the levels its caller</span>
-</span><span data-line="1287"><span class="c1">#: allows. ``read`` changes nothing; ``write`` changes the store or a setting and can be undone</span>
-</span><span data-line="1288"><span class="c1">#: or repeated; ``file`` writes a path on the machine that runs it; ``destructive`` cannot be</span>
-</span><span data-line="1289"><span class="c1">#: undone; ``spend`` costs money or queues work that does; ``server`` is run by a server or a</span>
-</span><span data-line="1290"><span class="c1">#: timer, never by a caller.</span>
-</span><span data-line="1291"><span class="n">EFFECTS</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="1292">    <span class="s2">"publish"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1293">    <span class="s2">"ls"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1294">    <span class="s2">"show"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1295">    <span class="s2">"trash"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1296">    <span class="s2">"restore"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1297">    <span class="s2">"purge"</span><span class="p">:</span> <span class="s2">"destructive"</span><span class="p">,</span>
-</span><span data-line="1298">    <span class="s2">"tag"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1299">    <span class="s2">"group"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1300">    <span class="s2">"groups"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1301">    <span class="s2">"aggregate"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
-</span><span data-line="1302">    <span class="s2">"references"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1303">    <span class="s2">"export"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
-</span><span data-line="1304">    <span class="s2">"shareable"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1305">    <span class="s2">"copy"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1306">    <span class="s2">"share"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1307">    <span class="s2">"shares"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1308">    <span class="s2">"unshare"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1309">    <span class="s2">"configure"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1310">    <span class="s2">"serve"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
-</span><span data-line="1311">    <span class="s2">"page_shell"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
-</span><span data-line="1312">    <span class="s2">"listen"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
-</span><span data-line="1313">    <span class="s2">"overview_state"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1314">    <span class="s2">"listen_work"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
-</span><span data-line="1315">    <span class="s2">"listen_down"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
-</span><span data-line="1316"><span class="p">}</span>
-</span><span data-line="1317"><span class="c1">#: what an agent or a tool is offered unless its host asks for more (MCP reads this)</span>
-</span><span data-line="1318"><span class="n">DFLT_EFFECTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"read"</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">})</span>
-</span><span data-line="1319">
-</span><span data-line="1320">
+</span><span data-line="1265">
+</span><span data-line="1266">
+</span><span data-line="1267"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="1268">    <span class="n">publish</span><span class="p">,</span>
+</span><span data-line="1269">    <span class="n">ls</span><span class="p">,</span>
+</span><span data-line="1270">    <span class="n">show</span><span class="p">,</span>
+</span><span data-line="1271">    <span class="n">trash</span><span class="p">,</span>
+</span><span data-line="1272">    <span class="n">restore</span><span class="p">,</span>
+</span><span data-line="1273">    <span class="n">purge</span><span class="p">,</span>
+</span><span data-line="1274">    <span class="n">tag</span><span class="p">,</span>
+</span><span data-line="1275">    <span class="n">group</span><span class="p">,</span>
+</span><span data-line="1276">    <span class="n">groups</span><span class="p">,</span>
+</span><span data-line="1277">    <span class="n">aggregate</span><span class="p">,</span>
+</span><span data-line="1278">    <span class="n">export</span><span class="p">,</span>
+</span><span data-line="1279">    <span class="n">references</span><span class="p">,</span>
+</span><span data-line="1280">    <span class="n">shareable</span><span class="p">,</span>
+</span><span data-line="1281">    <span class="n">copy</span><span class="p">,</span>
+</span><span data-line="1282">    <span class="n">share</span><span class="p">,</span>
+</span><span data-line="1283">    <span class="n">shares</span><span class="p">,</span>
+</span><span data-line="1284">    <span class="n">unshare</span><span class="p">,</span>
+</span><span data-line="1285">    <span class="n">configure</span><span class="p">,</span>
+</span><span data-line="1286">    <span class="n">serve</span><span class="p">,</span>
+</span><span data-line="1287">    <span class="n">page_shell</span><span class="p">,</span>
+</span><span data-line="1288">    <span class="n">listen</span><span class="p">,</span>
+</span><span data-line="1289">    <span class="n">overview_state</span><span class="p">,</span>
+</span><span data-line="1290">    <span class="n">listen_work</span><span class="p">,</span>
+</span><span data-line="1291">    <span class="n">listen_down</span><span class="p">,</span>
+</span><span data-line="1292"><span class="p">]</span>
+</span><span data-line="1293">
+</span><span data-line="1294">
+</span><span data-line="1295"><span class="c1">#: what a function does to the world, least to most: a surface serves the levels its caller</span>
+</span><span data-line="1296"><span class="c1">#: allows. ``read`` changes nothing; ``write`` changes the store or a setting and can be undone</span>
+</span><span data-line="1297"><span class="c1">#: or repeated; ``file`` writes a path on the machine that runs it; ``destructive`` cannot be</span>
+</span><span data-line="1298"><span class="c1">#: undone; ``spend`` costs money or queues work that does; ``server`` is run by a server or a</span>
+</span><span data-line="1299"><span class="c1">#: timer, never by a caller.</span>
+</span><span data-line="1300"><span class="n">EFFECTS</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="1301">    <span class="s2">"publish"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1302">    <span class="s2">"ls"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1303">    <span class="s2">"show"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1304">    <span class="s2">"trash"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1305">    <span class="s2">"restore"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1306">    <span class="s2">"purge"</span><span class="p">:</span> <span class="s2">"destructive"</span><span class="p">,</span>
+</span><span data-line="1307">    <span class="s2">"tag"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1308">    <span class="s2">"group"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1309">    <span class="s2">"groups"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1310">    <span class="s2">"aggregate"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
+</span><span data-line="1311">    <span class="s2">"references"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1312">    <span class="s2">"export"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
+</span><span data-line="1313">    <span class="s2">"shareable"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1314">    <span class="s2">"copy"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1315">    <span class="s2">"share"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1316">    <span class="s2">"shares"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1317">    <span class="s2">"unshare"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1318">    <span class="s2">"configure"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1319">    <span class="s2">"serve"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
+</span><span data-line="1320">    <span class="s2">"page_shell"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
+</span><span data-line="1321">    <span class="s2">"listen"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
+</span><span data-line="1322">    <span class="s2">"overview_state"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1323">    <span class="s2">"listen_work"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
+</span><span data-line="1324">    <span class="s2">"listen_down"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
+</span><span data-line="1325"><span class="p">}</span>
+</span><span data-line="1326"><span class="c1">#: what an agent or a tool is offered unless its host asks for more (MCP reads this)</span>
+</span><span data-line="1327"><span class="n">DFLT_EFFECTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"read"</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">})</span>
+</span><span data-line="1328">
+</span><span data-line="1329">
 <div class="viewcode-block" id="tools_with">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.tools_with">[docs]</a>
-</span><span data-line="1321"><span class="k">def</span><span class="w"> </span><span class="nf">tools_with</span><span class="p">(</span><span class="n">effects</span><span class="o">=</span><span class="n">DFLT_EFFECTS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-</span><span data-line="1322"><span class="w">    </span><span class="sd">"""The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.</span>
-</span><span data-line="1323">
-</span><span data-line="1324"><span class="sd">    &gt;&gt;&gt; [f.__name__ for f in tools_with({"read"})]</span>
-</span><span data-line="1325"><span class="sd">    ['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']</span>
-</span><span data-line="1326"><span class="sd">    """</span>
-</span><span data-line="1327">    <span class="k">return</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_dispatch_funcs</span> <span class="k">if</span> <span class="n">EFFECTS</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="ow">in</span> <span class="n">effects</span><span class="p">]</span></div>
+</span><span data-line="1330"><span class="k">def</span><span class="w"> </span><span class="nf">tools_with</span><span class="p">(</span><span class="n">effects</span><span class="o">=</span><span class="n">DFLT_EFFECTS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+</span><span data-line="1331"><span class="w">    </span><span class="sd">"""The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.</span>
+</span><span data-line="1332">
+</span><span data-line="1333"><span class="sd">    &gt;&gt;&gt; [f.__name__ for f in tools_with({"read"})]</span>
+</span><span data-line="1334"><span class="sd">    ['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']</span>
+</span><span data-line="1335"><span class="sd">    """</span>
+</span><span data-line="1336">    <span class="k">return</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_dispatch_funcs</span> <span class="k">if</span> <span class="n">EFFECTS</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="ow">in</span> <span class="n">effects</span><span class="p">]</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -1566,7 +1576,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=6799126d"></script>
+      <script src="../../_static/documentation_options.js?v=4d22d5b7"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

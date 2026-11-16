@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.share_page.html">annals.share_page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.store.html">annals.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.tables.html">annals.tables</a></li>
@@ -355,6 +356,32 @@ data-aria-dark="Switch to auto color mode">
 </span></pre></div>
 </div>
 <p>The link is <code class="docutils literal notranslate"><span class="pre">&lt;share_base_url&gt;/&lt;token&gt;/</span></code>: 128 random bits, <code class="docutils literal notranslate"><span class="pre">noindex</span></code>, <code class="docutils literal notranslate"><span class="pre">no-referrer</span></code>. Every request is checked against the share’s record (<code class="docutils literal notranslate"><span class="pre">shares/&lt;token&gt;.json</span></code> under the data root), so a file you did not choose is a 404 even beside the shared page, a revoke or an expiry takes effect on the next request, and references to anything outside the share (an image you left out, a link to another annals page or to anything else on your annals’ host, an annals id in the text) are removed from every text file before it is sent (markdown, html, plain text, svg). A linked page you tick goes with the files it shows, not every file beside it. The password is a gate on the link, not an account: at least 8 characters, stored hashed (stdlib scrypt), with attempts limited per client and per link, and a correct one earns a cookie scoped to that link. Links are read-only and last 7 days unless you say otherwise.</p>
+<p><strong>One link, readable by people and agents.</strong> The page a link opens is the shared text itself, rendered on the server, with no script: markdown rendered, a group’s documents one after another, audio and video with the browser’s players. A document that is an html page is served as itself, sandboxed. So a person, NotebookLM, a link preview or <code class="docutils literal notranslate"><span class="pre">curl</span></code> all read the document, not only its title. The script viewer (galleries, downloads) is a link away (<code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/?viewer</span></code>). The same link also answers as one file, under the same token, expiry, password and revocation:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>form</p></th>
+<th class="head"><p>address</p></th>
+<th class="head"><p>give it to</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>page</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/</span></code> (a group: every document, in order); <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/d/&lt;id&gt;</span></code> one of them</p></td>
+<td><p>a person, NotebookLM or any web reader</p></td>
+</tr>
+<tr class="row-odd"><td><p>Markdown</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/share.md</span></code>; <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/d/&lt;id&gt;.md</span></code></p></td>
+<td><p>an agent: the whole share as one text</p></td>
+</tr>
+<tr class="row-even"><td><p>PDF</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/share.pdf</span></code>; <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/d/&lt;id&gt;.pdf</span></code></p></td>
+<td><p>someone who wants the images in one file, or an upload (needs the <code class="docutils literal notranslate"><span class="pre">pdf</span></code> extra)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The page names the other two in <code class="docutils literal notranslate"><span class="pre">&lt;link</span> <span class="pre">rel=&quot;alternate&quot;&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">share</span></code> prints all three, and the Share sheet offers them under “Same link as Markdown or PDF”.</p>
 <p>Where the links are served:</p>
 <ul class="simple">
 <li><p><strong>Standalone</strong> (<code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code>): at <code class="docutils literal notranslate"><span class="pre">/annals/shared/&lt;token&gt;/</span></code>, outside the login, with nothing to configure.</p></li>
@@ -474,7 +501,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-16 14:40 UTC from <a href="https://github.com/thorwhalen/annals/commit/9c5e2c3035ece3006a4bb91f8d5181b945a2c589">9c5e2c3</a> (main) · annals 0.0.59 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-16 16:07 UTC from <a href="https://github.com/thorwhalen/annals/commit/df4a2a7755fb160f4c1f40dfe46f3116836e7d58">df4a2a7</a> (main) · annals 0.0.60 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -509,7 +536,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=6799126d"></script>
+      <script src="_static/documentation_options.js?v=4d22d5b7"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

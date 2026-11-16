@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
@@ -117,6 +118,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.notebook.markdown_html"><code class="docutils literal notranslate"><span class="pre">markdown_html()</span></code></a></li>
 <li><a class="reference internal" href="#annals.notebook.notebook_sources"><code class="docutils literal notranslate"><span class="pre">notebook_sources()</span></code></a></li>
 <li><a class="reference internal" href="#annals.notebook.render_source"><code class="docutils literal notranslate"><span class="pre">render_source()</span></code></a></li>
+<li><a class="reference internal" href="#annals.notebook.render_source_body"><code class="docutils literal notranslate"><span class="pre">render_source_body()</span></code></a></li>
 <li><a class="reference internal" href="#annals.notebook.source_files"><code class="docutils literal notranslate"><span class="pre">source_files()</span></code></a></li>
 <li><a class="reference internal" href="#annals.notebook.source_link_rewriter"><code class="docutils literal notranslate"><span class="pre">source_link_rewriter()</span></code></a></li>
 <li><a class="reference internal" href="#annals.notebook.source_page"><code class="docutils literal notranslate"><span class="pre">source_page()</span></code></a></li>
@@ -182,7 +184,8 @@ numbered files first, as <a class="reference internal" href="annals.aggregate.ht
 <li><p><a class="reference internal" href="#annals.notebook.notebook_sources" title="annals.notebook.notebook_sources"><code class="xref py py-func docutils literal notranslate"><span class="pre">notebook_sources()</span></code></a>: the <code class="docutils literal notranslate"><span class="pre">{doc,</span> <span class="pre">file,</span> <span class="pre">title,</span> <span class="pre">url}</span></code> rows of a share, in its order.</p></li>
 <li><p><a class="reference internal" href="#annals.notebook.source_scope" title="annals.notebook.source_scope"><code class="xref py py-func docutils literal notranslate"><span class="pre">source_scope()</span></code></a>: what a notebook share includes of a document: its source pages
 and the files they show, never the rest of a folder.</p></li>
-<li><p><a class="reference internal" href="#annals.notebook.render_source" title="annals.notebook.render_source"><code class="xref py py-func docutils literal notranslate"><span class="pre">render_source()</span></code></a>: one markdown file as its source page, shared-text rules applied
+<li><p><a class="reference internal" href="#annals.notebook.render_source" title="annals.notebook.render_source"><code class="xref py py-func docutils literal notranslate"><span class="pre">render_source()</span></code></a>: one markdown file as its source page (<a class="reference internal" href="#annals.notebook.render_source_body" title="annals.notebook.render_source_body"><code class="xref py py-func docutils literal notranslate"><span class="pre">render_source_body()</span></code></a>
+is the page’s body alone, which the share page embeds), shared-text rules applied
 twice: to the text (<a class="reference internal" href="annals.share.html#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.share.filter_refs()</span></code></a>), then to every link and image of
 the rendered page (<a class="reference internal" href="annals.share.html#annals.share.ref_decider" title="annals.share.ref_decider"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.share.ref_decider()</span></code></a> over markdown-it’s tokens), and
 any annals id left in it removed. Cached, and rendered only up to
@@ -230,25 +233,28 @@ which the notebook shows as the source’s name, so the sources can be told apar
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.notebook_sources" title="annals.notebook.notebook_sources"><code class="xref py py-obj docutils literal notranslate"><span class="pre">notebook_sources</span></code></a>(scope, *, link)</p></td>
 <td><p>One row per source file of <code class="docutils literal notranslate"><span class="pre">scope</span></code> (<code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> pairs, in the share's order).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.render_source" title="annals.notebook.render_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render_source</span></code></a>(text, *, title, link, doc_id, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.render_source" title="annals.notebook.render_source"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render_source</span></code></a>(text, *, title, **scope)</p></td>
 <td><p>One markdown file of a share as its source page (see the module docstring).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.source_files" title="annals.notebook.source_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_files</span></code></a>(meta, files)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.render_source_body" title="annals.notebook.render_source_body"><code class="xref py py-obj docutils literal notranslate"><span class="pre">render_source_body</span></code></a>(text, *, link, doc_id, ...)</p></td>
+<td><p>One markdown file of a share as safe html, links and images made absolute.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.source_files" title="annals.notebook.source_files"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_files</span></code></a>(meta, files)</p></td>
 <td><p>The files of a document (<code class="docutils literal notranslate"><span class="pre">files</span></code>: those a caller may serve) that are sources.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.source_link_rewriter" title="annals.notebook.source_link_rewriter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_link_rewriter</span></code></a>(decide, *, link, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.source_link_rewriter" title="annals.notebook.source_link_rewriter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_link_rewriter</span></code></a>(decide, *, link, ...)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">url</span> <span class="pre">-&gt;</span> <span class="pre">url</span> <span class="pre">|</span> <span class="pre">None</span></code> for a source page, which has no <code class="docutils literal notranslate"><span class="pre">&lt;base&gt;</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.source_page" title="annals.notebook.source_page"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_page</span></code></a>(title, body_html)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.source_page" title="annals.notebook.source_page"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_page</span></code></a>(title, body_html)</p></td>
 <td><p>The page a notebook reads: a <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>, the body, plain style, no script.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.source_scope" title="annals.notebook.source_scope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_scope</span></code></a>(read_text)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.source_scope" title="annals.notebook.source_scope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_scope</span></code></a>(read_text)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">meta</span> <span class="pre">-&gt;</span> <span class="pre">files</span></code>: a document's source pages and the files they show, for a share.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.source_title" title="annals.notebook.source_title"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_title</span></code></a>(meta, rel, *, several)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.source_title" title="annals.notebook.source_title"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_title</span></code></a>(meta, rel, *, several)</p></td>
 <td><p>The source's name in the notebook: the document's title, plus the file if it has several.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.notebook.source_url" title="annals.notebook.source_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_url</span></code></a>(link, doc_id, rel)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.notebook.source_url" title="annals.notebook.source_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">source_url</span></code></a>(link, doc_id, rel)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/source/&lt;doc</span> <span class="pre">id&gt;/&lt;file&gt;</span></code> (<code class="docutils literal notranslate"><span class="pre">link</span></code>: the share's, with or without a slash).</p></td>
 </tr>
 </tbody>
@@ -352,9 +358,21 @@ link (only images, audio, pdf…), so the page can say why they are missing.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.notebook.render_source">
-<span class="sig-prename descclassname"><span class="pre">annals.notebook.</span></span><span class="sig-name descname"><span class="pre">render_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_ids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private_hosts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/notebook.html#render_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.notebook.render_source" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.notebook.</span></span><span class="sig-name descname"><span class="pre">render_source</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">scope</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/notebook.html#render_source"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.notebook.render_source" title="Link to this definition">#</a></dt>
 <dd><p>One markdown file of a share as its source page (see the module docstring).</p>
-<p>Every argument is hashable, so a page is rendered once per text and scope.
+<p><code class="docutils literal notranslate"><span class="pre">scope</span></code> is <a class="reference internal" href="#annals.notebook.render_source_body" title="annals.notebook.render_source_body"><code class="xref py py-func docutils literal notranslate"><span class="pre">render_source_body()</span></code></a>’s; the page adds the <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.notebook.render_source_body">
+<span class="sig-prename descclassname"><span class="pre">annals.notebook.</span></span><span class="sig-name descname"><span class="pre">render_source_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rel</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_ids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private_hosts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/notebook.html#render_source_body"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.notebook.render_source_body" title="Link to this definition">#</a></dt>
+<dd><p>One markdown file of a share as safe html, links and images made absolute.</p>
+<p>Every argument is hashable, so a body is rendered once per text and scope.
 <code class="docutils literal notranslate"><span class="pre">shared_ids</span></code> are the annals ids the share includes (opened at <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/d/&lt;id&gt;</span></code>),
 <code class="docutils literal notranslate"><span class="pre">root_id</span></code> the shared group’s (opened at <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/</span></code>).</p>
 <dl class="field-list simple">
@@ -477,7 +495,7 @@ page, any other file to the share’s raw file. Anchors and web links stay as th
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=6799126d"></script>
+      <script src="../_static/documentation_options.js?v=4d22d5b7"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

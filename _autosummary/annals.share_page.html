@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.share_page - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.sources" href="annals.sources.html" /><link rel="prev" title="annals.share" href="annals.share.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.share_page"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.share_page.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.docfilter.html">annals.docfilter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.linkcheck.html">annals.linkcheck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.listening.html">annals.listening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.records.html">annals.records</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.share_page</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.share_page.ALTERNATES"><code class="docutils literal notranslate"><span class="pre">ALTERNATES</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.DESCRIPTION_CHARS"><code class="docutils literal notranslate"><span class="pre">DESCRIPTION_CHARS</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.SHARE_FILE"><code class="docutils literal notranslate"><span class="pre">SHARE_FILE</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.STATIC_FILE_MAX_BYTES"><code class="docutils literal notranslate"><span class="pre">STATIC_FILE_MAX_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.STATIC_MAX_BYTES"><code class="docutils literal notranslate"><span class="pre">STATIC_MAX_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.STATIC_MAX_FILES"><code class="docutils literal notranslate"><span class="pre">STATIC_MAX_FILES</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.STATIC_MAX_IMAGES"><code class="docutils literal notranslate"><span class="pre">STATIC_MAX_IMAGES</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.STATIC_MAX_PLAYERS"><code class="docutils literal notranslate"><span class="pre">STATIC_MAX_PLAYERS</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.ShareScope"><code class="docutils literal notranslate"><span class="pre">ShareScope</span></code></a><ul>
+<li><a class="reference internal" href="#annals.share_page.ShareScope.shared"><code class="docutils literal notranslate"><span class="pre">ShareScope.shared()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.share_page.VIEWER_PARAM"><code class="docutils literal notranslate"><span class="pre">VIEWER_PARAM</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.alternate_links"><code class="docutils literal notranslate"><span class="pre">alternate_links()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.alternate_urls"><code class="docutils literal notranslate"><span class="pre">alternate_urls()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.description_of"><code class="docutils literal notranslate"><span class="pre">description_of()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.designed_page"><code class="docutils literal notranslate"><span class="pre">designed_page()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.page_body"><code class="docutils literal notranslate"><span class="pre">page_body()</span></code></a></li>
+<li><a class="reference internal" href="#annals.share_page.with_base"><code class="docutils literal notranslate"><span class="pre">with_base()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.share_page</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.share_page">
+<span id="annals-share-page"></span><h1>annals.share_page<a class="headerlink" href="#module-annals.share_page" title="Link to this heading">#</a></h1>
+<p>A share link’s page with its text in it, and no script, so every reader can read it.</p>
+<p>A share link used to answer with a shell: a <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code> and an empty <code class="docutils literal notranslate"><span class="pre">&lt;div&gt;</span></code> that the
+viewer’s script filled, with an html document inside a frame. NotebookLM made a
+twenty-minute audio overview of such a link’s title. Its fetcher does run script, so it saw
+the viewer’s buttons, but a group shows only titles there and a frame is not read. So the
+page a link opens is now the shared text itself, rendered on the server under the rules
+every shared text already follows, and nothing on it runs. The owner asked for exactly that:
+a person only needs the document. The script viewer (galleries, players, downloads) is one
+link away, <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/?viewer</span></code>.</p>
+<p>The same share also answers as one Markdown file and one PDF, with the same token, expiry
+and revocation (the routes are <code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.share_api</span></code>’s); the page names them in
+<code class="docutils literal notranslate"><span class="pre">&lt;link</span> <span class="pre">rel=&quot;alternate&quot;&gt;</span></code> and in a line at its top:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1">&lt;link&gt;/                 the page: every shared document's text (a group's, in order)
+</span><span data-line="2">&lt;link&gt;/d/&lt;id&gt;           the page of one document of the share
+</span><span data-line="3">&lt;link&gt;/share.md         the whole share as one Markdown file
+</span><span data-line="4">&lt;link&gt;/share.pdf        the whole share as one PDF (images included)
+</span><span data-line="5">&lt;link&gt;/d/&lt;id&gt;.md|.pdf   one document of it
+</span><span data-line="6">&lt;link&gt;/?viewer          the script viewer, as before
+</span></pre></div>
+</div>
+<p>What goes in the page, per document: its markdown and html files (the notebook sources of
+<a class="reference internal" href="annals.notebook.html#module-annals.notebook" title="annals.notebook"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.notebook</span></code></a>, numbered files first), markdown rendered with links and images
+made safe by <a class="reference internal" href="annals.notebook.html#annals.notebook.render_source_body" title="annals.notebook.render_source_body"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.notebook.render_source_body()</span></code></a>, html reduced to its structure and
+words by <a class="reference internal" href="annals.combine.html#annals.combine.html_body" title="annals.combine.html_body"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.combine.html_body()</span></code></a> with a link to the page as designed; for a
+document with no text, its images; its audio and video with the browser’s own players;
+then links to its other files. Past <a class="reference internal" href="#annals.share_page.STATIC_MAX_BYTES" title="annals.share_page.STATIC_MAX_BYTES"><code class="xref py py-data docutils literal notranslate"><span class="pre">STATIC_MAX_BYTES</span></code></a> of text or
+<a class="reference internal" href="#annals.share_page.STATIC_MAX_FILES" title="annals.share_page.STATIC_MAX_FILES"><code class="xref py py-data docutils literal notranslate"><span class="pre">STATIC_MAX_FILES</span></code></a> files, the remaining files and documents are links to their own pages, so a large group still answers quickly and every
+document stays reachable. A document that <em>is</em> an html page (<a class="reference internal" href="#annals.share_page.designed_page" title="annals.share_page.designed_page"><code class="xref py py-func docutils literal notranslate"><span class="pre">designed_page()</span></code></a>) is
+served as itself at its own link, filtered and sandboxed as <code class="docutils literal notranslate"><span class="pre">/raw</span></code> serves it, with a
+<code class="docutils literal notranslate"><span class="pre">&lt;base&gt;</span></code> (<a class="reference internal" href="#annals.share_page.with_base" title="annals.share_page.with_base"><code class="xref py py-func docutils literal notranslate"><span class="pre">with_base()</span></code></a>) so its images and styles load.</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.STATIC_MAX_BYTES" title="annals.share_page.STATIC_MAX_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STATIC_MAX_BYTES</span></code></a></p></td>
+<td><p>the page's text stops growing past this many bytes of html; later documents are links</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share_page.STATIC_MAX_FILES" title="annals.share_page.STATIC_MAX_FILES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STATIC_MAX_FILES</span></code></a></p></td>
+<td><p>the text files rendered into one page at most; the rest are links (a page is made on every request, and anyone holding the link may make one)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.STATIC_FILE_MAX_BYTES" title="annals.share_page.STATIC_FILE_MAX_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STATIC_FILE_MAX_BYTES</span></code></a></p></td>
+<td><p>a document's file larger than this is linked, not put in the page</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share_page.STATIC_MAX_IMAGES" title="annals.share_page.STATIC_MAX_IMAGES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STATIC_MAX_IMAGES</span></code></a></p></td>
+<td><p>images shown for a document without text (a gallery folder); the rest are listed</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.STATIC_MAX_PLAYERS" title="annals.share_page.STATIC_MAX_PLAYERS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">STATIC_MAX_PLAYERS</span></code></a></p></td>
+<td><p>audio and video players in one document's page; the rest are listed</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share_page.DESCRIPTION_CHARS" title="annals.share_page.DESCRIPTION_CHARS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DESCRIPTION_CHARS</span></code></a></p></td>
+<td><p>the length of the page's <code class="docutils literal notranslate"><span class="pre">&lt;meta</span> <span class="pre">name=&quot;description&quot;&gt;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.ALTERNATES" title="annals.share_page.ALTERNATES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ALTERNATES</span></code></a></p></td>
+<td><p>path suffix, media type, label</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share_page.SHARE_FILE" title="annals.share_page.SHARE_FILE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHARE_FILE</span></code></a></p></td>
+<td><p>the share's whole text, at <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/&lt;SHARE_FILE&gt;.&lt;ext&gt;</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.VIEWER_PARAM" title="annals.share_page.VIEWER_PARAM"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VIEWER_PARAM</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/?viewer</span></code> opens the script viewer (galleries, players, downloads) instead</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.alternate_links" title="annals.share_page.alternate_links"><code class="xref py py-obj docutils literal notranslate"><span class="pre">alternate_links</span></code></a>(link[, doc_id])</p></td>
+<td><p>The <code class="docutils literal notranslate"><span class="pre">&lt;link</span> <span class="pre">rel=&quot;alternate&quot;&gt;</span></code> tags of <a class="reference internal" href="#annals.share_page.alternate_urls" title="annals.share_page.alternate_urls"><code class="xref py py-func docutils literal notranslate"><span class="pre">alternate_urls()</span></code></a>, for the <code class="docutils literal notranslate"><span class="pre">&lt;head&gt;</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share_page.alternate_urls" title="annals.share_page.alternate_urls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">alternate_urls</span></code></a>(link[, doc_id])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(url,</span> <span class="pre">media</span> <span class="pre">type,</span> <span class="pre">label)</span></code> of the share (or of one document of it) as files.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.description_of" title="annals.share_page.description_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">description_of</span></code></a>(content, *[, skip, n])</p></td>
+<td><p>The first <code class="docutils literal notranslate"><span class="pre">n</span></code> characters of the page's words (the title and alternates line left out).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share_page.designed_page" title="annals.share_page.designed_page"><code class="xref py py-obj docutils literal notranslate"><span class="pre">designed_page</span></code></a>(meta, files)</p></td>
+<td><p>The html file a document's page <em>is</em>, when it is one, else <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.page_body" title="annals.share_page.page_body"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_body</span></code></a>(docs, *, title, read_text, scope)</p></td>
+<td><p>The page's content and its description: <code class="docutils literal notranslate"><span class="pre">(html,</span> <span class="pre">plain</span> <span class="pre">text</span> <span class="pre">of</span> <span class="pre">~280</span> <span class="pre">chars)</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share_page.with_base" title="annals.share_page.with_base"><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_base</span></code></a>(page, href)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">page</span></code> with <code class="docutils literal notranslate"><span class="pre">&lt;base</span> <span class="pre">href&gt;</span></code> as its first element, so its relative references (images, styles, its other pages) resolve where the share serves its files.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share_page.ShareScope" title="annals.share_page.ShareScope"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShareScope</span></code></a>(link, shared_ids[, root_id, ...])</p></td>
+<td><p>What a page of one share may show and link to.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.ALTERNATES">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">ALTERNATES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">(('md',</span> <span class="pre">'text/plain',</span> <span class="pre">'Markdown'),</span> <span class="pre">('pdf',</span> <span class="pre">'application/pdf',</span> <span class="pre">'PDF'))</span></span><a class="headerlink" href="#annals.share_page.ALTERNATES" title="Link to this definition">#</a></dt>
+<dd><p>path suffix, media type, label</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the alternate representations of a share</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.DESCRIPTION_CHARS">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">DESCRIPTION_CHARS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">280</span></span><a class="headerlink" href="#annals.share_page.DESCRIPTION_CHARS" title="Link to this definition">#</a></dt>
+<dd><p>the length of the page’s <code class="docutils literal notranslate"><span class="pre">&lt;meta</span> <span class="pre">name=&quot;description&quot;&gt;</span></code></p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.SHARE_FILE">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">SHARE_FILE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'share'</span></span><a class="headerlink" href="#annals.share_page.SHARE_FILE" title="Link to this definition">#</a></dt>
+<dd><p>the share’s whole text, at <code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/&lt;SHARE_FILE&gt;.&lt;ext&gt;</span></code></p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.STATIC_FILE_MAX_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">STATIC_FILE_MAX_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">2000000</span></span><a class="headerlink" href="#annals.share_page.STATIC_FILE_MAX_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>a document’s file larger than this is linked, not put in the page</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.STATIC_MAX_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">STATIC_MAX_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1500000</span></span><a class="headerlink" href="#annals.share_page.STATIC_MAX_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>the page’s text stops growing past this many bytes of html; later documents are links</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.STATIC_MAX_FILES">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">STATIC_MAX_FILES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">40</span></span><a class="headerlink" href="#annals.share_page.STATIC_MAX_FILES" title="Link to this definition">#</a></dt>
+<dd><p>the text files rendered into one page at most; the rest are links (a page is made on
+every request, and anyone holding the link may make one)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.STATIC_MAX_IMAGES">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">STATIC_MAX_IMAGES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">60</span></span><a class="headerlink" href="#annals.share_page.STATIC_MAX_IMAGES" title="Link to this definition">#</a></dt>
+<dd><p>images shown for a document without text (a gallery folder); the rest are listed</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.STATIC_MAX_PLAYERS">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">STATIC_MAX_PLAYERS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20</span></span><a class="headerlink" href="#annals.share_page.STATIC_MAX_PLAYERS" title="Link to this definition">#</a></dt>
+<dd><p>audio and video players in one document’s page; the rest are listed</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.share_page.ShareScope">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">ShareScope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shared_ids</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">root_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">private_hosts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#ShareScope"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.ShareScope" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What a page of one share may show and link to.</p>
+<p><code class="docutils literal notranslate"><span class="pre">link</span></code> is the share’s address (root-relative is fine: a fetcher resolves it against
+the page), <code class="docutils literal notranslate"><span class="pre">shared_ids</span></code> the documents it includes, <code class="docutils literal notranslate"><span class="pre">root_id</span></code> its group (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> for
+a document share), <code class="docutils literal notranslate"><span class="pre">private_hosts</span></code> the owner’s hosts, never linked to.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.share_page.ShareScope.shared">
+<span class="sig-name descname"><span class="pre">shared</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">annals_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#ShareScope.shared"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.ShareScope.shared" title="Link to this definition">#</a></dt>
+<dd><p>The share’s page for an annals id it includes, else <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.share_page.VIEWER_PARAM">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">VIEWER_PARAM</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'viewer'</span></span><a class="headerlink" href="#annals.share_page.VIEWER_PARAM" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">&lt;link&gt;/?viewer</span></code> opens the script viewer (galleries, players, downloads) instead</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.share_page.alternate_links">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">alternate_links</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#alternate_links"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.alternate_links" title="Link to this definition">#</a></dt>
+<dd><p>The <code class="docutils literal notranslate"><span class="pre">&lt;link</span> <span class="pre">rel=&quot;alternate&quot;&gt;</span></code> tags of <a class="reference internal" href="#annals.share_page.alternate_urls" title="annals.share_page.alternate_urls"><code class="xref py py-func docutils literal notranslate"><span class="pre">alternate_urls()</span></code></a>, for the <code class="docutils literal notranslate"><span class="pre">&lt;head&gt;</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.share_page.alternate_urls">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">alternate_urls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">link</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#alternate_urls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.alternate_urls" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">(url,</span> <span class="pre">media</span> <span class="pre">type,</span> <span class="pre">label)</span></code> of the share (or of one document of it) as files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.share_page.description_of">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">description_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">content</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">skip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">280</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#description_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.description_of" title="Link to this definition">#</a></dt>
+<dd><p>The first <code class="docutils literal notranslate"><span class="pre">n</span></code> characters of the page’s words (the title and alternates line left out).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.share_page.designed_page">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">designed_page</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#designed_page"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.designed_page" title="Link to this definition">#</a></dt>
+<dd><p>The html file a document’s page <em>is</em>, when it is one, else <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p>
+<p>Such a document is served as itself at its link (filtered and sandboxed, as <code class="docutils literal notranslate"><span class="pre">/raw</span></code>
+serves it): a person sees it as designed, and a fetcher, even one that runs script,
+reads it at the top level rather than inside a frame it does not open.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.share_page.page_body">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">page_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">docs</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">read_text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scope</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viewer_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#page_body"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.page_body" title="Link to this definition">#</a></dt>
+<dd><p>The page’s content and its description: <code class="docutils literal notranslate"><span class="pre">(html,</span> <span class="pre">plain</span> <span class="pre">text</span> <span class="pre">of</span> <span class="pre">~280</span> <span class="pre">chars)</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">docs</span></code> are the <code class="docutils literal notranslate"><span class="pre">(meta,</span> <span class="pre">files)</span></code> pairs to show, in order (one, for a document’s
+page); <code class="docutils literal notranslate"><span class="pre">read_text(doc_id,</span> <span class="pre">rel)</span></code> reads a file as it is on disk (the shared-text
+filters are applied here). <code class="docutils literal notranslate"><span class="pre">doc_id</span></code> names the document a <code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;</span></code> page is for,
+which picks the alternates the page offers; <code class="docutils literal notranslate"><span class="pre">viewer_url</span></code> is where the script viewer
+opens it. <code class="docutils literal notranslate"><span class="pre">max_bytes</span></code>: <a class="reference internal" href="#annals.share_page.STATIC_MAX_BYTES" title="annals.share_page.STATIC_MAX_BYTES"><code class="xref py py-data docutils literal notranslate"><span class="pre">STATIC_MAX_BYTES</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.share_page.with_base">
+<span class="sig-prename descclassname"><span class="pre">annals.share_page.</span></span><span class="sig-name descname"><span class="pre">with_base</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">href</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share_page.html#with_base"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share_page.with_base" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">page</span></code> with <code class="docutils literal notranslate"><span class="pre">&lt;base</span> <span class="pre">href&gt;</span></code> as its first element, so its relative references
+(images, styles, its other pages) resolve where the share serves its files.</p>
+<p>The page’s own <code class="docutils literal notranslate"><span class="pre">&lt;base&gt;</span></code> and referrer <code class="docutils literal notranslate"><span class="pre">&lt;meta&gt;</span></code> go: either would send its requests,
+or the link, elsewhere. The tag goes right after the doctype, where the parser puts it
+in the head whatever comes later (a <code class="docutils literal notranslate"><span class="pre">&lt;head&gt;</span></code> written in a comment, say).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.share.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.share</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.sources.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.sources</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=4d22d5b7"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

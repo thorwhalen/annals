@@ -20,6 +20,7 @@ annals.share
       references
       remove_unshared_ids
       resolve_rel
+      share_links
       share_url
    
    .. rubric:: Classes

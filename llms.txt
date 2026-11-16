@@ -26,6 +26,7 @@
 - [annals.render](_autosummary/annals.render.html.md): Render markdown (and other page-like files) to html and PDF, with their images inside.
 - [annals.requirements](_autosummary/annals.requirements.html.md): Optional dependencies, checked where they are needed and explained when they are missing.
 - [annals.share](_autosummary/annals.share.html.md): Share links: one document (or a group) behind a public, unguessable, revocable link.
+- [annals.share_page](_autosummary/annals.share_page.html.md): A share link’s page with its text in it, and no script, so every reader can read it.
 - [annals.sources](_autosummary/annals.sources.html.md): Item sources: everything the page lists, wherever it lives, as rows of one shape.
 - [annals.store](_autosummary/annals.store.html.md): The document store: a flat set of documents, tags, groups and a recycle bin, as plain files.
 - [annals.tables](_autosummary/annals.tables.html.md): Scrolling, zooming tables for published html pages.
@@ -33,7 +34,7 @@
 - [annals.target](_autosummary/annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
 - [annals.tools](_autosummary/annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 - [For AI agents](ai-agents.html.md): &#96;annals&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-16 14:40 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-16 16:07 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

@@ -55,6 +55,7 @@
    requirements
    share
    share_api
+   share_page
    sources
    store
    tables

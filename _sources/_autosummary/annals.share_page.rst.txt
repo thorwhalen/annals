@@ -1,0 +1,37 @@
+annals.share\_page
+==================
+
+.. automodule:: annals.share_page
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      STATIC_MAX_BYTES
+      STATIC_MAX_FILES
+      STATIC_FILE_MAX_BYTES
+      STATIC_MAX_IMAGES
+      STATIC_MAX_PLAYERS
+      DESCRIPTION_CHARS
+      ALTERNATES
+      SHARE_FILE
+      VIEWER_PARAM
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      alternate_links
+      alternate_urls
+      description_of
+      designed_page
+      page_body
+      with_base
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      ShareScope
+   

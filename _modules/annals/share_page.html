@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.share_page - annals</title><link rel="index" title="Index" href="../../genindex.html" /><link rel="search" title="Search" href="../../search.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.share_page"/>
+    <meta name="twitter:card" content="summary"/>
+  </head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul>
+<li class="toctree-l1"><a class="reference internal" href="../../api.html">API reference</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../../_autosummary/annals.html">annals</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.combine.html">annals.combine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.docfilter.html">annals.docfilter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.linkcheck.html">annals.linkcheck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.listening.html">annals.listening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.media.html">annals.media</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.notebook.html">annals.notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.records.html">annals.records</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share_page.html">annals.share_page</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">Module code</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.share_page</strong>
+        <meta itemprop="position" content="3" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <h1>Source code for annals.share_page</h1><div class="highlight"><pre>
+<span></span><span data-line="1"><span class="sd">"""A share link's page with its text in it, and no script, so every reader can read it.</span>
+</span><span data-line="2">
+</span><span data-line="3"><span class="sd">A share link used to answer with a shell: a ``&lt;title&gt;`` and an empty ``&lt;div&gt;`` that the</span>
+</span><span data-line="4"><span class="sd">viewer's script filled, with an html document inside a frame. NotebookLM made a</span>
+</span><span data-line="5"><span class="sd">twenty-minute audio overview of such a link's title. Its fetcher does run script, so it saw</span>
+</span><span data-line="6"><span class="sd">the viewer's buttons, but a group shows only titles there and a frame is not read. So the</span>
+</span><span data-line="7"><span class="sd">page a link opens is now the shared text itself, rendered on the server under the rules</span>
+</span><span data-line="8"><span class="sd">every shared text already follows, and nothing on it runs. The owner asked for exactly that:</span>
+</span><span data-line="9"><span class="sd">a person only needs the document. The script viewer (galleries, players, downloads) is one</span>
+</span><span data-line="10"><span class="sd">link away, ``&lt;link&gt;/?viewer``.</span>
+</span><span data-line="11">
+</span><span data-line="12"><span class="sd">The same share also answers as one Markdown file and one PDF, with the same token, expiry</span>
+</span><span data-line="13"><span class="sd">and revocation (the routes are :mod:`annals.share_api`'s); the page names them in</span>
+</span><span data-line="14"><span class="sd">``&lt;link rel="alternate"&gt;`` and in a line at its top::</span>
+</span><span data-line="15">
+</span><span data-line="16"><span class="sd">    &lt;link&gt;/                 the page: every shared document's text (a group's, in order)</span>
+</span><span data-line="17"><span class="sd">    &lt;link&gt;/d/&lt;id&gt;           the page of one document of the share</span>
+</span><span data-line="18"><span class="sd">    &lt;link&gt;/share.md         the whole share as one Markdown file</span>
+</span><span data-line="19"><span class="sd">    &lt;link&gt;/share.pdf        the whole share as one PDF (images included)</span>
+</span><span data-line="20"><span class="sd">    &lt;link&gt;/d/&lt;id&gt;.md|.pdf   one document of it</span>
+</span><span data-line="21"><span class="sd">    &lt;link&gt;/?viewer          the script viewer, as before</span>
+</span><span data-line="22">
+</span><span data-line="23"><span class="sd">What goes in the page, per document: its markdown and html files (the notebook sources of</span>
+</span><span data-line="24"><span class="sd">:mod:`annals.notebook`, numbered files first), markdown rendered with links and images</span>
+</span><span data-line="25"><span class="sd">made safe by :func:`annals.notebook.render_source_body`, html reduced to its structure and</span>
+</span><span data-line="26"><span class="sd">words by :func:`annals.combine.html_body` with a link to the page as designed; for a</span>
+</span><span data-line="27"><span class="sd">document with no text, its images; its audio and video with the browser's own players;</span>
+</span><span data-line="28"><span class="sd">then links to its other files. Past :data:`STATIC_MAX_BYTES` of text or</span>
+</span><span data-line="29"><span class="sd">:data:`STATIC_MAX_FILES` files, the remaining files and documents are links to their own pages, so a large group still answers quickly and every</span>
+</span><span data-line="30"><span class="sd">document stays reachable. A document that *is* an html page (:func:`designed_page`) is</span>
+</span><span data-line="31"><span class="sd">served as itself at its own link, filtered and sandboxed as ``/raw`` serves it, with a</span>
+</span><span data-line="32"><span class="sd">``&lt;base&gt;`` (:func:`with_base`) so its images and styles load.</span>
+</span><span data-line="33"><span class="sd">"""</span>
+</span><span data-line="34">
+</span><span data-line="35"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+</span><span data-line="36">
+</span><span data-line="37"><span class="kn">import</span><span class="w"> </span><span class="nn">html</span>
+</span><span data-line="38"><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+</span><span data-line="39"><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span>
+</span><span data-line="40"><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+</span><span data-line="41"><span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">quote</span>
+</span><span data-line="42">
+</span><span data-line="43"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.aggregate</span><span class="w"> </span><span class="kn">import</span> <span class="n">demote_headings</span>
+</span><span data-line="44"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.combine</span><span class="w"> </span><span class="kn">import</span> <span class="n">html_body</span>
+</span><span data-line="45"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.notebook</span><span class="w"> </span><span class="kn">import</span> <span class="n">render_source_body</span><span class="p">,</span> <span class="n">source_files</span>
+</span><span data-line="46"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.share</span><span class="w"> </span><span class="kn">import</span> <span class="n">dir_of</span><span class="p">,</span> <span class="n">filter_refs</span><span class="p">,</span> <span class="n">ref_decider</span><span class="p">,</span> <span class="n">references</span><span class="p">,</span> <span class="n">resolve_rel</span>
+</span><span data-line="47"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">kind_of</span>
+</span><span data-line="48">
+</span><span data-line="49"><span class="c1">#: the page's text stops growing past this many bytes of html; later documents are links</span>
+</span><span data-line="50"><span class="n">STATIC_MAX_BYTES</span> <span class="o">=</span> <span class="mi">1_500_000</span>
+</span><span data-line="51"><span class="c1">#: the text files rendered into one page at most; the rest are links (a page is made on</span>
+</span><span data-line="52"><span class="c1">#: every request, and anyone holding the link may make one)</span>
+</span><span data-line="53"><span class="n">STATIC_MAX_FILES</span> <span class="o">=</span> <span class="mi">40</span>
+</span><span data-line="54"><span class="c1">#: a document's file larger than this is linked, not put in the page</span>
+</span><span data-line="55"><span class="n">STATIC_FILE_MAX_BYTES</span> <span class="o">=</span> <span class="mi">2_000_000</span>
+</span><span data-line="56"><span class="c1">#: images shown for a document without text (a gallery folder); the rest are listed</span>
+</span><span data-line="57"><span class="n">STATIC_MAX_IMAGES</span> <span class="o">=</span> <span class="mi">60</span>
+</span><span data-line="58"><span class="c1">#: audio and video players in one document's page; the rest are listed</span>
+</span><span data-line="59"><span class="n">STATIC_MAX_PLAYERS</span> <span class="o">=</span> <span class="mi">20</span>
+</span><span data-line="60"><span class="c1">#: the length of the page's ``&lt;meta name="description"&gt;``</span>
+</span><span data-line="61"><span class="n">DESCRIPTION_CHARS</span> <span class="o">=</span> <span class="mi">280</span>
+</span><span data-line="62"><span class="c1">#: the alternate representations of a share: path suffix, media type, label</span>
+</span><span data-line="63"><span class="n">ALTERNATES</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="64">    <span class="p">(</span><span class="s2">"md"</span><span class="p">,</span> <span class="s2">"text/plain"</span><span class="p">,</span> <span class="s2">"Markdown"</span><span class="p">),</span>  <span class="c1"># served as text, so a browser shows it</span>
+</span><span data-line="65">    <span class="p">(</span><span class="s2">"pdf"</span><span class="p">,</span> <span class="s2">"application/pdf"</span><span class="p">,</span> <span class="s2">"PDF"</span><span class="p">),</span>
+</span><span data-line="66"><span class="p">)</span>
+</span><span data-line="67"><span class="c1">#: the share's whole text, at ``&lt;link&gt;/&lt;SHARE_FILE&gt;.&lt;ext&gt;``</span>
+</span><span data-line="68"><span class="n">SHARE_FILE</span> <span class="o">=</span> <span class="s2">"share"</span>
+</span><span data-line="69"><span class="c1">#: ``&lt;link&gt;/?viewer`` opens the script viewer (galleries, players, downloads) instead</span>
+</span><span data-line="70"><span class="n">VIEWER_PARAM</span> <span class="o">=</span> <span class="s2">"viewer"</span>
+</span><span data-line="71"><span class="c1">#: media a page plays with the browser's own controls</span>
+</span><span data-line="72"><span class="n">_PLAYED</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"audio"</span><span class="p">:</span> <span class="s2">"audio"</span><span class="p">,</span> <span class="s2">"video"</span><span class="p">:</span> <span class="s2">"video"</span><span class="p">}</span>
+</span><span data-line="73">
+</span><span data-line="74">
+<div class="viewcode-block" id="ShareScope">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.ShareScope">[docs]</a>
+</span><span data-line="75"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="76"><span class="k">class</span><span class="w"> </span><span class="nc">ShareScope</span><span class="p">:</span>
+</span><span data-line="77"><span class="w">    </span><span class="sd">"""What a page of one share may show and link to.</span>
+</span><span data-line="78">
+</span><span data-line="79"><span class="sd">    ``link`` is the share's address (root-relative is fine: a fetcher resolves it against</span>
+</span><span data-line="80"><span class="sd">    the page), ``shared_ids`` the documents it includes, ``root_id`` its group (``""`` for</span>
+</span><span data-line="81"><span class="sd">    a document share), ``private_hosts`` the owner's hosts, never linked to.</span>
+</span><span data-line="82"><span class="sd">    """</span>
+</span><span data-line="83">
+</span><span data-line="84">    <span class="n">link</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="85">    <span class="n">shared_ids</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+</span><span data-line="86">    <span class="n">root_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+</span><span data-line="87">    <span class="n">private_hosts</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">()</span>
+</span><span data-line="88">
+<div class="viewcode-block" id="ShareScope.shared">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.ShareScope.shared">[docs]</a>
+</span><span data-line="89">    <span class="k">def</span><span class="w"> </span><span class="nf">shared</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">annals_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="90"><span class="w">        </span><span class="sd">"""The share's page for an annals id it includes, else ``None``."""</span>
+</span><span data-line="91">        <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+</span><span data-line="92">        <span class="k">if</span> <span class="n">annals_id</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_ids</span><span class="p">:</span>
+</span><span data-line="93">            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/d/</span><span class="si">{</span><span class="n">annals_id</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="94">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/"</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_id</span> <span class="ow">and</span> <span class="n">annals_id</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_id</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+</span><span data-line="95">
+</span><span data-line="96">    <span class="k">def</span><span class="w"> </span><span class="nf">raw_url</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="97">        <span class="n">rel_q</span> <span class="o">=</span> <span class="s2">"/"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">quote</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">safe</span><span class="o">=</span><span class="s2">""</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">rel</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"/"</span><span class="p">))</span>
+</span><span data-line="98">        <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">'/'</span><span class="p">)</span><span class="si">}</span><span class="s2">/raw/</span><span class="si">{</span><span class="n">quote</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span><span class="w"> </span><span class="n">safe</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">rel_q</span><span class="si">}</span><span class="s2">"</span></div>
+
+</span><span data-line="99">
+</span><span data-line="100">
+<div class="viewcode-block" id="alternate_urls">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.alternate_urls">[docs]</a>
+</span><span data-line="101"><span class="k">def</span><span class="w"> </span><span class="nf">alternate_urls</span><span class="p">(</span><span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+</span><span data-line="102"><span class="w">    </span><span class="sd">"""``(url, media type, label)`` of the share (or of one document of it) as files."""</span>
+</span><span data-line="103">    <span class="n">link</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+</span><span data-line="104">    <span class="n">stem</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/d/</span><span class="si">{</span><span class="n">doc_id</span><span class="si">}</span><span class="s2">"</span> <span class="k">if</span> <span class="n">doc_id</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">SHARE_FILE</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="105">    <span class="k">return</span> <span class="p">[(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">stem</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">mime</span><span class="p">,</span> <span class="n">label</span><span class="p">)</span> <span class="k">for</span> <span class="n">ext</span><span class="p">,</span> <span class="n">mime</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">ALTERNATES</span><span class="p">]</span></div>
+
+</span><span data-line="106">
+</span><span data-line="107">
+<div class="viewcode-block" id="alternate_links">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.alternate_links">[docs]</a>
+</span><span data-line="108"><span class="k">def</span><span class="w"> </span><span class="nf">alternate_links</span><span class="p">(</span><span class="n">link</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="109"><span class="w">    </span><span class="sd">"""The ``&lt;link rel="alternate"&gt;`` tags of :func:`alternate_urls`, for the ``&lt;head&gt;``."""</span>
+</span><span data-line="110">    <span class="k">return</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="111">        <span class="sa">f</span><span class="s1">'&lt;link rel="alternate" type="</span><span class="si">{</span><span class="n">mime</span><span class="si">}</span><span class="s1">" href="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}</span><span class="s1">" '</span>
+</span><span data-line="112">        <span class="sa">f</span><span class="s1">'title="</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">"&gt;</span><span class="se">\n</span><span class="s1">'</span>
+</span><span data-line="113">        <span class="k">for</span> <span class="n">url</span><span class="p">,</span> <span class="n">mime</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">alternate_urls</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="114">    <span class="p">)</span></div>
+
+</span><span data-line="115">
+</span><span data-line="116">
+</span><span data-line="117"><span class="k">class</span><span class="w"> </span><span class="nc">_Budget</span><span class="p">:</span>
+</span><span data-line="118"><span class="w">    </span><span class="sd">"""What one page may still render: bytes of text and a number of files."""</span>
+</span><span data-line="119">
+</span><span data-line="120">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_bytes</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">max_files</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+</span><span data-line="121">        <span class="bp">self</span><span class="o">.</span><span class="n">bytes_left</span> <span class="o">=</span> <span class="n">max_bytes</span>
+</span><span data-line="122">        <span class="bp">self</span><span class="o">.</span><span class="n">files_left</span> <span class="o">=</span> <span class="n">STATIC_MAX_FILES</span> <span class="k">if</span> <span class="n">max_files</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">max_files</span>
+</span><span data-line="123">
+</span><span data-line="124">    <span class="nd">@property</span>
+</span><span data-line="125">    <span class="k">def</span><span class="w"> </span><span class="nf">spent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="126">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bytes_left</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">files_left</span> <span class="o">&lt;=</span> <span class="mi">0</span>
+</span><span data-line="127">
+</span><span data-line="128">    <span class="k">def</span><span class="w"> </span><span class="nf">spend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_bytes</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="129">        <span class="bp">self</span><span class="o">.</span><span class="n">bytes_left</span> <span class="o">-=</span> <span class="n">n_bytes</span>
+</span><span data-line="130">        <span class="bp">self</span><span class="o">.</span><span class="n">files_left</span> <span class="o">-=</span> <span class="mi">1</span>
+</span><span data-line="131">
+</span><span data-line="132">
+<div class="viewcode-block" id="designed_page">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.designed_page">[docs]</a>
+</span><span data-line="133"><span class="k">def</span><span class="w"> </span><span class="nf">designed_page</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span> <span class="n">files</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="134"><span class="w">    </span><span class="sd">"""The html file a document's page *is*, when it is one, else ``None``.</span>
+</span><span data-line="135">
+</span><span data-line="136"><span class="sd">    Such a document is served as itself at its link (filtered and sandboxed, as ``/raw``</span>
+</span><span data-line="137"><span class="sd">    serves it): a person sees it as designed, and a fetcher, even one that runs script,</span>
+</span><span data-line="138"><span class="sd">    reads it at the top level rather than inside a frame it does not open.</span>
+</span><span data-line="139"><span class="sd">    """</span>
+</span><span data-line="140">    <span class="n">main</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"main"</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">""</span>
+</span><span data-line="141">    <span class="k">return</span> <span class="n">main</span> <span class="k">if</span> <span class="n">main</span> <span class="ow">in</span> <span class="n">files</span> <span class="ow">and</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">main</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"html"</span> <span class="k">else</span> <span class="kc">None</span></div>
+
+</span><span data-line="142">
+</span><span data-line="143">
+</span><span data-line="144"><span class="n">_BASE_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rb</span><span class="s2">"&lt;base\b[^&gt;]*&gt;"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+</span><span data-line="145"><span class="c1">#: a page's own referrer policy would override the share's ``no-referrer`` (the link is a key)</span>
+</span><span data-line="146"><span class="n">_REFERRER_META_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rb</span><span class="s2">"&lt;meta\b[^&gt;]*\bname\s*=\s*[</span><span class="se">\"</span><span class="s2">']?referrer\b[^&gt;]*&gt;"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+</span><span data-line="147"><span class="n">_DOCTYPE_AT_START</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">rb</span><span class="s2">"(?:\xef\xbb\xbf)?\s*&lt;!doctype[^&gt;]*&gt;"</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+</span><span data-line="148">
+</span><span data-line="149">
+<div class="viewcode-block" id="with_base">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.with_base">[docs]</a>
+</span><span data-line="150"><span class="k">def</span><span class="w"> </span><span class="nf">with_base</span><span class="p">(</span><span class="n">page</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">href</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+</span><span data-line="151"><span class="w">    </span><span class="sd">"""``page`` with ``&lt;base href&gt;`` as its first element, so its relative references</span>
+</span><span data-line="152"><span class="sd">    (images, styles, its other pages) resolve where the share serves its files.</span>
+</span><span data-line="153">
+</span><span data-line="154"><span class="sd">    The page's own ``&lt;base&gt;`` and referrer ``&lt;meta&gt;`` go: either would send its requests,</span>
+</span><span data-line="155"><span class="sd">    or the link, elsewhere. The tag goes right after the doctype, where the parser puts it</span>
+</span><span data-line="156"><span class="sd">    in the head whatever comes later (a ``&lt;head&gt;`` written in a comment, say).</span>
+</span><span data-line="157"><span class="sd">    """</span>
+</span><span data-line="158">    <span class="n">page</span> <span class="o">=</span> <span class="n">_REFERRER_META_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">b</span><span class="s2">""</span><span class="p">,</span> <span class="n">_BASE_RE</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">b</span><span class="s2">""</span><span class="p">,</span> <span class="n">page</span><span class="p">))</span>
+</span><span data-line="159">    <span class="n">tag</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'&lt;base href="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">href</span><span class="p">,</span><span class="w"> </span><span class="n">quote</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="si">}</span><span class="s1">"&gt;'</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+</span><span data-line="160">    <span class="n">d</span> <span class="o">=</span> <span class="n">_DOCTYPE_AT_START</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">page</span><span class="p">)</span>
+</span><span data-line="161">    <span class="n">at</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">end</span><span class="p">()</span> <span class="k">if</span> <span class="n">d</span> <span class="k">else</span> <span class="mi">0</span>
+</span><span data-line="162">    <span class="k">return</span> <span class="n">page</span><span class="p">[:</span><span class="n">at</span><span class="p">]</span> <span class="o">+</span> <span class="n">tag</span> <span class="o">+</span> <span class="n">page</span><span class="p">[</span><span class="n">at</span><span class="p">:]</span></div>
+
+</span><span data-line="163">
+</span><span data-line="164">
+</span><span data-line="165"><span class="k">def</span><span class="w"> </span><span class="nf">_doc_html</span><span class="p">(</span>
+</span><span data-line="166">    <span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">,</span>
+</span><span data-line="167">    <span class="n">files</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="168">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="169">    <span class="n">read_text</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
+</span><span data-line="170">    <span class="n">scope</span><span class="p">:</span> <span class="n">ShareScope</span><span class="p">,</span>
+</span><span data-line="171">    <span class="n">demote</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="172">    <span class="n">budget</span><span class="p">:</span> <span class="s2">"_Budget"</span><span class="p">,</span>
+</span><span data-line="173"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="174"><span class="w">    </span><span class="sd">"""One document's text and files as an html fragment (see the module docstring).</span>
+</span><span data-line="175">
+</span><span data-line="176"><span class="sd">    ``read_text`` raising ``KeyError``, ``OSError`` or ``ValueError`` (a file gone, or too</span>
+</span><span data-line="177"><span class="sd">    large) leaves that file as a link; ``budget`` is spent per file rendered, and once it</span>
+</span><span data-line="178"><span class="sd">    is spent the remaining files are links too.</span>
+</span><span data-line="179"><span class="sd">    """</span>
+</span><span data-line="180">    <span class="n">doc_id</span> <span class="o">=</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
+</span><span data-line="181">    <span class="n">sizes</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"sizes"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+</span><span data-line="182">    <span class="n">sources</span> <span class="o">=</span> <span class="n">source_files</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">files</span><span class="p">)</span>
+</span><span data-line="183">    <span class="n">shown</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+</span><span data-line="184">    <span class="n">parts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="185">    <span class="k">for</span> <span class="n">rel</span> <span class="ow">in</span> <span class="n">sources</span><span class="p">:</span>
+</span><span data-line="186">        <span class="k">if</span> <span class="n">budget</span><span class="o">.</span><span class="n">spent</span> <span class="ow">or</span> <span class="nb">int</span><span class="p">(</span><span class="n">sizes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">rel</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">STATIC_FILE_MAX_BYTES</span><span class="p">:</span>
+</span><span data-line="187">            <span class="k">continue</span>  <span class="c1"># listed with the other files below</span>
+</span><span data-line="188">        <span class="k">try</span><span class="p">:</span>
+</span><span data-line="189">            <span class="n">text</span> <span class="o">=</span> <span class="n">read_text</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">rel</span><span class="p">)</span>
+</span><span data-line="190">        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
+</span><span data-line="191">            <span class="k">continue</span>
+</span><span data-line="192">        <span class="n">budget</span><span class="o">.</span><span class="n">spend</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+</span><span data-line="193">        <span class="n">shown</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">rel</span><span class="p">)</span>
+</span><span data-line="194">        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sources</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="195">            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&lt;p&gt;&lt;strong&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">rel</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/strong&gt;&lt;/p&gt;"</span><span class="p">)</span>
+</span><span data-line="196">        <span class="k">if</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">rel</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"md"</span><span class="p">:</span>
+</span><span data-line="197">            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="198">                <span class="n">render_source_body</span><span class="p">(</span>
+</span><span data-line="199">                    <span class="n">demote_headings</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">demote</span><span class="p">)</span> <span class="k">if</span> <span class="n">demote</span> <span class="k">else</span> <span class="n">text</span><span class="p">,</span>
+</span><span data-line="200">                    <span class="n">link</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">link</span><span class="p">,</span>
+</span><span data-line="201">                    <span class="n">doc_id</span><span class="o">=</span><span class="n">doc_id</span><span class="p">,</span>
+</span><span data-line="202">                    <span class="n">rel</span><span class="o">=</span><span class="n">rel</span><span class="p">,</span>
+</span><span data-line="203">                    <span class="n">files</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">files</span><span class="p">),</span>
+</span><span data-line="204">                    <span class="n">sources</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(</span><span class="n">sources</span><span class="p">),</span>
+</span><span data-line="205">                    <span class="n">shared_ids</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">shared_ids</span><span class="p">,</span>
+</span><span data-line="206">                    <span class="n">root_id</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">root_id</span><span class="p">,</span>
+</span><span data-line="207">                    <span class="n">private_hosts</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">private_hosts</span><span class="p">,</span>
+</span><span data-line="208">                <span class="p">)</span>
+</span><span data-line="209">            <span class="p">)</span>
+</span><span data-line="210">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="211">            <span class="n">designed</span> <span class="o">=</span> <span class="n">scope</span><span class="o">.</span><span class="n">shared</span><span class="p">(</span><span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="212">            <span class="k">if</span> <span class="n">designed</span> <span class="ow">and</span> <span class="n">rel</span> <span class="o">==</span> <span class="n">designed_page</span><span class="p">(</span><span class="n">meta</span><span class="p">,</span> <span class="n">files</span><span class="p">):</span>
+</span><span data-line="213">                <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="214">                    <span class="sa">f</span><span class="s1">'&lt;p class="muted"&gt;&lt;a href="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">designed</span><span class="p">)</span><span class="si">}</span><span class="s1">"&gt;'</span>
+</span><span data-line="215">                    <span class="s2">"Open the page as designed&lt;/a&gt;&lt;/p&gt;"</span>
+</span><span data-line="216">                <span class="p">)</span>
+</span><span data-line="217">            <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_html_doc</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">,</span> <span class="n">rel</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span> <span class="n">demote</span><span class="o">=</span><span class="n">demote</span><span class="p">))</span>
+</span><span data-line="218">        <span class="n">shown</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">references</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">rel</span><span class="p">),</span> <span class="n">from_dir</span><span class="o">=</span><span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">))[</span><span class="s2">"files"</span><span class="p">])</span>
+</span><span data-line="219">    <span class="k">if</span> <span class="ow">not</span> <span class="n">shown</span><span class="p">:</span>
+</span><span data-line="220">        <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"image"</span><span class="p">][:</span><span class="n">STATIC_MAX_IMAGES</span><span class="p">]</span>
+</span><span data-line="221">        <span class="n">parts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span>
+</span><span data-line="222">            <span class="sa">f</span><span class="s1">'&lt;figure&gt;&lt;img src="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">scope</span><span class="o">.</span><span class="n">raw_url</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">))</span><span class="si">}</span><span class="s1">" '</span>
+</span><span data-line="223">            <span class="sa">f</span><span class="s1">'alt="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="si">}</span><span class="s1">" loading="lazy"&gt;&lt;/figure&gt;'</span>
+</span><span data-line="224">            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">images</span>
+</span><span data-line="225">        <span class="p">)</span>
+</span><span data-line="226">        <span class="n">shown</span> <span class="o">|=</span> <span class="nb">set</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+</span><span data-line="227">    <span class="n">played</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shown</span> <span class="ow">and</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="ow">in</span> <span class="n">_PLAYED</span><span class="p">]</span>
+</span><span data-line="228">    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">played</span><span class="p">[:</span><span class="n">STATIC_MAX_PLAYERS</span><span class="p">]:</span>
+</span><span data-line="229">        <span class="n">tag</span> <span class="o">=</span> <span class="n">_PLAYED</span><span class="p">[</span><span class="n">kind_of</span><span class="p">(</span><span class="n">f</span><span class="p">)]</span>
+</span><span data-line="230">        <span class="n">src</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">scope</span><span class="o">.</span><span class="n">raw_url</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">f</span><span class="p">))</span>
+</span><span data-line="231">        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span data-line="232">            <span class="sa">f</span><span class="s1">'&lt;p&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/p&gt;&lt;</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s1"> controls preload="none" src="</span><span class="si">{</span><span class="n">src</span><span class="si">}</span><span class="s1">"&gt;&lt;/</span><span class="si">{</span><span class="n">tag</span><span class="si">}</span><span class="s1">&gt;'</span>
+</span><span data-line="233">        <span class="p">)</span>
+</span><span data-line="234">        <span class="n">shown</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+</span><span data-line="235">    <span class="n">rest</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">files</span> <span class="k">if</span> <span class="n">f</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shown</span><span class="p">]</span>
+</span><span data-line="236">    <span class="k">if</span> <span class="n">rest</span><span class="p">:</span>
+</span><span data-line="237">        <span class="n">items</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="238">            <span class="sa">f</span><span class="s1">'&lt;li&gt;&lt;a href="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">scope</span><span class="o">.</span><span class="n">raw_url</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">))</span><span class="si">}</span><span class="s1">"&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/a&gt;&lt;/li&gt;'</span>
+</span><span data-line="239">            <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">rest</span>
+</span><span data-line="240">        <span class="p">)</span>
+</span><span data-line="241">        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&lt;p&gt;Files:&lt;/p&gt;&lt;ul&gt;</span><span class="si">{</span><span class="n">items</span><span class="si">}</span><span class="s2">&lt;/ul&gt;"</span><span class="p">)</span>
+</span><span data-line="242">    <span class="k">return</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span>
+</span><span data-line="243">
+</span><span data-line="244">
+</span><span data-line="245"><span class="k">def</span><span class="w"> </span><span class="nf">_html_doc</span><span class="p">(</span>
+</span><span data-line="246">    <span class="n">text</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="247">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="248">    <span class="n">rel</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="249">    <span class="n">files</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
+</span><span data-line="250">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="251">    <span class="n">scope</span><span class="p">:</span> <span class="n">ShareScope</span><span class="p">,</span>
+</span><span data-line="252">    <span class="n">demote</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+</span><span data-line="253"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="254"><span class="w">    </span><span class="sd">"""An html file of the share: filtered like any shared text, then its words and structure."""</span>
+</span><span data-line="255">    <span class="n">text</span> <span class="o">=</span> <span class="n">filter_refs</span><span class="p">(</span>
+</span><span data-line="256">        <span class="n">text</span><span class="p">,</span>
+</span><span data-line="257">        <span class="s2">"html"</span><span class="p">,</span>
+</span><span data-line="258">        <span class="n">files</span><span class="o">=</span><span class="n">files</span><span class="p">,</span>
+</span><span data-line="259">        <span class="n">shared</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">shared</span><span class="p">,</span>
+</span><span data-line="260">        <span class="n">from_dir</span><span class="o">=</span><span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">),</span>
+</span><span data-line="261">        <span class="n">private_hosts</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">private_hosts</span><span class="p">,</span>
+</span><span data-line="262">    <span class="p">)</span>
+</span><span data-line="263">    <span class="n">included</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+</span><span data-line="264">
+</span><span data-line="265">    <span class="k">def</span><span class="w"> </span><span class="nf">image_src</span><span class="p">(</span><span class="n">src</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="266">        <span class="n">target</span> <span class="o">=</span> <span class="n">resolve_rel</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">))</span>
+</span><span data-line="267">        <span class="k">if</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">included</span> <span class="ow">and</span> <span class="n">kind_of</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"image"</span><span class="p">:</span>
+</span><span data-line="268">            <span class="k">return</span> <span class="n">scope</span><span class="o">.</span><span class="n">raw_url</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+</span><span data-line="269">        <span class="k">return</span> <span class="kc">None</span>  <span class="c1"># an image elsewhere is never loaded from the share's page</span>
+</span><span data-line="270">
+</span><span data-line="271">    <span class="n">decide</span> <span class="o">=</span> <span class="n">ref_decider</span><span class="p">(</span>
+</span><span data-line="272">        <span class="n">from_dir</span><span class="o">=</span><span class="n">dir_of</span><span class="p">(</span><span class="n">rel</span><span class="p">),</span>
+</span><span data-line="273">        <span class="n">files</span><span class="o">=</span><span class="n">included</span><span class="p">,</span>
+</span><span data-line="274">        <span class="n">shared</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">shared</span><span class="p">,</span>
+</span><span data-line="275">        <span class="n">private_hosts</span><span class="o">=</span><span class="n">scope</span><span class="o">.</span><span class="n">private_hosts</span><span class="p">,</span>
+</span><span data-line="276">    <span class="p">)</span>
+</span><span data-line="277">    <span class="c1"># the link filter read the text as text; the parser here may read an attribute</span>
+</span><span data-line="278">    <span class="c1"># differently, so every link it keeps is decided again</span>
+</span><span data-line="279">    <span class="k">return</span> <span class="n">html_body</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">rewrite_src</span><span class="o">=</span><span class="n">image_src</span><span class="p">,</span> <span class="n">rewrite_href</span><span class="o">=</span><span class="n">decide</span><span class="p">,</span> <span class="n">demote</span><span class="o">=</span><span class="n">demote</span><span class="p">)</span>
+</span><span data-line="280">
+</span><span data-line="281">
+<div class="viewcode-block" id="page_body">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.page_body">[docs]</a>
+</span><span data-line="282"><span class="k">def</span><span class="w"> </span><span class="nf">page_body</span><span class="p">(</span>
+</span><span data-line="283">    <span class="n">docs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">Mapping</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]],</span>
+</span><span data-line="284">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="285">    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="286">    <span class="n">read_text</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span>
+</span><span data-line="287">    <span class="n">scope</span><span class="p">:</span> <span class="n">ShareScope</span><span class="p">,</span>
+</span><span data-line="288">    <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="289">    <span class="n">viewer_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="290">    <span class="n">max_bytes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="291"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="292"><span class="w">    </span><span class="sd">"""The page's content and its description: ``(html, plain text of ~280 chars)``.</span>
+</span><span data-line="293">
+</span><span data-line="294"><span class="sd">    ``docs`` are the ``(meta, files)`` pairs to show, in order (one, for a document's</span>
+</span><span data-line="295"><span class="sd">    page); ``read_text(doc_id, rel)`` reads a file as it is on disk (the shared-text</span>
+</span><span data-line="296"><span class="sd">    filters are applied here). ``doc_id`` names the document a ``/d/&lt;id&gt;`` page is for,</span>
+</span><span data-line="297"><span class="sd">    which picks the alternates the page offers; ``viewer_url`` is where the script viewer</span>
+</span><span data-line="298"><span class="sd">    opens it. ``max_bytes``: :data:`STATIC_MAX_BYTES`.</span>
+</span><span data-line="299"><span class="sd">    """</span>
+</span><span data-line="300">    <span class="n">max_bytes</span> <span class="o">=</span> <span class="n">STATIC_MAX_BYTES</span> <span class="k">if</span> <span class="n">max_bytes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">max_bytes</span>
+</span><span data-line="301">    <span class="n">docs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+</span><span data-line="302">    <span class="n">several</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+</span><span data-line="303">    <span class="n">alts</span> <span class="o">=</span> <span class="s2">" · "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="304">        <span class="sa">f</span><span class="s1">'&lt;a href="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">url</span><span class="p">)</span><span class="si">}</span><span class="s1">"&gt;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&lt;/a&gt;'</span>
+</span><span data-line="305">        <span class="k">for</span> <span class="n">url</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">alternate_urls</span><span class="p">(</span><span class="n">scope</span><span class="o">.</span><span class="n">link</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">)</span>
+</span><span data-line="306">    <span class="p">)</span>
+</span><span data-line="307">    <span class="k">if</span> <span class="n">viewer_url</span><span class="p">:</span>
+</span><span data-line="308">        <span class="n">alts</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">' · &lt;a href="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">viewer_url</span><span class="p">)</span><span class="si">}</span><span class="s1">"&gt;open in the viewer&lt;/a&gt;'</span>
+</span><span data-line="309">    <span class="n">out</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="310">        <span class="sa">f</span><span class="s2">"&lt;h1&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">title</span><span class="p">)</span><span class="si">}</span><span class="s2">&lt;/h1&gt;"</span><span class="p">,</span>
+</span><span data-line="311">        <span class="sa">f</span><span class="s1">'&lt;p class="muted"&gt;Also as </span><span class="si">{</span><span class="n">alts</span><span class="si">}</span><span class="s1">.&lt;/p&gt;'</span><span class="p">,</span>
+</span><span data-line="312">    <span class="p">]</span>
+</span><span data-line="313">    <span class="n">budget</span><span class="p">,</span> <span class="n">more</span> <span class="o">=</span> <span class="n">_Budget</span><span class="p">(</span><span class="n">max_bytes</span><span class="p">),</span> <span class="p">[]</span>
+</span><span data-line="314">    <span class="k">for</span> <span class="n">meta</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">:</span>
+</span><span data-line="315">        <span class="n">name</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
+</span><span data-line="316">        <span class="k">if</span> <span class="n">budget</span><span class="o">.</span><span class="n">spent</span><span class="p">:</span>
+</span><span data-line="317">            <span class="n">more</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="n">name</span><span class="p">))</span>
+</span><span data-line="318">            <span class="k">continue</span>
+</span><span data-line="319">        <span class="n">body</span> <span class="o">=</span> <span class="n">_doc_html</span><span class="p">(</span>
+</span><span data-line="320">            <span class="n">meta</span><span class="p">,</span>
+</span><span data-line="321">            <span class="n">files</span><span class="p">,</span>
+</span><span data-line="322">            <span class="n">read_text</span><span class="o">=</span><span class="n">read_text</span><span class="p">,</span>
+</span><span data-line="323">            <span class="n">scope</span><span class="o">=</span><span class="n">scope</span><span class="p">,</span>
+</span><span data-line="324">            <span class="n">demote</span><span class="o">=</span><span class="mi">2</span> <span class="k">if</span> <span class="n">several</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+</span><span data-line="325">            <span class="n">budget</span><span class="o">=</span><span class="n">budget</span><span class="p">,</span>
+</span><span data-line="326">        <span class="p">)</span>
+</span><span data-line="327">        <span class="k">if</span> <span class="n">several</span><span class="p">:</span>
+</span><span data-line="328">            <span class="n">href</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">scope</span><span class="o">.</span><span class="n">shared</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span>
+</span><span data-line="329">            <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">'&lt;h2&gt;&lt;a href="</span><span class="si">{</span><span class="n">href</span><span class="si">}</span><span class="s1">"&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">name</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/a&gt;&lt;/h2&gt;</span><span class="se">\n</span><span class="si">{</span><span class="n">body</span><span class="si">}</span><span class="s1">'</span>
+</span><span data-line="330">        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&lt;article&gt;</span><span class="se">\n</span><span class="si">{</span><span class="n">body</span><span class="si">}</span><span class="se">\n</span><span class="s2">&lt;/article&gt;"</span><span class="p">)</span>
+</span><span data-line="331">    <span class="k">if</span> <span class="n">more</span><span class="p">:</span>
+</span><span data-line="332">        <span class="n">items</span> <span class="o">=</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="333">            <span class="sa">f</span><span class="s1">'&lt;li&gt;&lt;a href="</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">scope</span><span class="o">.</span><span class="n">shared</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s2">""</span><span class="p">)</span><span class="si">}</span><span class="s1">"&gt;</span><span class="si">{</span><span class="n">html</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">n</span><span class="p">)</span><span class="si">}</span><span class="s1">&lt;/a&gt;&lt;/li&gt;'</span>
+</span><span data-line="334">            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">more</span>
+</span><span data-line="335">        <span class="p">)</span>
+</span><span data-line="336">        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">"&lt;h2&gt;More in this share&lt;/h2&gt;&lt;ul&gt;</span><span class="si">{</span><span class="n">items</span><span class="si">}</span><span class="s2">&lt;/ul&gt;"</span><span class="p">)</span>
+</span><span data-line="337">    <span class="n">content</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out</span><span class="p">)</span>
+</span><span data-line="338">    <span class="k">return</span> <span class="n">content</span><span class="p">,</span> <span class="n">description_of</span><span class="p">(</span><span class="n">content</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="n">title</span><span class="p">)</span></div>
+
+</span><span data-line="339">
+</span><span data-line="340">
+<div class="viewcode-block" id="description_of">
+<a class="viewcode-back" href="../../_autosummary/annals.share_page.html#annals.share_page.description_of">[docs]</a>
+</span><span data-line="341"><span class="k">def</span><span class="w"> </span><span class="nf">description_of</span><span class="p">(</span><span class="n">content</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">skip</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">DESCRIPTION_CHARS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="342"><span class="w">    </span><span class="sd">"""The first ``n`` characters of the page's words (the title and alternates line left out)."""</span>
+</span><span data-line="343">    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;(script|style)\b.*?&lt;/\1&gt;"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">content</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">S</span> <span class="o">|</span> <span class="n">re</span><span class="o">.</span><span class="n">I</span><span class="p">)</span>
+</span><span data-line="344">    <span class="n">text</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">'&lt;p class="muted"&gt;Also as .*?&lt;/p&gt;'</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">flags</span><span class="o">=</span><span class="n">re</span><span class="o">.</span><span class="n">S</span><span class="p">)</span>
+</span><span data-line="345">    <span class="n">text</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">unescape</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"&lt;[^&gt;]+&gt;"</span><span class="p">,</span> <span class="s2">" "</span><span class="p">,</span> <span class="n">text</span><span class="p">))</span>
+</span><span data-line="346">    <span class="n">text</span> <span class="o">=</span> <span class="s2">" "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">text</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+</span><span data-line="347">    <span class="k">if</span> <span class="n">skip</span> <span class="ow">and</span> <span class="n">text</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">skip</span><span class="p">):</span>
+</span><span data-line="348">        <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">skip</span><span class="p">)</span> <span class="p">:]</span><span class="o">.</span><span class="n">lstrip</span><span class="p">()</span>
+</span><span data-line="349">    <span class="k">return</span> <span class="n">text</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">n</span> <span class="k">else</span> <span class="n">text</span><span class="p">[:</span> <span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span> <span class="o">+</span> <span class="s2">"…"</span></div>
+
+</span></pre></div>
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../../_static/documentation_options.js?v=4d22d5b7"></script>
+      <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../../_static/shibuya.js?v=50760d75"></script>
+      <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+const initStyles = () => {
+    const defaultStyle = document.createElement('style');
+    defaultStyle.textContent = "pre.mermaid {\n    /* Same as .mermaid-container > pre */\n    display: block;\n    width: 100%;\n}\n\npre.mermaid > svg {\n    /* Same as .mermaid-container > pre > svg */\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}";
+    document.head.appendChild(defaultStyle);
+
+    const fullscreenStyle = document.createElement('style');
+    fullscreenStyle.textContent = ".mermaid-container {\n    position: relative;\n    display: flex;\n    flex-direction: row;\n    width: 100%;\n}\n\n.mermaid-container > pre {\n    display: block;\n    width: 100%;\n}\n\n.mermaid-container > pre > svg {\n    height: 500px;\n    width: 100%;\n    max-width: 100% !important;\n}\n\n.mermaid-fullscreen-btn {\n    position: absolute;\n    width: 28px;\n    height: 28px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.3);\n    border-radius: 4px;\n    cursor: pointer;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    transition: all 0.2s;\n    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);\n    font-size: 14px;\n    line-height: 1;\n    padding: 0;\n    color: #333;\n}\n\n.mermaid-fullscreen-btn:hover {\n    opacity: 100% !important;\n    background: rgba(255, 255, 255, 1);\n    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-btn.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.3);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-btn.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal {\n    display: none;\n    position: fixed !important;\n    top: 0 !important;\n    left: 0 !important;\n    width: 95vw;\n    height: 100vh;\n    background: rgba(255, 255, 255, 0.98);\n    z-index: 9999;\n    padding: 20px;\n    overflow: auto;\n}\n\n.mermaid-fullscreen-modal.dark-theme {\n    background: rgba(0, 0, 0, 0.98);\n}\n\n.mermaid-fullscreen-modal.active {\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen {\n    position: relative;\n    width: 95vw;\n    height: 90vh;\n    max-width: 95vw;\n    max-height: 90vh;\n    background: white;\n    border-radius: 8px;\n    padding: 20px;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);\n    overflow: auto;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen.dark-theme {\n    background: #1a1a1a;\n    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);\n}\n\n.mermaid-container-fullscreen pre.mermaid {\n    width: 100%;\n    height: 100%;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n}\n\n.mermaid-container-fullscreen .mermaid svg {\n    height: 100% !important;\n    width: 100% !important;\n    cursor: grab;\n}\n\n.mermaid-fullscreen-close {\n    position: fixed !important;\n    top: 20px !important;\n    right: 20px !important;\n    width: 40px;\n    height: 40px;\n    background: rgba(255, 255, 255, 0.95);\n    border: 1px solid rgba(0, 0, 0, 0.2);\n    border-radius: 50%;\n    cursor: pointer;\n    z-index: 10000;\n    display: flex;\n    align-items: center;\n    justify-content: center;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);\n    transition: all 0.2s;\n    font-size: 24px;\n    line-height: 1;\n    color: #333;\n}\n\n.mermaid-fullscreen-close:hover {\n    background: white;\n    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);\n    transform: scale(1.1);\n}\n\n.mermaid-fullscreen-close.dark-theme {\n    background: rgba(50, 50, 50, 0.95);\n    border: 1px solid rgba(255, 255, 255, 0.2);\n    color: #e0e0e0;\n}\n\n.mermaid-fullscreen-close.dark-theme:hover {\n    background: rgba(60, 60, 60, 1);\n    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);\n}\n\n.mermaid-fullscreen-modal .mermaid-fullscreen-btn {\n    display: none !important;\n}";
+    document.head.appendChild(fullscreenStyle);
+}
+
+// Detect if page has dark background
+const isDarkTheme = () => {
+    // We use a set of heuristics:
+    // 1. Check for common dark mode classes or attributes
+    // 2. Check computed background color brightness
+    if (document.documentElement.classList.contains('dark') ||
+        document.documentElement.getAttribute('data-theme') === 'dark' ||
+        document.body.classList.contains('dark') ||
+        document.body.getAttribute('data-theme') === 'dark') {
+        // console.log("Dark theme detected via class/attribute");
+        return true;
+    }
+    if (document.documentElement.classList.contains('light') ||
+        document.documentElement.getAttribute('data-theme') === 'light' ||
+        document.body.classList.contains('light') ||
+        document.body.getAttribute('data-theme') === 'light') {
+        // console.log("Light theme detected via class/attribute");
+        return false;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        // console.log("Dark theme detected via prefers-color-scheme");
+        return true;
+    }
+    const bgColor = window.getComputedStyle(document.body).backgroundColor;
+    const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+    if (match) {
+        const r = parseInt(match[1]);
+        const g = parseInt(match[2]);
+        const b = parseInt(match[3]);
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        // console.log("Background color brightness:", brightness);
+        return brightness < 128;
+    }
+    // console.log("No dark or light theme detected, defaulting to light theme");
+    return false;
+};
+
+let darkTheme = isDarkTheme();
+let modal = null;
+let modalContent = null;
+let previousScrollOffset = [window.scrollX, window.scrollY];
+let _lazyObserver = null;
+let _renderQueue = Promise.resolve();
+let closeModal = () => {};
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal?.classList.contains('active')) {
+        closeModal();
+    }
+});
+
+// Apply d3 zoom to each SVG. Idempotent: an SVG already wrapped is skipped,
+// so this is safe to call both for the initial batch and for diagrams that
+// render lazily once they become visible.
+const addZoomToSvgs = (svgs) => {
+    svgs.each(function() {
+        if (this.getAttribute('data-zoom-applied') === 'true') return;
+        var svg = d3.select(this);
+        svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+        var inner = svg.select("g");
+        var zoom = d3.zoom().on("zoom", function(event) {
+            inner.attr("transform", event.transform);
+        });
+        svg.call(zoom);
+        this.setAttribute('data-zoom-applied', 'true');
+    });
+};
+
+const runMermaid = async (rerun) => {
+    console.log("Running mermaid diagrams, rerun =", rerun);
+    // clear all existing mermaid charts
+    let all_mermaids = document.querySelectorAll(".mermaid");
+
+    if (rerun) {
+        // Disconnect any previous lazy rendering observer
+        if (_lazyObserver) {
+            _lazyObserver.disconnect();
+            _lazyObserver = null;
+        }
+
+        all_mermaids.forEach((el) => {
+            el.removeAttribute('data-mermaid-deferred');
+            el.removeAttribute('data-mermaid-render-failed');
+            if(!el.hasAttribute("data-original-code")) {
+                // store original code
+                // console.log(`Storing original code for first run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+            if(el.getAttribute("data-processed") === "true") {
+                // remove and restore original
+                el.removeAttribute("data-processed");
+                // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                el.innerHTML = el.getAttribute('data-original-code');
+            } else {
+                // store original code
+                // console.log(`Storing original code for re-run: `, el.innerHTML);
+                el.setAttribute('data-original-code', el.innerHTML);
+            }
+        });
+
+        // Separate visible and hidden elements. Mermaid's layout engine measures
+        // text dimensions via the DOM, which fails for elements hidden by a parent
+        // (e.g., Reveal.js non-active slides, sphinx-design unopened tabs),
+        // producing broken SVGs. Render visible elements now, defer hidden ones.
+        const visible = [];
+        const hidden = [];
+        all_mermaids.forEach((el) => {
+            // offsetParent is null for display:none ancestors.
+            // getClientRects().length > 0 catches position:fixed elements
+            // (which also have null offsetParent but are still visible).
+            if (el.offsetParent !== null || el.getClientRects().length > 0) {
+                visible.push(el);
+            } else {
+                hidden.push(el);
+                el.setAttribute('data-mermaid-deferred', 'true');
+            }
+        });
+
+        if (visible.length > 0) {
+            try {
+                await mermaid.run({ nodes: visible });
+            } catch (e) {
+                console.error("Mermaid rendering failed:", e);
+            }
+        }
+
+        // Lazily render hidden elements when they become visible.
+        // Uses a promise chain (_renderQueue) to serialize rendering,
+        // since IntersectionObserver may report multiple entries at once
+        // and mermaid.run() is not safe to call concurrently.
+        if (hidden.length > 0) {
+            if (typeof IntersectionObserver === 'undefined') {
+                console.warn("IntersectionObserver not available; hidden mermaid diagrams will not render.");
+            } else {
+                _renderQueue = Promise.resolve();
+                _lazyObserver = new IntersectionObserver((entries) => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting && entry.target.getAttribute("data-processed") !== "true") {
+                            _lazyObserver.unobserve(entry.target);
+                            const el = entry.target;
+                            _renderQueue = _renderQueue.then(async () => {
+                                try {
+                                    await mermaid.run({ nodes: [el] });
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    // Apply zoom to the now-rendered diagram, matching
+                                    // the decoration visible diagrams receive.
+                                    if (false) {
+                                        addZoomToSvgs(d3.selectAll("").select(function() {
+                                            return this.querySelector("svg");
+                                        }));
+                                    }
+                                } catch (e) {
+                                    console.error("Mermaid deferred rendering failed:", e);
+                                    el.removeAttribute('data-mermaid-deferred');
+                                    el.setAttribute('data-mermaid-render-failed', 'true');
+                                }
+                            });
+                        }
+                    }
+                });
+                hidden.forEach((el) => _lazyObserver.observe(el));
+            }
+        }
+    }
+
+    all_mermaids = document.querySelectorAll(".mermaid");
+    // Exclude deferred (hidden) and render-failed elements from completion checks
+    const mermaids_active = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])");
+    const mermaids_processed = document.querySelectorAll(".mermaid:not([data-mermaid-deferred]):not([data-mermaid-render-failed])[data-processed='true']");
+
+    if (false) {
+        const mermaids_to_add_zoom = 0 === -1 ? mermaids_active.length : 0;
+        if(mermaids_to_add_zoom > 0) {
+            var svgs = d3.selectAll("").select(function() {
+                return this.querySelector("svg");
+            });
+            // Wait until every active (visible) diagram has rendered. Deferred
+            // diagrams are excluded, so a fixed d3_node_count that counts a
+            // hidden diagram no longer loops forever waiting for its SVG.
+            if(mermaids_active.length !== mermaids_processed.length) {
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+            addZoomToSvgs(svgs);
+        }
+    } else if(mermaids_active.length !== mermaids_processed.length) {
+        // Wait for mermaid to process all diagrams
+        setTimeout(() => runMermaid(false), 200);
+        return;
+    }
+
+    // Stop here if not adding fullscreen capability
+    if (!true) return;
+
+    if (modal !== null ) {
+        // Destroy existing modal
+        modal.remove();
+        modal = null;
+        modalContent = null;
+    }
+
+    modal = document.createElement('div');
+    modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+    modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+    document.body.appendChild(modal);
+
+    modalContent = modal.querySelector('.mermaid-container-fullscreen');
+    const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+    closeModal = () => {
+        modal.classList.remove('active');
+        modalContent.innerHTML = '';
+        document.body.style.overflow = ''
+        window.scrollTo({left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant'});
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+    document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+        if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+            mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+            // Already processed, adjust button class if needed
+            const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+            if (existingBtn) {
+                existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+            }
+            return;
+        }
+
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+        container.appendChild(mermaidDiv);
+
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+        fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+        fullscreenBtn.textContent = "\u26f6";
+        fullscreenBtn.style.opacity = "50%";
+
+        // Calculate dynamic position based on diagram's margin and padding
+        const diagramStyle = window.getComputedStyle(mermaidDiv);
+        const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+        const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+        const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+        const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+        fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+        fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+        fullscreenBtn.addEventListener('click', () => {
+            previousScrollOffset = [window.scrollX, window.scrollY];
+            const clone = mermaidDiv.cloneNode(true);
+            modalContent.innerHTML = '';
+            modalContent.appendChild(clone);
+
+            const svg = clone.querySelector('svg');
+            if (svg) {
+                svg.removeAttribute('width');
+                svg.removeAttribute('height');
+                svg.style.width = '100%';
+                svg.style.height = 'auto';
+                svg.style.maxWidth = '100%';
+                svg.style.display = 'block';
+
+                if (false) {
+                    setTimeout(() => {
+                        const g = svg.querySelector('g');
+                        if (g) {
+                            var svgD3 = d3.select(svg);
+                            svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                            var inner = svgD3.select("g");
+                            var zoom = d3.zoom().on("zoom", function(event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svgD3.call(zoom);
+                        }
+                    }, 100);
+                }
+            }
+
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        });
+        container.appendChild(fullscreenBtn);
+    });
+};
+
+
+
+const load = async () => {
+    initStyles();
+
+
+    await runMermaid(true);
+
+    const reRunIfThemeChanges = async () => {
+        const newDarkTheme = isDarkTheme();
+        if (newDarkTheme !== darkTheme) {
+            darkTheme = newDarkTheme;
+            console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+            await mermaid.initialize(
+                {...{"startOnLoad": false},
+                ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+                }
+            );
+            await runMermaid(true);
+        }
+    };
+
+    // Update theme classes when theme changes
+    const themeObserver = new MutationObserver(reRunIfThemeChanges);
+    themeObserver.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+    themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+    });
+};
+
+
+
+
+
+console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+mermaid.initialize(
+    {...{"startOnLoad": false},
+    ...{ darkMode: darkTheme, theme: darkTheme ? "dark" : "default" },
+    }
+);
+
+window.addEventListener("load", load);
+window.runMermaid = runMermaid;</script></body>
+</html>

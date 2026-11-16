@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
@@ -271,7 +272,7 @@ work starts. Nothing is stored: the document is made per call.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.explain" title="annals.combine.explain"><code class="xref py py-obj docutils literal notranslate"><span class="pre">explain</span></code></a>(fmt)</p></td>
 <td><p>One sentence on what a <code class="docutils literal notranslate"><span class="pre">fmt</span></code> output is made of (the 'supported' part of a message).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.html_body" title="annals.combine.html_body"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_body</span></code></a>(text, *[, rewrite_src, demote])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.combine.html_body" title="annals.combine.html_body"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_body</span></code></a>(text, *[, rewrite_src, ...])</p></td>
 <td><p>The content of an html page as a safe fragment: its structure and words, nothing live.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.combine.items_of" title="annals.combine.items_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">items_of</span></code></a>(sources, fmt)</p></td>
@@ -542,11 +543,12 @@ is not installed (before any work), and <code class="docutils literal notranslat
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.combine.html_body">
-<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">html_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewrite_src</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#html_body"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.html_body" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.combine.</span></span><span class="sig-name descname"><span class="pre">html_body</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewrite_src</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">&lt;lambda&gt;&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rewrite_href</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">demote</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/combine.html#html_body"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.combine.html_body" title="Link to this definition">#</a></dt>
 <dd><p>The content of an html page as a safe fragment: its structure and words, nothing live.</p>
 <p>Only a fixed set of tags survives, with a few plain attributes: no script, style, frame,
 form, event handler, <code class="docutils literal notranslate"><span class="pre">class</span></code> or <code class="docutils literal notranslate"><span class="pre">id</span></code>; a link keeps only an <code class="docutils literal notranslate"><span class="pre">http(s)</span></code> or <code class="docutils literal notranslate"><span class="pre">mailto</span></code>
-address. <code class="docutils literal notranslate"><span class="pre">rewrite_src(src)</span></code> decides each image: the url to show it from, or <code class="docutils literal notranslate"><span class="pre">None</span></code>
+address, which <code class="docutils literal notranslate"><span class="pre">rewrite_href(href)</span></code>, when given, may change or refuse (<code class="docutils literal notranslate"><span class="pre">None</span></code>: the
+link keeps its words, loses its address). <code class="docutils literal notranslate"><span class="pre">rewrite_src(src)</span></code> decides each image: the url to show it from, or <code class="docutils literal notranslate"><span class="pre">None</span></code>
 for its alt text instead (an image is never loaded from where the page says). <code class="docutils literal notranslate"><span class="pre">demote</span></code>
 pushes headings that many levels down. Unbalanced tags are closed, so a fragment can
 never swallow what is joined after it.</p>
@@ -665,7 +667,7 @@ names and reasons are cut, so the header stays far under what a proxy accepts.</
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=6799126d"></script>
+      <script src="../_static/documentation_options.js?v=4d22d5b7"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

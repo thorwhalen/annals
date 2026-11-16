@@ -303,6 +303,12 @@ only on this machine.
 
 Make a public link to ONE document (or group) and print it; nothing else is reachable.
 
+Returns three forms of the one link (the CLI prints the first on stdout, the others
+on stderr): `url`, the page, whose text is in the html (a
+person, NotebookLM or any fetcher reads it without running script); `markdown`, the
+whole share as one text, for an agent; `pdf`, the same with its images. All three end
+with the link’s expiry or revocation.
+
 `ref` is a document or group id, or its link. The link opens without a login, shows
 only that page and the files chosen, and can be revoked (`annals unshare`).
 `include`: comma separated files of the document to share (the page itself always

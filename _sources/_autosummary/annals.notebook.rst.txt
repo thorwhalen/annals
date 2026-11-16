@@ -23,6 +23,7 @@ annals.notebook
       markdown_html
       notebook_sources
       render_source
+      render_source_body
       source_files
       source_link_rewriter
       source_page

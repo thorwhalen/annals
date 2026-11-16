@@ -69,7 +69,7 @@ work starts. Nothing is stored: the document is made per call.
 | [`combine`](#annals.combine.combine)(sources[, fmt, title, demote, toc, ...])   | Every usable file of `sources` as one `fmt` ("md", "html" or "pdf") file.              |
 |-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
 | [`explain`](#annals.combine.explain)(fmt)                                       | One sentence on what a `fmt` output is made of (the 'supported' part of a message).    |
-| [`html_body`](#annals.combine.html_body)(text, \*[, rewrite_src, demote])         | The content of an html page as a safe fragment: its structure and words, nothing live. |
+| [`html_body`](#annals.combine.html_body)(text, \*[, rewrite_src, ...])            | The content of an html page as a safe fragment: its structure and words, nothing live. |
 | [`items_of`](#annals.combine.items_of)(sources, fmt)                             | The files to try for a `fmt` output, in the documents' order.                          |
 | [`kinds_for`](#annals.combine.kinds_for)(fmt)                                     | The kinds of file that can be put in a `fmt` output, in a stable order.                |
 | [`register`](#annals.combine.register)(kind, fmt, \*[, requires])                | Decorator: the function turns a file of `kind` into a part of the `fmt` output.        |
@@ -239,13 +239,14 @@ One sentence on what a `fmt` output is made of (the ‘supported’ part of a me
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.combine.html_body(text, \*, rewrite_src=<function <lambda>>, demote=0)
+### annals.combine.html_body(text, \*, rewrite_src=<function <lambda>>, rewrite_href=None, demote=0)
 
 The content of an html page as a safe fragment: its structure and words, nothing live.
 
 Only a fixed set of tags survives, with a few plain attributes: no script, style, frame,
 form, event handler, `class` or `id`; a link keeps only an `http(s)` or `mailto`
-address. `rewrite_src(src)` decides each image: the url to show it from, or `None`
+address, which `rewrite_href(href)`, when given, may change or refuse (`None`: the
+link keeps its words, loses its address). `rewrite_src(src)` decides each image: the url to show it from, or `None`
 for its alt text instead (an image is never loaded from where the page says). `demote`
 pushes headings that many levels down. Unbalanced tags are closed, so a fragment can
 never swallow what is joined after it.

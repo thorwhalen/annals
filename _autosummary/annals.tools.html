@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
@@ -597,6 +598,11 @@ only on this machine.</p>
 <dt class="sig sig-object py" id="annals.tools.share">
 <span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">share</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">expires</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'7d'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#share"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.share" title="Link to this definition">#</a></dt>
 <dd><p>Make a public link to ONE document (or group) and print it; nothing else is reachable.</p>
+<p>Returns three forms of the one link (the CLI prints the first on stdout, the others
+on stderr): <code class="docutils literal notranslate"><span class="pre">url</span></code>, the page, whose text is in the html (a
+person, NotebookLM or any fetcher reads it without running script); <code class="docutils literal notranslate"><span class="pre">markdown</span></code>, the
+whole share as one text, for an agent; <code class="docutils literal notranslate"><span class="pre">pdf</span></code>, the same with its images. All three end
+with the link’s expiry or revocation.</p>
 <p><code class="docutils literal notranslate"><span class="pre">ref</span></code> is a document or group id, or its link. The link opens without a login, shows
 only that page and the files chosen, and can be revoked (<code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">unshare</span></code>).
 <code class="docutils literal notranslate"><span class="pre">include</span></code>: comma separated files of the document to share (the page itself always
@@ -742,7 +748,7 @@ outbox or a remote target. <code class="docutils literal notranslate"><span clas
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=6799126d"></script>
+      <script src="../_static/documentation_options.js?v=4d22d5b7"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
