@@ -1,4 +1,4 @@
-> built 2026-11-16 02:09 UTC from 7cf677b (main) · annals 0.0.51. Details: build_info.json
+> built 2026-11-16 02:30 UTC from 50b8d76 (main) · annals 0.0.52. Details: build_info.json
 
 # index.html.md
 
@@ -2256,24 +2256,26 @@ waited.
 
 ### Module Attributes
 
-| [`ENV_OVERVIEWS`](_autosummary/annals.overview.html.md#annals.overview.ENV_OVERVIEWS)     | see [`readers_offered()`](_autosummary/annals.overview.html.md#annals.overview.readers_offered)                                                                                            |
-|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`READERS_SEP`](_autosummary/annals.overview.html.md#annals.overview.READERS_SEP)       | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
-| [`EVERY_READER`](_autosummary/annals.overview.html.md#annals.overview.EVERY_READER)      | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
-| [`REQUEST_FILE_MODE`](_autosummary/annals.overview.html.md#annals.overview.REQUEST_FILE_MODE) | read by the server and the worker, which may be different users                                                                                                   |
-| [`DFLT_DAILY_LIMIT`](_autosummary/annals.overview.html.md#annals.overview.DFLT_DAILY_LIMIT)  | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
-| [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)   | nobody is waiting for it now                                                                                                                                      |
-| [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S)  | a request still running after this long has lost its worker                                                                                                       |
-| [`DOWN_FILE`](_autosummary/annals.overview.html.md#annals.overview.DOWN_FILE)         | the file marking the maker down; not `.json`, because every `.json` here is a request                                                                             |
-| [`DOWN_AFTER`](_autosummary/annals.overview.html.md#annals.overview.DOWN_AFTER)        | the same fast failure from this many documents in a row means the maker is down                                                                                   |
-| [`FAST_FAILURE_S`](_autosummary/annals.overview.html.md#annals.overview.FAST_FAILURE_S)    | the maker could not start                                                                                                                                         |
-| [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.overview.PROBE_EVERY_S)     | while the maker is down, one waiting request is tried this often, to notice it works again                                                                        |
-| [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)           | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
-| [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)  | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
-| [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)               | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
-| [`WAITING`](_autosummary/annals.overview.html.md#annals.overview.WAITING)           | made once it works again, never spent on before                                                                                                                   |
-| [`FAILED_SHOWN_S`](_autosummary/annals.overview.html.md#annals.overview.FAILED_SHOWN_S)    | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
-| [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)      | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
+| [`ENV_OVERVIEWS`](_autosummary/annals.overview.html.md#annals.overview.ENV_OVERVIEWS)           | see [`readers_offered()`](_autosummary/annals.overview.html.md#annals.overview.readers_offered)                                                                                            |
+|--------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`READERS_SEP`](_autosummary/annals.overview.html.md#annals.overview.READERS_SEP)             | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
+| [`EVERY_READER`](_autosummary/annals.overview.html.md#annals.overview.EVERY_READER)            | in `ANNALS_OVERVIEWS`, the readers are separated by this; `*` alone means every reader                                                                            |
+| [`REQUEST_FILE_MODE`](_autosummary/annals.overview.html.md#annals.overview.REQUEST_FILE_MODE)       | read by the server and the worker, which may be different users                                                                                                   |
+| [`DFLT_DAILY_LIMIT`](_autosummary/annals.overview.html.md#annals.overview.DFLT_DAILY_LIMIT)        | at most this many overviews are started in any 24 hours, whoever asks                                                                                             |
+| [`QUEUED_EXPIRY_S`](_autosummary/annals.overview.html.md#annals.overview.QUEUED_EXPIRY_S)         | nobody is waiting for it now                                                                                                                                      |
+| [`RUNNING_MARGIN_S`](_autosummary/annals.overview.html.md#annals.overview.RUNNING_MARGIN_S)        | a request still running after this long has lost its worker                                                                                                       |
+| [`DOWN_FILE`](_autosummary/annals.overview.html.md#annals.overview.DOWN_FILE)               | the file marking the maker down; not `.json`, because every `.json` here is a request                                                                             |
+| [`DOWN_AFTER`](_autosummary/annals.overview.html.md#annals.overview.DOWN_AFTER)              | the same fast failure from this many documents in a row means the maker is down                                                                                   |
+| [`FAST_FAILURE_S`](_autosummary/annals.overview.html.md#annals.overview.FAST_FAILURE_S)          | the maker could not start                                                                                                                                         |
+| [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.overview.PROBE_EVERY_S)           | while the maker is down, one waiting request is tried this often, to notice it works again                                                                        |
+| [`MINUTES`](_autosummary/annals.overview.html.md#annals.overview.MINUTES)                 | the lengths a reader can pick, in minutes; each costs voice characters, so the set is closed                                                                      |
+| [`CHARS_PER_MINUTE`](_autosummary/annals.overview.html.md#annals.overview.CHARS_PER_MINUTE)        | spoken English at about 150 words a minute and 6 characters a word; shown as an estimate                                                                          |
+| [`TAG`](_autosummary/annals.overview.html.md#annals.overview.TAG)                     | marks a document that is itself an overview, so nobody makes an overview of an overview                                                                           |
+| [`WAITING`](_autosummary/annals.overview.html.md#annals.overview.WAITING)                 | made once it works again, never spent on before                                                                                                                   |
+| [`FAILED_SHOWN_S`](_autosummary/annals.overview.html.md#annals.overview.FAILED_SHOWN_S)          | a failed request is still listed as unmade for this long, so a retry is offered where the reader looks for the overview (the Audio tab), not only on the document |
+| [`COMBINED_TAG`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_TAG)            | marks a document made by putting several documents' text in one, for one review of them all                                                                       |
+| [`COMBINED_REQUEST_PREFIX`](_autosummary/annals.overview.html.md#annals.overview.COMBINED_REQUEST_PREFIX) | a queued combination is filed under this plus its [`combined_key()`](_autosummary/annals.overview.html.md#annals.overview.combined_key), until it has a document                        |
+| [`COMBINE_KIND`](_autosummary/annals.overview.html.md#annals.overview.COMBINE_KIND)            | the `kind` of a request record for a combination (the only marker; the id is a file name)                                                                         |
 
 ### Functions
 
@@ -2281,7 +2283,9 @@ waited.
 |-----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | [`combined_document`](_autosummary/annals.overview.html.md#annals.overview.combined_document)(store, docs, \*, title[, ...])   | One document holding the text of `docs`, so a review of it covers them all.                                                    |
 | [`combined_key`](_autosummary/annals.overview.html.md#annals.overview.combined_key)(docs)                                 | Names a set of documents at their current versions, in any order.                                                              |
+| [`combined_request_id`](_autosummary/annals.overview.html.md#annals.overview.combined_request_id)(key)                           | The id a queued combination is filed under, before its document exists.                                                        |
 | [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.                                          |
+| [`find_combined`](_autosummary/annals.overview.html.md#annals.overview.find_combined)(store, key)                          | The combined document made for `key` ([`combined_key()`](_autosummary/annals.overview.html.md#annals.overview.combined_key)), if there is one.       |
 | [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                                                     |
 | [`made_here`](_autosummary/annals.overview.html.md#annals.overview.made_here)(meta)                                    | Whether the overview feature made this document: a spoken overview, or the text it combined to speak several documents as one. |
 | [`maker_down`](_autosummary/annals.overview.html.md#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.                                               |
@@ -2309,9 +2313,17 @@ waited.
 
 spoken English at about 150 words a minute and 6 characters a word; shown as an estimate
 
+### annals.overview.COMBINED_REQUEST_PREFIX *= 'combined-'*
+
+a queued combination is filed under this plus its [`combined_key()`](_autosummary/annals.overview.html.md#annals.overview.combined_key), until it has a document
+
 ### annals.overview.COMBINED_TAG *= 'combined'*
 
 marks a document made by putting several documents’ text in one, for one review of them all
+
+### annals.overview.COMBINE_KIND *= 'combine'*
+
+the `kind` of a request record for a combination (the only marker; the id is a file name)
 
 ### annals.overview.DFLT_DAILY_LIMIT *= 20*
 
@@ -2390,6 +2402,13 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 The request files: one per document, each replaced whole so a reader never sees half.
 
+#### delete(doc_id)
+
+Remove a request, if there is one.
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
 #### ids()
 
 Documents with a request, oldest request first.
@@ -2467,12 +2486,26 @@ True
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.overview.combined_request_id(key)
+
+The id a queued combination is filed under, before its document exists.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
 ### annals.overview.eligible(meta)
 
 Whether a document can be spoken: readable text, current, and not itself an overview.
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.overview.find_combined(store, key)
+
+The combined document made for `key` ([`combined_key()`](_autosummary/annals.overview.html.md#annals.overview.combined_key)), if there is one.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 ### annals.overview.html_to_text(html)
 
@@ -2558,8 +2591,17 @@ is down ([`maker_down()`](_autosummary/annals.overview.html.md#annals.overview.m
 
 Ask for ONE overview of several documents: of the document combining their text.
 
-Returns `{"doc": <combined document id>, "listen": <its overview state>}`. Raises
-`ValueError` as [`request()`](_autosummary/annals.overview.html.md#annals.overview.request) does, or when there is nothing to speak.
+Nothing is published here. When the documents were combined before, that document gets
+an ordinary request. Otherwise the request is queued, with the document ids, under
+[`combined_request_id()`](_autosummary/annals.overview.html.md#annals.overview.combined_request_id) (a record marked `kind: "combine"`), and the worker makes
+the combined document (see [`combined_document()`](_autosummary/annals.overview.html.md#annals.overview.combined_document)) when it starts the job, so a
+request nobody works leaves no document behind. Returns `{"doc": <combined document
+id, or None until the worker has made it>, "listen": <the overview's state>}`. Raises
+`ValueError` as [`request()`](_autosummary/annals.overview.html.md#annals.overview.request) does, or when there is nothing to speak or too much
+of it: refused now, not after the request has waited for a worker.
+
+The key names the documents at their versions *now*. A retry after one of them changed
+is a different key, so a new request: the old failed one stays listed until it expires.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -2576,7 +2618,9 @@ What a page shows for a document: its request’s state and what it can start.
 The overviews asked for and not (yet) made: being made, waiting, or failed recently.
 
 Each is `state_of` its document plus `doc`, `title`, `created` (the document’s),
-`requested` and `finished` (the last try’s). A request whose document is gone, binned
+`requested` and `finished` (the last try’s). A queued combination of several documents
+has no document yet: `doc` is `None` and `combine` has the `docs` and `group`
+to ask again with (`POST /overviews`). A request whose document is gone, binned
 or no longer speakable is left out: nothing can be retried. Newest first.
 
 * **Return type:**
@@ -4483,18 +4527,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 02:09 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/7cf677b3b5b8dbedd2e99f03f10264cef343b878"><code>7cf677b</code></a> on branch <code>main</code>, for **annals 0.0.51** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 02:30 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/50b8d760023e5265fc51318aa7dcf757fc7463c7"><code>50b8d76</code></a> on branch <code>main</code>, for **annals 0.0.52** (from <code>pyproject.toml</code>).
 
 #### WARNING
 The documentation and the package may be misaligned:
 
-- The documented version (0.0.51) is behind the latest release on PyPI (0.0.52): `pip install annals` gives newer code than these docs describe.
+- The documented version (0.0.52) is behind the latest release on PyPI (0.0.53): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/7cf677b3b5b8dbedd2e99f03f10264cef343b878"><code>7cf677b3b5b8dbedd2e99f03f10264cef343b878</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/50b8d760023e5265fc51318aa7dcf757fc7463c7"><code>50b8d760023e5265fc51318aa7dcf757fc7463c7</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4505,9 +4549,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43789984582">43789984582</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43792153546">43792153546</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>7cf677b3b5b8dbedd2e99f03f10264cef343b878</code> (in the history of the built commit) |
+| Event commit | <code>50b8d760023e5265fc51318aa7dcf757fc7463c7</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4532,13 +4576,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.52/">0.0.52</a>, newer than the documented version (0.0.51).
+Latest release: <a href="https://pypi.org/project/annals/0.0.53/">0.0.53</a>, newer than the documented version (0.0.52).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 7cf677b3b5b8dbedd2e99f03f10264cef343b878
+git checkout 50b8d760023e5265fc51318aa7dcf757fc7463c7
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

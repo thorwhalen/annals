@@ -107,7 +107,9 @@ data-aria-dark="Switch to auto color mode">
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#annals.overview.CHARS_PER_MINUTE"><code class="docutils literal notranslate"><span class="pre">CHARS_PER_MINUTE</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.COMBINED_REQUEST_PREFIX"><code class="docutils literal notranslate"><span class="pre">COMBINED_REQUEST_PREFIX</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.COMBINED_TAG"><code class="docutils literal notranslate"><span class="pre">COMBINED_TAG</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.COMBINE_KIND"><code class="docutils literal notranslate"><span class="pre">COMBINE_KIND</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.DFLT_DAILY_LIMIT"><code class="docutils literal notranslate"><span class="pre">DFLT_DAILY_LIMIT</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.DOWN_AFTER"><code class="docutils literal notranslate"><span class="pre">DOWN_AFTER</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.DOWN_FILE"><code class="docutils literal notranslate"><span class="pre">DOWN_FILE</span></code></a></li>
@@ -123,6 +125,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.overview.REQUEST_FILE_MODE"><code class="docutils literal notranslate"><span class="pre">REQUEST_FILE_MODE</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.RUNNING_MARGIN_S"><code class="docutils literal notranslate"><span class="pre">RUNNING_MARGIN_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.Requests"><code class="docutils literal notranslate"><span class="pre">Requests</span></code></a><ul>
+<li><a class="reference internal" href="#annals.overview.Requests.delete"><code class="docutils literal notranslate"><span class="pre">Requests.delete()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.Requests.ids"><code class="docutils literal notranslate"><span class="pre">Requests.ids()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.Requests.mark"><code class="docutils literal notranslate"><span class="pre">Requests.mark()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.Requests.note_start"><code class="docutils literal notranslate"><span class="pre">Requests.note_start()</span></code></a></li>
@@ -135,7 +138,9 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.overview.choices"><code class="docutils literal notranslate"><span class="pre">choices()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.combined_document"><code class="docutils literal notranslate"><span class="pre">combined_document()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.combined_key"><code class="docutils literal notranslate"><span class="pre">combined_key()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.combined_request_id"><code class="docutils literal notranslate"><span class="pre">combined_request_id()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.eligible"><code class="docutils literal notranslate"><span class="pre">eligible()</span></code></a></li>
+<li><a class="reference internal" href="#annals.overview.find_combined"><code class="docutils literal notranslate"><span class="pre">find_combined()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.html_to_text"><code class="docutils literal notranslate"><span class="pre">html_to_text()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.made_here"><code class="docutils literal notranslate"><span class="pre">made_here()</span></code></a></li>
 <li><a class="reference internal" href="#annals.overview.maker_down"><code class="docutils literal notranslate"><span class="pre">maker_down()</span></code></a></li>
@@ -279,6 +284,12 @@ waited.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.COMBINED_TAG" title="annals.overview.COMBINED_TAG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMBINED_TAG</span></code></a></p></td>
 <td><p>marks a document made by putting several documents' text in one, for one review of them all</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.COMBINED_REQUEST_PREFIX" title="annals.overview.COMBINED_REQUEST_PREFIX"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMBINED_REQUEST_PREFIX</span></code></a></p></td>
+<td><p>a queued combination is filed under this plus its <a class="reference internal" href="#annals.overview.combined_key" title="annals.overview.combined_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">combined_key()</span></code></a>, until it has a document</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.COMBINE_KIND" title="annals.overview.COMBINE_KIND"><code class="xref py py-obj docutils literal notranslate"><span class="pre">COMBINE_KIND</span></code></a></p></td>
+<td><p>the <code class="docutils literal notranslate"><span class="pre">kind</span></code> of a request record for a combination (the only marker; the id is a file name)</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -295,8 +306,14 @@ waited.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.combined_key" title="annals.overview.combined_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combined_key</span></code></a>(docs)</p></td>
 <td><p>Names a set of documents at their current versions, in any order.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.eligible" title="annals.overview.eligible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eligible</span></code></a>(meta)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.combined_request_id" title="annals.overview.combined_request_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">combined_request_id</span></code></a>(key)</p></td>
+<td><p>The id a queued combination is filed under, before its document exists.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.eligible" title="annals.overview.eligible"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eligible</span></code></a>(meta)</p></td>
 <td><p>Whether a document can be spoken: readable text, current, and not itself an overview.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.find_combined" title="annals.overview.find_combined"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_combined</span></code></a>(store, key)</p></td>
+<td><p>The combined document made for <code class="docutils literal notranslate"><span class="pre">key</span></code> (<a class="reference internal" href="#annals.overview.combined_key" title="annals.overview.combined_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">combined_key()</span></code></a>), if there is one.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.html_to_text" title="annals.overview.html_to_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_to_text</span></code></a>(html)</p></td>
 <td><p>The readable text of a page: no markup, scripts or styles.</p></td>
@@ -364,9 +381,21 @@ waited.</p>
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.COMBINED_REQUEST_PREFIX">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">COMBINED_REQUEST_PREFIX</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'combined-'</span></span><a class="headerlink" href="#annals.overview.COMBINED_REQUEST_PREFIX" title="Link to this definition">#</a></dt>
+<dd><p>a queued combination is filed under this plus its <a class="reference internal" href="#annals.overview.combined_key" title="annals.overview.combined_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">combined_key()</span></code></a>, until it has a document</p>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="annals.overview.COMBINED_TAG">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">COMBINED_TAG</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'combined'</span></span><a class="headerlink" href="#annals.overview.COMBINED_TAG" title="Link to this definition">#</a></dt>
 <dd><p>marks a document made by putting several documents’ text in one, for one review of them all</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.overview.COMBINE_KIND">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">COMBINE_KIND</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'combine'</span></span><a class="headerlink" href="#annals.overview.COMBINE_KIND" title="Link to this definition">#</a></dt>
+<dd><p>the <code class="docutils literal notranslate"><span class="pre">kind</span></code> of a request record for a combination (the only marker; the id is a file name)</p>
 </dd></dl>
 
 <dl class="py data">
@@ -483,6 +512,17 @@ the reader looks for the overview (the Audio tab), not only on the document</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py method">
+<dt class="sig sig-object py" id="annals.overview.Requests.delete">
+<span class="sig-name descname"><span class="pre">delete</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#Requests.delete"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.Requests.delete" title="Link to this definition">#</a></dt>
+<dd><p>Remove a request, if there is one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="annals.overview.Requests.ids">
 <span class="sig-name descname"><span class="pre">ids</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#Requests.ids"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.Requests.ids" title="Link to this definition">#</a></dt>
 <dd><p>Documents with a request, oldest request first.</p>
@@ -598,12 +638,34 @@ has text to speak, or past <code class="docutils literal notranslate"><span clas
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.combined_request_id">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">combined_request_id</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#combined_request_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.combined_request_id" title="Link to this definition">#</a></dt>
+<dd><p>The id a queued combination is filed under, before its document exists.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.overview.eligible">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">eligible</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#eligible"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.eligible" title="Link to this definition">#</a></dt>
 <dd><p>Whether a document can be spoken: readable text, current, and not itself an overview.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.overview.find_combined">
+<span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">find_combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#find_combined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.find_combined" title="Link to this definition">#</a></dt>
+<dd><p>The combined document made for <code class="docutils literal notranslate"><span class="pre">key</span></code> (<a class="reference internal" href="#annals.overview.combined_key" title="annals.overview.combined_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">combined_key()</span></code></a>), if there is one.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -715,8 +777,16 @@ is down (<a class="reference internal" href="#annals.overview.maker_down" title=
 <dt class="sig sig-object py" id="annals.overview.request_combined">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">request_combined</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requests</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">docs</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minutes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_bytes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#request_combined"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.request_combined" title="Link to this definition">#</a></dt>
 <dd><p>Ask for ONE overview of several documents: of the document combining their text.</p>
-<p>Returns <code class="docutils literal notranslate"><span class="pre">{&quot;doc&quot;:</span> <span class="pre">&lt;combined</span> <span class="pre">document</span> <span class="pre">id&gt;,</span> <span class="pre">&quot;listen&quot;:</span> <span class="pre">&lt;its</span> <span class="pre">overview</span> <span class="pre">state&gt;}</span></code>. Raises
-<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> as <a class="reference internal" href="#annals.overview.request" title="annals.overview.request"><code class="xref py py-func docutils literal notranslate"><span class="pre">request()</span></code></a> does, or when there is nothing to speak.</p>
+<p>Nothing is published here. When the documents were combined before, that document gets
+an ordinary request. Otherwise the request is queued, with the document ids, under
+<a class="reference internal" href="#annals.overview.combined_request_id" title="annals.overview.combined_request_id"><code class="xref py py-func docutils literal notranslate"><span class="pre">combined_request_id()</span></code></a> (a record marked <code class="docutils literal notranslate"><span class="pre">kind:</span> <span class="pre">&quot;combine&quot;</span></code>), and the worker makes
+the combined document (see <a class="reference internal" href="#annals.overview.combined_document" title="annals.overview.combined_document"><code class="xref py py-func docutils literal notranslate"><span class="pre">combined_document()</span></code></a>) when it starts the job, so a
+request nobody works leaves no document behind. Returns <code class="docutils literal notranslate"><span class="pre">{&quot;doc&quot;:</span> <span class="pre">&lt;combined</span> <span class="pre">document</span>
+<span class="pre">id,</span> <span class="pre">or</span> <span class="pre">None</span> <span class="pre">until</span> <span class="pre">the</span> <span class="pre">worker</span> <span class="pre">has</span> <span class="pre">made</span> <span class="pre">it&gt;,</span> <span class="pre">&quot;listen&quot;:</span> <span class="pre">&lt;the</span> <span class="pre">overview's</span> <span class="pre">state&gt;}</span></code>. Raises
+<code class="docutils literal notranslate"><span class="pre">ValueError</span></code> as <a class="reference internal" href="#annals.overview.request" title="annals.overview.request"><code class="xref py py-func docutils literal notranslate"><span class="pre">request()</span></code></a> does, or when there is nothing to speak or too much
+of it: refused now, not after the request has waited for a worker.</p>
+<p>The key names the documents at their versions <em>now</em>. A retry after one of them changed
+is a different key, so a new request: the old failed one stays listed until it expires.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -740,7 +810,9 @@ is down (<a class="reference internal" href="#annals.overview.maker_down" title=
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">unmade</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">requests</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#unmade"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.unmade" title="Link to this definition">#</a></dt>
 <dd><p>The overviews asked for and not (yet) made: being made, waiting, or failed recently.</p>
 <p>Each is <code class="docutils literal notranslate"><span class="pre">state_of</span></code> its document plus <code class="docutils literal notranslate"><span class="pre">doc</span></code>, <code class="docutils literal notranslate"><span class="pre">title</span></code>, <code class="docutils literal notranslate"><span class="pre">created</span></code> (the document’s),
-<code class="docutils literal notranslate"><span class="pre">requested</span></code> and <code class="docutils literal notranslate"><span class="pre">finished</span></code> (the last try’s). A request whose document is gone, binned
+<code class="docutils literal notranslate"><span class="pre">requested</span></code> and <code class="docutils literal notranslate"><span class="pre">finished</span></code> (the last try’s). A queued combination of several documents
+has no document yet: <code class="docutils literal notranslate"><span class="pre">doc</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code> and <code class="docutils literal notranslate"><span class="pre">combine</span></code> has the <code class="docutils literal notranslate"><span class="pre">docs</span></code> and <code class="docutils literal notranslate"><span class="pre">group</span></code>
+to ask again with (<code class="docutils literal notranslate"><span class="pre">POST</span> <span class="pre">/overviews</span></code>). A request whose document is gone, binned
 or no longer speakable is left out: nothing can be retried. Newest first.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
@@ -817,7 +889,7 @@ is tried every <a class="reference internal" href="#annals.overview.PROBE_EVERY_
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=440a2162"></script>
+      <script src="../_static/documentation_options.js?v=73f2ab08"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

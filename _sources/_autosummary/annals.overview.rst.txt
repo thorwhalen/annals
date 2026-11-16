@@ -25,6 +25,8 @@ annals.overview
       WAITING
       FAILED_SHOWN_S
       COMBINED_TAG
+      COMBINED_REQUEST_PREFIX
+      COMBINE_KIND
    
    .. rubric:: Functions
 
@@ -33,7 +35,9 @@ annals.overview
       choices
       combined_document
       combined_key
+      combined_request_id
       eligible
+      find_combined
       html_to_text
       made_here
       maker_down
