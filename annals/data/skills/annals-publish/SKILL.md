@@ -21,6 +21,7 @@ Only if `annals` is not found: `pip install annals`. Do not `pip install -U` it 
 - The title is taken from the first `# heading` (markdown) or `<title>` (html); pass `--title "..."` to override.
 - `--tags a,b` adds tags (searchable). `--session <name>` records who published; always pass your session or corpus name when you have one.
 - `--meta corpus=<repo> issue=<n> kind=report` records what the document belongs to (also `repo`, `item`). `--json` prints `{id, title, url, ...}` instead of bare links, for a program calling this command. `annals ls --session <name> --since 6h --tag t --json` lists what a session published, matching whole values.
+- `annals tag <link-or-id> a,b` sets the owner's tags on a document (they then show in `ls` and `show`). Only when the owner asks: `annals trash <id>` then `annals purge <id>` deletes for good, and `annals listen <id> --minutes 5` asks for a spoken overview (it spends money); the MCP server offers those only when its host enables them.
 
 ## Reading an annals link you are given
 

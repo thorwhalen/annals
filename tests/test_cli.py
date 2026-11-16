@@ -21,9 +21,14 @@ def test_publish_prints_url_then_ls_and_trash(tmp_path, monkeypatch):
     src.write_text("# My report\n\nbody")
 
     out = io.StringIO()
-    assert _run(["publish", str(src), "--tags", "a,b", "--session", "test-session"], out) == 0
+    assert (
+        _run(["publish", str(src), "--tags", "a,b", "--session", "test-session"], out)
+        == 0
+    )
     url = out.getvalue().strip()
-    assert re.match(r"^https://example\.com/annals/d/\d{8}-\d{6}-my-report-[0-9a-f]{4}$", url)
+    assert re.match(
+        r"^https://example\.com/annals/d/\d{8}-\d{6}-my-report-[0-9a-f]{4}$", url
+    )
     doc_id = url.rsplit("/", 1)[1]
 
     out = io.StringIO()
@@ -70,9 +75,17 @@ def test_settings_precedence(tmp_path, monkeypatch):
     monkeypatch.delenv("ANNALS_BASE_URL", raising=False)
     s = load_settings()
     assert s.base_url == "http://127.0.0.1:8765/annals"
-    write_config(Settings(target="tw:/root/.local/share/annals", base_url="https://apps.example.com/annals/"))
+    write_config(
+        Settings(
+            target="tw:/root/.local/share/annals",
+            base_url="https://apps.example.com/annals/",
+        )
+    )
     s = load_settings()
-    assert s.target == "tw:/root/.local/share/annals" and s.base_url == "https://apps.example.com/annals"
+    assert (
+        s.target == "tw:/root/.local/share/annals"
+        and s.base_url == "https://apps.example.com/annals"
+    )
     monkeypatch.setenv("ANNALS_TARGET", "/elsewhere")
     assert load_settings().target == "/elsewhere"
     assert load_settings(target="/arg").target == "/arg"
@@ -82,7 +95,10 @@ def test_configure_writes_file(tmp_path, monkeypatch):
     monkeypatch.setenv("ANNALS_CONFIG", str(tmp_path / "c.toml"))
     monkeypatch.delenv("ANNALS_TARGET", raising=False)
     out = io.StringIO()
-    _run(["configure", "--target", "host:/srv/annals", "--base-url", "https://h/annals"], out)
+    _run(
+        ["configure", "--target", "host:/srv/annals", "--base-url", "https://h/annals"],
+        out,
+    )
     got = json.loads(out.getvalue())
     assert got["target"] == "host:/srv/annals" and (tmp_path / "c.toml").exists()
 
@@ -112,9 +128,12 @@ def test_add_to_appends_to_an_existing_group(tmp_path, monkeypatch, capsys):
     out = capsys.readouterr().out
     assert gid in out
     from annals.store import DocStore
+
     assert len(DocStore(tmp_path / "data").group(gid)["docs"]) == 3
     assert len(DocStore(tmp_path / "data").list_groups()) == 1
-    assert run(["publish", str(tmp_path / "c.md"), "--add-to", gid, "--group", "X"]) == 1
+    assert (
+        run(["publish", str(tmp_path / "c.md"), "--add-to", gid, "--group", "X"]) == 1
+    )
 
 
 def test_share_shares_unshare(tmp_path, monkeypatch):
@@ -154,7 +173,9 @@ def test_share_shares_unshare(tmp_path, monkeypatch):
     # what the CLI wrote is what the server serves
     client = TestClient(mk_app(store=DocStore(tmp_path / "data"), authorizer=no_auth))
     hdr = {"content-type": "application/x-www-form-urlencoded"}
-    client.post(f"/annals/shared/{token}/unlock", content=b"password=s3cret-pw", headers=hdr)
+    client.post(
+        f"/annals/shared/{token}/unlock", content=b"password=s3cret-pw", headers=hdr
+    )
     doc_id = doc_url.rsplit("/", 1)[1]
     assert client.get(f"/annals/shared/{token}/raw/{doc_id}/x.png").status_code == 200
     assert client.get(f"/annals/shared/{token}/raw/{doc_id}/y.png").status_code == 404
@@ -186,7 +207,9 @@ def test_share_base_url_resolution(tmp_path, monkeypatch):
 def test_share_refuses_an_outbox(tmp_path, monkeypatch):
     cfg = tmp_path / "c.toml"
     write_config(
-        Settings(target=str(tmp_path / "out"), base_url="https://h/annals", outbox=True),
+        Settings(
+            target=str(tmp_path / "out"), base_url="https://h/annals", outbox=True
+        ),
         config_path=cfg,
     )
     monkeypatch.setenv("ANNALS_CONFIG", str(cfg))
@@ -229,7 +252,9 @@ def test_an_agent_reads_a_private_link_it_was_handed(tmp_path, monkeypatch):
 def test_reading_refuses_an_outbox(tmp_path, monkeypatch):
     cfg = tmp_path / "c.toml"
     write_config(
-        Settings(target=str(tmp_path / "out"), base_url="https://h/annals", outbox=True),
+        Settings(
+            target=str(tmp_path / "out"), base_url="https://h/annals", outbox=True
+        ),
         config_path=cfg,
     )
     monkeypatch.setenv("ANNALS_CONFIG", str(cfg))
@@ -241,11 +266,18 @@ def test_reading_refuses_an_outbox(tmp_path, monkeypatch):
         assert "outbox" in err.getvalue()
 
 
-def test_an_audio_file_takes_its_timed_text_along_as_one_document(tmp_path, monkeypatch):
+def test_an_audio_file_takes_its_timed_text_along_as_one_document(
+    tmp_path, monkeypatch
+):
     monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
     monkeypatch.setenv("ANNALS_BASE_URL", "https://example.com/annals")
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
-    names = ("talk.chapters.vtt", "talk.mp3", "notes.md", "talk.vtt")  # as a shell glob lists them
+    names = (
+        "talk.chapters.vtt",
+        "talk.mp3",
+        "notes.md",
+        "talk.vtt",
+    )  # as a shell glob lists them
     for name in names:
         (tmp_path / name).write_text("# Notes" if name.endswith(".md") else "x")
     out = io.StringIO()
@@ -276,7 +308,19 @@ def test_publish_json_is_the_contract_and_meta_lands_in_source(tmp_path, monkeyp
     _env(tmp_path, monkeypatch)
     src = tmp_path / "r.md"
     src.write_text("# R\n\nbody")
-    res = _json(["publish", str(src), "--json", "--meta", "corpus=annals", "--meta", "issue=64", "--group", "G"])
+    res = _json(
+        [
+            "publish",
+            str(src),
+            "--json",
+            "--meta",
+            "corpus=annals",
+            "--meta",
+            "issue=64",
+            "--group",
+            "G",
+        ]
+    )
     assert set(res) == {"id", "title", "url", "group_id", "group_url"}
     got = _json(["show", res["id"]])
     assert got["source"]["corpus"] == "annals" and got["source"]["issue"] == "64"
@@ -296,14 +340,35 @@ def test_ls_filters_are_exact(tmp_path, monkeypatch):
     for name, session, tags in [("a", "sess-1", "x"), ("b", "sess-10", "xy")]:
         f = tmp_path / f"{name}.md"
         f.write_text(f"# {name}\n\nbody")
-        _json(["publish", str(f), "--json", "--session", session, "--tags", tags, "--meta", f"kind={name}"])
+        _json(
+            [
+                "publish",
+                str(f),
+                "--json",
+                "--session",
+                session,
+                "--tags",
+                tags,
+                "--meta",
+                f"kind={name}",
+            ]
+        )
     assert [d["title"] for d in _json(["ls", "--session", "sess-1"])["docs"]] == ["a"]
     assert [d["title"] for d in _json(["ls", "--tag", "x"])["docs"]] == ["a"]
     assert [d["title"] for d in _json(["ls", "--meta", "kind=b"])["docs"]] == ["b"]
     assert _json(["ls", "--since", "1h"])["total"] == 2
     assert _json(["ls", "--since", "2999-01-01"])["total"] == 0
     row = _json(["ls", "--session", "sess-10"])["docs"][0]
-    assert set(row) == {"id", "title", "kind", "tags", "created", "updated", "source", "url"}
+    assert set(row) == {
+        "id",
+        "title",
+        "kind",
+        "tags",
+        "created",
+        "updated",
+        "source",
+        "url",
+    }
     assert row["source"]["session"] == "sess-10" and row["source"]["kind"] == "b"
 
 
@@ -311,7 +376,9 @@ def test_meta_repeats_and_a_path_may_follow_it(tmp_path, monkeypatch):
     _env(tmp_path, monkeypatch)
     src = tmp_path / "r.md"
     src.write_text("# R\n\nbody")
-    res = _json(["publish", "--meta", "corpus=c", "--meta", "item=i7", str(src), "--json"])
+    res = _json(
+        ["publish", "--meta", "corpus=c", "--meta", "item=i7", str(src), "--json"]
+    )
     src_meta = _json(["show", res["id"]])["source"]
     assert (src_meta["corpus"], src_meta["item"]) == ("c", "i7")
 
@@ -321,7 +388,9 @@ def test_meta_cannot_overwrite_recorded_provenance(tmp_path, monkeypatch):
     src = tmp_path / "r.md"
     src.write_text("# R\n\nbody")
     err = io.StringIO()
-    assert run(["publish", str(src), "--meta", "host=x"], out=io.StringIO(), err=err) == 1
+    assert (
+        run(["publish", str(src), "--meta", "host=x"], out=io.StringIO(), err=err) == 1
+    )
     assert "cannot set 'host'" in err.getvalue()
 
 
@@ -349,3 +418,64 @@ def test_since_follows_a_replaced_document(tmp_path, monkeypatch):
     assert _json(["ls", "--since", "1h"])["total"] >= 1
     err = io.StringIO()
     assert run(["ls", "--since", "yesterday-ish"], out=io.StringIO(), err=err) == 1
+
+
+def test_every_operation_is_classified_and_mcp_serves_by_effect():
+    from annals import mcp, tools
+
+    names = {f.__name__ for f in tools._dispatch_funcs}
+    assert set(tools.EFFECTS) == names  # a new verb must be classified
+    served = {r.split(":")[1] for r in mcp._refs()}
+    assert served == {n for n in names if tools.EFFECTS[n] in {"read", "write"}}
+    assert not served & {
+        "purge",
+        "listen",
+        "listen_down",
+        "serve",
+        "page_shell",
+        "aggregate",
+    }
+    assert {"copy", "tag", "ls"} <= served  # what only the CLI had before
+    assert "purge" in {r.split(":")[1] for r in mcp._refs({"read", "destructive"})}
+
+
+def test_the_mcp_server_builds_with_the_default_and_a_wider_set(monkeypatch):
+    import pytest
+
+    pytest.importorskip("py2mcp")
+    from annals import mcp
+
+    assert mcp.mk_server() is not None
+    monkeypatch.setenv(mcp.ENV_EFFECTS, "read,write,destructive,spend")
+    assert mcp.mk_server() is not None
+
+
+def test_tag_then_purge_from_the_command_line(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nbody")
+    doc = _json(["publish", str(src), "--json"])["id"]
+    assert _json(["tag", doc, "a,b"]) == {"id": doc, "tags": ["a", "b"]}
+    assert _json(["show", doc])["tags"] == [
+        "a",
+        "b",
+    ]  # the owner's tags are what every read verb shows
+    assert [d["id"] for d in _json(["ls", "--tag", "a"])["docs"]] == [doc]
+    assert _json(["ls", "--tag", "gone"])["total"] == 0
+    err = io.StringIO()
+    assert (
+        run(["purge", doc], out=io.StringIO(), err=err) == 1
+        and "not in the trash" in err.getvalue()
+    )
+    other = tmp_path / "o.md"
+    other.write_text("# O\n\nx")
+    keep = _json(["publish", str(other), "--json"])["id"]
+    _json(["trash", doc])
+    err = io.StringIO()  # one id not in the bin: nothing is deleted
+    assert (
+        run(["purge", doc, keep], out=io.StringIO(), err=err) == 1
+        and keep in err.getvalue()
+    )
+    assert _json(["ls", "--trash"])["total"] == 1
+    assert _json(["purge", doc]) == {"purged": [doc]}
+    assert _json(["ls", "--trash"])["total"] == 0

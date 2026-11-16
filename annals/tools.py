@@ -125,6 +125,26 @@ def _changed_at(meta: dict) -> datetime | None:
         return None
 
 
+def _owner_tags(store: DocStore) -> dict[str, list[str]]:
+    """The owner's tags (set by ``annals tag`` or the page), keyed by item key: they win over the publisher's."""
+    from annals.catalog import default_tags
+
+    tags = default_tags(store)
+    snap = getattr(tags, "snapshot", None)
+    return snap() if snap else dict(tags)
+
+
+def _with_owner_tags(metas: list[dict], store: DocStore) -> list[dict]:
+    """``metas`` with each document's tags replaced by the owner's, where the owner set them."""
+    from annals.sources import PUBLISHED, mk_key
+
+    own = _owner_tags(store)
+    return [
+        {**m, "tags": own.get(mk_key(PUBLISHED, m["id"]), m.get("tags", []))}
+        for m in metas
+    ]
+
+
 def _as_list(x) -> list[str]:
     items = [x] if isinstance(x, str) else list(x)
     if not items:
@@ -333,14 +353,16 @@ def ls(
     ``to`` lists a named target instead of the default one. The rest are exact filters,
     all of which must hold, for tools that poll: ``since`` (an ISO date or time, or an age
     like ``6h`` or ``2d``: published or replaced at or after it), ``session`` (the publishing session's
-    name, whole, case-sensitive), ``tag`` (one tag, whole) and ``meta`` (``key=value``,
+    name, whole, case-sensitive), ``tag`` (one tag, whole: the owner's own tags, set by ``annals tag``, win over the publisher's) and ``meta`` (``key=value``,
     several allowed, against the document's ``source``: ``corpus=annals``). A row is
     ``{id, title, kind, tags, created, updated, source, url}``; with ``--json`` that is the contract
     (``misc/docs/design.md``), and ``total`` counts the matches before ``limit``.
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
     store = _store(settings)
-    docs = store.search(q, trash=trash) if q else store.list(trash=trash)
+    docs = _with_owner_tags(
+        store.search(q, trash=trash) if q else store.list(trash=trash), store
+    )
     wanted = _parse_meta(meta)
     if session:
         wanted["session"] = session
@@ -394,7 +416,7 @@ def show(
             "url": _group_url(settings, g["id"]),
             "doc_urls": [_doc_url(settings, i) for i in g["docs"]],
         }
-    meta = store.meta(ref)
+    meta = _with_owner_tags([store.meta(ref)], store)[0]
     meta["url"] = _doc_url(settings, ref)
     meta["groups"] = [  # a version is in the groups its document is in
         {**g, "url": _group_url(settings, g["id"])}
@@ -419,6 +441,60 @@ def trash(
     """Move documents to the recycle bin (restorable)."""
     store = _store(load_settings(target=target, to=to))
     return {"trashed": [store.trash(i)["id"] for i in _as_list(doc_ids)]}
+
+
+def purge(
+    doc_ids: list[str], *, target: str | None = None, to: str | None = None
+) -> dict:
+    """Delete documents that are in the bin for good (not restorable). One that is not in the bin is refused."""
+    from annals.catalog import mk_catalog, purge_document
+
+    store = _store(load_settings(target=target, to=to))
+    ids = _as_list(doc_ids)
+    in_bin = {m["id"] for m in store.list(trash=True)}
+    if missing := [
+        i for i in ids if i not in in_bin
+    ]:  # nothing is deleted unless every id can be
+        raise ValueError(
+            f"not in the trash, so not purged (nothing was deleted): {', '.join(missing)}; trash it first"
+        )
+    catalog = mk_catalog(store)
+    return {"purged": [purge_document(store, catalog, i)["id"] for i in ids]}
+
+
+def tag(
+    doc_id: str,
+    tags: str,
+    *,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Set a document's tags (comma separated; "" clears them), as the page's tag editor does.
+
+    The tags are the owner's overlay, kept apart from the document and shown by ``ls`` and
+    ``show`` in place of the publisher's. They live where the documents do, so this refuses an
+    outbox or a remote target. ``doc_id`` may be the document's link. Returns ``{id, tags}``.
+    """
+    from annals.catalog import mk_catalog
+    from annals.sources import PUBLISHED, mk_key
+    from annals.target import LocalTarget
+
+    settings = load_settings(target=target, to=to)
+    store = _store(settings)
+    if settings.outbox or not isinstance(store.target, LocalTarget):
+        raise ValueError(
+            "the owner's tags are kept where the documents are: this target is not local (or is an outbox)"
+        )
+    kind, ref = _parse_ref(doc_id)
+    if kind == "group":
+        raise ValueError("annals tag names a document, not a group")
+    store.meta(
+        ref
+    )  # a document that does not exist raises here, before anything is written
+    row = mk_catalog(store).set_tags(
+        mk_key(PUBLISHED, ref), [t for t in tags.split(",") if t.strip()]
+    )
+    return {"id": ref, "tags": row["tags"]}
 
 
 def restore(
@@ -1017,6 +1093,8 @@ _dispatch_funcs[:] = [
     show,
     trash,
     restore,
+    purge,
+    tag,
     group,
     groups,
     aggregate,
@@ -1031,3 +1109,43 @@ _dispatch_funcs[:] = [
     listen_work,
     listen_down,
 ]
+
+
+#: what a function does to the world, least to most: a surface serves the levels its caller
+#: allows. ``read`` changes nothing; ``write`` changes the store or a setting and can be undone
+#: or repeated; ``file`` writes a path on the machine that runs it; ``destructive`` cannot be
+#: undone; ``spend`` costs money or queues work that does; ``server`` is run by a server or a
+#: timer, never by a caller.
+EFFECTS = {
+    "publish": "write",
+    "ls": "read",
+    "show": "read",
+    "trash": "write",
+    "restore": "write",
+    "purge": "destructive",
+    "tag": "write",
+    "group": "write",
+    "groups": "read",
+    "aggregate": "file",
+    "copy": "write",
+    "share": "write",
+    "shares": "read",
+    "unshare": "write",
+    "configure": "write",
+    "serve": "server",
+    "page_shell": "server",
+    "listen": "spend",
+    "listen_work": "server",
+    "listen_down": "spend",
+}
+#: what an agent or a tool is offered unless its host asks for more (MCP reads this)
+DFLT_EFFECTS = frozenset({"read", "write"})
+
+
+def tools_with(effects=DFLT_EFFECTS) -> list:
+    """The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.
+
+    >>> [f.__name__ for f in tools_with({"read"})]
+    ['ls', 'show', 'groups', 'shares']
+    """
+    return [f for f in _dispatch_funcs if EFFECTS[f.__name__] in effects]
