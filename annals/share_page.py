@@ -25,8 +25,8 @@ What goes in the page, per document: its markdown and html files (the notebook s
 made safe by :func:`annals.notebook.render_source_body`, html reduced to its structure and
 words by :func:`annals.combine.html_body` with a link to the page as designed; for a
 document with no text, its images; its audio and video with the browser's own players;
-then links to its other files. Past :data:`STATIC_MAX_BYTES` of html the remaining
-documents are links to their own pages, so a large group still answers quickly and every
+then links to its other files. Past :data:`STATIC_MAX_BYTES` of text or
+:data:`STATIC_MAX_FILES` files, the remaining files and documents are links to their own pages, so a large group still answers quickly and every
 document stays reachable. A document that *is* an html page (:func:`designed_page`) is
 served as itself at its own link, filtered and sandboxed as ``/raw`` serves it, with a
 ``<base>`` (:func:`with_base`) so its images and styles load.
@@ -43,11 +43,14 @@ from urllib.parse import quote
 from annals.aggregate import demote_headings
 from annals.combine import html_body
 from annals.notebook import render_source_body, source_files
-from annals.share import dir_of, filter_refs, references, resolve_rel
+from annals.share import dir_of, filter_refs, ref_decider, references, resolve_rel
 from annals.store import kind_of
 
 #: the page's text stops growing past this many bytes of html; later documents are links
-STATIC_MAX_BYTES = 3_000_000
+STATIC_MAX_BYTES = 1_500_000
+#: the text files rendered into one page at most; the rest are links (a page is made on
+#: every request, and anyone holding the link may make one)
+STATIC_MAX_FILES = 40
 #: a document's file larger than this is linked, not put in the page
 STATIC_FILE_MAX_BYTES = 2_000_000
 #: images shown for a document without text (a gallery folder); the rest are listed
@@ -56,7 +59,7 @@ STATIC_MAX_IMAGES = 60
 DESCRIPTION_CHARS = 280
 #: the alternate representations of a share: path suffix, media type, label
 ALTERNATES = (
-    ("md", "text/markdown", "Markdown"),
+    ("md", "text/plain", "Markdown"),  # served as text, so a browser shows it
     ("pdf", "application/pdf", "PDF"),
 )
 #: the share's whole text, at ``<link>/<SHARE_FILE>.<ext>``
@@ -109,6 +112,22 @@ def alternate_links(link: str, doc_id: str | None = None) -> str:
     )
 
 
+class _Budget:
+    """What one page may still render: bytes of text and a number of files."""
+
+    def __init__(self, max_bytes: int, max_files: int | None = None):
+        self.bytes_left = max_bytes
+        self.files_left = STATIC_MAX_FILES if max_files is None else max_files
+
+    @property
+    def spent(self) -> bool:
+        return self.bytes_left <= 0 or self.files_left <= 0
+
+    def spend(self, n_bytes: int) -> None:
+        self.bytes_left -= n_bytes
+        self.files_left -= 1
+
+
 def designed_page(meta: Mapping, files: Sequence[str]) -> str | None:
     """The html file a document's page *is*, when it is one, else ``None``.
 
@@ -142,20 +161,27 @@ def _doc_html(
     read_text: Callable[[str, str], str],
     scope: ShareScope,
     demote: int,
+    budget: "_Budget",
 ) -> str:
-    """One document's text and files as an html fragment (see the module docstring)."""
+    """One document's text and files as an html fragment (see the module docstring).
+
+    ``read_text`` raising ``KeyError``, ``OSError`` or ``ValueError`` (a file gone, or too
+    large) leaves that file as a link; ``budget`` is spent per file rendered, and once it
+    is spent the remaining files are links too.
+    """
     doc_id = meta["id"]
     sizes = meta.get("sizes") or {}
     sources = source_files(meta, files)
     shown: set[str] = set()
     parts: list[str] = []
     for rel in sources:
-        if int(sizes.get(rel, 0)) > STATIC_FILE_MAX_BYTES:
+        if budget.spent or int(sizes.get(rel, 0)) > STATIC_FILE_MAX_BYTES:
             continue  # listed with the other files below
         try:
             text = read_text(doc_id, rel)
         except (KeyError, OSError, ValueError):
             continue
+        budget.spend(len(text))
         shown.add(rel)
         if len(sources) > 1:
             parts.append(f"<p><strong>{html.escape(rel)}</strong></p>")
@@ -233,7 +259,15 @@ def _html_doc(
             return scope.raw_url(doc_id, target)
         return None  # an image elsewhere is never loaded from the share's page
 
-    return html_body(text, rewrite_src=image_src, demote=demote)
+    decide = ref_decider(
+        from_dir=dir_of(rel),
+        files=included,
+        shared=scope.shared,
+        private_hosts=scope.private_hosts,
+    )
+    # the link filter read the text as text; the parser here may read an attribute
+    # differently, so every link it keeps is decided again
+    return html_body(text, rewrite_src=image_src, rewrite_href=decide, demote=demote)
 
 
 def page_body(
@@ -267,19 +301,23 @@ def page_body(
         f"<h1>{html.escape(title)}</h1>",
         f'<p class="muted">Also as {alts}.</p>',
     ]
-    size, more = 0, []
+    budget, more = _Budget(max_bytes), []
     for meta, files in docs:
         name = meta.get("title") or meta["id"]
-        if size > max_bytes:
+        if budget.spent:
             more.append((meta["id"], name))
             continue
         body = _doc_html(
-            meta, files, read_text=read_text, scope=scope, demote=2 if several else 0
+            meta,
+            files,
+            read_text=read_text,
+            scope=scope,
+            demote=2 if several else 0,
+            budget=budget,
         )
         if several:
             href = html.escape(scope.shared(meta["id"]) or "")
             body = f'<h2><a href="{href}">{html.escape(name)}</a></h2>\n{body}'
-        size += len(body)
         out.append(f"<article>\n{body}\n</article>")
     if more:
         items = "".join(

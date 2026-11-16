@@ -78,7 +78,7 @@ def test_a_document_share_page_carries_its_text(client, shares, report):
     assert other["id"] not in body and "private page" not in body
     assert "https://example.org" in body
     assert '<meta name="description" content="Findings The capture rate rose' in body
-    assert f'<link rel="alternate" type="text/markdown" href="{link}/share.md"' in body
+    assert f'<link rel="alternate" type="text/plain" href="{link}/share.md"' in body
     assert f'href="{link}/share.pdf"' in body
     # no script on the page (a fetcher that runs script would replace the text with the
     # viewer); the viewer is a link away
@@ -157,7 +157,10 @@ def test_a_locked_link_shows_no_text_until_unlocked(client, shares, report):
     link = f"/{rec['token']}"
     page = client.get(link + "/")
     assert page.status_code == 401 and "twelve percent" not in page.text
-    assert client.get(f"{link}/share.md").status_code == 401
+    form = client.get(f"{link}/share.pdf")  # a person may open a file link first
+    assert form.status_code == 401 and 'type="password"' in form.text
+    assert f'name="next" value="{link}/share.pdf"' in form.text
+    assert "twelve percent" not in client.get(f"{link}/share.md").text
     client.post(f"{link}/unlock", data={"password": "correct horse battery", "next": f"{link}/"})
     assert "twelve percent" in client.get(link + "/").text
 
@@ -234,3 +237,50 @@ def test_share_links_name_the_three_forms():
         "markdown": "https://h/s/T/share.md",
         "pdf": "https://h/s/T/share.pdf",
     }
+
+
+def test_a_missing_file_is_left_out_not_the_whole_page(client, shares, store, tmp_path):
+    src = tmp_path / "two"
+    src.mkdir()
+    (src / "a.md").write_text("alpha text")
+    (src / "b.md").write_text("beta text")
+    d = store.publish(src, title="Two")
+    rec = shares.create(d["id"])
+    (tmp_path / "data" / "docs" / d["id"] / "b.md").unlink()
+    r = client.get(f"/{rec['token']}/")
+    assert r.status_code == 200 and "alpha text" in r.text and "beta text" not in r.text
+
+
+def test_a_folder_of_many_files_renders_only_so_many(client, shares, store, tmp_path, monkeypatch):
+    monkeypatch.setattr(share_page, "STATIC_MAX_FILES", 3)
+    src = tmp_path / "many"
+    src.mkdir()
+    for i in range(6):
+        (src / f"{i:02d}.md").write_text(f"chapter {i} words")
+    d = store.publish(src, title="Many")
+    rec = shares.create(d["id"])
+    body = client.get(f"/{rec['token']}/").text
+    assert "chapter 2 words" in body and "chapter 3 words" not in body
+    assert f"/raw/{d['id']}/05.md" in body  # still reachable, as a link
+
+
+def test_an_html_link_the_text_filter_misread_is_decided_again(client, shares, store):
+    page = (
+        "<p><a data-x='href=\"https://ok.example/' href=\"https://priv.example/secret\">x</a></p>"
+    )
+    a = store.publish(text="# A\n\nwords", title="A")
+    b = store.publish(text=page, title="B", filename="b.html")
+    rec = shares.create(store.make_group("G", [a["id"], b["id"]])["id"])
+    app = mk_share_api(shares=shares, thumbnailer=None, private_hosts=("priv.example",))
+    body = TestClient(app).get(f"/{rec['token']}/").text
+    assert "priv.example" not in body
+
+
+def test_too_many_pages_at_once_are_told_to_retry(client, shares, report, monkeypatch):
+    import annals.share_api as share_api
+
+    meta, _ = report
+    rec = shares.create(meta["id"])
+    monkeypatch.setattr(share_api, "STATIC_CONCURRENCY", 0)
+    busy = TestClient(mk_share_api(shares=shares, thumbnailer=None)).get(f"/{rec['token']}/")
+    assert busy.status_code == 503 and "twelve percent" not in busy.text

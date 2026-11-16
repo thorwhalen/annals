@@ -36,6 +36,7 @@ import functools
 import html
 import json
 import secrets
+import threading
 from pathlib import Path
 from typing import Callable
 from urllib.parse import parse_qs
@@ -86,6 +87,7 @@ from annals.notebook import (
 from annals.share import Shares, dir_of, filter_refs
 from annals.share_page import (
     SHARE_FILE,
+    STATIC_FILE_MAX_BYTES,
     VIEWER_PARAM,
     ShareScope,
     alternate_links,
@@ -122,6 +124,8 @@ MAX_FORM_BYTES = 4096
 MAX_SHARED_PAGE_BYTES = 20_000_000
 #: the share as one file, at ``share.<ext>`` and ``d/<id>.<ext>`` (:mod:`annals.share_page`)
 _FILE_FORMATS = ("md", "pdf")
+#: script-free pages made at once; one more is told to retry (each holds a server thread)
+STATIC_CONCURRENCY = 4
 #: the script-free page: its stylesheet and images, media, nothing that runs
 STATIC_PAGE_CSP = (
     "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
@@ -219,6 +223,7 @@ def mk_share_api(
     if thumbnailer is True:
         thumbnailer = default_thumbnailer()
     thumbs = ThumbServer(store, thumbnailer)
+    _renders = threading.BoundedSemaphore(STATIC_CONCURRENCY)
     app = FastAPI(
         title=f"{title} share", docs_url=None, redoc_url=None, openapi_url=None
     )
@@ -341,7 +346,12 @@ def mk_share_api(
             )
 
         def read_text(i: str, rel: str) -> str:
-            path = doc_file_path(store, i, rel)
+            try:
+                path = doc_file_path(store, i, rel)
+            except HTTPException as e:  # gone from disk, or a store with no local files
+                raise OSError(e.detail) from e
+            if path.stat().st_size > STATIC_FILE_MAX_BYTES:
+                raise ValueError(f"{rel} is too large to show in the page")
             return path.read_text(encoding="utf-8", errors="replace")
 
         content, description = page_body(
@@ -384,6 +394,21 @@ def mk_share_api(
         headers = {**NO_STORE, "Content-Security-Policy": RAW_SANDBOX_CSP}
         return Response(body, media_type="text/html; charset=utf-8", headers=headers)
 
+    def _locked_form(token: str, request: Request) -> Response | None:
+        """The password form, when the link is live but locked for this request."""
+        state, rec = shares.status(token)
+        if state != "ok" or shares.unlocked(
+            rec, request.cookies.get(COOKIE_NAME), max_age_s=unlock_max_age_s
+        ):
+            return None
+        link = _link(request, token)
+        return _password_page(
+            rec.get("title") or title,
+            f"{link}/unlock",
+            request.url.path,
+            f"{_root(request)}/ui",
+        )
+
     def _page(token: str, request: Request, doc_id: str | None = None) -> Response:
         ui = f"{_root(request)}/ui"
         state, rec = shares.status(token)
@@ -407,6 +432,13 @@ def mk_share_api(
             )
             return _password_page(rec.get("title") or title, f"{link}/unlock", nxt, ui)
         if request.query_params.get(VIEWER_PARAM) is None:
+            if not _renders.acquire(blocking=False):
+                return _message_page(
+                    "Busy",
+                    "Many people are opening shared pages right now. Try again in a moment.",
+                    ui,
+                    status=503,
+                )
             try:
                 return _static_page(rec, request, doc_id, ui)
             except HTTPException as e:
@@ -418,6 +450,8 @@ def mk_share_api(
                     ui,
                     status=404,
                 )
+            finally:
+                _renders.release()
         nonce = secrets.token_urlsafe(12)
         cfg = {
             "base": link,
@@ -450,7 +484,9 @@ def mk_share_api(
         """One document's page, or, as ``<id>.md`` / ``<id>.pdf``, that document as a file."""
         stem, dot, ext = doc_id.rpartition(".")
         if dot and ext in _FILE_FORMATS:
-            return await _as_file(token, request, ext, only=stem)
+            return await _as_file(
+                token, request, ext, only=stem, form_when_locked=True
+            )
         return await anyio.to_thread.run_sync(_page, token, request, doc_id)
 
     @app.get(f"/{{token}}/{SHARE_FILE}.{{ext}}")
@@ -463,7 +499,7 @@ def mk_share_api(
         """
         if ext not in _FILE_FORMATS:
             raise HTTPException(404, "no such representation of this share")
-        return await _as_file(token, request, ext)
+        return await _as_file(token, request, ext, form_when_locked=True)
 
     @app.post("/{token}/unlock", include_in_schema=False)
     async def unlock(token: str, request: Request) -> Response:
@@ -694,9 +730,18 @@ def mk_share_api(
         *,
         download: bool = False,
         only: str | None = None,
+        form_when_locked: bool = False,
     ) -> Response:
-        """The share (or its document ``only``) combined into one ``format`` file."""
-        rec = _open(token, request)
+        """The share (or its document ``only``) combined into one ``format`` file.
+
+        ``form_when_locked``: a locked link answers with its password form, not a JSON 401
+        (the file links a person may open first, before the page).
+        """
+        if form_when_locked:
+            locked = await anyio.to_thread.run_sync(_locked_form, token, request)
+            if locked is not None:
+                return locked
+        rec = await anyio.to_thread.run_sync(_open, token, request)
         docs = await anyio.to_thread.run_sync(shares.included, rec)
         if only is not None:
             docs = [(m, f) for m, f in docs if m["id"] == only]
