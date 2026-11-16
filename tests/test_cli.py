@@ -479,3 +479,14 @@ def test_tag_then_purge_from_the_command_line(tmp_path, monkeypatch):
     assert _json(["ls", "--trash"])["total"] == 1
     assert _json(["purge", doc]) == {"purged": [doc]}
     assert _json(["ls", "--trash"])["total"] == 0
+
+
+def test_ls_may_filter_on_recorded_provenance_and_refuses_a_session_conflict(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nbody")
+    _json(["publish", str(src), "--json", "--session", "s1"])
+    assert _json(["ls", "--meta", "session=s1"])["total"] == 1
+    err = io.StringIO()
+    assert run(["ls", "--meta", "session=a", "--session", "b"], out=io.StringIO(), err=err) == 1
+    assert "twice" in err.getvalue()

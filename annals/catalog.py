@@ -167,6 +167,25 @@ def purge_document(store: DocStore, catalog: Catalog, doc_id: str) -> dict:
     return {"ok": True, "id": doc_id}
 
 
+def owner_tags(store: DocStore) -> dict[str, list[str]]:
+    """The owner's tags (set by ``annals tag`` or the page), keyed by item key, as one snapshot."""
+    tags = default_tags(store)
+    snap = getattr(tags, "snapshot", None)
+    return snap() if snap else dict(tags)
+
+
+def with_owner_tags(metas: list[dict], tags: Mapping[str, list[str]]) -> list[dict]:
+    """``metas`` (documents' meta) with each one's tags replaced by the owner's, where the owner set them.
+
+    >>> with_owner_tags([{"id": "a", "tags": ["x"]}, {"id": "b", "tags": ["y"]}], {"published:a": ["z"]})
+    [{'id': 'a', 'tags': ['z']}, {'id': 'b', 'tags': ['y']}]
+    """
+    return [
+        {**m, "tags": list(tags.get(mk_key(PUBLISHED, m["id"]), m.get("tags", [])))}
+        for m in metas
+    ]
+
+
 def default_tags(store: DocStore) -> MutableMapping[str, list[str]]:
     """Where the owner's tags live by default: one JSON file under the data root
     (``tags/tags.json``), or a dict when the data root is not on this machine."""

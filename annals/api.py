@@ -73,7 +73,9 @@ from annals.catalog import (
     default_tags,
     mk_catalog,
     purge_document,
+    with_owner_tags,
 )
+from annals.docfilter import DocFilter
 from annals.export import (
     aggregate_response,
     markdown_response,
@@ -85,12 +87,10 @@ from annals.export import (
 )
 from annals.combine import supported
 from annals.sources import (
-    PUBLISHED,
     PublishedSource,
     Source,
     as_source,
     list_meta,
-    mk_key,
     parse_sources_spec,
     with_thumb,
 )
@@ -377,10 +377,7 @@ def _mk_api(
 
     def _owner_tags(meta: dict) -> dict:
         """A document's tags as the owner left them (the publisher's until the owner edits)."""
-        own = catalog.tags.get(mk_key(PUBLISHED, meta["id"]))
-        if own is not None:
-            meta["tags"] = list(own)
-        return meta
+        return with_owner_tags([meta], catalog.tags)[0]
 
     @api.get("/health")
     def health() -> dict:
@@ -388,10 +385,29 @@ def _mk_api(
         return {"ok": True, "target": store.target.describe()}
 
     @api.get("/docs")
-    def list_docs(q: str = "", trash: bool = False) -> dict:
-        """All documents (or the bin), newest first; ``q`` filters by words."""
+    def list_docs(
+        q: str = "",
+        trash: bool = False,
+        since: str = "",
+        session: str = "",
+        tag: str = "",
+        meta: list[str] = Query(default=[]),
+    ) -> dict:
+        """All documents (or the bin), newest first; ``q`` filters by words.
+
+        ``since`` (an ISO date or time, or an age such as ``6h``), ``session``, ``tag`` and
+        ``meta`` (``key=value``, repeatable, against the document's source) are the exact
+        filters of ``annals ls`` (:mod:`annals.docfilter`), tags as the owner left them. A time
+        without an offset is the server's local time, so send ``Z`` or an offset (``%2B`` for
+        ``+`` in a query string). A bad value is a 422.
+        """
+        try:
+            wanted = DocFilter.of(since=since, session=session, tag=tag, meta=meta)
+        except ValueError as e:
+            raise HTTPException(422, str(e))
         docs = store.search(q, trash=trash) if q else store.list(trash=trash)
-        return {"docs": [_owner_tags(list_meta(m)) for m in docs]}
+        rows = [_owner_tags(list_meta(m)) for m in docs]
+        return {"docs": wanted.apply(rows)}
 
     @api.get("/docs/{doc_id}")
     def get_doc(doc_id: str) -> dict:
