@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 import annals.share_page as share_page
 from annals.share import ScryptHasher, Shares, share_links
 from annals.share_api import mk_share_api
-from annals.share_page import alternate_urls, description_of
+from annals.share_page import alternate_urls, description_of, with_base
 from annals.store import DocStore
 
 
@@ -185,7 +185,9 @@ def test_an_html_document_is_served_as_itself_sandboxed(client, shares, store, t
         assert r.status_code == 200 and "Body words" in r.text and "color:red" in r.text
         assert r.headers["content-security-policy"].startswith("sandbox ")
         assert "allow-same-origin" not in r.headers["content-security-policy"]
-        assert f'<head><base href="{link}/raw/{d["id"]}/">' in r.text
+        base = r.text.index(f'<base href="{link}/raw/{d["id"]}/">')
+        assert base < r.text.lower().index("<html")  # first thing after the doctype
+        assert "frame-ancestors 'none'" in r.headers["content-security-policy"]
     assert client.get(f"{link}/raw/{d['id']}/img/a.png").status_code == 200
 
 
@@ -284,3 +286,44 @@ def test_too_many_pages_at_once_are_told_to_retry(client, shares, report, monkey
     monkeypatch.setattr(share_api, "STATIC_CONCURRENCY", 0)
     busy = TestClient(mk_share_api(shares=shares, thumbnailer=None)).get(f"/{rec['token']}/")
     assert busy.status_code == 503 and "twelve percent" not in busy.text
+
+
+def test_the_base_is_the_shares_whatever_the_page_says():
+    page = (
+        b"<!doctype html><!-- <head> --><html><head><base href='https://cdn.example/'>"
+        b'<meta name="referrer" content="unsafe-url"></head><body><img src="a.png"></body></html>'
+    )
+    out = with_base(page, "/T/raw/d/")
+    assert out.startswith(b'<!doctype html><base href="/T/raw/d/">')
+    assert b"cdn.example" not in out and b"unsafe-url" not in out
+    assert with_base(b"<p>x</p>", "/b/").startswith(b'<base href="/b/">')
+
+
+def test_the_viewers_own_addresses_open_the_viewer(client, shares, report):
+    meta, _ = report
+    link = f"/{shares.create(meta['id'])['token']}"
+    assert "app.js" in client.get(f"{link}/d/{meta['id']}?f=report.md").text
+    assert "app.js" not in client.get(f"{link}/d/{meta['id']}").text
+
+
+def test_players_are_capped_and_not_listed_twice(client, shares, store, tmp_path, monkeypatch):
+    monkeypatch.setattr(share_page, "STATIC_MAX_PLAYERS", 2)
+    src = tmp_path / "talks"
+    src.mkdir()
+    for i in range(4):
+        (src / f"t{i}.mp3").write_bytes(b"ID3")
+    d = store.publish(src, title="Talks")
+    body = client.get(f"/{shares.create(d['id'])['token']}/").text
+    assert body.count("<audio ") == 2 and 'preload="none"' in body
+    assert body.count(f"/raw/{d['id']}/t0.mp3") == 1  # a player, not also a file link
+    assert f"/raw/{d['id']}/t3.mp3" in body  # past the cap: a link
+
+
+def test_render_slots_limit_per_link_and_in_all():
+    from annals.share_api import RenderSlots
+
+    slots = RenderSlots(3, per_key=2)
+    assert slots.acquire("a") and slots.acquire("a") and not slots.acquire("a")
+    assert slots.acquire("b") and not slots.acquire("c")
+    slots.release("a")
+    assert slots.acquire("c")

@@ -55,6 +55,8 @@ STATIC_MAX_FILES = 40
 STATIC_FILE_MAX_BYTES = 2_000_000
 #: images shown for a document without text (a gallery folder); the rest are listed
 STATIC_MAX_IMAGES = 60
+#: audio and video players in one document's page; the rest are listed
+STATIC_MAX_PLAYERS = 20
 #: the length of the page's ``<meta name="description">``
 DESCRIPTION_CHARS = 280
 #: the alternate representations of a share: path suffix, media type, label
@@ -139,19 +141,25 @@ def designed_page(meta: Mapping, files: Sequence[str]) -> str | None:
     return main if main in files and kind_of(main) == "html" else None
 
 
+_BASE_RE = re.compile(rb"<base\b[^>]*>", re.I)
+#: a page's own referrer policy would override the share's ``no-referrer`` (the link is a key)
+_REFERRER_META_RE = re.compile(rb"<meta\b[^>]*\bname\s*=\s*[\"']?referrer\b[^>]*>", re.I)
+_DOCTYPE_AT_START = re.compile(rb"(?:\xef\xbb\xbf)?\s*<!doctype[^>]*>", re.I)
+
+
 def with_base(page: bytes, href: str) -> bytes:
-    """``page`` with ``<base href>`` first in its head, so its relative references (images,
-    styles, its other pages) resolve where the share serves its files."""
+    """``page`` with ``<base href>`` as its first element, so its relative references
+    (images, styles, its other pages) resolve where the share serves its files.
+
+    The page's own ``<base>`` and referrer ``<meta>`` go: either would send its requests,
+    or the link, elsewhere. The tag goes right after the doctype, where the parser puts it
+    in the head whatever comes later (a ``<head>`` written in a comment, say).
+    """
+    page = _REFERRER_META_RE.sub(b"", _BASE_RE.sub(b"", page))
     tag = f'<base href="{html.escape(href, quote=True)}">'.encode()
-    m = re.search(rb"<head\b[^>]*>", page[:65536], re.I)
-    if m:
-        return page[: m.end()] + tag + page[m.end() :]
-    m = re.search(rb"<html\b[^>]*>", page[:65536], re.I)
-    at = m.end() if m else 0
-    if not m:
-        d = re.match(rb"\s*(?:\xef\xbb\xbf)?\s*<!doctype[^>]*>", page, re.I)
-        at = d.end() if d else 0
-    return page[:at] + b"<head>" + tag + b"</head>" + page[at:]
+    d = _DOCTYPE_AT_START.match(page)
+    at = d.end() if d else 0
+    return page[:at] + tag + page[at:]
 
 
 def _doc_html(
@@ -216,13 +224,14 @@ def _doc_html(
             for f in images
         )
         shown |= set(images)
-    for f in files:
-        tag = _PLAYED.get(kind_of(f))
-        if tag and f not in shown:
-            src = html.escape(scope.raw_url(doc_id, f))
-            parts.append(
-                f'<p>{html.escape(f)}</p><{tag} controls preload="metadata" src="{src}"></{tag}>'
-            )
+    played = [f for f in files if f not in shown and kind_of(f) in _PLAYED]
+    for f in played[:STATIC_MAX_PLAYERS]:
+        tag = _PLAYED[kind_of(f)]
+        src = html.escape(scope.raw_url(doc_id, f))
+        parts.append(
+            f'<p>{html.escape(f)}</p><{tag} controls preload="none" src="{src}"></{tag}>'
+        )
+        shown.add(f)
     rest = [f for f in files if f not in shown]
     if rest:
         items = "".join(

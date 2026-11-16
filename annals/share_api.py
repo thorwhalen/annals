@@ -124,13 +124,40 @@ MAX_FORM_BYTES = 4096
 MAX_SHARED_PAGE_BYTES = 20_000_000
 #: the share as one file, at ``share.<ext>`` and ``d/<id>.<ext>`` (:mod:`annals.share_page`)
 _FILE_FORMATS = ("md", "pdf")
-#: script-free pages made at once; one more is told to retry (each holds a server thread)
-STATIC_CONCURRENCY = 4
+#: script-free pages made at once, and per link; one more is told to retry at once (each
+#: holds a server thread), so one link held open cannot stall every other link's page
+STATIC_CONCURRENCY = 8
+STATIC_CONCURRENCY_PER_LINK = 2
 #: the script-free page: its stylesheet and images, media, nothing that runs
 STATIC_PAGE_CSP = (
-    "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; "
+    "default-src 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; "
     "media-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
 )
+
+
+class RenderSlots:
+    """At most ``total`` jobs at once, and at most ``per_key`` of them for one key; a job
+    over either limit is refused at once rather than queued."""
+
+    def __init__(self, total: int, *, per_key: int):
+        self.total, self.per_key = total, per_key
+        self._lock = threading.Lock()
+        self._busy: dict[str, int] = {}
+
+    def acquire(self, key: str) -> bool:
+        with self._lock:
+            if sum(self._busy.values()) >= self.total or self._busy.get(key, 0) >= self.per_key:
+                return False
+            self._busy[key] = self._busy.get(key, 0) + 1
+            return True
+
+    def release(self, key: str) -> None:
+        with self._lock:
+            n = self._busy.get(key, 0) - 1
+            if n > 0:
+                self._busy[key] = n
+            else:
+                self._busy.pop(key, None)
 
 
 def _csp(nonce: str) -> str:
@@ -223,7 +250,7 @@ def mk_share_api(
     if thumbnailer is True:
         thumbnailer = default_thumbnailer()
     thumbs = ThumbServer(store, thumbnailer)
-    _renders = threading.BoundedSemaphore(STATIC_CONCURRENCY)
+    _renders = RenderSlots(STATIC_CONCURRENCY, per_key=STATIC_CONCURRENCY_PER_LINK)
     app = FastAPI(
         title=f"{title} share", docs_url=None, redoc_url=None, openapi_url=None
     )
@@ -391,7 +418,8 @@ def mk_share_api(
         text = path.read_text(encoding="utf-8", errors="replace")
         body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
         body = with_base(serve_html(body, media_relay=False), scope.raw_url(doc_id, dir_of(rel) + "/" if dir_of(rel) else ""))
-        headers = {**NO_STORE, "Content-Security-Policy": RAW_SANDBOX_CSP}
+        csp = f"{RAW_SANDBOX_CSP}; frame-ancestors 'none'"
+        headers = {**NO_STORE, "Content-Security-Policy": csp}
         return Response(body, media_type="text/html; charset=utf-8", headers=headers)
 
     def _locked_form(token: str, request: Request) -> Response | None:
@@ -431,8 +459,10 @@ def mk_share_api(
                 f"?{request.url.query}" if request.url.query else ""
             )
             return _password_page(rec.get("title") or title, f"{link}/unlock", nxt, ui)
-        if request.query_params.get(VIEWER_PARAM) is None:
-            if not _renders.acquire(blocking=False):
+        # ``?f=`` is the viewer's own address for one file of a document
+        viewer = VIEWER_PARAM in request.query_params or "f" in request.query_params
+        if not viewer:
+            if not _renders.acquire(token):
                 return _message_page(
                     "Busy",
                     "Many people are opening shared pages right now. Try again in a moment.",
@@ -451,7 +481,7 @@ def mk_share_api(
                     status=404,
                 )
             finally:
-                _renders.release()
+                _renders.release(token)
         nonce = secrets.token_urlsafe(12)
         cfg = {
             "base": link,
