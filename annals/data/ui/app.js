@@ -36,6 +36,7 @@
   var FRAME_SANDBOX = "allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-forms allow-modals allow-downloads";
   var NAME = CFG.title || "annals";
   var SHARE = CFG.share || null;   /* set when this page is a share link's, for a recipient */
+  var READER = false;  /* a room (mk_api(room=True), told by /sources): reading only, no owner controls */
   var UI = (CFG.ui || API + "/ui").replace(/\/$/, "");
   var app = document.getElementById("app");
   var toastEl;
@@ -330,7 +331,7 @@
   /* The sources, for the navigation: published first, then folders read in place. */
   var sourcesReady;
   function sources() {
-    sourcesReady = sourcesReady || api("/sources").then(function (b) { return b.sources || []; }).catch(function () { sourcesReady = null; return [{ name: "published", title: "Published" }]; });
+    sourcesReady = sourcesReady || api("/sources").then(function (b) { READER = !!b.room; return b.sources || []; }).catch(function () { sourcesReady = null; return [{ name: "published", title: "Published" }]; });
     return sourcesReady;
   }
   var knownSources = [{ name: "published", title: "Published" }];
@@ -392,7 +393,7 @@
   }
   /* One link per source, then everything at once, then the bin; the current one marked. */
   function mainNav(current) {
-    if (SHARE) return [];
+    if (SHARE || READER) return [];
     var items = knownSources.map(function (s) { return [scopeHref(s.name), s.title, s.name]; });
     if (knownSources.length > 1) items.push([BASE + "/all", "All", "all"]);
     items.push([BASE + "/audio", "Audio", "audio"]);
@@ -654,7 +655,7 @@
     }
     var bar = canSelect && !trash ? pickBar({
       scope: listScope, resolve: resolvePick, allLabel: "Pick all shown documents",
-      actions: [addToGroupAction(listScope, { onDone: afterGroup })],
+      actions: READER ? [] : [addToGroupAction(listScope, { onDone: afterGroup })],
       onAll: function (on) { shownRows.forEach(function (r) { if (on) picked[r.id] = slimRow(r); else delete picked[r.id]; }); keepSel(); render(); },
       onClear: function () { picked = {}; keepSel(); render(); },
       state: listState
@@ -1248,7 +1249,7 @@
         lead: SHARE ? null : artifactLink(m), view: tools.view,
         results: owner ? resultButtons(docScope) : null,
         actions: [COPY_ADDRESS()].concat(tools.actions, [
-          rel || SHARE ? null : (m.in_trash
+          rel || SHARE || READER ? null : (m.in_trash
             ? { section: "manage", label: "Restore", hint: "Take it out of the recycle bin", icon: "restore", run: binOnce(function () { return api("/docs/" + m.id + "/restore", { method: "POST" }).then(function () { toast("Restored"); lastList = null; docView(m.id); }); }) }
             : { section: "manage", label: "Move to bin", hint: "You can restore it from the bin", icon: "trash", danger: true, run: binOnce(function () { return api("/docs/" + m.id + "/trash", { method: "POST" }).then(function () { toast("Moved to the bin"); lastList = null; go(BASE + "/"); }); }) })
         ])
@@ -1276,7 +1277,7 @@
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
-        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, inGroups, rel || isVersion || SHARE ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
         fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
         rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
         body,
@@ -1332,7 +1333,7 @@
      press first fetches the picked documents, the button pending meanwhile. */
   function resultButtons(getScope, resolve) {
     var sc0 = getScope();
-    return RESULTS.filter(function (r) { return resolve || r.when(sc0); }).map(function (r) {
+    return RESULTS.filter(function (r) { return (!READER || r.id === "file") && (resolve || r.when(sc0)); }).map(function (r) {
       var btn = h("button", { class: "btn result", type: "button", "data-result": r.id, "aria-haspopup": "dialog", onclick: function () {
         if (btn.getAttribute("aria-busy") === "true") return;
         var sc = getScope();
@@ -1563,7 +1564,7 @@
       });
       var bar = items.length ? pickBar({
         scope: scope, allLabel: "Pick all documents",
-        actions: [COPY_ADDRESS(), addToGroupAction(scope, { from: g.id, onDone: function () { picked = {}; update(); } })],
+        actions: [COPY_ADDRESS()].concat(READER ? [] : [addToGroupAction(scope, { from: g.id, onDone: function () { picked = {}; update(); } })]),
         onAll: function (on) { picked = {}; if (on) items.forEach(function (m) { picked[m.id] = true; }); update(); },
         onClear: function () { picked = {}; update(); },
         state: function () {
@@ -2443,7 +2444,7 @@
       ]);
       page(it.title || basename(id), mainNav(source), [
         backLink(back, sourceTitle(source)),
-        h("div", { class: "doc-head" }, [h("h2", null, [it.title || it.id]), meta, tagEditor(key, it.tags, back)]),
+        h("div", { class: "doc-head" }, [h("h2", null, [it.title || it.id]), meta, READER ? null : tagEditor(key, it.tags, back)]),
         actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }),
         body
       ]);

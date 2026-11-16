@@ -17,6 +17,7 @@ from annals.catalog import owner_tags, with_owner_tags
 from annals.config import Settings, default_data_dir, load_settings, write_config
 from annals.docfilter import DocFilter, parse_meta
 from annals.store import (
+    META,
     SIDECAR_MEDIA_KINDS,
     DocStore,
     check_artifact_url,
@@ -25,6 +26,7 @@ from annals.store import (
     is_sidecar_of,
     kind_of,
     split_version,
+    without_provenance,
 )
 from annals.target import SshTarget, check_rel, parse_target
 
@@ -258,6 +260,8 @@ def publish(
     source.update(parse_meta(meta))
     if session:
         source["session"] = session
+    if settings.room:  # an outside audience reads it: where it came from stays here
+        source, artifact = {}, None
     docs = []
     link_warnings = []
     units = _with_sidecars(_as_list(paths))
@@ -741,6 +745,7 @@ def configure(
     to: str | None = None,
     outbox: bool = False,
     share_base_url: str | None = None,
+    room: bool = False,
 ) -> dict:
     """Write the publisher config (where to publish, what link to print) and show it.
 
@@ -751,9 +756,11 @@ def configure(
     left for the server to apply; it is kept by later changes (``ANNALS_OUTBOX=0`` or an
     edit of the file turns it off). ``--share-base-url`` is where share links point when
     the share server is not at ``<base-url>/shared`` (a platform running it as its own
-    public app). With no arguments, shows the resolved settings without writing.
+    public app). ``--room`` marks a target an outside audience reads (a client's room): what
+    is published or copied to it carries no provenance; kept by later changes, like
+    ``--outbox``. With no arguments, shows the resolved settings without writing.
     """
-    writing = bool(target or base_url or outbox or share_base_url)
+    writing = bool(target or base_url or outbox or share_base_url or room)
     if to and writing:
         # Resolve a partly-given named target against what is already saved under it.
         try:
@@ -763,6 +770,7 @@ def configure(
                 to=to,
                 outbox=outbox or None,
                 share_base_url=share_base_url,
+                room=room or None,
             )
         except ValueError:
             if not (target and base_url):
@@ -774,6 +782,7 @@ def configure(
                 base_url=base_url,
                 outbox=outbox,
                 share_base_url=share_base_url,
+                room=room,
             )
     else:
         current = load_settings(to=to)  # what a partial change applies to
@@ -783,6 +792,7 @@ def configure(
             to=to,
             outbox=(outbox or current.outbox) if writing else None,
             share_base_url=share_base_url,
+            room=(room or current.room) if writing else None,
         )
     out = settings.as_dict()
     if writing:
@@ -851,7 +861,9 @@ def _same_place(a: str, b: str) -> bool:
     return False
 
 
-def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
+def _copy_doc(
+    src: DocStore, dst: DocStore, doc_id: str, *, redact: bool = False
+) -> dict:
     import tempfile
 
     if split_version(doc_id)[1] is not None:
@@ -869,6 +881,10 @@ def _copy_doc(src: DocStore, dst: DocStore, doc_id: str) -> dict:
         ]
         if odd:
             raise ValueError(f"refusing to copy {doc_id}: not regular files: {odd[:3]}")
+        if redact:  # every meta of it, its versions' too, before anything leaves here
+            for mp in (Path(td) / "doc").rglob(META):
+                m = json.loads(mp.read_text(encoding="utf-8"))
+                mp.write_text(json.dumps(without_provenance(m)), encoding="utf-8")
         dst.target.put_tree(Path(td) / "doc", f"docs/{doc_id}")
     return meta
 
@@ -911,7 +927,7 @@ def copy(
             g = src.group(ident)
             check_id(g["id"])
             for doc_id in g["docs"]:
-                m = _copy_doc(src, dst, doc_id)
+                m = _copy_doc(src, dst, doc_id, redact=dst_settings.room)
                 copied.append(
                     {
                         "id": doc_id,
@@ -925,7 +941,7 @@ def copy(
                 "group_url": _group_url(dst_settings, g["id"]),
             }
         else:
-            m = _copy_doc(src, dst, ident)
+            m = _copy_doc(src, dst, ident, redact=dst_settings.room)
             copied.append(
                 {"id": ident, "title": m["title"], "url": _doc_url(dst_settings, ident)}
             )

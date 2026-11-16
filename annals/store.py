@@ -1121,3 +1121,42 @@ class HidingStore(DocStore):
         is refused as a missing one."""
         ids = self._group_docs_checked(doc_ids)
         return self._without_hidden([self.whole._append_to_group(gid, ids)])[0]
+
+
+#: what a document's meta says about where it came from, never shown to an outside
+#: audience: ``source`` (the publisher's host, cwd, session and ``--meta`` keys) and
+#: ``artifact`` (a claude.ai link only the owner can open)
+PROVENANCE_KEYS = ("source", "artifact")
+
+
+def without_provenance(meta: dict, *, keys: Iterable[str] = PROVENANCE_KEYS) -> dict:
+    """``meta`` without the keys that say where it came from.
+
+    >>> without_provenance({"id": "a", "source": {"host": "h"}, "artifact": "x"})
+    {'id': 'a'}
+    """
+    keys = frozenset(keys)
+    return {k: v for k, v in meta.items() if k not in keys}
+
+
+class RoomStore(HidingStore):
+    """The documents of ``store`` as an outside audience reads them (a room).
+
+    Nothing in the bin: a binned document is absent, as in :class:`HidingStore`, so the
+    owner withdraws a document from a room by binning it. And no provenance: every meta
+    read through this store (one, a listing, a search, a group's) comes without
+    :data:`PROVENANCE_KEYS`, so whatever an API builds from it cannot show or match them.
+    Writes go to ``store`` unchanged.
+    """
+
+    def __init__(self, store: DocStore, *, redact: Iterable[str] = PROVENANCE_KEYS):
+        super().__init__(store, hide=lambda meta: bool(meta.get("in_trash")))
+        self.redact = tuple(redact)
+
+    def list(self, *, trash: bool = False) -> list[dict]:
+        if trash:  # a room has no bin
+            return []
+        return [without_provenance(m, keys=self.redact) for m in super().list()]
+
+    def meta(self, doc_id: str, *, settle: bool = True) -> dict:
+        return without_provenance(super().meta(doc_id, settle=settle), keys=self.redact)
