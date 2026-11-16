@@ -25,6 +25,8 @@ annals.store
       ARTIFACT_HOSTS
       THUMB_CACHE
       SIDECAR_SUFFIXES
+      PROVENANCE_KEYS
+      ROOM_META_KEYS
    
    .. rubric:: Functions
 
@@ -38,9 +40,11 @@ annals.store
       mk_id
       mk_pending_id
       now_iso
+      room_meta
       slugify
       split_version
       title_and_excerpt
+      without_provenance
    
    .. rubric:: Classes
 
@@ -48,4 +52,5 @@ annals.store
    
       DocStore
       HidingStore
+      RoomStore
    

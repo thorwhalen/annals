@@ -147,7 +147,16 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.LOCK_STALE_S"><code class="docutils literal notranslate"><span class="pre">LOCK_STALE_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.MAX_GROUP_TITLE"><code class="docutils literal notranslate"><span class="pre">MAX_GROUP_TITLE</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.PENDING_SEP"><code class="docutils literal notranslate"><span class="pre">PENDING_SEP</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.PROVENANCE_KEYS"><code class="docutils literal notranslate"><span class="pre">PROVENANCE_KEYS</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.RESERVED"><code class="docutils literal notranslate"><span class="pre">RESERVED</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.ROOM_META_KEYS"><code class="docutils literal notranslate"><span class="pre">ROOM_META_KEYS</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.RoomStore"><code class="docutils literal notranslate"><span class="pre">RoomStore</span></code></a><ul>
+<li><a class="reference internal" href="#annals.store.RoomStore.group"><code class="docutils literal notranslate"><span class="pre">RoomStore.group()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.RoomStore.list"><code class="docutils literal notranslate"><span class="pre">RoomStore.list()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.RoomStore.list_groups"><code class="docutils literal notranslate"><span class="pre">RoomStore.list_groups()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.RoomStore.meta"><code class="docutils literal notranslate"><span class="pre">RoomStore.meta()</span></code></a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.SWAP_STEP_S"><code class="docutils literal notranslate"><span class="pre">SWAP_STEP_S</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.SWAP_WAIT_S"><code class="docutils literal notranslate"><span class="pre">SWAP_WAIT_S</span></code></a></li>
@@ -162,9 +171,11 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.mk_id"><code class="docutils literal notranslate"><span class="pre">mk_id()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.mk_pending_id"><code class="docutils literal notranslate"><span class="pre">mk_pending_id()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.now_iso"><code class="docutils literal notranslate"><span class="pre">now_iso()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.room_meta"><code class="docutils literal notranslate"><span class="pre">room_meta()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.slugify"><code class="docutils literal notranslate"><span class="pre">slugify()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.split_version"><code class="docutils literal notranslate"><span class="pre">split_version()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.title_and_excerpt"><code class="docutils literal notranslate"><span class="pre">title_and_excerpt()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.without_provenance"><code class="docutils literal notranslate"><span class="pre">without_provenance()</span></code></a></li>
 </ul>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
@@ -284,6 +295,12 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.SIDECAR_SUFFIXES" title="annals.store.SIDECAR_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SIDECAR_SUFFIXES</span></code></a></p></td>
 <td><p>timed text published beside an audio file, named <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;&lt;suffix&gt;</span></code> in the same folder (the suffix in any case): a transcript (<code class="docutils literal notranslate"><span class="pre">.cues.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">.srt</span></code>) and chapters (<code class="docutils literal notranslate"><span class="pre">.chapters.vtt</span></code>).</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.PROVENANCE_KEYS" title="annals.store.PROVENANCE_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PROVENANCE_KEYS</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">source</span></code> (the publisher's host, cwd, session and <code class="docutils literal notranslate"><span class="pre">--meta</span></code> keys) and <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai link only the owner can open).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.ROOM_META_KEYS" title="annals.store.ROOM_META_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ROOM_META_KEYS</span></code></a></p></td>
+<td><p>everything a reader's page needs, and nothing else, so a field added later stays out until named here</p></td>
+</tr>
 </tbody>
 </table>
 </div>
@@ -315,14 +332,20 @@ replacement twice and nothing is ever deleted.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.store.now_iso" title="annals.store.now_iso"><code class="xref py py-obj docutils literal notranslate"><span class="pre">now_iso</span></code></a>()</p></td>
 <td><p>UTC timestamp with second precision, the format every meta.json uses.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.room_meta" title="annals.store.room_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">room_meta</span></code></a>(meta, *[, keys])</p></td>
+<td><p>Only the fields of <code class="docutils literal notranslate"><span class="pre">meta</span></code> a room shows (<a class="reference internal" href="#annals.store.ROOM_META_KEYS" title="annals.store.ROOM_META_KEYS"><code class="xref py py-data docutils literal notranslate"><span class="pre">ROOM_META_KEYS</span></code></a>).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.slugify" title="annals.store.slugify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">slugify</span></code></a>(text, *[, max_len])</p></td>
 <td><p>Lowercase ascii words joined by hyphens; empty input becomes <code class="docutils literal notranslate"><span class="pre">doc</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.split_version" title="annals.store.split_version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_version</span></code></a>(doc_id)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">n)</span></code> from <code class="docutils literal notranslate"><span class="pre">&lt;id&gt;&#64;&lt;n&gt;</span></code> (version <code class="docutils literal notranslate"><span class="pre">n</span></code>), <code class="docutils literal notranslate"><span class="pre">(&quot;&lt;id&gt;&quot;,</span> <span class="pre">None)</span></code> from an id.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.store.title_and_excerpt" title="annals.store.title_and_excerpt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">title_and_excerpt</span></code></a>(head, kind)</p></td>
 <td><p>A title (markdown <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">h1</span></code> or html <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;</span></code>) and a plain-text excerpt of <code class="docutils literal notranslate"><span class="pre">head</span></code>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.without_provenance" title="annals.store.without_provenance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">without_provenance</span></code></a>(meta, *[, keys])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">meta</span></code> without the keys that say where it came from.</p></td>
 </tr>
 </tbody>
 </table>
@@ -336,6 +359,9 @@ replacement twice and nothing is ever deleted.</p>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.store.HidingStore" title="annals.store.HidingStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HidingStore</span></code></a>(store, *, hide)</p></td>
 <td><p>The documents of <code class="docutils literal notranslate"><span class="pre">store</span></code> without those <code class="docutils literal notranslate"><span class="pre">hide(meta)</span></code> is true of, on the same target.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.RoomStore" title="annals.store.RoomStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RoomStore</span></code></a>(store, *[, keys])</p></td>
+<td><p>The documents of <code class="docutils literal notranslate"><span class="pre">store</span></code> as an outside audience reads them (a room).</p></td>
 </tr>
 </tbody>
 </table>
@@ -742,6 +768,19 @@ being archived) between renames, and <code class="docutils literal notranslate">
 </dd></dl>
 
 <dl class="py data">
+<dt class="sig sig-object py" id="annals.store.PROVENANCE_KEYS">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">PROVENANCE_KEYS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('source',</span> <span class="pre">'artifact')</span></span><a class="headerlink" href="#annals.store.PROVENANCE_KEYS" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">source</span></code> (the publisher’s host,
+cwd, session and <code class="docutils literal notranslate"><span class="pre">--meta</span></code> keys) and <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai link only the owner can
+open). <code class="docutils literal notranslate"><span class="pre">copy</span></code> to a room drops them from what it writes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>what a document’s meta says about where it came from</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
 <dt class="sig sig-object py" id="annals.store.RESERVED">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">RESERVED</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('.versions',)</span></span><a class="headerlink" href="#annals.store.RESERVED" title="Link to this definition">#</a></dt>
 <dd><p>the store’s bookkeeping lives there</p>
@@ -750,6 +789,83 @@ being archived) between renames, and <code class="docutils literal notranslate">
 <dd class="field-odd"><p>names a document’s own files may not use</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.store.ROOM_META_KEYS">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">ROOM_META_KEYS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'created',</span> <span class="pre">'excerpt',</span> <span class="pre">'files',</span> <span class="pre">'id',</span> <span class="pre">'in_trash',</span> <span class="pre">'kind',</span> <span class="pre">'main',</span> <span class="pre">'size',</span> <span class="pre">'sizes',</span> <span class="pre">'tags',</span> <span class="pre">'title',</span> <span class="pre">'updated',</span> <span class="pre">'version',</span> <span class="pre">'version_of',</span> <span class="pre">'versions'})</span></span><a class="headerlink" href="#annals.store.ROOM_META_KEYS" title="Link to this definition">#</a></dt>
+<dd><p>everything a
+reader’s page needs, and nothing else, so a field added later stays out until named here</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>the fields of a document’s meta an outside audience may see (a room)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.store.RoomStore">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">RoomStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">frozenset({'created',</span> <span class="pre">'excerpt',</span> <span class="pre">'files',</span> <span class="pre">'id',</span> <span class="pre">'in_trash',</span> <span class="pre">'kind',</span> <span class="pre">'main',</span> <span class="pre">'size',</span> <span class="pre">'sizes',</span> <span class="pre">'tags',</span> <span class="pre">'title',</span> <span class="pre">'updated',</span> <span class="pre">'version',</span> <span class="pre">'version_of',</span> <span class="pre">'versions'})</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#RoomStore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.RoomStore" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#annals.store.HidingStore" title="annals.store.HidingStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">HidingStore</span></code></a></p>
+<p>The documents of <code class="docutils literal notranslate"><span class="pre">store</span></code> as an outside audience reads them (a room).</p>
+<p>Nothing in the bin: a binned document is absent, as in <a class="reference internal" href="#annals.store.HidingStore" title="annals.store.HidingStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">HidingStore</span></code></a>, so the
+owner withdraws a document from a room by binning it; a group left with no document
+to show is absent too (its title included). And only the fields in
+<a class="reference internal" href="#annals.store.ROOM_META_KEYS" title="annals.store.ROOM_META_KEYS"><code class="xref py py-data docutils literal notranslate"><span class="pre">ROOM_META_KEYS</span></code></a>: every meta read through this store (one, a listing, a search,
+a group’s) comes without the rest, so whatever an API builds from it cannot show or
+match them. Writes go to <code class="docutils literal notranslate"><span class="pre">store</span></code> unchanged. Reading may still settle a pending
+replacement the publisher left, as the owner’s store does.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.RoomStore.group">
+<span class="sig-name descname"><span class="pre">group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#RoomStore.group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.RoomStore.group" title="Link to this definition">#</a></dt>
+<dd><p>One group, by id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.RoomStore.list">
+<span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#RoomStore.list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.RoomStore.list" title="Link to this definition">#</a></dt>
+<dd><p>Every document’s meta, last changed first (<code class="docutils literal notranslate"><span class="pre">updated</span></code>, else <code class="docutils literal notranslate"><span class="pre">created</span></code>).</p>
+<p>Pending replacements are applied first (when this store settles). One whose
+document is not here is listed under its own id, so it is never out of sight.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.store.RoomStore.list" title="annals.store.RoomStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.RoomStore.list_groups">
+<span class="sig-name descname"><span class="pre">list_groups</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#RoomStore.list_groups"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.RoomStore.list_groups" title="Link to this definition">#</a></dt>
+<dd><p>Every group, newest first.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.store.RoomStore.list" title="annals.store.RoomStore.list"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.store.RoomStore.meta">
+<span class="sig-name descname"><span class="pre">meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">settle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#RoomStore.meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.RoomStore.meta" title="Link to this definition">#</a></dt>
+<dd><p>One document’s meta; <code class="docutils literal notranslate"><span class="pre">in_trash</span></code> says which side of the bin it is on.</p>
+<p><code class="docutils literal notranslate"><span class="pre">&lt;id&gt;&#64;&lt;n&gt;</span></code> is version <code class="docutils literal notranslate"><span class="pre">n</span></code>: its own meta, with <code class="docutils literal notranslate"><span class="pre">version_of</span></code> naming the document.
+A pending replacement, read by its own id, says <code class="docutils literal notranslate"><span class="pre">pending</span></code>. <code class="docutils literal notranslate"><span class="pre">settle=False</span></code>
+skips applying pending replacements (for a hot path such as a raw file).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="py data">
@@ -896,6 +1012,21 @@ whitespace collapsed. <code class="docutils literal notranslate"><span class="pr
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.store.room_meta">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">room_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">frozenset({'created',</span> <span class="pre">'excerpt',</span> <span class="pre">'files',</span> <span class="pre">'id',</span> <span class="pre">'in_trash',</span> <span class="pre">'kind',</span> <span class="pre">'main',</span> <span class="pre">'size',</span> <span class="pre">'sizes',</span> <span class="pre">'tags',</span> <span class="pre">'title',</span> <span class="pre">'updated',</span> <span class="pre">'version',</span> <span class="pre">'version_of',</span> <span class="pre">'versions'})</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#room_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.room_meta" title="Link to this definition">#</a></dt>
+<dd><p>Only the fields of <code class="docutils literal notranslate"><span class="pre">meta</span></code> a room shows (<a class="reference internal" href="#annals.store.ROOM_META_KEYS" title="annals.store.ROOM_META_KEYS"><code class="xref py py-data docutils literal notranslate"><span class="pre">ROOM_META_KEYS</span></code></a>).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">room_meta</span><span class="p">({</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"a"</span><span class="p">,</span> <span class="s2">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"host"</span><span class="p">:</span> <span class="s2">"h"</span><span class="p">},</span> <span class="s2">"from_pending"</span><span class="p">:</span> <span class="s2">"p"</span><span class="p">,</span> <span class="s2">"versions"</span><span class="p">:</span> <span class="p">[{</span><span class="s2">"n"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">"from_pending"</span><span class="p">:</span> <span class="s2">"p"</span><span class="p">}]})</span>
+</span><span data-line="2"><span class="go">{'id': 'a', 'versions': [{'n': 1}]}</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.store.slugify">
 <span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">slugify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_len</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">48</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#slugify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.slugify" title="Link to this definition">#</a></dt>
 <dd><p>Lowercase ascii words joined by hyphens; empty input becomes <code class="docutils literal notranslate"><span class="pre">doc</span></code>.</p>
@@ -924,6 +1055,21 @@ whitespace collapsed. <code class="docutils literal notranslate"><span class="pr
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.store.without_provenance">
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">without_provenance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('source',</span> <span class="pre">'artifact')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#without_provenance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.without_provenance" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">meta</span></code> without the keys that say where it came from.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">without_provenance</span><span class="p">({</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"a"</span><span class="p">,</span> <span class="s2">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"host"</span><span class="p">:</span> <span class="s2">"h"</span><span class="p">},</span> <span class="s2">"artifact"</span><span class="p">:</span> <span class="s2">"x"</span><span class="p">})</span>
+</span><span data-line="2"><span class="go">{'id': 'a'}</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -970,7 +1116,7 @@ whitespace collapsed. <code class="docutils literal notranslate"><span class="pr
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=c3e19674"></script>
+      <script src="../_static/documentation_options.js?v=6799126d"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

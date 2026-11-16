@@ -50,6 +50,8 @@ replacement twice and nothing is ever deleted.
 | [`ARTIFACT_HOSTS`](#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
 | [`THUMB_CACHE`](#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                              |
 | [`SIDECAR_SUFFIXES`](#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
+| [`PROVENANCE_KEYS`](#annals.store.PROVENANCE_KEYS)    | `source` (the publisher's host, cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can open).                                                                                                                        |
+| [`ROOM_META_KEYS`](#annals.store.ROOM_META_KEYS)     | everything a reader's page needs, and nothing else, so a field added later stays out until named here                                                                                                                                             |
 
 ### Functions
 
@@ -62,15 +64,18 @@ replacement twice and nothing is ever deleted.
 | [`mk_id`](#annals.store.mk_id)(title, \*[, when])               | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                                                       |
 | [`mk_pending_id`](#annals.store.mk_pending_id)(doc_id, \*[, when])      | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                                                            |
 | [`now_iso`](#annals.store.now_iso)()                              | UTC timestamp with second precision, the format every meta.json uses.                                                                                        |
+| [`room_meta`](#annals.store.room_meta)(meta, \*[, keys])            | Only the fields of `meta` a room shows ([`ROOM_META_KEYS`](#annals.store.ROOM_META_KEYS)).                                                    |
 | [`slugify`](#annals.store.slugify)(text, \*[, max_len])           | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                                                          |
 | [`split_version`](#annals.store.split_version)(doc_id)                  | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                                                                    |
 | [`title_and_excerpt`](#annals.store.title_and_excerpt)(head, kind)          | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                                                              |
+| [`without_provenance`](#annals.store.without_provenance)(meta, \*[, keys])   | `meta` without the keys that say where it came from.                                                                                                         |
 
 ### Classes
 
 | [`DocStore`](#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.              |
 |-----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | [`HidingStore`](#annals.store.HidingStore)(store, \*, hide)     | The documents of `store` without those `hide(meta)` is true of, on the same target. |
+| [`RoomStore`](#annals.store.RoomStore)(store, \*[, keys])     | The documents of `store` as an outside audience reads them (a room).                |
 
 ### annals.store.ARTIFACT_HOSTS *= ('claude.ai',)*
 
@@ -357,12 +362,78 @@ the longest title a group may have (a longer one is refused, not cut)
 
 `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`
 
+### annals.store.PROVENANCE_KEYS *= ('source', 'artifact')*
+
+`source` (the publisher’s host,
+cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can
+open). `copy` to a room drops them from what it writes.
+
+* **Type:**
+  what a document’s meta says about where it came from
+
 ### annals.store.RESERVED *= ('.versions',)*
 
 the store’s bookkeeping lives there
 
 * **Type:**
   names a document’s own files may not use
+
+### annals.store.ROOM_META_KEYS *= frozenset({'created', 'excerpt', 'files', 'id', 'in_trash', 'kind', 'main', 'size', 'sizes', 'tags', 'title', 'updated', 'version', 'version_of', 'versions'})*
+
+everything a
+reader’s page needs, and nothing else, so a field added later stays out until named here
+
+* **Type:**
+  the fields of a document’s meta an outside audience may see (a room)
+
+### *class* annals.store.RoomStore(store, , keys=frozenset({'created', 'excerpt', 'files', 'id', 'in_trash', 'kind', 'main', 'size', 'sizes', 'tags', 'title', 'updated', 'version', 'version_of', 'versions'}))
+
+Bases: [`HidingStore`](#annals.store.HidingStore)
+
+The documents of `store` as an outside audience reads them (a room).
+
+Nothing in the bin: a binned document is absent, as in [`HidingStore`](#annals.store.HidingStore), so the
+owner withdraws a document from a room by binning it; a group left with no document
+to show is absent too (its title included). And only the fields in
+[`ROOM_META_KEYS`](#annals.store.ROOM_META_KEYS): every meta read through this store (one, a listing, a search,
+a group’s) comes without the rest, so whatever an API builds from it cannot show or
+match them. Writes go to `store` unchanged. Reading may still settle a pending
+replacement the publisher left, as the owner’s store does.
+
+#### group(gid)
+
+One group, by id.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### list(, trash=False)
+
+Every document’s meta, last changed first (`updated`, else `created`).
+
+Pending replacements are applied first (when this store settles). One whose
+document is not here is listed under its own id, so it is never out of sight.
+
+* **Return type:**
+  [`list`](#annals.store.RoomStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### list_groups()
+
+Every group, newest first.
+
+* **Return type:**
+  [`list`](#annals.store.RoomStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### meta(doc_id, , settle=True)
+
+One document’s meta; `in_trash` says which side of the bin it is on.
+
+`<id>@<n>` is version `n`: its own meta, with `version_of` naming the document.
+A pending replacement, read by its own id, says `pending`. `settle=False`
+skips applying pending replacements (for a hot path such as a raw file).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.store.SIDECAR_SUFFIXES *= ('.cues.json', '.chapters.vtt', '.vtt', '.srt')*
 
@@ -463,6 +534,18 @@ UTC timestamp with second precision, the format every meta.json uses.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.store.room_meta(meta, , keys=frozenset({'created', 'excerpt', 'files', 'id', 'in_trash', 'kind', 'main', 'size', 'sizes', 'tags', 'title', 'updated', 'version', 'version_of', 'versions'}))
+
+Only the fields of `meta` a room shows ([`ROOM_META_KEYS`](#annals.store.ROOM_META_KEYS)).
+
+```pycon
+>>> room_meta({"id": "a", "source": {"host": "h"}, "from_pending": "p", "versions": [{"n": 1, "from_pending": "p"}]})
+{'id': 'a', 'versions': [{'n': 1}]}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.store.slugify(text, , max_len=48)
 
 Lowercase ascii words joined by hyphens; empty input becomes `doc`.
@@ -483,3 +566,15 @@ A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.store.without_provenance(meta, , keys=('source', 'artifact'))
+
+`meta` without the keys that say where it came from.
+
+```pycon
+>>> without_provenance({"id": "a", "source": {"host": "h"}, "artifact": "x"})
+{'id': 'a'}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

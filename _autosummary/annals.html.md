@@ -209,7 +209,7 @@ A directory on this machine.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### *class* annals.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
+### *class* annals.Settings(target, base_url, configured=True, outbox=False, share_base_url='', room=False)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -234,6 +234,13 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### room *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= False*
+
+what is written to it carries no provenance
+
+* **Type:**
+  an outside audience reads this target
+
 #### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
 
 where share links point (`<this>/<token>/`); `<base_url>/shared` by default
@@ -244,7 +251,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### annals.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
+### annals.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None, room=False)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -257,7 +264,9 @@ the server pulls and empties (it cannot be written to from here), so replacement
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
 edit of the file turns it off). `--share-base-url` is where share links point when
 the share server is not at `<base-url>/shared` (a platform running it as its own
-public app). With no arguments, shows the resolved settings without writing.
+public app). `--room` marks a target an outside audience reads (a client’s room): what
+is published or copied to it carries no provenance; kept by later changes, like
+`--outbox`. With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -280,7 +289,7 @@ List groups, newest first.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
+### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, room=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 

@@ -29,6 +29,10 @@ fetches documents from it rather than being written to): a replacement published
 travels as it is and is applied where it lands (see [`annals.store`](annals.store.html.md#module-annals.store)). `ANNALS_OUTBOX`
 overrides it.
 
+A fourth, `room`, is true for a target an outside audience reads (a client’s room, served
+with `mk_api(room=True)`): `publish` and `copy` to it write no provenance (the
+publisher’s host, cwd, session and `--meta` keys), so it never reaches that disk.
+
 The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
 reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
 so with no configuration at all `annals publish` and `annals serve` meet in the same
@@ -66,7 +70,7 @@ where the public share server answers (a share link is `<this>/<token>/`)
 * **Type:**
   extra folders the page lists beside the published documents
 
-### *class* annals.config.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
+### *class* annals.config.Settings(target, base_url, configured=True, outbox=False, share_base_url='', room=False)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -91,6 +95,13 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### room *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= False*
+
+what is written to it carries no provenance
+
+* **Type:**
+  an outside audience reads this target
+
 #### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
 
 where share links point (`<this>/<token>/`); `<base_url>/shared` by default
@@ -109,7 +120,7 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
+### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, room=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 

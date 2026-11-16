@@ -80,6 +80,10 @@ That writes `~/.config/annals/config.toml`. `target` is a directory, or `host:/p
 
 A config file can name more places: `annals configure --to team --target host:/path --base-url https://team.example.com/annals` saves a `[targets.team]` table and leaves the default alone. Then `annals publish r.md --to team` (also `ls`, `show`, `trash`, `restore`, `group`, `groups`) works on that place only, and `annals copy <link-or-id> --to team [--source other]` copies documents or whole groups there, keeping their ids. Nothing about the place is in the code: a name, a target and a base url.
 
+### A room for an outside audience (`--room`)
+
+A room is an annals for people outside (a client, a team): `annals configure --to client --target host:/path --base-url https://.../client_files --room`, then `annals copy <link> --to client` or `annals publish f.pdf --to client`, and nothing written there carries provenance (host, cwd, session, `--meta`). Serve it with `mk_api(data_dir=..., room=True)` behind the host’s login: read only, no bin, no ledgers, listening, overviews or shares, and only the meta fields a reader needs (no provenance) in any page or API answer, even for documents written by other means. Withdraw a document with `annals trash <id> --to client`.
+
 ## Hosting the page
 
 **Inside an app platform** (the usual case). Mount the API under the platform’s prefix and let the platform’s login gate it:

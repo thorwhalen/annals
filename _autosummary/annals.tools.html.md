@@ -82,7 +82,7 @@ leaves out the table of contents. Redirect to save text, or name the file:
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
+### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None, room=False)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -95,7 +95,9 @@ the server pulls and empties (it cannot be written to from here), so replacement
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
 edit of the file turns it off). `--share-base-url` is where share links point when
 the share server is not at `<base-url>/shared` (a platform running it as its own
-public app). With no arguments, shows the resolved settings without writing.
+public app). `--room` marks a target an outside audience reads (a client’s room): what
+is published or copied to it carries no provenance; kept by later changes, like
+`--outbox`. With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

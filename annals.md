@@ -1,4 +1,4 @@
-> built 2026-11-16 04:06 UTC from 7f411e2 (main) · annals 0.0.58. Details: build_info.json
+> built 2026-11-16 14:40 UTC from 9c5e2c3 (main) · annals 0.0.59. Details: build_info.json
 
 # index.html.md
 
@@ -83,6 +83,10 @@ That writes `~/.config/annals/config.toml`. `target` is a directory, or `host:/p
 ### A second place (`--to`)
 
 A config file can name more places: `annals configure --to team --target host:/path --base-url https://team.example.com/annals` saves a `[targets.team]` table and leaves the default alone. Then `annals publish r.md --to team` (also `ls`, `show`, `trash`, `restore`, `group`, `groups`) works on that place only, and `annals copy <link-or-id> --to team [--source other]` copies documents or whole groups there, keeping their ids. Nothing about the place is in the code: a name, a target and a base url.
+
+### A room for an outside audience (`--room`)
+
+A room is an annals for people outside (a client, a team): `annals configure --to client --target host:/path --base-url https://.../client_files --room`, then `annals copy <link> --to client` or `annals publish f.pdf --to client`, and nothing written there carries provenance (host, cwd, session, `--meta`). Serve it with `mk_api(data_dir=..., room=True)` behind the host’s login: read only, no bin, no ledgers, listening, overviews or shares, and only the meta fields a reader needs (no provenance) in any page or API answer, even for documents written by other means. Withdraw a document with `annals trash <id> --to client`.
 
 ## Hosting the page
 
@@ -1045,6 +1049,10 @@ fetches documents from it rather than being written to): a replacement published
 travels as it is and is applied where it lands (see [`annals.store`](_autosummary/annals.store.html.md#module-annals.store)). `ANNALS_OUTBOX`
 overrides it.
 
+A fourth, `room`, is true for a target an outside audience reads (a client’s room, served
+with `mk_api(room=True)`): `publish` and `copy` to it write no provenance (the
+publisher’s host, cwd, session and `--meta` keys), so it never reaches that disk.
+
 The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
 reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
 so with no configuration at all `annals publish` and `annals serve` meet in the same
@@ -1082,7 +1090,7 @@ where the public share server answers (a share link is `<this>/<token>/`)
 * **Type:**
   extra folders the page lists beside the published documents
 
-### *class* annals.config.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
+### *class* annals.config.Settings(target, base_url, configured=True, outbox=False, share_base_url='', room=False)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1107,6 +1115,13 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### room *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= False*
+
+what is written to it carries no provenance
+
+* **Type:**
+  an outside audience reads this target
+
 #### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
 
 where share links point (`<this>/<token>/`); `<base_url>/shared` by default
@@ -1125,7 +1140,7 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
-### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
+### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, room=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 
@@ -1491,7 +1506,7 @@ A directory on this machine.
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
-### *class* annals.Settings(target, base_url, configured=True, outbox=False, share_base_url='')
+### *class* annals.Settings(target, base_url, configured=True, outbox=False, share_base_url='', room=False)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -1516,6 +1531,13 @@ in the local data dir and the link points at a local server, which is rarely mea
 
 the target is pulled and emptied by another machine; replacements apply there
 
+#### room *: [bool](https://docs.python.org/3/builtins/functions.html#bool)* *= False*
+
+what is written to it carries no provenance
+
+* **Type:**
+  an outside audience reads this target
+
 #### share_base_url *: [str](https://docs.python.org/3/builtins/stdtypes.html#str)* *= ''*
 
 where share links point (`<this>/<token>/`); `<base_url>/shared` by default
@@ -1526,7 +1548,7 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 `host:path` on another machine, via the system ssh and rsync in batch mode.
 
-### annals.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
+### annals.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None, room=False)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -1539,7 +1561,9 @@ the server pulls and empties (it cannot be written to from here), so replacement
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
 edit of the file turns it off). `--share-base-url` is where share links point when
 the share server is not at `<base-url>/shared` (a platform running it as its own
-public app). With no arguments, shows the resolved settings without writing.
+public app). `--room` marks a target an outside audience reads (a client’s room): what
+is published or copied to it carries no provenance; kept by later changes, like
+`--outbox`. With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1562,7 +1586,7 @@ List groups, newest first.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, config_path=None)
+### annals.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, room=None, config_path=None)
 
 Resolve settings: arguments, then `to`, env, the config file, then local defaults.
 
@@ -3692,6 +3716,8 @@ replacement twice and nothing is ever deleted.
 | [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
 | [`THUMB_CACHE`](_autosummary/annals.store.html.md#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                              |
 | [`SIDECAR_SUFFIXES`](_autosummary/annals.store.html.md#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
+| [`PROVENANCE_KEYS`](_autosummary/annals.store.html.md#annals.store.PROVENANCE_KEYS)    | `source` (the publisher's host, cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can open).                                                                                                                        |
+| [`ROOM_META_KEYS`](_autosummary/annals.store.html.md#annals.store.ROOM_META_KEYS)     | everything a reader's page needs, and nothing else, so a field added later stays out until named here                                                                                                                                             |
 
 ### Functions
 
@@ -3704,15 +3730,18 @@ replacement twice and nothing is ever deleted.
 | [`mk_id`](_autosummary/annals.store.html.md#annals.store.mk_id)(title, \*[, when])               | `YYYYMMDD-HHMMSS-<slug>-<4 hex>`: sortable by time, readable in a URL.                                                                                       |
 | [`mk_pending_id`](_autosummary/annals.store.html.md#annals.store.mk_pending_id)(doc_id, \*[, when])      | `<id>.r<YYYYMMDDHHMMSSffffff>-<hex>`: sorts in publication order.                                                                                            |
 | [`now_iso`](_autosummary/annals.store.html.md#annals.store.now_iso)()                              | UTC timestamp with second precision, the format every meta.json uses.                                                                                        |
+| [`room_meta`](_autosummary/annals.store.html.md#annals.store.room_meta)(meta, \*[, keys])            | Only the fields of `meta` a room shows ([`ROOM_META_KEYS`](_autosummary/annals.store.html.md#annals.store.ROOM_META_KEYS)).                                                    |
 | [`slugify`](_autosummary/annals.store.html.md#annals.store.slugify)(text, \*[, max_len])           | Lowercase ascii words joined by hyphens; empty input becomes `doc`.                                                                                          |
 | [`split_version`](_autosummary/annals.store.html.md#annals.store.split_version)(doc_id)                  | `("<id>", n)` from `<id>@<n>` (version `n`), `("<id>", None)` from an id.                                                                                    |
 | [`title_and_excerpt`](_autosummary/annals.store.html.md#annals.store.title_and_excerpt)(head, kind)          | A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.                                                                              |
+| [`without_provenance`](_autosummary/annals.store.html.md#annals.store.without_provenance)(meta, \*[, keys])   | `meta` without the keys that say where it came from.                                                                                                         |
 
 ### Classes
 
 | [`DocStore`](_autosummary/annals.store.html.md#annals.store.DocStore)(target, \*[, settle])   | Publish, list, read, trash, restore and group documents on a `Target`.              |
 |-----------------------------------------------------------------------------------|-------------------------------------------------------------------------------------|
 | [`HidingStore`](_autosummary/annals.store.html.md#annals.store.HidingStore)(store, \*, hide)     | The documents of `store` without those `hide(meta)` is true of, on the same target. |
+| [`RoomStore`](_autosummary/annals.store.html.md#annals.store.RoomStore)(store, \*[, keys])     | The documents of `store` as an outside audience reads them (a room).                |
 
 ### annals.store.ARTIFACT_HOSTS *= ('claude.ai',)*
 
@@ -3999,12 +4028,78 @@ the longest title a group may have (a longer one is refused, not cut)
 
 `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`
 
+### annals.store.PROVENANCE_KEYS *= ('source', 'artifact')*
+
+`source` (the publisher’s host,
+cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can
+open). `copy` to a room drops them from what it writes.
+
+* **Type:**
+  what a document’s meta says about where it came from
+
 ### annals.store.RESERVED *= ('.versions',)*
 
 the store’s bookkeeping lives there
 
 * **Type:**
   names a document’s own files may not use
+
+### annals.store.ROOM_META_KEYS *= frozenset({'created', 'excerpt', 'files', 'id', 'in_trash', 'kind', 'main', 'size', 'sizes', 'tags', 'title', 'updated', 'version', 'version_of', 'versions'})*
+
+everything a
+reader’s page needs, and nothing else, so a field added later stays out until named here
+
+* **Type:**
+  the fields of a document’s meta an outside audience may see (a room)
+
+### *class* annals.store.RoomStore(store, , keys=frozenset({'created', 'excerpt', 'files', 'id', 'in_trash', 'kind', 'main', 'size', 'sizes', 'tags', 'title', 'updated', 'version', 'version_of', 'versions'}))
+
+Bases: [`HidingStore`](_autosummary/annals.store.html.md#annals.store.HidingStore)
+
+The documents of `store` as an outside audience reads them (a room).
+
+Nothing in the bin: a binned document is absent, as in [`HidingStore`](_autosummary/annals.store.html.md#annals.store.HidingStore), so the
+owner withdraws a document from a room by binning it; a group left with no document
+to show is absent too (its title included). And only the fields in
+[`ROOM_META_KEYS`](_autosummary/annals.store.html.md#annals.store.ROOM_META_KEYS): every meta read through this store (one, a listing, a search,
+a group’s) comes without the rest, so whatever an API builds from it cannot show or
+match them. Writes go to `store` unchanged. Reading may still settle a pending
+replacement the publisher left, as the owner’s store does.
+
+#### group(gid)
+
+One group, by id.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### list(, trash=False)
+
+Every document’s meta, last changed first (`updated`, else `created`).
+
+Pending replacements are applied first (when this store settles). One whose
+document is not here is listed under its own id, so it is never out of sight.
+
+* **Return type:**
+  [`list`](_autosummary/annals.store.html.md#annals.store.RoomStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### list_groups()
+
+Every group, newest first.
+
+* **Return type:**
+  [`list`](_autosummary/annals.store.html.md#annals.store.RoomStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### meta(doc_id, , settle=True)
+
+One document’s meta; `in_trash` says which side of the bin it is on.
+
+`<id>@<n>` is version `n`: its own meta, with `version_of` naming the document.
+A pending replacement, read by its own id, says `pending`. `settle=False`
+skips applying pending replacements (for a hot path such as a raw file).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.store.SIDECAR_SUFFIXES *= ('.cues.json', '.chapters.vtt', '.vtt', '.srt')*
 
@@ -4105,6 +4200,18 @@ UTC timestamp with second precision, the format every meta.json uses.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.store.room_meta(meta, , keys=frozenset({'created', 'excerpt', 'files', 'id', 'in_trash', 'kind', 'main', 'size', 'sizes', 'tags', 'title', 'updated', 'version', 'version_of', 'versions'}))
+
+Only the fields of `meta` a room shows ([`ROOM_META_KEYS`](_autosummary/annals.store.html.md#annals.store.ROOM_META_KEYS)).
+
+```pycon
+>>> room_meta({"id": "a", "source": {"host": "h"}, "from_pending": "p", "versions": [{"n": 1, "from_pending": "p"}]})
+{'id': 'a', 'versions': [{'n': 1}]}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.store.slugify(text, , max_len=48)
 
 Lowercase ascii words joined by hyphens; empty input becomes `doc`.
@@ -4125,6 +4232,18 @@ A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.
 
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.store.without_provenance(meta, , keys=('source', 'artifact'))
+
+`meta` without the keys that say where it came from.
+
+```pycon
+>>> without_provenance({"id": "a", "source": {"host": "h"}, "artifact": "x"})
+{'id': 'a'}
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 
 # _autosummary/annals.tables.html.md
@@ -4470,7 +4589,7 @@ leaves out the table of contents. Redirect to save text, or name the file:
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None)
+### annals.tools.configure(, target=None, base_url=None, to=None, outbox=False, share_base_url=None, room=False)
 
 Write the publisher config (where to publish, what link to print) and show it.
 
@@ -4483,7 +4602,9 @@ the server pulls and empties (it cannot be written to from here), so replacement
 left for the server to apply; it is kept by later changes (`ANNALS_OUTBOX=0` or an
 edit of the file turns it off). `--share-base-url` is where share links point when
 the share server is not at `<base-url>/shared` (a platform running it as its own
-public app). With no arguments, shows the resolved settings without writing.
+public app). `--room` marks a target an outside audience reads (a client’s room): what
+is published or copied to it carries no provenance; kept by later changes, like
+`--outbox`. With no arguments, shows the resolved settings without writing.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -4772,7 +4893,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 04:06 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/7f411e2858f563374e87460a347bc1ded04ff736"><code>7f411e2</code></a> on branch <code>main</code>, for **annals 0.0.58** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 14:40 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/9c5e2c3035ece3006a4bb91f8d5181b945a2c589"><code>9c5e2c3</code></a> on branch <code>main</code>, for **annals 0.0.59** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -4781,7 +4902,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/7f411e2858f563374e87460a347bc1ded04ff736"><code>7f411e2858f563374e87460a347bc1ded04ff736</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/9c5e2c3035ece3006a4bb91f8d5181b945a2c589"><code>9c5e2c3035ece3006a4bb91f8d5181b945a2c589</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4792,9 +4913,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43801600343">43801600343</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43887254512">43887254512</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>7f411e2858f563374e87460a347bc1ded04ff736</code> (in the history of the built commit) |
+| Event commit | <code>9c5e2c3035ece3006a4bb91f8d5181b945a2c589</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4819,13 +4940,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.58/">0.0.58</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.59/">0.0.59</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 7f411e2858f563374e87460a347bc1ded04ff736
+git checkout 9c5e2c3035ece3006a4bb91f8d5181b945a2c589
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

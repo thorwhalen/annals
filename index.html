@@ -115,6 +115,7 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#where-documents-go">Where documents go</a><ul>
 <li><a class="reference internal" href="#a-second-place-to">A second place (<code class="docutils literal notranslate"><span class="pre">--to</span></code>)</a></li>
+<li><a class="reference internal" href="#a-room-for-an-outside-audience-room">A room for an outside audience (<code class="docutils literal notranslate"><span class="pre">--room</span></code>)</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#hosting-the-page">Hosting the page</a></li>
@@ -242,6 +243,10 @@ data-aria-dark="Switch to auto color mode">
 <section id="a-second-place-to">
 <span id="a-second-place---to"></span><h3>A second place (<code class="docutils literal notranslate"><span class="pre">--to</span></code>)<a class="headerlink" href="#a-second-place-to" title="Link to this heading">#</a></h3>
 <p>A config file can name more places: <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--to</span> <span class="pre">team</span> <span class="pre">--target</span> <span class="pre">host:/path</span> <span class="pre">--base-url</span> <span class="pre">https://team.example.com/annals</span></code> saves a <code class="docutils literal notranslate"><span class="pre">[targets.team]</span></code> table and leaves the default alone. Then <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">r.md</span> <span class="pre">--to</span> <span class="pre">team</span></code> (also <code class="docutils literal notranslate"><span class="pre">ls</span></code>, <code class="docutils literal notranslate"><span class="pre">show</span></code>, <code class="docutils literal notranslate"><span class="pre">trash</span></code>, <code class="docutils literal notranslate"><span class="pre">restore</span></code>, <code class="docutils literal notranslate"><span class="pre">group</span></code>, <code class="docutils literal notranslate"><span class="pre">groups</span></code>) works on that place only, and <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">copy</span> <span class="pre">&lt;link-or-id&gt;</span> <span class="pre">--to</span> <span class="pre">team</span> <span class="pre">[--source</span> <span class="pre">other]</span></code> copies documents or whole groups there, keeping their ids. Nothing about the place is in the code: a name, a target and a base url.</p>
+</section>
+<section id="a-room-for-an-outside-audience-room">
+<span id="a-room-for-an-outside-audience---room"></span><h3>A room for an outside audience (<code class="docutils literal notranslate"><span class="pre">--room</span></code>)<a class="headerlink" href="#a-room-for-an-outside-audience-room" title="Link to this heading">#</a></h3>
+<p>A room is an annals for people outside (a client, a team): <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">configure</span> <span class="pre">--to</span> <span class="pre">client</span> <span class="pre">--target</span> <span class="pre">host:/path</span> <span class="pre">--base-url</span> <span class="pre">https://.../client_files</span> <span class="pre">--room</span></code>, then <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">copy</span> <span class="pre">&lt;link&gt;</span> <span class="pre">--to</span> <span class="pre">client</span></code> or <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">f.pdf</span> <span class="pre">--to</span> <span class="pre">client</span></code>, and nothing written there carries provenance (host, cwd, session, <code class="docutils literal notranslate"><span class="pre">--meta</span></code>). Serve it with <code class="docutils literal notranslate"><span class="pre">mk_api(data_dir=...,</span> <span class="pre">room=True)</span></code> behind the host’s login: read only, no bin, no ledgers, listening, overviews or shares, and only the meta fields a reader needs (no provenance) in any page or API answer, even for documents written by other means. Withdraw a document with <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">trash</span> <span class="pre">&lt;id&gt;</span> <span class="pre">--to</span> <span class="pre">client</span></code>.</p>
 </section>
 </section>
 <section id="hosting-the-page">
@@ -469,7 +474,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-16 04:06 UTC from <a href="https://github.com/thorwhalen/annals/commit/7f411e2858f563374e87460a347bc1ded04ff736">7f411e2</a> (main) · annals 0.0.58 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-16 14:40 UTC from <a href="https://github.com/thorwhalen/annals/commit/9c5e2c3035ece3006a4bb91f8d5181b945a2c589">9c5e2c3</a> (main) · annals 0.0.59 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -504,7 +509,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=c3e19674"></script>
+      <script src="_static/documentation_options.js?v=6799126d"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

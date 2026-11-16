@@ -1371,6 +1371,117 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="1123">        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_without_hidden</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">whole</span><span class="o">.</span><span class="n">_append_to_group</span><span class="p">(</span><span class="n">gid</span><span class="p">,</span> <span class="n">ids</span><span class="p">)])[</span><span class="mi">0</span><span class="p">]</span></div>
 </div>
 
+</span><span data-line="1124">
+</span><span data-line="1125">
+</span><span data-line="1126"><span class="c1">#: what a document's meta says about where it came from: ``source`` (the publisher's host,</span>
+</span><span data-line="1127"><span class="c1">#: cwd, session and ``--meta`` keys) and ``artifact`` (a claude.ai link only the owner can</span>
+</span><span data-line="1128"><span class="c1">#: open). ``copy`` to a room drops them from what it writes.</span>
+</span><span data-line="1129"><span class="n">PROVENANCE_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"source"</span><span class="p">,</span> <span class="s2">"artifact"</span><span class="p">)</span>
+</span><span data-line="1130"><span class="c1">#: the fields of a document's meta an outside audience may see (a room): everything a</span>
+</span><span data-line="1131"><span class="c1">#: reader's page needs, and nothing else, so a field added later stays out until named here</span>
+</span><span data-line="1132"><span class="n">ROOM_META_KEYS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span>
+</span><span data-line="1133">    <span class="p">{</span>
+</span><span data-line="1134">        <span class="s2">"id"</span><span class="p">,</span>
+</span><span data-line="1135">        <span class="s2">"title"</span><span class="p">,</span>
+</span><span data-line="1136">        <span class="s2">"kind"</span><span class="p">,</span>
+</span><span data-line="1137">        <span class="s2">"main"</span><span class="p">,</span>
+</span><span data-line="1138">        <span class="s2">"files"</span><span class="p">,</span>
+</span><span data-line="1139">        <span class="s2">"sizes"</span><span class="p">,</span>
+</span><span data-line="1140">        <span class="s2">"size"</span><span class="p">,</span>
+</span><span data-line="1141">        <span class="s2">"tags"</span><span class="p">,</span>
+</span><span data-line="1142">        <span class="s2">"excerpt"</span><span class="p">,</span>
+</span><span data-line="1143">        <span class="s2">"created"</span><span class="p">,</span>
+</span><span data-line="1144">        <span class="s2">"updated"</span><span class="p">,</span>
+</span><span data-line="1145">        <span class="s2">"version"</span><span class="p">,</span>
+</span><span data-line="1146">        <span class="s2">"versions"</span><span class="p">,</span>
+</span><span data-line="1147">        <span class="s2">"version_of"</span><span class="p">,</span>
+</span><span data-line="1148">        <span class="s2">"in_trash"</span><span class="p">,</span>
+</span><span data-line="1149">    <span class="p">}</span>
+</span><span data-line="1150"><span class="p">)</span>
+</span><span data-line="1151"><span class="c1">#: the fields of a version entry (``meta["versions"]``) a room shows</span>
+</span><span data-line="1152"><span class="n">_ROOM_VERSION_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"n"</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">,</span> <span class="s2">"size"</span><span class="p">,</span> <span class="s2">"created"</span><span class="p">)</span>
+</span><span data-line="1153">
+</span><span data-line="1154">
+<div class="viewcode-block" id="without_provenance">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.without_provenance">[docs]</a>
+</span><span data-line="1155"><span class="k">def</span><span class="w"> </span><span class="nf">without_provenance</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">PROVENANCE_KEYS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1156"><span class="w">    </span><span class="sd">"""``meta`` without the keys that say where it came from.</span>
+</span><span data-line="1157">
+</span><span data-line="1158"><span class="sd">    &gt;&gt;&gt; without_provenance({"id": "a", "source": {"host": "h"}, "artifact": "x"})</span>
+</span><span data-line="1159"><span class="sd">    {'id': 'a'}</span>
+</span><span data-line="1160"><span class="sd">    """</span>
+</span><span data-line="1161">    <span class="n">keys</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+</span><span data-line="1162">    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span></div>
+
+</span><span data-line="1163">
+</span><span data-line="1164">
+<div class="viewcode-block" id="room_meta">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.room_meta">[docs]</a>
+</span><span data-line="1165"><span class="k">def</span><span class="w"> </span><span class="nf">room_meta</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">ROOM_META_KEYS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1166"><span class="w">    </span><span class="sd">"""Only the fields of ``meta`` a room shows (:data:`ROOM_META_KEYS`).</span>
+</span><span data-line="1167">
+</span><span data-line="1168"><span class="sd">    &gt;&gt;&gt; room_meta({"id": "a", "source": {"host": "h"}, "from_pending": "p", "versions": [{"n": 1, "from_pending": "p"}]})</span>
+</span><span data-line="1169"><span class="sd">    {'id': 'a', 'versions': [{'n': 1}]}</span>
+</span><span data-line="1170"><span class="sd">    """</span>
+</span><span data-line="1171">    <span class="n">keys</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+</span><span data-line="1172">    <span class="n">out</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">}</span>
+</span><span data-line="1173">    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"versions"</span><span class="p">),</span> <span class="nb">list</span><span class="p">):</span>
+</span><span data-line="1174">        <span class="n">out</span><span class="p">[</span><span class="s2">"versions"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="1175">            <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_ROOM_VERSION_KEYS</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">v</span><span class="p">}</span>
+</span><span data-line="1176">            <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">out</span><span class="p">[</span><span class="s2">"versions"</span><span class="p">]</span>
+</span><span data-line="1177">            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+</span><span data-line="1178">        <span class="p">]</span>
+</span><span data-line="1179">    <span class="k">return</span> <span class="n">out</span></div>
+
+</span><span data-line="1180">
+</span><span data-line="1181">
+<div class="viewcode-block" id="RoomStore">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.RoomStore">[docs]</a>
+</span><span data-line="1182"><span class="k">class</span><span class="w"> </span><span class="nc">RoomStore</span><span class="p">(</span><span class="n">HidingStore</span><span class="p">):</span>
+</span><span data-line="1183"><span class="w">    </span><span class="sd">"""The documents of ``store`` as an outside audience reads them (a room).</span>
+</span><span data-line="1184">
+</span><span data-line="1185"><span class="sd">    Nothing in the bin: a binned document is absent, as in :class:`HidingStore`, so the</span>
+</span><span data-line="1186"><span class="sd">    owner withdraws a document from a room by binning it; a group left with no document</span>
+</span><span data-line="1187"><span class="sd">    to show is absent too (its title included). And only the fields in</span>
+</span><span data-line="1188"><span class="sd">    :data:`ROOM_META_KEYS`: every meta read through this store (one, a listing, a search,</span>
+</span><span data-line="1189"><span class="sd">    a group's) comes without the rest, so whatever an API builds from it cannot show or</span>
+</span><span data-line="1190"><span class="sd">    match them. Writes go to ``store`` unchanged. Reading may still settle a pending</span>
+</span><span data-line="1191"><span class="sd">    replacement the publisher left, as the owner's store does.</span>
+</span><span data-line="1192"><span class="sd">    """</span>
+</span><span data-line="1193">
+</span><span data-line="1194">    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">ROOM_META_KEYS</span><span class="p">):</span>
+</span><span data-line="1195">        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">hide</span><span class="o">=</span><span class="k">lambda</span> <span class="n">meta</span><span class="p">:</span> <span class="nb">bool</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"in_trash"</span><span class="p">)))</span>
+</span><span data-line="1196">        <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">keys</span><span class="p">)</span>
+</span><span data-line="1197">
+<div class="viewcode-block" id="RoomStore.list">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.RoomStore.list">[docs]</a>
+</span><span data-line="1198">    <span class="k">def</span><span class="w"> </span><span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">trash</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="1199">        <span class="k">if</span> <span class="n">trash</span><span class="p">:</span>  <span class="c1"># a room has no bin</span>
+</span><span data-line="1200">            <span class="k">return</span> <span class="p">[]</span>
+</span><span data-line="1201">        <span class="k">return</span> <span class="p">[</span><span class="n">room_meta</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">keys</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">list</span><span class="p">()]</span></div>
+
+</span><span data-line="1202">
+<div class="viewcode-block" id="RoomStore.meta">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.RoomStore.meta">[docs]</a>
+</span><span data-line="1203">    <span class="k">def</span><span class="w"> </span><span class="nf">meta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">settle</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1204">        <span class="k">return</span> <span class="n">room_meta</span><span class="p">(</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">meta</span><span class="p">(</span><span class="n">doc_id</span><span class="p">,</span> <span class="n">settle</span><span class="o">=</span><span class="n">settle</span><span class="p">),</span> <span class="n">keys</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">)</span></div>
+
+</span><span data-line="1205">
+<div class="viewcode-block" id="RoomStore.group">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.RoomStore.group">[docs]</a>
+</span><span data-line="1206">    <span class="k">def</span><span class="w"> </span><span class="nf">group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gid</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1207">        <span class="n">g</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+</span><span data-line="1208">        <span class="k">if</span> <span class="ow">not</span> <span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">]:</span>
+</span><span data-line="1209">            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">gid</span><span class="p">)</span>
+</span><span data-line="1210">        <span class="k">return</span> <span class="n">g</span></div>
+
+</span><span data-line="1211">
+<div class="viewcode-block" id="RoomStore.list_groups">
+<a class="viewcode-back" href="../../_autosummary/annals.store.html#annals.RoomStore.list_groups">[docs]</a>
+</span><span data-line="1212">    <span class="k">def</span><span class="w"> </span><span class="nf">list_groups</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="1213">        <span class="k">return</span> <span class="p">[</span><span class="n">g</span> <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">list_groups</span><span class="p">()</span> <span class="k">if</span> <span class="n">g</span><span class="p">[</span><span class="s2">"docs"</span><span class="p">]]</span></div>
+</div>
+
 </span></pre></div>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
@@ -1398,7 +1509,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=c3e19674"></script>
+      <script src="../../_static/documentation_options.js?v=6799126d"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
