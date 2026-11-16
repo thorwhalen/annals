@@ -1067,8 +1067,10 @@ def serve(
     nothing for an open server on localhost. A host reachable beyond this machine with no auth
     configured is refused unless ``allow_open`` (``--allow-open``) says something else gates it.
     ``overviews`` (``--overviews '*'``, or reader names separated by commas) offers the Listen
-    button; it spends money, needs ``ANNALS_OVERVIEW_COMMAND`` and a worker (``annals
-    listen-work`` on a timer), and is off otherwise.
+    button to those the login lets in (unset: ``ANNALS_OVERVIEWS`` decides, and unset it is
+    off; ``--overviews ''`` forces it off). It spends money, needs ``ANNALS_OVERVIEW_COMMAND``
+    and a worker (``annals listen-work`` on a timer), and a server with no login serves it
+    only on this machine.
     """
     from annals.api import serve as _serve
 

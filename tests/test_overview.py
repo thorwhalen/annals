@@ -749,41 +749,65 @@ def _maker_with_url(tmp_path, body):
     return [sys.executable, str(script), "{source}", "{minutes}", "{out}", "{url}"]
 
 
-def test_the_engine_contract(client, store, doc, requests, tmp_path):
+def test_the_engine_contract(client, store, requests, tmp_path):
     """misc/docs/design.md "The overview engine contract": what an engine may rely on and owes."""
-    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
-    seen = tmp_path / "seen.txt"
+    plain = store.publish(text="First line.\n\nSecond.", title="Plain title")["id"]
+    page = store.publish(
+        text="<html><head><title>x</title><script>no()</script></head><body><p>Spoken &amp; read.</p></body></html>",
+        title="A page", filename="p.html",
+    )["id"]
+    for d in (plain, page):
+        client.post(f"/docs/{d}/overview", json={"minutes": 3})
+    seen = tmp_path / "seen.json"
     probe = (
-        "import sys\n"
-        f"open({str(seen)!r}, 'w').write(repr(dict(\n"
-        "    source_text=open(source).read(), minutes=minutes, url=url,\n"
-        "    cwd_files=sorted(os.listdir('.')), stdin=sys.stdin.read())))\n"
+        "import json, sys\n"
+        f"seen = {str(seen)!r}\n"
+        "rows = json.load(open(seen)) if os.path.exists(seen) else []\n"
+        "rows.append(dict(source_text=open(source).read(), minutes=minutes, url=url,\n"
+        "    cwd_files=sorted(os.listdir('.')), stdin=sys.stdin.read(), out_name=os.path.basename(out)))\n"
+        "json.dump(rows, open(seen, 'w'))\n"
         "open(out, 'w').write('<!doctype html><title>P</title>')\n"
     )
     overview.work(store, requests, command=_maker_with_url(tmp_path, probe), doc_url=lambda i: f"https://h/annals/d/{i}")
-    got = eval(seen.read_text())
-    assert got["source_text"].startswith("# Hello\n\n") and "The parser landed." in got["source_text"]
-    assert got["minutes"] == "3" and got["url"] == f"https://h/annals/d/{doc}"
-    assert got["stdin"] == "" and "overview.html" not in got["cwd_files"]  # stdin closed, an empty scratch dir
-    assert client.get(f"/docs/{doc}/overview").json()["state"] == "done"
+    import json
+
+    rows = {r["url"]: r for r in json.loads(seen.read_text())}
+    p, h = rows[f"https://h/annals/d/{plain}"], rows[f"https://h/annals/d/{page}"]
+    assert p["source_text"] == "# Plain title\n\nFirst line.\n\nSecond.\n"  # the title, a blank line, the text
+    assert "# A page" in h["source_text"] and "Spoken & read." in h["source_text"] and "no()" not in h["source_text"]
+    assert p["minutes"] == "3" and p["stdin"] == "" and p["cwd_files"] == ["source.md"]
+    assert client.get(f"/docs/{plain}/overview").json()["state"] == "done"
 
 
 def test_the_engine_failure_contract(client, store, doc, requests, tmp_path):
-    other = store.publish(text="# Other\n\nMore.", title="Other")["id"]
-    third = store.publish(text="# Third\n\nEvenmore.", title="Third")["id"]
-    for d in (doc, other, third):
-        client.post(f"/docs/{d}/overview", json={"minutes": 3})
-    # exit 0 without a page is a failure; the last non-empty line of stdout+stderr is the reason
-    noisy = "print('progress 10%'); print('still working', file=sys.stderr); print('the voice ran out'); print('')\nsys.exit(3)"
-    overview.work(store, requests, command=_maker(tmp_path, "import sys\n" + noisy))
+    """Exit 0 without a page, a non-zero exit with the last line as the reason, no output at all."""
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    overview.work(store, requests, command=_maker(tmp_path, "import sys\nprint('the voice said so')"))
+    assert client.get(f"/docs/{doc}/overview").json()["error"] == "the overview command wrote no page"
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    noisy = "import sys\nprint('progress 10%'); print('still working', file=sys.stderr); print('the voice ran out'); print('')\nsys.exit(3)"
+    overview.work(store, requests, command=_maker(tmp_path, noisy))
     assert client.get(f"/docs/{doc}/overview").json()["error"] == "the voice ran out"
+    client.post(f"/docs/{doc}/overview", json={"minutes": 3})
+    overview.work(store, requests, command=_maker(tmp_path, "import sys\nsys.exit(4)"))
+    assert client.get(f"/docs/{doc}/overview").json()["error"] == "the overview command exited 4"
+
+
+def test_the_same_failure_from_two_documents_marks_the_maker_down(client, store, requests, tmp_path):
+    ids = [store.publish(text=f"# D{i}\n\ntext {i}", title=f"D{i}")["id"] for i in range(3)]
+    for d in ids:
+        client.post(f"/docs/{d}/overview", json={"minutes": 3})
+    overview.work(store, requests, command=_maker(tmp_path, "import sys\nsys.exit('the account is out of credit (code 4%d)' % len(source))"))
+    assert overview.maker_down(requests)
+    states = {client.get(f"/docs/{d}/overview").json()["state"] for d in ids}
+    assert "waiting" in states  # the rest wait for the fix instead of failing
 
 
 def test_a_long_failure_reason_is_cut(client, store, doc, requests, tmp_path):
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
     long_reason = "x" * (overview.MAX_ERROR_CHARS + 100)
     overview.work(store, requests, command=_maker(tmp_path, f"import sys\nsys.exit({long_reason!r})"))
-    assert len(client.get(f"/docs/{doc}/overview").json()["error"]) <= overview.MAX_ERROR_CHARS
+    assert client.get(f"/docs/{doc}/overview").json()["error"] == "x" * overview.MAX_ERROR_CHARS
 
 
 def test_a_command_must_name_source_and_out():

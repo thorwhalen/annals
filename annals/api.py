@@ -1509,9 +1509,11 @@ def serve(
 ) -> None:
     """Run the standalone server with uvicorn (needs the ``annals[server]`` extra).
 
-    ``overviews`` turns spoken overviews on, as ``ANNALS_OVERVIEWS`` does (which it overrides):
-    ``*`` for every reader, or reader names separated by commas. It spends money, so it is
-    off unless asked for.
+    ``overviews`` turns spoken overviews on, as ``ANNALS_OVERVIEWS`` does (which it overrides;
+    unset, that variable decides, and unset it is off): ``*`` for every reader the login lets
+    in, or reader names separated by commas as the login names them. It spends money, so a
+    server with no login refuses it unless it is on this machine only (bound to loopback, no
+    ``allow_open``): there everyone who reaches the page is the owner.
 
     Refuses (``ValueError``) a non-loopback ``host`` while no auth is configured in the
     environment, because everyone reaching the port would be the owner. ``allow_open=True``
@@ -1536,6 +1538,20 @@ def serve(
             "so anyone who can reach the port would read every document. Set ANNALS_WHOAMI_URL + "
             "ANNALS_ALLOWED_USERS or ANNALS_BASIC_USER + ANNALS_BASIC_PASSWORD, bind to 127.0.0.1, "
             "or pass allow_open=True (--allow-open) if something in front of it does the gating."
+        )
+    spoken = overview.ENV_OVERVIEWS
+    asked = overviews if overviews is not None else os.environ.get(spoken, "")
+    if asked and authorizer is no_auth and (allow_open or not _is_loopback(host)):
+        raise ValueError(
+            f"refused: spoken overviews spend money and this server has no login, so anyone who "
+            f"reaches {host!r} could queue them. Set a login (ANNALS_WHOAMI_URL + "
+            f"ANNALS_ALLOWED_USERS or ANNALS_BASIC_USER + ANNALS_BASIC_PASSWORD), or serve on "
+            f"127.0.0.1 without allow_open."
+        )
+    if asked and asked != "*" and authorizer is no_auth:
+        raise ValueError(
+            "overviews for named readers need a login that names them; with no login every "
+            "reader is the owner, so use '*' (this machine only) or set a login"
         )
     app = mk_app(
         data_dir=data_dir or os.environ.get(ENV_DATA_DIR),
