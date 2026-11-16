@@ -51,12 +51,7 @@ PLAYER = """<!doctype html><html><head><meta charset="utf-8"><title>Bees</title>
 @pytest.fixture(scope="module")
 def site(tmp_path_factory, serve):
     store = DocStore(tmp_path_factory.mktemp("audio") / "data")
-    over = store.publish(
-        text=PLAYER % (_silence_wav(), RATE),
-        title="Listen: Bees",
-        filename="overview.html",
-        tags=[TAG],
-    )
+    over = store.publish(text=PLAYER % (_silence_wav(), RATE), title="Listen: Bees", filename="overview.html", tags=[TAG])
     store.publish(text="# Tides", title="Tides", filename="tides.md")
     return {"base": serve(store), "over": over}
 
@@ -100,9 +95,7 @@ def test_listen_on_one_device_and_see_what_is_left_on_another(device, site):
     frame.locator("#play").click()
     phone.wait_for_timeout(1800)  # about 7 s of the clip at RATE
     frame.locator("#pause").click()
-    phone.wait_for_function(
-        "document.querySelector('.listening [role=status]').textContent.indexOf('In progress') === 0"
-    )
+    phone.wait_for_function("document.querySelector('.listening [role=status]').textContent.indexOf('In progress') === 0")
     assert "stopped at 0:0" in _status_line(phone).inner_text()
     _no_sideways_scroll(phone)
 
@@ -114,10 +107,7 @@ def test_listen_on_one_device_and_see_what_is_left_on_another(device, site):
     _status_line(tablet).wait_for()
     assert tablet.get_by_role("button", name="Start over").count() == 1
     tframe = tablet.frame_locator("iframe.frame")
-    flight = {
-        "now": 0,
-        "max": 0,
-    }  # progress reports in flight: one at a time, or the line can show an older record
+    flight = {"now": 0, "max": 0}  # progress reports in flight: one at a time, or the line can show an older record
 
     def _sent(req):
         if req.method == "POST" and "/listening/" in req.url:
@@ -155,12 +145,7 @@ def test_listen_on_one_device_and_see_what_is_left_on_another(device, site):
 
 def test_dragging_to_the_end_is_not_a_listen(device, serve, tmp_path):
     store = DocStore(tmp_path / "data")
-    over = store.publish(
-        text=PLAYER % (_silence_wav(), RATE),
-        title="Listen: Wasps",
-        filename="overview.html",
-        tags=[TAG],
-    )
+    over = store.publish(text=PLAYER % (_silence_wav(), RATE), title="Listen: Wasps", filename="overview.html", tags=[TAG])
     phone = device()
     phone.goto(f"{serve(store)}/d/{over['id']}")
     _status_line(phone).wait_for()
@@ -175,17 +160,11 @@ def test_mark_done_from_the_list_and_search(device, site):
     phone.goto(f"{site['base']}/audio")
     phone.locator(".audio-row").first.wait_for()
     mark = phone.locator(".audio-row .mark")
-    if (
-        mark.get_attribute("aria-pressed") == "true"
-    ):  # the other test may have finished it
+    if mark.get_attribute("aria-pressed") == "true":  # the other test may have finished it
         mark.click()
-        phone.wait_for_function(
-            "document.querySelector('.audio-row .mark').getAttribute('aria-pressed') === 'false'"
-        )
+        phone.wait_for_function("document.querySelector('.audio-row .mark').getAttribute('aria-pressed') === 'false'")
     phone.locator(".audio-row .mark").click()
-    phone.wait_for_function(
-        "document.querySelector('.audio-row .mark').getAttribute('aria-pressed') === 'true'"
-    )
+    phone.wait_for_function("document.querySelector('.audio-row .mark').getAttribute('aria-pressed') === 'true'")
     assert "Done" in phone.locator(".audio-row").inner_text()
     phone.get_by_role("searchbox", name="Search the overviews").fill("wasps")
     phone.locator(".audio-list .empty").wait_for()
@@ -193,44 +172,22 @@ def test_mark_done_from_the_list_and_search(device, site):
     _no_sideways_scroll(phone)
 
 
-def test_an_overview_that_failed_shows_why_and_can_be_asked_for_again(
-    device, serve, tmp_path
-):
+def test_an_overview_that_failed_shows_why_and_can_be_asked_for_again(device, serve, tmp_path):
     from annals import overview
 
     store = DocStore(tmp_path / "data")
-    src = store.publish(text="# Moths", title="Moths at night", filename="moths.md")[
-        "id"
-    ]
-    why = (
-        'RuntimeError: claude -p exited 1: {"result": "' + "x" * 250 + '"}'
-    )  # long and unbroken, as the real one
-    overview.Requests(store.target.root).put(
-        src,
-        {
-            "state": overview.FAILED,
-            "minutes": 5,
-            "requested": overview._now(),
-            "finished": overview._now(),
-            "error": why,
-        },
-    )
+    src = store.publish(text="# Moths", title="Moths at night", filename="moths.md")["id"]
+    why = 'RuntimeError: claude -p exited 1: {"result": "' + "x" * 250 + '"}'  # long and unbroken, as the real one
+    overview.Requests(store.target.root).put(src, {"state": overview.FAILED, "minutes": 5, "requested": overview._now(), "finished": overview._now(), "error": why})
     phone = device()
     phone.goto(f"{serve(store, overviews=True)}/audio")
     row = phone.locator(".unmade-row")
     row.wait_for()
     text = row.inner_text()
-    assert (
-        "Moths at night" in text
-        and "Did not work" in text
-        and "tried just now" in text
-        and "document from" in text
-    )
+    assert "Moths at night" in text and "Did not work" in text and "tried just now" in text and "document from" in text
     assert "No spoken overviews yet" in phone.locator(".audio-list").inner_text()
     assert row.locator(".why").is_hidden()
-    assert (
-        row.bounding_box()["height"] < 120
-    )  # a title and one line of state, Try again beside them
+    assert row.bounding_box()["height"] < 120  # a title and one line of state, Try again beside them
     if SHOTS:
         phone.screenshot(path=f"{SHOTS}/unmade-closed.png")
     row.get_by_role("button", name="Why").click()
@@ -239,57 +196,31 @@ def test_an_overview_that_failed_shows_why_and_can_be_asked_for_again(
     if SHOTS:
         phone.screenshot(path=f"{SHOTS}/unmade-open.png")
     row.get_by_role("button", name="Try again").click()
-    phone.wait_for_function(
-        "document.querySelector('.unmade-row').textContent.indexOf('Being made') >= 0"
-    )
+    phone.wait_for_function("document.querySelector('.unmade-row').textContent.indexOf('Being made') >= 0")
     assert overview.Requests(store.target.root).get(src)["state"] == overview.QUEUED
     phone.get_by_role("button", name="Done 0").click()
     assert phone.locator(".unmade").is_hidden()  # not what a "done" filter asks about
 
 
-def test_when_the_maker_is_down_the_page_says_why_and_offers_no_try_again(
-    device, serve, tmp_path
-):
+def test_when_the_maker_is_down_the_page_says_why_and_offers_no_try_again(device, serve, tmp_path):
     """The owner pressed Try again on two days while the server's login had expired (annals#62)."""
     from annals import overview
 
     store = DocStore(tmp_path / "data")
     requests = overview.Requests(store.target.root)
-    waits = store.publish(text="# Moths", title="Moths at night", filename="moths.md")[
-        "id"
-    ]
+    waits = store.publish(text="# Moths", title="Moths at night", filename="moths.md")["id"]
     failed = store.publish(text="# Owls", title="Owls", filename="owls.md")["id"]
     now = overview._now()
-    requests.put(
-        failed,
-        {
-            "state": overview.FAILED,
-            "minutes": 5,
-            "requested": now,
-            "finished": now,
-            "error": "the login expired",
-        },
-    )
-    overview.mark_down(
-        requests,
-        "the server's login expired",
-        link="https://github.com/someone/platform/issues/563",
-    )
+    requests.put(failed, {"state": overview.FAILED, "minutes": 5, "requested": now, "finished": now, "error": "the login expired"})
+    overview.mark_down(requests, "the server's login expired", link="https://github.com/someone/platform/issues/563")
     overview.request(store, requests, waits, minutes=3)
     base = serve(store, overviews=True)
     phone = device()
     phone.goto(f"{base}/audio")
     note = phone.locator(".down")
     note.wait_for()
-    assert (
-        "Listening is off" in note.inner_text()
-        and "the server's login expired" in note.inner_text()
-    )
-    assert (
-        note.get_by_role("link", name="platform#563")
-        .get_attribute("href")
-        .endswith("/issues/563")
-    )
+    assert "Listening is off" in note.inner_text() and "the server's login expired" in note.inner_text()
+    assert note.get_by_role("link", name="platform#563").get_attribute("href").endswith("/issues/563")
     phone.locator(".unmade-row").nth(1).wait_for()
     assert "Waiting (3 min)" in phone.locator(".unmade").inner_text()
     assert phone.get_by_role("button", name="Try again").count() == 0
@@ -300,9 +231,7 @@ def test_when_the_maker_is_down_the_page_says_why_and_offers_no_try_again(
     phone.get_by_role("button", name="Listen").click()
     panel = phone.locator(".listen-panel")
     panel.locator(".down").wait_for()
-    assert (
-        "is waiting" in panel.inner_text() and panel.get_by_role("button").count() == 0
-    )
+    assert "is waiting" in panel.inner_text() and panel.get_by_role("button").count() == 0
 
 
 #: a transcript player in the shape of @zodal/speech's: tapping a line seeks, then plays
@@ -330,9 +259,7 @@ _UNTIL_ENDED = """a => new Promise((ok, no) => {
 
 
 @pytest.mark.parametrize("engine", ["chromium", "webkit"])
-def test_tapping_a_line_after_the_end_plays_from_that_line(
-    engine, request, serve, tmp_path
-):
+def test_tapping_a_line_after_the_end_plays_from_that_line(engine, request, serve, tmp_path):
     """Reported 2026-11-13 on an iPad: once the audio had finished, tapping the transcript
     played it again from the start, not from the line tapped. WebKit (every iPhone and iPad
     browser) starts an ended element from its end or from 0 when a seek is still landing as
@@ -340,12 +267,7 @@ def test_tapping_a_line_after_the_end_plays_from_that_line(
     lost most of the time without the fix, so several taps make a miss near-certain."""
     browser = request.getfixturevalue(engine)
     store = DocStore(tmp_path / "data")
-    over = store.publish(
-        text=LINES_PLAYER % _silence_wav(seconds=4),
-        title="Listen: Lines",
-        filename="overview.html",
-        tags=[TAG],
-    )
+    over = store.publish(text=LINES_PLAYER % _silence_wav(seconds=4), title="Listen: Lines", filename="overview.html", tags=[TAG])
     page = browser.new_page()
     try:
         page.goto(f"{serve(store)}/d/{over['id']}")
@@ -358,9 +280,7 @@ def test_tapping_a_line_after_the_end_plays_from_that_line(
             frame.locator(".line").nth(1).click()
             page.wait_for_timeout(600)
             at, paused = audio.evaluate("a => [a.currentTime, a.paused]")
-            assert not paused and 1.1 < at < 2.5, (
-                f"{engine}, tap {attempt}: at {at:.2f}s, paused={paused}; expected playing from 1s"
-            )
+            assert not paused and 1.1 < at < 2.5, f"{engine}, tap {attempt}: at {at:.2f}s, paused={paused}; expected playing from 1s"
     finally:
         page.close()
 
@@ -372,12 +292,7 @@ def test_a_pause_while_a_play_is_held_wins(engine, request, serve, tmp_path):
     AbortError as a native one would (review of annals#68)."""
     browser = request.getfixturevalue(engine)
     store = DocStore(tmp_path / "data")
-    over = store.publish(
-        text=LINES_PLAYER % _silence_wav(seconds=4),
-        title="Listen: Pause",
-        filename="overview.html",
-        tags=[TAG],
-    )
+    over = store.publish(text=LINES_PLAYER % _silence_wav(seconds=4), title="Listen: Pause", filename="overview.html", tags=[TAG])
     page = browser.new_page()
     try:
         page.goto(f"{serve(store)}/d/{over['id']}")

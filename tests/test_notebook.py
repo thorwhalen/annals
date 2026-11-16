@@ -62,9 +62,7 @@ def test_notebook_sources_rows_titles_and_skips():
         ("d2", "page.html", "Book · page.html"),
     ]
     assert out["sources"][0]["url"] == "/s/tok/source/d1/solo.md"
-    assert out["skipped"] == [
-        {"doc": "d3", "title": "Pics", "kinds": ["audio", "image"]}
-    ]
+    assert out["skipped"] == [{"doc": "d3", "title": "Pics", "kinds": ["audio", "image"]}]
 
 
 def test_source_url_quotes_each_segment():
@@ -102,12 +100,8 @@ def test_owner_makes_source_links_for_chosen_documents(owner, bundle):
     g, intro, chapters, image, private = bundle
     made = owner.post(
         "/annals/api/shares",
-        json={
-            "ref": g["id"],
-            "include": [intro["id"], chapters["id"], image["id"]],
-            "expires": "1d",
-            "files": "sources",
-        },
+        json={"ref": g["id"], "include": [intro["id"], chapters["id"], image["id"]],
+              "expires": "1d", "files": "sources"},
     ).json()
     out = owner.get(f"/annals/api/shares/{made['token']}/sources").json()
     titles = [s["title"] for s in out["sources"]]
@@ -133,9 +127,7 @@ def test_owner_makes_source_links_for_chosen_documents(owner, bundle):
 
     link = made["url"]
     # the private page was not ticked: no source, no raw file
-    assert (
-        anon.get(f"{link}source/{private['id']}/{private['main']}").status_code == 404
-    )
+    assert anon.get(f"{link}source/{private['id']}/{private['main']}").status_code == 404
     # an image is not a source page, even when it is shared
     assert anon.get(f"{link}source/{chapters['id']}/pic.png").status_code == 404
     # the image alone was ticked but has no page: a notebook share holds none of its files
@@ -222,19 +214,13 @@ def test_sibling_pages_link_to_their_source_page(owner, store, tmp_path):
 
 def test_html_source_runs_nothing(owner, store, tmp_path):
     page = tmp_path / "page.html"
-    page.write_text(
-        "<html><head><title>P</title></head><body><script>x()</script>Hi</body></html>"
-    )
+    page.write_text("<html><head><title>P</title></head><body><script>x()</script>Hi</body></html>")
     doc = store.publish(page, title="P")
     g = store.make_group("G", [doc["id"]])
-    made = owner.post(
-        "/annals/api/shares", json={"ref": g["id"], "files": "sources"}
-    ).json()
+    made = owner.post("/annals/api/shares", json={"ref": g["id"], "files": "sources"}).json()
     r = TestClient(owner.app).get(f"{made['url']}source/{doc['id']}/page.html")
     csp = r.headers["content-security-policy"]
-    assert (
-        r.status_code == 200 and csp.startswith("sandbox;") and "script-src" not in csp
-    )
+    assert r.status_code == 200 and csp.startswith("sandbox;") and "script-src" not in csp
     assert "connect-src" not in csp and "default-src 'none'" in csp
 
 
@@ -247,9 +233,7 @@ def test_password_and_expiry_hold_on_source_routes(owner, store):
     anon = TestClient(owner.app, follow_redirects=False)
     assert anon.get(f"{locked['url']}source/{doc['id']}/p.md").status_code == 401
     assert anon.get(f"{locked['url']}sources").status_code == 401
-    assert owner.get(f"/annals/api/shares/{locked['token']}/sources").json()[
-        "protected"
-    ]
+    assert owner.get(f"/annals/api/shares/{locked['token']}/sources").json()["protected"]
 
 
 def test_a_huge_page_is_sent_as_text_not_rendered(owner, store, monkeypatch):

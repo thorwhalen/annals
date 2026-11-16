@@ -84,9 +84,7 @@ def _browser(p, engine, *, executable_path=None):
 
 @pytest.fixture(scope="module")
 def chromium(_playwright):
-    yield from _browser(
-        _playwright, "chromium", executable_path=os.environ.get("ANNALS_TEST_BROWSER")
-    )
+    yield from _browser(_playwright, "chromium", executable_path=os.environ.get("ANNALS_TEST_BROWSER"))
 
 
 @pytest.fixture(scope="module")

@@ -63,10 +63,7 @@ def test_a_page_sees_the_choices_and_their_cost(client, doc):
 
 
 def test_asking_queues_once(client, doc, requests):
-    assert (
-        client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"]
-        == "queued"
-    )
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "queued"
     again = client.post(f"/docs/{doc}/overview", json={"minutes": 7}).json()
     assert again["state"] == "queued" and again["minutes"] == 3
     assert requests.get(doc)["minutes"] == 3
@@ -74,52 +71,32 @@ def test_asking_queues_once(client, doc, requests):
 
 @pytest.mark.parametrize("minutes", [4, 0, 1000, "5", None])
 def test_only_the_offered_lengths(client, doc, minutes):
-    assert (
-        client.post(f"/docs/{doc}/overview", json={"minutes": minutes}).status_code
-        == 400
-    )
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": minutes}).status_code == 400
 
 
 def test_another_site_cannot_spend_the_money(client, doc, requests):
-    r = client.post(
-        f"/docs/{doc}/overview",
-        json={"minutes": 3},
-        headers={"sec-fetch-site": "cross-site"},
-    )
+    r = client.post(f"/docs/{doc}/overview", json={"minutes": 3}, headers={"sec-fetch-site": "cross-site"})
     assert r.status_code == 403 and requests.get(doc) is None
 
 
 def test_unknown_document_is_404(client):
-    assert (
-        client.post(
-            "/docs/20990101-000000-nope-abcd/overview", json={"minutes": 3}
-        ).status_code
-        == 404
-    )
+    assert client.post("/docs/20990101-000000-nope-abcd/overview", json={"minutes": 3}).status_code == 404
 
 
 def test_what_cannot_be_spoken_is_not_offered(store, client):
     picture = store.publish(text="x", filename="a.bin", title="Binary")["id"]
     assert "listen" not in client.get(f"/docs/{picture}").json()
-    assert (
-        client.post(f"/docs/{picture}/overview", json={"minutes": 3}).status_code == 400
-    )
+    assert client.post(f"/docs/{picture}/overview", json={"minutes": 3}).status_code == 400
 
 
-def test_the_worker_publishes_the_page_and_the_button_finds_it(
-    client, store, doc, requests, tmp_path
-):
+def test_the_worker_publishes_the_page_and_the_button_finds_it(client, store, doc, requests, tmp_path):
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
     results = overview.work(store, requests, command=_maker(tmp_path, GOOD))
     assert results[0]["state"] == "done"
     listen = client.get(f"/docs/{doc}").json()["listen"]
     assert listen["state"] == "done" and not listen["stale"]
     made = store.meta(listen["overview"])
-    assert (
-        made["kind"] == "html"
-        and overview.TAG in made["tags"]
-        and "Hello" in made["title"]
-    )
+    assert made["kind"] == "html" and overview.TAG in made["tags"] and "Hello" in made["title"]
     assert "The parser landed." in store.read_text(made["id"])
 
 
@@ -131,30 +108,20 @@ def test_an_overview_has_no_overview(client, store, doc, requests, tmp_path):
     assert client.post(f"/docs/{made}/overview", json={"minutes": 3}).status_code == 400
 
 
-def test_a_failure_says_why_and_the_next_still_runs(
-    client, store, doc, requests, tmp_path
-):
+def test_a_failure_says_why_and_the_next_still_runs(client, store, doc, requests, tmp_path):
     other = store.publish(text="# Other\n\nMore.", title="Other")["id"]
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
-    bad = (
-        "import sys as s\nif 'parser' in open(source).read():\n    s.exit('the voice ran out')\n"
-        + GOOD
-    )
+    bad = "import sys as s\nif 'parser' in open(source).read():\n    s.exit('the voice ran out')\n" + GOOD
     client.post(f"/docs/{other}/overview", json={"minutes": 3})
     overview.work(store, requests, command=_maker(tmp_path, bad))
     failed = client.get(f"/docs/{doc}/overview").json()
     assert failed["state"] == "failed" and failed["error"] == "the voice ran out"
     assert client.get(f"/docs/{other}/overview").json()["state"] == "done"
     # and it can be asked for again
-    assert (
-        client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"]
-        == "queued"
-    )
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "queued"
 
 
-def test_a_command_that_writes_nothing_is_a_failure(
-    client, store, doc, requests, tmp_path
-):
+def test_a_command_that_writes_nothing_is_a_failure(client, store, doc, requests, tmp_path):
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
     overview.work(store, requests, command=_maker(tmp_path, "pass"))
     assert "no page" in client.get(f"/docs/{doc}/overview").json()["error"]
@@ -173,9 +140,7 @@ def test_a_command_must_name_its_inputs(store, requests):
         overview.work(store, requests, command=None)
 
 
-def test_the_document_changing_marks_the_overview_stale(
-    client, store, doc, requests, tmp_path
-):
+def test_the_document_changing_marks_the_overview_stale(client, store, doc, requests, tmp_path):
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
     assert not client.get(f"/docs/{doc}/overview").json()["stale"]
@@ -183,22 +148,15 @@ def test_the_document_changing_marks_the_overview_stale(
     assert client.get(f"/docs/{doc}/overview").json()["stale"]
 
 
-def test_a_binned_overview_is_gone_from_the_button(
-    client, store, doc, requests, tmp_path
-):
+def test_a_binned_overview_is_gone_from_the_button(client, store, doc, requests, tmp_path):
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
     store.trash(requests.get(doc)["overview"])
     assert client.get(f"/docs/{doc}/overview").json()["state"] == "none"
 
 
-def test_a_request_left_running_belonged_to_a_dead_worker(
-    store, doc, requests, tmp_path
-):
-    requests.put(
-        doc,
-        {"state": "running", "minutes": 3, "version": 1, "started": overview._now()},
-    )
+def test_a_request_left_running_belonged_to_a_dead_worker(store, doc, requests, tmp_path):
+    requests.put(doc, {"state": "running", "minutes": 3, "version": 1, "started": overview._now()})
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
     assert requests.get(doc)["state"] == "failed"
 
@@ -213,9 +171,7 @@ def test_a_second_worker_does_nothing(store, doc, requests, tmp_path):
 
 def test_a_page_is_spoken_as_its_text(store, requests, tmp_path):
     page = tmp_path / "page.html"
-    page.write_text(
-        "<html><head><title>T</title><style>p{}</style></head><body><p>Words here.</p><script>evil()</script></body></html>"
-    )
+    page.write_text("<html><head><title>T</title><style>p{}</style></head><body><p>Words here.</p><script>evil()</script></body></html>")
     doc = store.publish(page, title="Page")["id"]
     overview.request(store, requests, doc, minutes=3)
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
@@ -239,26 +195,16 @@ def test_a_remote_store_cannot_offer_it():
 
 def test_float_and_bool_minutes_are_refused(client, doc):
     for minutes in (3.0, 5.0, True):
-        assert (
-            client.post(f"/docs/{doc}/overview", json={"minutes": minutes}).status_code
-            == 400
-        )
+        assert client.post(f"/docs/{doc}/overview", json={"minutes": minutes}).status_code == 400
 
 
-def test_a_current_overview_is_not_paid_for_twice(
-    client, store, doc, requests, tmp_path
-):
+def test_a_current_overview_is_not_paid_for_twice(client, store, doc, requests, tmp_path):
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
     first = requests.get(doc)["overview"]
     again = client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()
     assert again["state"] == "done" and again["overview"] == first
-    assert (
-        client.post(f"/docs/{doc}/overview", json={"minutes": 3, "force": True}).json()[
-            "state"
-        ]
-        == "queued"
-    )
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3, "force": True}).json()["state"] == "queued"
 
 
 def test_a_crash_after_publishing_does_not_pay_again(store, doc, requests, tmp_path):
@@ -268,25 +214,17 @@ def test_a_crash_after_publishing_does_not_pay_again(store, doc, requests, tmp_p
     # As if the worker had died between publishing and recording it.
     requests.put(doc, {"state": "queued", "minutes": 3, "requested": overview._now()})
     marker = tmp_path / "ran"
-    overview.work(
-        store,
-        requests,
-        command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD),
-    )
+    overview.work(store, requests, command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD))
     assert not marker.exists()
     assert requests.get(doc)["overview"] == made
     assert sum(overview.TAG in m.get("tags", []) for m in store.list()) == 1
 
 
 def test_the_daily_limit_stops_the_spending(store, requests, tmp_path):
-    docs = [
-        store.publish(text=f"# D{i}\n\nText.", title=f"D{i}")["id"] for i in range(3)
-    ]
+    docs = [store.publish(text=f"# D{i}\n\nText.", title=f"D{i}")["id"] for i in range(3)]
     for d in docs:
         overview.request(store, requests, d, minutes=3)
-    results = overview.work(
-        store, requests, command=_maker(tmp_path, GOOD), daily_limit=2
-    )
+    results = overview.work(store, requests, command=_maker(tmp_path, GOOD), daily_limit=2)
     assert [r["state"] for r in results] == ["done", "done", "failed"]
     assert "limit" in results[2]["error"]
 
@@ -305,42 +243,24 @@ def test_a_request_made_during_a_run_is_picked_up(store, doc, requests, tmp_path
     assert {r["doc"] for r in results} == {doc, other}
 
 
-def test_a_request_nobody_fulfilled_expires_and_can_be_retried(
-    client, store, doc, requests, tmp_path
-):
+def test_a_request_nobody_fulfilled_expires_and_can_be_retried(client, store, doc, requests, tmp_path):
     old = "2020-01-01T00:00:00+00:00"
     requests.put(doc, {"state": "queued", "minutes": 3, "requested": old})
     seen = client.get(f"/docs/{doc}/overview").json()
     assert seen["state"] == "failed" and "no worker" in seen["error"]
     marker = tmp_path / "ran"
-    overview.work(
-        store,
-        requests,
-        command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD),
-    )
-    assert not marker.exists(), (
-        "an expired request must not spend money when a worker wakes"
-    )
-    assert (
-        client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"]
-        == "queued"
-    )
+    overview.work(store, requests, command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD))
+    assert not marker.exists(), "an expired request must not spend money when a worker wakes"
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "queued"
 
 
 def test_a_dead_workers_request_can_be_retried_without_a_worker(client, doc, requests):
-    requests.put(
-        doc, {"state": "running", "minutes": 3, "started": "2020-01-01T00:00:00+00:00"}
-    )
+    requests.put(doc, {"state": "running", "minutes": 3, "started": "2020-01-01T00:00:00+00:00"})
     assert client.get(f"/docs/{doc}/overview").json()["state"] == "failed"
-    assert (
-        client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"]
-        == "queued"
-    )
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "queued"
 
 
-@pytest.mark.parametrize(
-    "junk", ["[1]", "7", '"x"', '{"state": "done"}', '{"state": "done", "overview": 3}']
-)
+@pytest.mark.parametrize("junk", ["[1]", "7", '"x"', '{"state": "done"}', '{"state": "done", "overview": 3}'])
 def test_a_damaged_record_breaks_nothing(client, store, doc, requests, tmp_path, junk):
     other = store.publish(text="# Other\n\nMore.", title="Other")["id"]
     requests.folder.mkdir(parents=True, exist_ok=True)
@@ -362,14 +282,7 @@ def test_the_version_recorded_is_the_one_spoken(client, store, doc, requests, tm
     assert "Changed first." in store.read_text(state["overview"])
 
 
-@pytest.mark.parametrize(
-    "bad",
-    [
-        ["x", "{{source}}", "{{out}}"],
-        ["x", "{source}", "{out}", "{nope}"],
-        ["x", "{source}", '{"a":1}', "{out}"],
-    ],
-)
+@pytest.mark.parametrize("bad", [["x", "{{source}}", "{{out}}"], ["x", "{source}", "{out}", "{nope}"], ["x", "{source}", '{"a":1}', "{out}"]])
 def test_a_bad_command_fails_before_any_money_is_spent(store, requests, bad):
     with pytest.raises(ValueError):
         overview.work(store, requests, command=bad)
@@ -387,13 +300,8 @@ def test_a_timeout_stops_the_children_too(store, doc, requests, tmp_path):
     assert not marker.exists()
 
 
-def test_a_daemon_holding_the_output_does_not_lose_a_paid_result(
-    store, doc, requests, tmp_path
-):
-    body = (
-        "import subprocess, sys\nsubprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n"
-        + GOOD
-    )
+def test_a_daemon_holding_the_output_does_not_lose_a_paid_result(store, doc, requests, tmp_path):
+    body = "import subprocess, sys\nsubprocess.Popen([sys.executable, '-c', 'import time; time.sleep(20)'])\n" + GOOD
     overview.request(store, requests, doc, minutes=3)
     began = time.monotonic()
     overview.work(store, requests, command=_maker(tmp_path, body), timeout=15)
@@ -420,9 +328,7 @@ def test_the_command_is_told_the_source_documents_page(store, doc, requests, tmp
     assert store.meta(requests.get(doc)["overview"])["source"]["of"] == doc
 
 
-def test_force_makes_a_new_one_rather_than_reusing_the_last(
-    client, store, doc, requests, tmp_path
-):
+def test_force_makes_a_new_one_rather_than_reusing_the_last(client, store, doc, requests, tmp_path):
     client.post(f"/docs/{doc}/overview", json={"minutes": 3})
     overview.work(store, requests, command=_maker(tmp_path, GOOD))
     first = requests.get(doc)["overview"]
@@ -459,13 +365,9 @@ def test_a_group_says_nothing_of_reviews_when_they_are_off(store, trio):
     assert off.post("/overviews", json={"docs": ["x"]}).status_code == 404
 
 
-def test_one_review_of_several_combines_them_into_one_document(
-    client, store, trio, requests
-):
+def test_one_review_of_several_combines_them_into_one_document(client, store, trio, requests):
     group, ids = trio
-    r = client.post(
-        "/overviews", json={"docs": ids[:2], "group": group["id"], "minutes": 3}
-    )
+    r = client.post("/overviews", json={"docs": ids[:2], "group": group["id"], "minutes": 3})
     assert r.status_code == 200, r.text
     out = r.json()
     assert out["listen"]["state"] == "queued" and out["listen"]["minutes"] == 3
@@ -477,21 +379,15 @@ def test_one_review_of_several_combines_them_into_one_document(
     # it joins the group, so it is found where it was asked for
     assert out["doc"] in store.group(group["id"])["docs"]
     # asking again for the same documents reuses it: one document, one request
-    again = client.post(
-        "/overviews", json={"docs": ids[1::-1], "group": group["id"], "minutes": 3}
-    ).json()
+    again = client.post("/overviews", json={"docs": ids[1::-1], "group": group["id"], "minutes": 3}).json()
     assert again["doc"] == out["doc"]
 
 
 def test_a_changed_document_makes_a_new_combination(client, store, trio):
     group, ids = trio
-    first = client.post(
-        "/overviews", json={"docs": ids[:2], "group": group["id"]}
-    ).json()["doc"]
+    first = client.post("/overviews", json={"docs": ids[:2], "group": group["id"]}).json()["doc"]
     store.publish(text="# Bees\n\nNow about wasps too.", replace=ids[0])
-    second = client.post(
-        "/overviews", json={"docs": ids[:2], "group": group["id"]}
-    ).json()["doc"]
+    second = client.post("/overviews", json={"docs": ids[:2], "group": group["id"]}).json()["doc"]
     assert second != first
 
 
@@ -505,26 +401,18 @@ def test_a_selection_must_belong_to_the_group(client, store, trio):
 
 def test_another_site_cannot_spend_on_a_group(client, trio, store):
     group, ids = trio
-    r = client.post(
-        "/overviews",
-        json={"docs": ids, "group": group["id"]},
-        headers={"sec-fetch-site": "cross-site"},
-    )
+    r = client.post("/overviews", json={"docs": ids, "group": group["id"]}, headers={"sec-fetch-site": "cross-site"})
     assert r.status_code == 403
     assert not any(overview.COMBINED_TAG in (m.get("tags") or []) for m in store.list())
 
 
 def test_a_combined_document_counts_as_what_it_combines(client, store, trio):
     group, ids = trio
-    first = client.post("/overviews", json={"docs": ids, "group": group["id"]}).json()[
-        "doc"
-    ]
+    first = client.post("/overviews", json={"docs": ids, "group": group["id"]}).json()["doc"]
     # the group's "all" now includes the combined document: still the same three, reused
     everything = store.group(group["id"])["docs"]
     assert first in everything
-    again = client.post(
-        "/overviews", json={"docs": everything, "group": group["id"]}
-    ).json()
+    again = client.post("/overviews", json={"docs": everything, "group": group["id"]}).json()
     assert again["doc"] == first
     assert store.read_text(first).count("About bees.") == 1
 
@@ -545,9 +433,7 @@ def test_presses_at_once_make_one_combined_document(client, store, trio):
         outs = list(pool.map(lambda _: client.post("/overviews", json=body), range(6)))
     assert {r.status_code for r in outs} == {200}
     assert len({r.json()["doc"] for r in outs}) == 1
-    combined = [
-        m for m in store.list() if overview.COMBINED_TAG in (m.get("tags") or [])
-    ]
+    combined = [m for m in store.list() if overview.COMBINED_TAG in (m.get("tags") or [])]
     assert len(combined) == 1
     assert store.group(group["id"])["docs"].count(combined[0]["id"]) == 1
 
@@ -555,9 +441,7 @@ def test_presses_at_once_make_one_combined_document(client, store, trio):
 def test_too_much_text_is_refused_before_anything_is_made(store, trio):
     group, ids = trio
     with pytest.raises(ValueError, match="bytes of text"):
-        overview.combined_document(
-            store, [store.meta(i) for i in ids], title="T", max_bytes=10
-        )
+        overview.combined_document(store, [store.meta(i) for i in ids], title="T", max_bytes=10)
     assert not any(overview.COMBINED_TAG in (m.get("tags") or []) for m in store.list())
 
 
@@ -568,21 +452,15 @@ def test_any_pick_of_documents_as_one_markdown_file(client, trio):
 
 
 # -- the maker is down: say why, wait, and make what waited once it works ---------------
-LOGIN = (
-    "import sys\nsys.exit('Failed to authenticate: this login reached its time limit')"
-)
+LOGIN = "import sys\nsys.exit('Failed to authenticate: this login reached its time limit')"
 
 
 @pytest.fixture
 def pair(store):
-    return [
-        store.publish(text=f"# D{i}\n\nText.", title=f"D{i}")["id"] for i in range(2)
-    ]
+    return [store.publish(text=f"# D{i}\n\nText.", title=f"D{i}")["id"] for i in range(2)]
 
 
-def test_the_same_fast_failure_twice_marks_the_maker_down(
-    client, store, pair, requests, tmp_path
-):
+def test_the_same_fast_failure_twice_marks_the_maker_down(client, store, pair, requests, tmp_path):
     for d in pair:
         overview.request(store, requests, d, minutes=3)
     results = overview.work(store, requests, command=_maker(tmp_path, LOGIN))
@@ -598,18 +476,14 @@ def test_one_document_failing_twice_is_that_document(store, doc, requests, tmp_p
     for _ in range(2):
         overview.request(store, requests, doc, minutes=3, force=True)
         overview.work(store, requests, command=_maker(tmp_path, LOGIN))
-    assert (
-        overview.maker_down(requests) is None and requests.get(doc)["state"] == "failed"
-    )
+    assert overview.maker_down(requests) is None and requests.get(doc)["state"] == "failed"
 
 
 def _probe_due_now(requests):
     requests.put_mark({**requests.mark(), "tried": "2020-01-01T00:00:00+00:00"})
 
 
-def test_different_failures_are_the_documents_not_the_maker(
-    store, pair, requests, tmp_path
-):
+def test_different_failures_are_the_documents_not_the_maker(store, pair, requests, tmp_path):
     for d in pair:
         overview.request(store, requests, d, minutes=3)
     bad = "import sys\nsys.exit('too short' if 'D0' in open(source).read() else 'not english')"
@@ -618,30 +492,17 @@ def test_different_failures_are_the_documents_not_the_maker(
     assert {requests.get(d)["state"] for d in pair} == {"failed"}
 
 
-def test_while_down_a_request_waits_and_nothing_is_spent(
-    client, store, doc, requests, tmp_path
-):
-    overview.mark_down(
-        requests, "the login expired"
-    )  # whoever marks it just saw it fail
-    assert (
-        client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"]
-        == "waiting"
-    )
+def test_while_down_a_request_waits_and_nothing_is_spent(client, store, doc, requests, tmp_path):
+    overview.mark_down(requests, "the login expired")  # whoever marks it just saw it fail
+    assert client.post(f"/docs/{doc}/overview", json={"minutes": 3}).json()["state"] == "waiting"
     marker = tmp_path / "ran"
-    overview.work(
-        store,
-        requests,
-        command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD),
-    )
+    overview.work(store, requests, command=_maker(tmp_path, f"open({str(marker)!r}, 'w')\n" + GOOD))
     assert not marker.exists() and requests.started_today() == 0
     seen = client.get(f"/docs/{doc}/overview").json()
     assert seen["state"] == "waiting" and seen["error"] == "the login expired"
 
 
-def test_a_probe_that_works_clears_the_mark_and_makes_what_waited(
-    client, store, pair, requests, tmp_path
-):
+def test_a_probe_that_works_clears_the_mark_and_makes_what_waited(client, store, pair, requests, tmp_path):
     overview.mark_down(requests, "the login expired")
     _probe_due_now(requests)
     for d in pair:
@@ -651,9 +512,7 @@ def test_a_probe_that_works_clears_the_mark_and_makes_what_waited(
     assert client.get("/audio").json()["down"] is None
 
 
-def test_a_probe_that_fails_again_keeps_the_rest_waiting(
-    store, pair, requests, tmp_path
-):
+def test_a_probe_that_fails_again_keeps_the_rest_waiting(store, pair, requests, tmp_path):
     overview.mark_down(requests, "the login expired")
     _probe_due_now(requests)
     for d in pair:
@@ -661,14 +520,10 @@ def test_a_probe_that_fails_again_keeps_the_rest_waiting(
     overview.work(store, requests, command=_maker(tmp_path, LOGIN))
     assert {requests.get(d)["state"] for d in pair} == {"waiting"}
     assert requests.started_today() == 1  # one probe, not one per request
-    assert (
-        overview.maker_down(requests)["reason"] == "the login expired"
-    )  # the agent's words stay
+    assert overview.maker_down(requests)["reason"] == "the login expired"  # the agent's words stay
 
 
-def test_an_agent_links_the_fix_and_clears_it_by_hand(
-    client, store, pair, requests, tmp_path
-):
+def test_an_agent_links_the_fix_and_clears_it_by_hand(client, store, pair, requests, tmp_path):
     from annals import tools
 
     for d in pair:
@@ -677,34 +532,21 @@ def test_an_agent_links_the_fix_and_clears_it_by_hand(
     issue = "https://github.com/someone/platform/issues/563"
     here = {"target": str(store.target.root)}
     out = tools.listen_down("the server's login expired", link=issue, **here)
-    assert (
-        out["down"]["reason"] == "the server's login expired"
-        and out["down"]["link"] == issue
-    )
+    assert out["down"]["reason"] == "the server's login expired" and out["down"]["link"] == issue
     assert client.get("/audio").json()["down"]["link"] == issue
-    assert (
-        tools.listen_down(**here)["down"]["link"] == issue
-    )  # nothing given: just shows it
+    assert tools.listen_down(**here)["down"]["link"] == issue  # nothing given: just shows it
     with pytest.raises(ValueError, match="web address"):
         tools.listen_down(link="javascript:alert(1)", **here)
     assert sorted(tools.listen_down(clear=True, **here)["queued"]) == sorted(pair)
     assert overview.maker_down(requests) is None
     assert {requests.get(d)["state"] for d in pair} == {"queued"}
     with pytest.raises(ValueError, match="not marked down"):
-        tools.listen_down(
-            link=issue, **here
-        )  # a link alone never takes a working maker down
+        tools.listen_down(link=issue, **here)  # a link alone never takes a working maker down
 
 
-@pytest.mark.parametrize(
-    "probe", ["import time\ntime.sleep(0.2)\nraise SystemExit('slow')", "pass"]
-)
-def test_a_probe_that_fails_otherwise_keeps_its_place(
-    store, doc, requests, tmp_path, monkeypatch, probe
-):
-    monkeypatch.setattr(
-        overview, "FAST_FAILURE_S", 0.1
-    )  # so the slow one counts as slow
+@pytest.mark.parametrize("probe", ["import time\ntime.sleep(0.2)\nraise SystemExit('slow')", "pass"])
+def test_a_probe_that_fails_otherwise_keeps_its_place(store, doc, requests, tmp_path, monkeypatch, probe):
+    monkeypatch.setattr(overview, "FAST_FAILURE_S", 0.1)  # so the slow one counts as slow
     overview.mark_down(requests, "the login expired")
     _probe_due_now(requests)
     overview.request(store, requests, doc, minutes=3)
@@ -718,9 +560,7 @@ def test_the_daily_limit_never_drops_what_waited(store, doc, requests, tmp_path)
     overview.request(store, requests, doc, minutes=3)
     overview.work(store, requests, command=_maker(tmp_path, GOOD), daily_limit=0)
     assert requests.get(doc)["state"] == "waiting"
-    assert overview._probe_due(requests), (
-        "a probe that did not run does not use up its slot"
-    )
+    assert overview._probe_due(requests), "a probe that did not run does not use up its slot"
     overview.mark_up(requests)  # back, but the day's limit is spent: it still waits
     overview.work(store, requests, command=_maker(tmp_path, GOOD), daily_limit=0)
     assert requests.get(doc)["state"] == "waiting"
