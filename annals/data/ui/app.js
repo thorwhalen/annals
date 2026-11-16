@@ -47,6 +47,8 @@
   var FACET_SHOWN = 8;         /* values shown before "Show all" */
   var FACET_FILTER_AT = 12;    /* a family this long gets a type-ahead box */
   var ERROR_TOAST_MS = 4000;   /* how long a failure stays up */
+  var GROUP_TITLE_MAX = 200;   /* the server's longest group title (annals.store.MAX_GROUP_TITLE) */
+  var TITLE_SUGGEST_MAX = 120; /* how much of a document's title a suggested group name keeps */
 
   /* -------- helpers ------------------------------------------------------------- */
   function h(tag, attrs, children) {
@@ -511,6 +513,9 @@
   };
   function readPref(k, d) { try { return localStorage.getItem(NAME + ":" + k) || d; } catch (e) { return d; } }
   function writePref(k, v) { try { localStorage.setItem(NAME + ":" + k, v); } catch (e) { /* private mode */ } }
+  function loadSel(key) { try { return key ? JSON.parse(sessionStorage.getItem(NAME + ":sel:" + key) || "null") : null; } catch (e) { return null; } }
+  function saveSel(key, rec) { try { sessionStorage.setItem(NAME + ":sel:" + key, JSON.stringify(rec)); } catch (e) { /* private mode: the picks last as long as the page */ } }
+  function slimRow(r) { return { id: r.id, title: r.title, kind: r.kind }; }
   var lastList = null;   /* {sig, rows, groups, at}: what the last list fetched */
   var listShown = 0;     /* how many rows the open list shows (0: no list open) */
 
@@ -532,12 +537,19 @@
     var listEl = h("div", { class: "list" });
     /* Select: only the published documents can be picked (a folder source's items are not documents) */
     var canSelect = scope === "published";
-    var selecting = canSelect && !!(back.sel && back.sel.on), picked = {};   /* picked: id -> true */
-    ((back.sel || {}).ids || []).forEach(function (id) { picked[id] = true; });
-    var shownIds = [], shownSet = {};
-    /* Select mode and the picks live in this history entry, so Back, Forward and a filter change keep them */
-    function selState() { return selecting ? { on: true, ids: Object.keys(picked) } : null; }
-    function keepSel() { history.replaceState(Object.assign({}, history.state, { sel: selState() }), ""); }
+    /* Select mode and the picks (id -> {id, title, kind}, enough to act on a pick the search no
+       longer shows) are kept in sessionStorage under a key the list's history entries carry, so
+       Back, Forward, a reload and a filter change keep them, and clearing the record (after a
+       group is made) clears it in every entry, whichever one is on screen. */
+    var selKey = back.selKey || "", selecting = false, picked = {};
+    var rec = loadSel(selKey);
+    if (canSelect && rec) { selecting = !!rec.on; picked = rec.picked || {}; }
+    var shownIds = [], shownSet = {}, shownRows = [];
+    function keepSel() {
+      selKey = selKey || Math.random().toString(36).slice(2);
+      saveSel(selKey, { on: selecting, picked: picked });
+      if ((history.state || {}).selKey !== selKey) history.replaceState(Object.assign({}, history.state, { selKey: selKey }), "");
+    }
 
     function anySelected() { return fams.some(function (f) { return sel[f.key].length; }); }
     function urlFor() {
@@ -548,7 +560,7 @@
       return location.pathname + (qs ? "?" + qs : "");
     }
     /* each filter change is one history entry, so Back undoes it */
-    function commit() { var u = urlFor(); if (u !== location.pathname + location.search) history.pushState({ list: true, sel: selState() }, "", u); state.shown = LIST_PAGE; restoreY = 0; render(); }
+    function commit() { var u = urlFor(); if (u !== location.pathname + location.search) history.pushState({ list: true, selKey: selKey || undefined }, "", u); state.shown = LIST_PAGE; restoreY = 0; render(); }
     function toggle(f, v) {
       var i = sel[f.key].indexOf(v);
       if (i >= 0) sel[f.key].splice(i, 1); else sel[f.key].push(v);
@@ -623,9 +635,7 @@
       applied.appendChild(h("button", { class: "btn link", onclick: function () { fams.forEach(function (f) { sel[f.key] = []; }); commit(); } }, ["Clear all"]));
     }
 
-    /* rows seen so far: a pick stays a pick when a search or filter stops showing its row */
-    var known = {};
-    function pickedRows() { return Object.keys(picked).map(function (id) { return known[id]; }).filter(Boolean); }
+    function pickedRows() { return Object.keys(picked).map(function (id) { return picked[id]; }); }
     /* Listen and One file need what a listing row lacks (files, review state): fetched when pressed */
     function resolvePick(sc) {
       return Promise.all(sc.items.map(function (m) { return api("/docs/" + m.id); })).then(function (metas) {
@@ -633,7 +643,7 @@
         return { kind: "list", items: metas, total: metas.length, listen: spoken ? { choices: spoken.listen.choices } : null };
       });
     }
-    function afterGroup() { picked = {}; selecting = false; keepSel(); syncSelectBtn(); render(); load(); }
+    function afterGroup() { picked = {}; selecting = false; keepSel(); syncSelectBtn(); render(); load(); }   /* the record is shared, so Back finds the list as it is now */
     /* onDone rides on the scope so Links can run it too */
     function listScope() { var p = pickedRows(); return { kind: "list", items: p, total: p.length, listen: null, onDone: afterGroup }; }
     function listState() {
@@ -645,7 +655,7 @@
     var bar = canSelect && !trash ? pickBar({
       scope: listScope, resolve: resolvePick, allLabel: "Pick all shown documents",
       actions: [addToGroupAction(listScope, { onDone: afterGroup })],
-      onAll: function (on) { shownIds.forEach(function (id) { if (on) picked[id] = true; else delete picked[id]; }); keepSel(); render(); },
+      onAll: function (on) { shownRows.forEach(function (r) { if (on) picked[r.id] = slimRow(r); else delete picked[r.id]; }); keepSel(); render(); },
       onClear: function () { picked = {}; keepSel(); render(); },
       state: listState
     }) : null;
@@ -658,7 +668,7 @@
       var row = h("div", { class: "pick-row" + (picked[r.id] ? " picked" : "") }, [h("label", { class: "pick" }, [input]), body]);
       input.checked = !!picked[r.id];
       function flip() {
-        if (input.checked) picked[r.id] = true; else delete picked[r.id];
+        if (input.checked) picked[r.id] = slimRow(r); else delete picked[r.id];
         row.classList.toggle("picked", input.checked);
         keepSel(); bar.update();
       }
@@ -669,8 +679,14 @@
 
     /* the list is drawn by renderList; the bar under it is brought up to date after every draw */
     function render() {
-      shownIds = []; shownSet = {};
-      rows.forEach(function (r) { known[r.id] = r; });
+      shownIds = []; shownSet = {}; shownRows = [];
+      /* a full listing is every document there is: picks of ones since deleted or binned go */
+      if (!loading && !failed && !state.q) {
+        var here = {}, gone = false;
+        rows.forEach(function (r) { here[r.id] = true; });
+        Object.keys(picked).forEach(function (id) { if (!here[id]) { delete picked[id]; gone = true; } });
+        if (gone) keepSel();
+      }
       renderList();
       if (bar) { bar.el.hidden = !selecting; bar.update(); }
     }
@@ -690,7 +706,7 @@
       entries.slice(0, state.shown).forEach(function (e) {
         if (e.group) { if (!selecting) listEl.appendChild(groupCard(e.group, e.time)); return; }
         var r = e.doc;
-        if (selecting) { shownIds.push(r.id); shownSet[r.id] = true; return listEl.appendChild(pickRow(r)); }
+        if (selecting) { shownIds.push(r.id); shownRows.push(r); shownSet[r.id] = true; return listEl.appendChild(pickRow(r)); }
         listEl.appendChild(trash ? card(r, trashActions(r)) : card(r, null, { showSource: scope === "all" }));
       });
       if (entries.length > state.shown) {
@@ -1363,12 +1379,12 @@
      group the pick is in, left out of the choices; o.onDone(group) runs when it is done. */
   var TITLE_MORE = " and ";
   function dfltGroupTitle(items) {
-    var first = (items[0] && (items[0].title || items[0].id)) || "Group";
+    var first = ((items[0] && (items[0].title || items[0].id)) || "Group").slice(0, TITLE_SUGGEST_MAX);
     return items.length > 1 ? first + TITLE_MORE + (items.length - 1) + " more" : first;
   }
   /* the form for a new group: Enter makes it, and the suggested name is selected to type over */
   function newGroupForm(items, make) {
-    var title = h("input", { type: "text", value: dfltGroupTitle(items), autocomplete: "off", "aria-label": "Name of the new group", class: "add-title" });
+    var title = h("input", { type: "text", value: dfltGroupTitle(items), autocomplete: "off", maxlength: String(GROUP_TITLE_MAX), "aria-label": "Name of the new group", class: "add-title" });
     title.addEventListener("focus", function () { title.select(); });
     var btn = h("button", { class: "btn primary", type: "submit" }, [h("span", { class: "lbl" }, ["Make the group"])]);
     var form = h("form", { class: "add-new", onsubmit: function (e) {
@@ -1379,7 +1395,7 @@
     return form;
   }
   /* the groups there are, to add to: a filter when there are many, and "Show more" */
-  function existingGroupList(ids, from, add) {
+  function existingGroupList(ids, from, add, openLinks) {
     var box = h("div", { class: "add-existing-wrap" }, [h("p", { class: "muted" }, ["Loading groups…"])]);
     api("/groups").then(function (r) {
       var all = (r.groups || []).filter(function (g) { return g.id !== from; });
@@ -1390,8 +1406,12 @@
         list.innerHTML = "";
         gs.slice(0, shown).forEach(function (g) {
           var has = ids.every(function (id) { return g.docs.indexOf(id) >= 0; });
-          var b = h("button", { class: "btn add-pick", type: "button", "aria-disabled": has ? "true" : null, onclick: function () { if (!has) add(g.id, b); } },
-            [h("span", { class: "lbl" }, [g.title || g.id]), h("span", { class: "muted" }, [has ? " · already has these" : " · " + g.docs.length])]);
+          /* a group that has them all needs no POST: for Links it is the way to its links */
+          var live = !has || !!openLinks;
+          var b = h("button", { class: "btn add-pick", type: "button", "aria-disabled": live ? null : "true", onclick: function () {
+            if (!live) return;
+            if (has) openLinks(g); else add(g.id, b);
+          } }, [h("span", { class: "lbl" }, [g.title || g.id]), h("span", { class: "muted" }, [has ? (openLinks ? " · has these: open its links" : " · already has these") : " · " + g.docs.length])]);
           list.appendChild(b);
         });
         if (gs.length > shown) list.appendChild(h("button", { class: "btn more", type: "button", onclick: function () { shown += LIST_PAGE; draw(); } }, ["Show " + Math.min(LIST_PAGE, gs.length - shown) + " more of " + (gs.length - shown)]));
@@ -1411,20 +1431,21 @@
     o = o || {};
     var ids = sc.items.map(function (m) { return m.id; });
     var wrap = h("div", { class: "add-group" });
-    var note = h("div", { class: "add-status", role: "status" });
+    var note = h("div", { class: "add-status", role: "status" });   /* mounted empty, so setting its text is announced */
     var problem = h("div", { class: "err add-error", role: "alert" });   /* in the sheet: a toast sits behind it */
+    var choices = [];   /* what is put away once it is done */
     var busy = false;
     function done(g, verb) {
       lastList = null;
+      choices.forEach(function (el) { el.hidden = true; });
+      var n = g.docs.length + (g.docs.length === 1 ? " document" : " documents");
+      note.innerHTML = "";
       if (o.links) {
-        wrap.innerHTML = "";
+        note.appendChild(h("p", null, [verb + " “" + (g.title || g.id) + "” (" + n + "); its links are below."]));
         wrap.appendChild(linksBody({ kind: "group", group: g, ref: g.id, items: sc.items, total: g.docs.length, listen: null }));
       } else {
-        wrap.innerHTML = "";
-        note.innerHTML = "";
-        note.appendChild(h("p", null, [verb + " “" + (g.title || g.id) + "” (" + g.docs.length + (g.docs.length === 1 ? " document" : " documents") + "). "]));
+        note.appendChild(h("p", null, [verb + " “" + (g.title || g.id) + "” (" + n + "). "]));
         note.appendChild(sheetLink(BASE + "/g/" + g.id, "Open the group", "btn primary add-open"));
-        wrap.appendChild(note);
       }
       if (o.onDone) o.onDone(g);
     }
@@ -1436,11 +1457,13 @@
         .catch(function (e) { if (e.message !== "login") problem.textContent = "That did not work: " + (e.message || e); })
         .then(function () { busy = false; btn.removeAttribute("aria-busy"); });
     }
-    if (o.intro) wrap.appendChild(h("p", { class: "muted" }, [o.intro]));
-    wrap.appendChild(problem);
-    wrap.appendChild(newGroupForm(sc.items, function (title, btn) { send("/groups", { title: title, docs: ids }, "Made", btn); }));
-    wrap.appendChild(h("h4", null, ["Or add to a group you have"]));
-    wrap.appendChild(existingGroupList(ids, o.from, function (gid, btn) { send("/groups/" + gid + "/docs", { docs: ids }, "Added to", btn); }));
+    var intro = o.intro ? h("p", { class: "muted" }, [o.intro]) : null;
+    var form = newGroupForm(sc.items, function (title, btn) { send("/groups", { title: title, docs: ids }, "Made", btn); });
+    var heading = h("h4", null, ["Or add to a group you have"]);
+    var existing = existingGroupList(ids, o.from, function (gid, btn) { send("/groups/" + gid + "/docs", { docs: ids }, "Added to", btn); },
+      o.links ? function (g) { done(g, "Using"); } : null);
+    choices = [intro, form, heading, existing].filter(Boolean);
+    [intro, problem, note, form, heading, existing].forEach(function (el) { if (el) wrap.appendChild(el); });
     return wrap;
   }
   /* The "Add to group…" row of a More menu, acting on the pick `getScope()` gives. */

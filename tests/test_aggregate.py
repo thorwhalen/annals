@@ -164,7 +164,8 @@ def bundle(store, tmp_path):
     binned = store.publish(text="# Binned", title="Binned", filename="binned.md")
     store.trash(binned["id"])
     g = store.make_group(
-        "My bundle", [chapters["id"], intro["id"], image["id"], binned["id"]]
+        "My bundle", [chapters["id"], intro["id"], image["id"], binned["id"]],
+        live_only=False,
     )
     return g, intro, chapters
 

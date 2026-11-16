@@ -21,6 +21,7 @@ from annals.store import (
     DocStore,
     check_artifact_url,
     check_id,
+    clean_title,
     is_sidecar_of,
     kind_of,
     split_version,
@@ -257,6 +258,17 @@ def publish(
         if len(_with_sidecars(_as_list(paths))) > 1:
             raise ValueError("--artifact takes one path: the page it is the version of")
     store = _store(settings)
+    if group and add_to:
+        raise ValueError(
+            "pass --group (a new group) or --add-to (an existing one), not both"
+        )
+    if group:  # refused before anything is published: a retry must not publish twice
+        group = clean_title(group)
+    if add_to:
+        try:
+            store.group(add_to)
+        except (KeyError, ValueError):
+            raise ValueError(f"no such group: {add_to}")
     tag_list = [t for t in tags.split(",") if t.strip()]
     source = _default_source()
     source.update(_parse_meta(meta))
@@ -322,13 +334,14 @@ def publish(
         )
     if warnings:
         result["warning"] = "\nannals: warning: ".join(warnings)
-    if group and add_to:
-        raise ValueError(
-            "pass --group (a new group) or --add-to (an existing one), not both"
-        )
     if group or add_to:
         ids = [d["id"] for d in docs]
-        g = store.add_to_group(add_to, ids) if add_to else store.make_group(group, ids)
+        try:
+            g = store.add_to_group(add_to, ids) if add_to else store.make_group(group, ids)
+        except RuntimeError as e:  # the group is busy: the documents are published, say which
+            note = f"published {', '.join(ids)} but not grouped ({e})"
+            result["warning"] = (result["warning"] + "\nannals: warning: " if "warning" in result else "") + note
+            return result
         result["group_id"] = g["id"]
         result["group_url"] = _group_url(settings, g["id"])
         result["url"] = result["group_url"] if len(docs) > 1 else result["url"]
@@ -525,7 +538,7 @@ def group(
     g = (
         store.add_to_group(add_to, _as_list(doc_ids))
         if add_to
-        else store.make_group(title, _as_list(doc_ids), live_only=True)
+        else store.make_group(title, _as_list(doc_ids))
     )
     return {
         "id": g["id"],

@@ -564,7 +564,7 @@ def _mk_api(
     def make_group(body: dict = Body(...)) -> dict:
         """Make a group by hand: ``{"title": str, "docs": [<document ids>]}``; returns it."""
         try:
-            return store.make_group(body.get("title"), _doc_ids(body), live_only=True)
+            return store.make_group(body.get("title"), _doc_ids(body))
         except ValueError as e:
             raise HTTPException(422, str(e)[:200])
 

@@ -38,7 +38,7 @@ import shutil
 import tempfile
 import time
 import unicodedata
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager, nullcontext, suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Iterable
@@ -73,6 +73,9 @@ LOCK_INFO = LOCK_NOTE
 LOCK_STALE_S = 600
 #: how long a group write waits for another writer of the same group, and how often it looks
 GROUP_LOCK_WAIT_S = 10
+#: a group lock is held for milliseconds, so one older than this is a dead holder's (the
+#: lock's note carries it, so recovery on another machine knows)
+GROUP_LOCK_STALE_S = 30
 GROUP_LOCK_POLL_S = 0.02
 #: the longest title a group may have (a longer one is refused, not cut)
 MAX_GROUP_TITLE = 200
@@ -521,14 +524,16 @@ class DocStore:
             self._unlock(lock)
         return applied
 
-    def _lock(self, root: str, base: str) -> str | None:
+    def _lock(self, root: str, base: str, *, ttl: int | None = None) -> str | None:
         """Take ``<root>/.lock-<base>`` (created with its note in one step); recover a
         stale one first. ``None`` when another reader holds it."""
         lock = f"{root}/{LOCK_PREFIX}{base}"
         for _ in range(2):
             try:
-                self.target.make_lock(lock, json.dumps(self._holder()))
-            except (OSError, RuntimeError):
+                self.target.make_lock(
+                    lock, json.dumps(self._holder(**({"ttl": ttl} if ttl else {})))
+                )
+            except OSError:  # it exists (an ssh failure of another kind is not "held")
                 if not self._recover(lock, root, base):
                     return None
                 continue
@@ -561,7 +566,7 @@ class DocStore:
     @staticmethod
     def _stale(info: dict) -> bool:
         """Old, or held by a process of this host that is gone."""
-        if time.time() - float(info.get("since", 0)) >= LOCK_STALE_S:
+        if time.time() - float(info.get("since", 0)) >= float(info.get("ttl", LOCK_STALE_S)):
             return True
         if info.get("host") == socket.gethostname() and info.get("pid"):
             try:
@@ -935,21 +940,23 @@ class DocStore:
         doc_ids: Iterable[str],
         *,
         gid: str | None = None,
-        live_only: bool = False,
+        live_only: bool = True,
     ) -> dict:
         """Create (or overwrite) a group: a titled, ordered list of documents.
 
         The title is cleaned (control characters dropped, whitespace collapsed, at most
-        ``MAX_GROUP_TITLE`` long, not blank); repeats are dropped, keeping the first. With
-        ``live_only`` each document must also exist and not be in the bin (what a person
-        making a group by hand gets; a bundle may keep a document later binned).
-        ``ValueError`` says which rule failed.
+        ``MAX_GROUP_TITLE`` long, not blank); repeats are dropped, keeping the first; each
+        document must exist and not be in the bin unless ``live_only=False`` (a bundle that
+        keeps a document later binned). ``ValueError`` says which rule failed. An explicit
+        ``gid`` rewrites that group, under its lock.
         """
         title = clean_title(title)
         ids = self._group_docs_checked(doc_ids, live_only=live_only)
+        explicit = bool(gid)
         gid = check_id(gid) if gid else mk_id(title)
         group = {"id": gid, "title": title, "docs": ids, "created": now_iso()}
-        self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
+        with self._group_locked(gid) if explicit else nullcontext():
+            self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
         return group
 
     def add_to_group(self, gid: str, doc_ids: Iterable[str]) -> dict:
@@ -993,12 +1000,12 @@ class DocStore:
     def _group_locked(self, gid: str):
         """:meth:`_locked` for a group, waiting (up to ``GROUP_LOCK_WAIT_S``) for the holder."""
         deadline = time.monotonic() + GROUP_LOCK_WAIT_S
-        lock = self._lock(GROUPS, gid)
+        lock = self._lock(GROUPS, gid, ttl=GROUP_LOCK_STALE_S)
         while lock is None:
             if time.monotonic() >= deadline:
                 raise RuntimeError(f"group {gid} is being changed right now; try again")
             time.sleep(GROUP_LOCK_POLL_S)
-            lock = self._lock(GROUPS, gid)
+            lock = self._lock(GROUPS, gid, ttl=GROUP_LOCK_STALE_S)
         try:
             yield
         finally:
