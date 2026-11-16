@@ -271,6 +271,13 @@ class Requests:
         os.replace(tmp, path)
         return record
 
+    def delete(self, doc_id: str) -> None:
+        """Remove a request, if there is one."""
+        try:
+            self._path(doc_id).unlink()
+        except FileNotFoundError:
+            pass
+
     def mark(self) -> dict:
         """What the worker knows of the maker's recent failures (see :func:`maker_down`)."""
         try:
@@ -436,6 +443,16 @@ def _probe_due(requests: Requests) -> bool:
 def state_of(store, requests: Requests, meta: dict) -> dict:
     """What a page shows for a document: its request's state and what it can start."""
     record = requests.get(meta["id"]) or {}
+    return _state_from(store, requests, record, version=meta.get("version"))
+
+
+def _combination_state(store, requests: Requests, rid: str) -> dict:
+    """:func:`state_of` for a queued combination, which has no document to ask about yet."""
+    record = requests.get(rid) or {}
+    return _state_from(store, requests, record, version=record.get("version"))
+
+
+def _state_from(store, requests: Requests, record: dict, *, version) -> dict:
     state = record.get("state", NONE)
     overview = record.get("overview")
     error = record.get("error")
@@ -455,7 +472,7 @@ def state_of(store, requests: Requests, meta: dict) -> dict:
         "minutes": record.get("minutes", DFLT_MINUTES),
         "overview": overview,
         "error": error if state in (FAILED, WAITING) else None,
-        "stale": state == DONE and record.get("version") != meta.get("version"),
+        "stale": state == DONE and record.get("version") != version,
         "choices": choices(),
         "down": down,
     }
@@ -466,27 +483,54 @@ def state_of(store, requests: Requests, meta: dict) -> dict:
 FAILED_SHOWN_S = 7 * 24 * 3600
 
 
+def _shown_unmade(state: dict, record: dict) -> bool:
+    when = record.get("finished") or record.get("requested")
+    return state["state"] in ACTIVE | {WAITING} or (
+        state["state"] == FAILED and not _older_than(when, FAILED_SHOWN_S)
+    )
+
+
+def _unmade_combination(store, requests: Requests, rid: str, record: dict) -> dict | None:
+    """An :func:`unmade` row for a queued combination: no ``doc``, but what to ask again with."""
+    state = _combination_state(store, requests, rid)
+    if not _shown_unmade(state, record):
+        return None
+    spec = record.get("combine") or {}
+    return {
+        **state,
+        "doc": None,
+        "title": spec.get("title") or "Documents together",
+        "created": None,
+        "requested": record.get("requested"),
+        "finished": record.get("finished"),
+        "combine": {"docs": spec.get("docs") or [], "group": spec.get("group")},
+    }
+
+
 def unmade(store, requests: Requests) -> list[dict]:
     """The overviews asked for and not (yet) made: being made, waiting, or failed recently.
 
     Each is ``state_of`` its document plus ``doc``, ``title``, ``created`` (the document's),
-    ``requested`` and ``finished`` (the last try's). A request whose document is gone, binned
+    ``requested`` and ``finished`` (the last try's). A queued combination of several documents
+    has no document yet: ``doc`` is ``None`` and ``combine`` has the ``docs`` and ``group``
+    to ask again with (``POST /overviews``). A request whose document is gone, binned
     or no longer speakable is left out: nothing can be retried. Newest first.
     """
     out = []
     for doc_id in reversed(requests.ids()):
+        record = requests.get(doc_id) or {}
+        if record.get("kind") == COMBINE_KIND:
+            if row := _unmade_combination(store, requests, doc_id, record):
+                out.append(row)
+            continue
         try:
             meta = store.meta(doc_id)
         except (KeyError, ValueError, OSError):
             continue
         if not eligible(meta):
             continue
-        record = requests.get(doc_id) or {}
         state = state_of(store, requests, meta)
-        when = record.get("finished") or record.get("requested")
-        if state["state"] in ACTIVE | {WAITING} or (
-            state["state"] == FAILED and not _older_than(when, FAILED_SHOWN_S)
-        ):
+        if _shown_unmade(state, record):
             out.append(
                 {
                     **state,
@@ -498,6 +542,18 @@ def unmade(store, requests: Requests) -> list[dict]:
                 }
             )
     return out
+
+
+def _enqueue(requests: Requests, rid: str, **extra) -> None:
+    """File a request as queued (waiting, while the maker is down), asked for just now."""
+    requests.put(
+        rid,
+        {
+            "state": WAITING if maker_down(requests) else QUEUED,
+            **extra,
+            "requested": _now(),
+        },
+    )
 
 
 def request(
@@ -524,15 +580,8 @@ def request(
         return current
     if current["state"] == DONE and not current["stale"] and not force:
         return current
-    requests.put(
-        doc_id,
-        {
-            "state": WAITING if maker_down(requests) else QUEUED,
-            "force": force,
-            "minutes": minutes,
-            "version": meta.get("version"),
-            "requested": _now(),
-        },
+    _enqueue(
+        requests, doc_id, force=force, minutes=minutes, version=meta.get("version")
     )
     return state_of(store, requests, meta)
 
@@ -543,6 +592,8 @@ COMBINED_SESSION = "annals combine"
 COMBINE_LOCK = ".combine.lock"
 #: a queued combination is filed under this plus its :func:`combined_key`, until it has a document
 COMBINED_REQUEST_PREFIX = "combined-"
+#: the ``kind`` of a request record for a combination (the only marker; the id is a file name)
+COMBINE_KIND = "combine"
 
 
 def combined_key(docs: Sequence[dict]) -> str:
@@ -615,7 +666,11 @@ def _combined_pairs(store, docs: Sequence[dict], *, max_bytes: int | None):
 
 @contextmanager
 def _combine_lock(store):
-    """One combination at a time, so two presses never make two documents (and two bills)."""
+    """One combination at a time, so two presses never make two documents (and two bills).
+
+    The worker is the only caller in the app, and it runs alone; the lock stays for library
+    callers of :func:`combined_document`, which may run from several processes.
+    """
     import fcntl
 
     folder = Path(store.target.root) / FOLDER
@@ -698,12 +753,16 @@ def request_combined(
     """Ask for ONE overview of several documents: of the document combining their text.
 
     Nothing is published here. When the documents were combined before, that document gets
-    an ordinary request. Otherwise the request is queued under :func:`combined_request_id`
-    with the document ids, and the worker makes the combined document (see
-    :func:`combined_document`) when it starts the job, so a request nobody works leaves no
-    document behind. Returns ``{"doc": <combined document id, or None until the worker has
-    made it>, "listen": <the overview's state>}``. Raises ``ValueError`` as :func:`request`
-    does, or when there is nothing to speak or too much of it.
+    an ordinary request. Otherwise the request is queued, with the document ids, under
+    :func:`combined_request_id` (a record marked ``kind: "combine"``), and the worker makes
+    the combined document (see :func:`combined_document`) when it starts the job, so a
+    request nobody works leaves no document behind. Returns ``{"doc": <combined document
+    id, or None until the worker has made it>, "listen": <the overview's state>}``. Raises
+    ``ValueError`` as :func:`request` does, or when there is nothing to speak or too much
+    of it: refused now, not after the request has waited for a worker.
+
+    The key names the documents at their versions *now*. A retry after one of them changed
+    is a different key, so a new request: the old failed one stays listed until it expires.
     """
     from annals.aggregate import TooLarge
 
@@ -711,36 +770,30 @@ def request_combined(
         raise ValueError(f"minutes must be one of {list(MINUTES)}")
     members = _members(store, docs)
     key = combined_key(members)
+    rid = combined_request_id(key)
     if meta := find_combined(store, key):
+        requests.delete(rid)  # made since (or by a worker that stopped after): the document leads
         return {
             "doc": meta["id"],
             "listen": request(store, requests, meta["id"], minutes=minutes),
         }
-    try:  # refused now, not after the request has waited for a worker
-        if not any(True for _ in _combined_pairs(store, members, max_bytes=max_bytes)):
-            raise ValueError("none of these documents has text to speak")
+    try:  # run to the end: the limit is on all the text, not on the first document
+        speakable = sum(
+            1 for _ in _combined_pairs(store, members, max_bytes=max_bytes)
+        )
     except TooLarge as e:
         raise ValueError(str(e)) from None
-    rid = combined_request_id(key)
-    pseudo = {"id": rid, "version": None}
-    current = state_of(store, requests, pseudo)
-    if current["state"] not in ACTIVE:
-        requests.put(
-            rid,
-            {
-                "state": WAITING if maker_down(requests) else QUEUED,
-                "minutes": minutes,
-                "requested": _now(),
-                "combine": {
-                    "docs": [m["id"] for m in members],
-                    "title": title,
-                    "group": group,
-                    "max_bytes": max_bytes,
-                },
+    if not speakable:
+        raise ValueError("none of these documents has text to speak")
+    if _combination_state(store, requests, rid)["state"] not in ACTIVE:
+        _enqueue(
+            requests, rid, kind=COMBINE_KIND, minutes=minutes,
+            combine={
+                "docs": [m["id"] for m in members], "title": title,
+                "group": group, "max_bytes": max_bytes,
             },
-        )
-        current = state_of(store, requests, pseudo)
-    return {"doc": None, "listen": current}
+        )  # fmt: skip
+    return {"doc": None, "listen": _combination_state(store, requests, rid)}
 
 
 def _make_combined(store, record: dict) -> str:
@@ -989,15 +1042,22 @@ def _step(
     if requests.started_today() >= limit:
         why = f"the limit of {limit} overviews a day was reached"
         return wait(why) if down or record.get("waited") else fail(why)
+    target = doc_id
+    if record.get("kind") == COMBINE_KIND:
+        # the document is made now, before anything is counted against the daily limit
+        try:
+            target = _make_combined(store, record)
+        except Exception as e:  # e.g. nothing left to speak: the request fails, free
+            return fail(e)
+        if (other := requests.get(target)) and other.get("state") in ACTIVE | {DONE}:
+            requests.delete(doc_id)  # its document has the request already: nothing to spend
+            return {"doc": target, "state": other["state"]}
     if down:
         requests.put_mark({**requests.mark(), "tried": _now()})  # this one is the probe
     requests.note_start(doc_id)
     requests.put(doc_id, {**record, "state": RUNNING, "started": _now()})
     began = time.monotonic()
     try:
-        target = doc_id
-        if record.get("combine"):  # a combination: its document is made now, not when asked for
-            target = _make_combined(store, record)
         made, version = _fulfil(
             store,
             target,
@@ -1024,12 +1084,16 @@ def _step(
         "version": version,
         "finished": _now(),
     }
-    if target != doc_id:  # a combination: its document now has the request, as any other does
-        requests.put(target, {k: v for k, v in done.items() if k != "combine"})
-        done["doc"] = target
-    requests.put(doc_id, done)
+    if target == doc_id:
+        requests.put(doc_id, done)
+    else:  # a combination: its document now holds the request, as any other document does
+        if (requests.get(target) or {}).get("state") not in ACTIVE:  # not one asked for since
+            requests.put(
+                target, {k: v for k, v in done.items() if k not in ("kind", "combine")}
+            )
+        requests.delete(doc_id)
     mark_up(requests)  # it works: whatever waited for it is queued again
-    return {"doc": doc_id, "state": DONE, "overview": made}
+    return {"doc": target, "state": DONE, "overview": made}
 
 
 def work(
