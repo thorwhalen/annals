@@ -5,7 +5,7 @@ orphan: true
 
 # About this build
 
-This documentation was built on **2026-11-16 03:13 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/6014cc335f62446dc4630b6ef16a259e52835da6"><code>6014cc3</code></a> on branch <code>main</code>, for **annals 0.0.54** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 03:24 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/dce849b903ef2137340e184585f8c16cce062198"><code>dce849b</code></a> on branch <code>main</code>, for **annals 0.0.55** (from <code>pyproject.toml</code>).
 
 :::{note}
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -15,7 +15,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 | | |
 |---|---|
-| Commit | <a href="https://github.com/thorwhalen/annals/commit/6014cc335f62446dc4630b6ef16a259e52835da6"><code>6014cc335f62446dc4630b6ef16a259e52835da6</code></a> |
+| Commit | <a href="https://github.com/thorwhalen/annals/commit/dce849b903ef2137340e184585f8c16cce062198"><code>dce849b903ef2137340e184585f8c16cce062198</code></a> |
 | Branch | <code>main</code> |
 | Tags at this commit | none |
 | Working tree | clean |
@@ -26,9 +26,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 | | |
 |---|---|
 | Repository | <code>thorwhalen/annals</code> |
-| Run | <a href="https://github.com/thorwhalen/annals/actions/runs/43796332884">43796332884</a> |
+| Run | <a href="https://github.com/thorwhalen/annals/actions/runs/43797575703">43797575703</a> |
 | Ref | <code>refs/heads/main</code> |
-| Event commit | <code>6014cc335f62446dc4630b6ef16a259e52835da6</code> (in the history of the built commit) |
+| Event commit | <code>dce849b903ef2137340e184585f8c16cce062198</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -53,13 +53,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.54/">0.0.54</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.55/">0.0.55</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 6014cc335f62446dc4630b6ef16a259e52835da6
+git checkout dce849b903ef2137340e184585f8c16cce062198
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

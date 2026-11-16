@@ -71,6 +71,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.docfilter.html">annals.docfilter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.jsonstore.html">annals.jsonstore</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.linkcheck.html">annals.linkcheck</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.listening.html">annals.listening</a></li>
@@ -109,7 +110,6 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.tools.DFLT_EFFECTS"><code class="docutils literal notranslate"><span class="pre">DFLT_EFFECTS</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.EFFECTS"><code class="docutils literal notranslate"><span class="pre">EFFECTS</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.LINK_CHECKED_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">LINK_CHECKED_SUFFIXES</span></code></a></li>
-<li><a class="reference internal" href="#annals.tools.RESERVED_META"><code class="docutils literal notranslate"><span class="pre">RESERVED_META</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.aggregate"><code class="docutils literal notranslate"><span class="pre">aggregate()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.configure"><code class="docutils literal notranslate"><span class="pre">configure()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.copy"><code class="docutils literal notranslate"><span class="pre">copy()</span></code></a></li>
@@ -120,7 +120,6 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.tools.listen_work"><code class="docutils literal notranslate"><span class="pre">listen_work()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.ls"><code class="docutils literal notranslate"><span class="pre">ls()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.page_shell"><code class="docutils literal notranslate"><span class="pre">page_shell()</span></code></a></li>
-<li><a class="reference internal" href="#annals.tools.parse_since"><code class="docutils literal notranslate"><span class="pre">parse_since()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.publish"><code class="docutils literal notranslate"><span class="pre">publish()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.purge"><code class="docutils literal notranslate"><span class="pre">purge()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.restore"><code class="docutils literal notranslate"><span class="pre">restore()</span></code></a></li>
@@ -181,16 +180,13 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.RESERVED_META" title="annals.tools.RESERVED_META"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RESERVED_META</span></code></a></p></td>
-<td><p>provenance annals fills in itself; <code class="docutils literal notranslate"><span class="pre">--meta</span></code> cannot overwrite it</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.LINK_CHECKED_SUFFIXES" title="annals.tools.LINK_CHECKED_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LINK_CHECKED_SUFFIXES</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.LINK_CHECKED_SUFFIXES" title="annals.tools.LINK_CHECKED_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LINK_CHECKED_SUFFIXES</span></code></a></p></td>
 <td><p>the suffixes whose text the link check reads (prose an author writes by hand)</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.EFFECTS" title="annals.tools.EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EFFECTS</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.EFFECTS" title="annals.tools.EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EFFECTS</span></code></a></p></td>
 <td><p>a surface serves the levels its caller allows.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.DFLT_EFFECTS" title="annals.tools.DFLT_EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_EFFECTS</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.DFLT_EFFECTS" title="annals.tools.DFLT_EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_EFFECTS</span></code></a></p></td>
 <td><p>what an agent or a tool is offered unless its host asks for more (MCP reads this)</p></td>
 </tr>
 </tbody>
@@ -230,40 +226,37 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.page_shell" title="annals.tools.page_shell"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_shell</span></code></a>(*[, api, base, title])</p></td>
 <td><p>The page's html shell, for a host that serves the API under its own prefix.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.parse_since" title="annals.tools.parse_since"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_since</span></code></a>(since, *[, now])</p></td>
-<td><p>A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.publish" title="annals.tools.publish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">publish</span></code></a>(paths, *[, title, tags, group, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.publish" title="annals.tools.publish"><code class="xref py py-obj docutils literal notranslate"><span class="pre">publish</span></code></a>(paths, *[, title, tags, group, ...])</p></td>
 <td><p>Publish one document and print its link; several paths become several documents.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.purge" title="annals.tools.purge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">purge</span></code></a>(doc_ids, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.purge" title="annals.tools.purge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">purge</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Delete documents that are in the bin for good (not restorable).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.restore" title="annals.tools.restore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore</span></code></a>(doc_ids, *[, target, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.restore" title="annals.tools.restore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Bring documents back from the recycle bin.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path, ...])</p></td>
 <td><p>Serve the annals page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[server]'</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.share" title="annals.tools.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a>(ref, *[, password, expires, include, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.share" title="annals.tools.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a>(ref, *[, password, expires, include, ...])</p></td>
 <td><p>Make a public link to ONE document (or group) and print it; nothing else is reachable.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.shares" title="annals.tools.shares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shares</span></code></a>(*[, all, target, base_url, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.shares" title="annals.tools.shares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shares</span></code></a>(*[, all, target, base_url, to])</p></td>
 <td><p>List share links, newest first (<code class="docutils literal notranslate"><span class="pre">all</span></code>: revoked and expired ones too).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
 <td><p>A document's metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.tag" title="annals.tools.tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag</span></code></a>(doc_id, tags, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.tag" title="annals.tools.tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag</span></code></a>(doc_id, tags, *[, target, to])</p></td>
 <td><p>Set a document's tags (comma separated; &quot;&quot; clears them), as the page's tag editor does.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.tools_with" title="annals.tools.tools_with"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools_with</span></code></a>([effects])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.tools_with" title="annals.tools.tools_with"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools_with</span></code></a>([effects])</p></td>
 <td><p>The operations whose effect is in <code class="docutils literal notranslate"><span class="pre">effects</span></code>, in the CLI's order: the list a caller-facing surface serves.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.trash" title="annals.tools.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.trash" title="annals.tools.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Move documents to the recycle bin (restorable).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.unshare" title="annals.tools.unshare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unshare</span></code></a>(links, *[, target, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.unshare" title="annals.tools.unshare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unshare</span></code></a>(links, *[, target, to])</p></td>
 <td><p>Revoke share links (their token or full link): they stop working at once.</p></td>
 </tr>
 </tbody>
@@ -294,12 +287,6 @@ timer, never by a caller.</p>
 <dt class="sig sig-object py" id="annals.tools.LINK_CHECKED_SUFFIXES">
 <span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">LINK_CHECKED_SUFFIXES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'.markdown',</span> <span class="pre">'.md',</span> <span class="pre">'.txt'})</span></span><a class="headerlink" href="#annals.tools.LINK_CHECKED_SUFFIXES" title="Link to this definition">#</a></dt>
 <dd><p>the suffixes whose text the link check reads (prose an author writes by hand)</p>
-</dd></dl>
-
-<dl class="py data">
-<dt class="sig sig-object py" id="annals.tools.RESERVED_META">
-<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">RESERVED_META</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'cwd',</span> <span class="pre">'host',</span> <span class="pre">'session'})</span></span><a class="headerlink" href="#annals.tools.RESERVED_META" title="Link to this definition">#</a></dt>
-<dd><p>provenance annals fills in itself; <code class="docutils literal notranslate"><span class="pre">--meta</span></code> cannot overwrite it</p>
 </dd></dl>
 
 <dl class="py function">
@@ -456,23 +443,6 @@ with the package.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="annals.tools.parse_since">
-<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">parse_since</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">since</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#parse_since"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.parse_since" title="Link to this definition">#</a></dt>
-<dd><p>A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_since</span><span class="p">(</span><span class="s2">"2026-11-12T09:00+00:00"</span><span class="p">)</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
-</span><span data-line="2"><span class="go">'2026-11-12T09:00:00+00:00'</span>
-</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_since</span><span class="p">(</span><span class="s2">"2d"</span><span class="p">,</span> <span class="n">now</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2026</span><span class="p">,</span> <span class="mi">11</span><span class="p">,</span> <span class="mi">14</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">))</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
-</span><span data-line="4"><span class="go">'2026-11-12'</span>
-</span></pre></div>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/datetime.html#datetime.datetime" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">datetime</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -689,7 +659,7 @@ outbox or a remote target. <code class="docutils literal notranslate"><span clas
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=1c03bfdc"></script>
+      <script src="../_static/documentation_options.js?v=b87b3bc5"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

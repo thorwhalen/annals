@@ -9,11 +9,10 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Module Attributes
 
-| [`RESERVED_META`](#annals.tools.RESERVED_META)         | provenance annals fills in itself; `--meta` cannot overwrite it                   |
-|------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`LINK_CHECKED_SUFFIXES`](#annals.tools.LINK_CHECKED_SUFFIXES) | the suffixes whose text the link check reads (prose an author writes by hand)     |
-| [`EFFECTS`](#annals.tools.EFFECTS)               | a surface serves the levels its caller allows.                                    |
-| [`DFLT_EFFECTS`](#annals.tools.DFLT_EFFECTS)          | what an agent or a tool is offered unless its host asks for more (MCP reads this) |
+| [`LINK_CHECKED_SUFFIXES`](#annals.tools.LINK_CHECKED_SUFFIXES)   | the suffixes whose text the link check reads (prose an author writes by hand)     |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`EFFECTS`](#annals.tools.EFFECTS)                 | a surface serves the levels its caller allows.                                    |
+| [`DFLT_EFFECTS`](#annals.tools.DFLT_EFFECTS)            | what an agent or a tool is offered unless its host asks for more (MCP reads this) |
 
 ### Functions
 
@@ -28,7 +27,6 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`listen_work`](#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).                     |
 | [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to, ...])   | List documents (newest first), optionally filtered by words or showing the bin.                           |
 | [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                               |
-| [`parse_since`](#annals.tools.parse_since)(since, \*[, now])                      | A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.        |
 | [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                          |
 | [`purge`](#annals.tools.purge)(doc_ids, \*[, target, to])                   | Delete documents that are in the bin for good (not restorable).                                           |
 | [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                                |
@@ -59,10 +57,6 @@ timer, never by a caller.
 ### annals.tools.LINK_CHECKED_SUFFIXES *= frozenset({'.markdown', '.md', '.txt'})*
 
 the suffixes whose text the link check reads (prose an author writes by hand)
-
-### annals.tools.RESERVED_META *= frozenset({'cwd', 'host', 'session'})*
-
-provenance annals fills in itself; `--meta` cannot overwrite it
 
 ### annals.tools.aggregate(group_id, , format='md', output=None, demote=1, order='numbered', no_toc=False, keep_wraps=False, target=None, to=None)
 
@@ -190,20 +184,6 @@ with the package.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
-### annals.tools.parse_since(since, , now=None)
-
-A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.
-
-```pycon
->>> parse_since("2026-11-12T09:00+00:00").isoformat()
-'2026-11-12T09:00:00+00:00'
->>> parse_since("2d", now=datetime(2026, 11, 14, tzinfo=timezone.utc)).date().isoformat()
-'2026-11-12'
-```
-
-* **Return type:**
-  [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
 
 ### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, meta=None)
 

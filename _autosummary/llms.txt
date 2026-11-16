@@ -11,6 +11,7 @@
 - [annals.catalog](annals.catalog.html.md): The catalog: every source’s items as one list, with search and the owner’s tags.
 - [annals.combine](annals.combine.html.md): Many files of many kinds as ONE document: a Markdown, html or PDF file.
 - [annals.config](annals.config.html.md): Settings: where documents are published and what link to print.
+- [annals.docfilter](annals.docfilter.html.md): Exact filters over a document’s meta, for a caller that polls: since, session, tag, source.
 - [annals.jsonstore](annals.jsonstore.html.md): A &#96;MutableMapping&#96; kept in one JSON file, safe with several server processes.
 - [annals.linkcheck](annals.linkcheck.html.md): Find what a document mentions without linking to it: the owner reads on a phone and clicks through.
 - [annals.listening](annals.listening.html.md): What each reader has heard of each audio document: percent heard, listens, where they stopped.

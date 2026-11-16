@@ -68,6 +68,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.catalog.html">annals.catalog</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.docfilter.html">annals.docfilter</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.jsonstore.html">annals.jsonstore</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.linkcheck.html">annals.linkcheck</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.listening.html">annals.listening</a></li>
@@ -329,39 +330,64 @@ data-aria-dark="Switch to auto color mode">
 
 </span><span data-line="168">
 </span><span data-line="169">
-<div class="viewcode-block" id="default_tags">
-<a class="viewcode-back" href="../../_autosummary/annals.catalog.html#annals.catalog.default_tags">[docs]</a>
-</span><span data-line="170"><span class="k">def</span><span class="w"> </span><span class="nf">default_tags</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
-</span><span data-line="171"><span class="w">    </span><span class="sd">"""Where the owner's tags live by default: one JSON file under the data root</span>
-</span><span data-line="172"><span class="sd">    (``tags/tags.json``), or a dict when the data root is not on this machine."""</span>
-</span><span data-line="173">    <span class="n">root</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">local_path</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
-</span><span data-line="174">    <span class="k">return</span> <span class="n">JsonTagStore</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">TAGS_DIR</span> <span class="o">/</span> <span class="n">TAGS_FILE</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span></div>
+<div class="viewcode-block" id="owner_tags">
+<a class="viewcode-back" href="../../_autosummary/annals.catalog.html#annals.catalog.owner_tags">[docs]</a>
+</span><span data-line="170"><span class="k">def</span><span class="w"> </span><span class="nf">owner_tags</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+</span><span data-line="171"><span class="w">    </span><span class="sd">"""The owner's tags (set by ``annals tag`` or the page), keyed by item key, as one snapshot."""</span>
+</span><span data-line="172">    <span class="n">tags</span> <span class="o">=</span> <span class="n">default_tags</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+</span><span data-line="173">    <span class="n">snap</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tags</span><span class="p">,</span> <span class="s2">"snapshot"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="174">    <span class="k">return</span> <span class="n">snap</span><span class="p">()</span> <span class="k">if</span> <span class="n">snap</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span></div>
 
 </span><span data-line="175">
 </span><span data-line="176">
+<div class="viewcode-block" id="with_owner_tags">
+<a class="viewcode-back" href="../../_autosummary/annals.catalog.html#annals.catalog.with_owner_tags">[docs]</a>
+</span><span data-line="177"><span class="k">def</span><span class="w"> </span><span class="nf">with_owner_tags</span><span class="p">(</span><span class="n">metas</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">tags</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="178"><span class="w">    </span><span class="sd">"""``metas`` (documents' meta) with each one's tags replaced by the owner's, where the owner set them.</span>
+</span><span data-line="179">
+</span><span data-line="180"><span class="sd">    &gt;&gt;&gt; with_owner_tags([{"id": "a", "tags": ["x"]}, {"id": "b", "tags": ["y"]}], {"published:a": ["z"]})</span>
+</span><span data-line="181"><span class="sd">    [{'id': 'a', 'tags': ['z']}, {'id': 'b', 'tags': ['y']}]</span>
+</span><span data-line="182"><span class="sd">    """</span>
+</span><span data-line="183">    <span class="k">return</span> <span class="p">[</span>
+</span><span data-line="184">        <span class="p">{</span><span class="o">**</span><span class="n">m</span><span class="p">,</span> <span class="s2">"tags"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">tags</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mk_key</span><span class="p">(</span><span class="n">PUBLISHED</span><span class="p">,</span> <span class="n">m</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]),</span> <span class="n">m</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">,</span> <span class="p">[])))}</span>
+</span><span data-line="185">        <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">metas</span>
+</span><span data-line="186">    <span class="p">]</span></div>
+
+</span><span data-line="187">
+</span><span data-line="188">
+<div class="viewcode-block" id="default_tags">
+<a class="viewcode-back" href="../../_autosummary/annals.catalog.html#annals.catalog.default_tags">[docs]</a>
+</span><span data-line="189"><span class="k">def</span><span class="w"> </span><span class="nf">default_tags</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
+</span><span data-line="190"><span class="w">    </span><span class="sd">"""Where the owner's tags live by default: one JSON file under the data root</span>
+</span><span data-line="191"><span class="sd">    (``tags/tags.json``), or a dict when the data root is not on this machine."""</span>
+</span><span data-line="192">    <span class="n">root</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">local_path</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
+</span><span data-line="193">    <span class="k">return</span> <span class="n">JsonTagStore</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">TAGS_DIR</span> <span class="o">/</span> <span class="n">TAGS_FILE</span><span class="p">)</span> <span class="k">if</span> <span class="n">root</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span></div>
+
+</span><span data-line="194">
+</span><span data-line="195">
 <div class="viewcode-block" id="mk_catalog">
 <a class="viewcode-back" href="../../_autosummary/annals.catalog.html#annals.catalog.mk_catalog">[docs]</a>
-</span><span data-line="177"><span class="k">def</span><span class="w"> </span><span class="nf">mk_catalog</span><span class="p">(</span>
-</span><span data-line="178">    <span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span>
-</span><span data-line="179">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="180">    <span class="n">sources</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Source</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="181">    <span class="n">tags</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="182"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Catalog</span><span class="p">:</span>
-</span><span data-line="183"><span class="w">    </span><span class="sd">"""The published documents first, then the extra sources; the owner's tags beside them.</span>
-</span><span data-line="184">
-</span><span data-line="185"><span class="sd">    ``sources`` maps a name to a folder path (read in place) or a :class:`Source`; by</span>
-</span><span data-line="186"><span class="sd">    default the folders named in ``ANNALS_SOURCES``. ``tags`` defaults to one JSON file</span>
-</span><span data-line="187"><span class="sd">    under the data root (``tags/tags.json``), or a dict when the data root is remote.</span>
-</span><span data-line="188"><span class="sd">    The API, and any CLI or agent tool that tags items, build their catalog here.</span>
-</span><span data-line="189"><span class="sd">    """</span>
-</span><span data-line="190">    <span class="k">if</span> <span class="n">sources</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="191">        <span class="n">sources</span> <span class="o">=</span> <span class="n">parse_sources_spec</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_SOURCES</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
-</span><span data-line="192">    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="193">        <span class="n">tags</span> <span class="o">=</span> <span class="n">default_tags</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
-</span><span data-line="194">    <span class="n">named</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Source</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">PUBLISHED</span><span class="p">:</span> <span class="n">PublishedSource</span><span class="p">(</span><span class="n">store</span><span class="p">)}</span>
-</span><span data-line="195">    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">sources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span data-line="196">        <span class="n">named</span><span class="p">[</span><span class="n">check_source_name</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">as_source</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
-</span><span data-line="197">    <span class="k">return</span> <span class="n">Catalog</span><span class="p">(</span><span class="n">named</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span></div>
+</span><span data-line="196"><span class="k">def</span><span class="w"> </span><span class="nf">mk_catalog</span><span class="p">(</span>
+</span><span data-line="197">    <span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span>
+</span><span data-line="198">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="199">    <span class="n">sources</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Source</span> <span class="o">|</span> <span class="n">Path</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="200">    <span class="n">tags</span><span class="p">:</span> <span class="n">MutableMapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="201"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Catalog</span><span class="p">:</span>
+</span><span data-line="202"><span class="w">    </span><span class="sd">"""The published documents first, then the extra sources; the owner's tags beside them.</span>
+</span><span data-line="203">
+</span><span data-line="204"><span class="sd">    ``sources`` maps a name to a folder path (read in place) or a :class:`Source`; by</span>
+</span><span data-line="205"><span class="sd">    default the folders named in ``ANNALS_SOURCES``. ``tags`` defaults to one JSON file</span>
+</span><span data-line="206"><span class="sd">    under the data root (``tags/tags.json``), or a dict when the data root is remote.</span>
+</span><span data-line="207"><span class="sd">    The API, and any CLI or agent tool that tags items, build their catalog here.</span>
+</span><span data-line="208"><span class="sd">    """</span>
+</span><span data-line="209">    <span class="k">if</span> <span class="n">sources</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="210">        <span class="n">sources</span> <span class="o">=</span> <span class="n">parse_sources_spec</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_SOURCES</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span>
+</span><span data-line="211">    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="212">        <span class="n">tags</span> <span class="o">=</span> <span class="n">default_tags</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+</span><span data-line="213">    <span class="n">named</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Source</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">PUBLISHED</span><span class="p">:</span> <span class="n">PublishedSource</span><span class="p">(</span><span class="n">store</span><span class="p">)}</span>
+</span><span data-line="214">    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">spec</span> <span class="ow">in</span> <span class="n">sources</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span data-line="215">        <span class="n">named</span><span class="p">[</span><span class="n">check_source_name</span><span class="p">(</span><span class="n">name</span><span class="p">)]</span> <span class="o">=</span> <span class="n">as_source</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</span><span data-line="216">    <span class="k">return</span> <span class="n">Catalog</span><span class="p">(</span><span class="n">named</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">)</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -390,7 +416,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=1c03bfdc"></script>
+      <script src="../../_static/documentation_options.js?v=b87b3bc5"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

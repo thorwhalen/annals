@@ -1,0 +1,27 @@
+annals.docfilter
+================
+
+.. automodule:: annals.docfilter
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      RESERVED_META
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      changed_at
+      parse_iso
+      parse_meta
+      parse_since
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      DocFilter
+   

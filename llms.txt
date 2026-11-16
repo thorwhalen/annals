@@ -13,6 +13,7 @@
 - [annals.catalog](_autosummary/annals.catalog.html.md): The catalog: every source’s items as one list, with search and the owner’s tags.
 - [annals.combine](_autosummary/annals.combine.html.md): Many files of many kinds as ONE document: a Markdown, html or PDF file.
 - [annals.config](_autosummary/annals.config.html.md): Settings: where documents are published and what link to print.
+- [annals.docfilter](_autosummary/annals.docfilter.html.md): Exact filters over a document’s meta, for a caller that polls: since, session, tag, source.
 - [annals.jsonstore](_autosummary/annals.jsonstore.html.md): A &#96;MutableMapping&#96; kept in one JSON file, safe with several server processes.
 - [annals.linkcheck](_autosummary/annals.linkcheck.html.md): Find what a document mentions without linking to it: the owner reads on a phone and clicks through.
 - [annals.listening](_autosummary/annals.listening.html.md): What each reader has heard of each audio document: percent heard, listens, where they stopped.
@@ -32,7 +33,7 @@
 - [annals.target](_autosummary/annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
 - [annals.tools](_autosummary/annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 - [For AI agents](ai-agents.html.md): &#96;annals&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-16 03:13 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-16 03:24 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

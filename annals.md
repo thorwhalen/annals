@@ -1,4 +1,4 @@
-> built 2026-11-16 03:13 UTC from 6014cc3 (main) · annals 0.0.54. Details: build_info.json
+> built 2026-11-16 03:24 UTC from dce849b (main) · annals 0.0.55. Details: build_info.json
 
 # index.html.md
 
@@ -603,7 +603,9 @@ query would give.
 | [`default_tags`](_autosummary/annals.catalog.html.md#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
 |-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`mk_catalog`](_autosummary/annals.catalog.html.md#annals.catalog.mk_catalog)(store, \*[, sources, tags]) | The published documents first, then the extra sources; the owner's tags beside them.                                                                 |
+| [`owner_tags`](_autosummary/annals.catalog.html.md#annals.catalog.owner_tags)(store)                      | The owner's tags (set by `annals tag` or the page), keyed by item key, as one snapshot.                                                              |
 | [`purge_document`](_autosummary/annals.catalog.html.md#annals.catalog.purge_document)(store, catalog, doc_id) | Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.                                                           |
+| [`with_owner_tags`](_autosummary/annals.catalog.html.md#annals.catalog.with_owner_tags)(metas, tags)           | `metas` (documents' meta) with each one's tags replaced by the owner's, where the owner set them.                                                    |
 
 ### Classes
 
@@ -682,6 +684,13 @@ The API, and any CLI or agent tool that tags items, build their catalog here.
 * **Return type:**
   [`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog)
 
+### annals.catalog.owner_tags(store)
+
+The owner’s tags (set by `annals tag` or the page), keyed by item key, as one snapshot.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
 ### annals.catalog.purge_document(store, catalog, doc_id)
 
 Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.
@@ -690,6 +699,18 @@ Delete a document that is in the bin for good: its files, its tags, its cached t
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.catalog.with_owner_tags(metas, tags)
+
+`metas` (documents’ meta) with each one’s tags replaced by the owner’s, where the owner set them.
+
+```pycon
+>>> with_owner_tags([{"id": "a", "tags": ["x"]}, {"id": "b", "tags": ["y"]}], {"published:a": ["z"]})
+[{'id': 'a', 'tags': ['z']}, {'id': 'b', 'tags': ['y']}]
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
 
 # _autosummary/annals.combine.html.md
@@ -1142,6 +1163,130 @@ way the other tables are kept.
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
 
 
+# _autosummary/annals.docfilter.html.md
+
+# annals.docfilter
+
+Exact filters over a document’s meta, for a caller that polls: since, session, tag, source.
+
+One place for the rules, so the CLI (`annals ls`), MCP and the HTTP `/docs` route cannot
+drift: `since` is an ISO date or time (local time unless it has an offset) or an age
+(`6h`, `2d`); `session`, `tag` and each `source` key match whole values, never
+substrings; all given filters must hold. They are pure: the caller lists the documents (and
+puts the owner’s tags in, [`annals.catalog.with_owner_tags()`](_autosummary/annals.catalog.html.md#annals.catalog.with_owner_tags)) and this narrows them.
+
+```pycon
+>>> docs = [{"id": "a", "tags": ["x"], "created": "2026-11-12T10:00:00+00:00", "source": {"session": "s1"}},
+...         {"id": "b", "tags": ["y"], "created": "2026-11-10T10:00:00+00:00", "source": {"session": "s2"}}]
+>>> [d["id"] for d in DocFilter.of(since="2026-11-11T00:00:00+00:00").apply(docs)]
+['a']
+>>> [d["id"] for d in DocFilter.of(session="s2", tag="y").apply(docs)]
+['b']
+```
+
+### Module Attributes
+
+| [`RESERVED_META`](_autosummary/annals.docfilter.html.md#annals.docfilter.RESERVED_META)   | provenance annals fills in itself; `--meta` cannot overwrite it   |
+|------------------------------------------------------------------|-------------------------------------------------------------------|
+
+### Functions
+
+| [`changed_at`](_autosummary/annals.docfilter.html.md#annals.docfilter.changed_at)(meta)                 | When a document last changed: a replaced one counts from its newest version.                       |
+|-----------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
+| [`parse_iso`](_autosummary/annals.docfilter.html.md#annals.docfilter.parse_iso)(text)                  | An ISO date or time as an aware datetime; one with no offset is local time.                        |
+| [`parse_meta`](_autosummary/annals.docfilter.html.md#annals.docfilter.parse_meta)(meta, \*[, reserved]) | `["corpus=x", "issue=12"]` (or one such string) as `{"corpus": "x", "issue": "12"}`.               |
+| [`parse_since`](_autosummary/annals.docfilter.html.md#annals.docfilter.parse_since)(since, \*[, now])    | A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age. |
+
+### Classes
+
+| [`DocFilter`](_autosummary/annals.docfilter.html.md#annals.docfilter.DocFilter)([since, session, tag, source])   | What a caller wants of a listing: any of since, session, tag and source keys; empty means all.   |
+|---------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------|
+
+### *class* annals.docfilter.DocFilter(since=None, session=None, tag=None, source=dict())
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What a caller wants of a listing: any of since, session, tag and source keys; empty means all.
+
+#### apply(docs)
+
+The documents that pass, in their order.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+#### matches(doc)
+
+Whether `doc` (a meta) passes every filter that was given.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+#### *classmethod* of(, since=None, session=None, tag=None, meta=None)
+
+From the CLI’s spelling: `since` text, `meta` as `key=value` strings.
+
+* **Return type:**
+  [`DocFilter`](_autosummary/annals.docfilter.html.md#annals.docfilter.DocFilter)
+
+### annals.docfilter.RESERVED_META *= frozenset({'cwd', 'host', 'session'})*
+
+provenance annals fills in itself; `--meta` cannot overwrite it
+
+### annals.docfilter.changed_at(meta)
+
+When a document last changed: a replaced one counts from its newest version.
+
+* **Return type:**
+  [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.docfilter.parse_iso(text)
+
+An ISO date or time as an aware datetime; one with no offset is local time.
+
+* **Return type:**
+  [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+
+### annals.docfilter.parse_meta(meta, , reserved=frozenset({'cwd', 'host', 'session'}))
+
+`["corpus=x", "issue=12"]` (or one such string) as `{"corpus": "x", "issue": "12"}`.
+
+A key in `reserved` (what annals records itself) is refused: writing it would forge
+provenance. A filter reads any key, so it passes `reserved=frozenset()`.
+
+```pycon
+>>> parse_meta(["corpus=annals", "issue=64"])
+{'corpus': 'annals', 'issue': '64'}
+>>> parse_meta(None)
+{}
+>>> parse_meta("oops")
+Traceback (most recent call last):
+...
+ValueError: --meta takes key=value (for example corpus=annals), got 'oops'
+>>> parse_meta(["host=h"])
+Traceback (most recent call last):
+...
+ValueError: --meta cannot set 'host': annals records it (use --session for the session)
+```
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.docfilter.parse_since(since, , now=None)
+
+A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.
+
+```pycon
+>>> parse_since("2026-11-12T09:00+00:00").isoformat()
+'2026-11-12T09:00:00+00:00'
+>>> parse_since("2d", now=datetime(2026, 11, 14, tzinfo=timezone.utc)).date().isoformat()
+'2026-11-12'
+```
+
+* **Return type:**
+  [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
+
+
 # _autosummary/annals.html.md
 
 # annals
@@ -1528,6 +1673,7 @@ Move documents to the recycle bin (restorable).
 | [`catalog`](_autosummary/annals.catalog.html.md#module-annals.catalog)           | The catalog: every source's items as one list, with search and the owner's tags.                                                                   |
 | [`combine`](_autosummary/annals.combine.html.md#module-annals.combine)           | Many files of many kinds as ONE document: a Markdown, html or PDF file.                                                                            |
 | [`config`](_autosummary/annals.config.html.md#module-annals.config)             | Settings: where documents are published and what link to print.                                                                                    |
+| [`docfilter`](_autosummary/annals.docfilter.html.md#module-annals.docfilter)       | Exact filters over a document's meta, for a caller that polls: since, session, tag, source.                                                        |
 | [`jsonstore`](_autosummary/annals.jsonstore.html.md#module-annals.jsonstore)       | A `MutableMapping` kept in one JSON file, safe with several server processes.                                                                      |
 | [`linkcheck`](_autosummary/annals.linkcheck.html.md#module-annals.linkcheck)       | Find what a document mentions without linking to it: the owner reads on a phone and clicks through.                                                |
 | [`listening`](_autosummary/annals.listening.html.md#module-annals.listening)       | What each reader has heard of each audio document: percent heard, listens, where they stopped.                                                     |
@@ -4242,11 +4388,10 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Module Attributes
 
-| [`RESERVED_META`](_autosummary/annals.tools.html.md#annals.tools.RESERVED_META)         | provenance annals fills in itself; `--meta` cannot overwrite it                   |
-|------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`LINK_CHECKED_SUFFIXES`](_autosummary/annals.tools.html.md#annals.tools.LINK_CHECKED_SUFFIXES) | the suffixes whose text the link check reads (prose an author writes by hand)     |
-| [`EFFECTS`](_autosummary/annals.tools.html.md#annals.tools.EFFECTS)               | a surface serves the levels its caller allows.                                    |
-| [`DFLT_EFFECTS`](_autosummary/annals.tools.html.md#annals.tools.DFLT_EFFECTS)          | what an agent or a tool is offered unless its host asks for more (MCP reads this) |
+| [`LINK_CHECKED_SUFFIXES`](_autosummary/annals.tools.html.md#annals.tools.LINK_CHECKED_SUFFIXES)   | the suffixes whose text the link check reads (prose an author writes by hand)     |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`EFFECTS`](_autosummary/annals.tools.html.md#annals.tools.EFFECTS)                 | a surface serves the levels its caller allows.                                    |
+| [`DFLT_EFFECTS`](_autosummary/annals.tools.html.md#annals.tools.DFLT_EFFECTS)            | what an agent or a tool is offered unless its host asks for more (MCP reads this) |
 
 ### Functions
 
@@ -4261,7 +4406,6 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`listen_work`](_autosummary/annals.tools.html.md#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).                     |
 | [`ls`](_autosummary/annals.tools.html.md#annals.tools.ls)([q, trash, limit, target, base_url, to, ...])   | List documents (newest first), optionally filtered by words or showing the bin.                           |
 | [`page_shell`](_autosummary/annals.tools.html.md#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                               |
-| [`parse_since`](_autosummary/annals.tools.html.md#annals.tools.parse_since)(since, \*[, now])                      | A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.        |
 | [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                          |
 | [`purge`](_autosummary/annals.tools.html.md#annals.tools.purge)(doc_ids, \*[, target, to])                   | Delete documents that are in the bin for good (not restorable).                                           |
 | [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                                |
@@ -4292,10 +4436,6 @@ timer, never by a caller.
 ### annals.tools.LINK_CHECKED_SUFFIXES *= frozenset({'.markdown', '.md', '.txt'})*
 
 the suffixes whose text the link check reads (prose an author writes by hand)
-
-### annals.tools.RESERVED_META *= frozenset({'cwd', 'host', 'session'})*
-
-provenance annals fills in itself; `--meta` cannot overwrite it
 
 ### annals.tools.aggregate(group_id, , format='md', output=None, demote=1, order='numbered', no_toc=False, keep_wraps=False, target=None, to=None)
 
@@ -4423,20 +4563,6 @@ with the package.
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
-
-### annals.tools.parse_since(since, , now=None)
-
-A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.
-
-```pycon
->>> parse_since("2026-11-12T09:00+00:00").isoformat()
-'2026-11-12T09:00:00+00:00'
->>> parse_since("2d", now=datetime(2026, 11, 14, tzinfo=timezone.utc)).date().isoformat()
-'2026-11-12'
-```
-
-* **Return type:**
-  [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
 
 ### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, meta=None)
 
@@ -4579,7 +4705,7 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 03:13 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/6014cc335f62446dc4630b6ef16a259e52835da6"><code>6014cc3</code></a> on branch <code>main</code>, for **annals 0.0.54** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 03:24 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/dce849b903ef2137340e184585f8c16cce062198"><code>dce849b</code></a> on branch <code>main</code>, for **annals 0.0.55** (from <code>pyproject.toml</code>).
 
 #### NOTE
 Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
@@ -4588,7 +4714,7 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/6014cc335f62446dc4630b6ef16a259e52835da6"><code>6014cc335f62446dc4630b6ef16a259e52835da6</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/dce849b903ef2137340e184585f8c16cce062198"><code>dce849b903ef2137340e184585f8c16cce062198</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4599,9 +4725,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43796332884">43796332884</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43797575703">43797575703</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>6014cc335f62446dc4630b6ef16a259e52835da6</code> (in the history of the built commit) |
+| Event commit | <code>dce849b903ef2137340e184585f8c16cce062198</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4626,13 +4752,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.54/">0.0.54</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.55/">0.0.55</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 6014cc335f62446dc4630b6ef16a259e52835da6
+git checkout dce849b903ef2137340e184585f8c16cce062198
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

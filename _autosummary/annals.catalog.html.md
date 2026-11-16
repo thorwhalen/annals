@@ -26,7 +26,9 @@ query would give.
 | [`default_tags`](#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
 |-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`mk_catalog`](#annals.catalog.mk_catalog)(store, \*[, sources, tags]) | The published documents first, then the extra sources; the owner's tags beside them.                                                                 |
+| [`owner_tags`](#annals.catalog.owner_tags)(store)                      | The owner's tags (set by `annals tag` or the page), keyed by item key, as one snapshot.                                                              |
 | [`purge_document`](#annals.catalog.purge_document)(store, catalog, doc_id) | Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.                                                           |
+| [`with_owner_tags`](#annals.catalog.with_owner_tags)(metas, tags)           | `metas` (documents' meta) with each one's tags replaced by the owner's, where the owner set them.                                                    |
 
 ### Classes
 
@@ -105,6 +107,13 @@ The API, and any CLI or agent tool that tags items, build their catalog here.
 * **Return type:**
   [`Catalog`](#annals.catalog.Catalog)
 
+### annals.catalog.owner_tags(store)
+
+The owner’s tags (set by `annals tag` or the page), keyed by item key, as one snapshot.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
+
 ### annals.catalog.purge_document(store, catalog, doc_id)
 
 Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.
@@ -113,3 +122,15 @@ Delete a document that is in the bin for good: its files, its tags, its cached t
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.catalog.with_owner_tags(metas, tags)
+
+`metas` (documents’ meta) with each one’s tags replaced by the owner’s, where the owner set them.
+
+```pycon
+>>> with_owner_tags([{"id": "a", "tags": ["x"]}, {"id": "b", "tags": ["y"]}], {"published:a": ["z"]})
+[{'id': 'a', 'tags': ['z']}, {'id': 'b', 'tags': ['y']}]
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]

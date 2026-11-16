@@ -8,7 +8,6 @@ annals.tools
 
    .. autosummary::
    
-      RESERVED_META
       LINK_CHECKED_SUFFIXES
       EFFECTS
       DFLT_EFFECTS
@@ -27,7 +26,6 @@ annals.tools
       listen_work
       ls
       page_shell
-      parse_since
       publish
       purge
       restore

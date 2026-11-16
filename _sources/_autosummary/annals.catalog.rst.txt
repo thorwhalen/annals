@@ -16,7 +16,9 @@ annals.catalog
    
       default_tags
       mk_catalog
+      owner_tags
       purge_document
+      with_owner_tags
    
    .. rubric:: Classes
 
