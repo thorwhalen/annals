@@ -520,3 +520,32 @@ def test_listen_takes_several_documents_for_one_overview(tmp_path, monkeypatch):
     assert res["listen"]["state"] in {"queued", "waiting"}
     err = io.StringIO()
     assert run(["listen", ids[0], "--also", "nope-nope"], out=io.StringIO(), err=err) == 1
+
+
+def test_listen_also_edge_cases_and_the_state_poll(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    ids = []
+    for name in ("a", "b", "c"):
+        f = tmp_path / f"{name}.md"
+        f.write_text(f"# {name}\n\nSome text about {name}.")
+        ids.append(_json(["publish", str(f), "--json"])["id"])
+    one = _json(["listen", ids[0], "--also", ids[0]])  # the same document twice: the ordinary overview
+    assert _json(["overview-state", ids[0]])["state"] == one["state"]
+    err = io.StringIO()
+    assert run(["listen", ids[0], "--also", ids[1], "--force"], out=io.StringIO(), err=err) == 1 and "--force" in err.getvalue()
+    _json(["trash", ids[2]])
+    err = io.StringIO()
+    assert run(["listen", ids[0], "--also", ids[2]], out=io.StringIO(), err=err) == 1 and ids[2] in err.getvalue()
+
+
+def test_references_of_several_documents_and_unknown_refs(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    a, b = tmp_path / "a.md", tmp_path / "b.md"
+    a.write_text("# A\n\nx\n\n## References\n\n[1] One. https://example.com/one\n")
+    b.write_text("# B\n\ny\n\n## References\n\n[1] Two. https://example.com/two\n")
+    ia, ib = [_json(["publish", str(p), "--json"])["id"] for p in (a, b)]
+    out = io.StringIO()
+    assert _run(["references", ia, "--also", ib, "--form", "urls"], out) == 0
+    assert out.getvalue().split() == ["https://example.com/one", "https://example.com/two"]
+    err = io.StringIO()
+    assert run(["references", "nope-nope"], out=io.StringIO(), err=err) == 1 and "no such document or group" in err.getvalue()
