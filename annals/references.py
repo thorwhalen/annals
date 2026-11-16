@@ -225,3 +225,35 @@ def doc_reference_texts(
             except skip:
                 continue
         yield (meta.get("title") or meta["id"]), texts
+
+
+def collect(
+    docs: Sequence[dict],
+    *,
+    read: Callable[[str, str], str],
+    title: str,
+    form: str = DFLT_FORM,
+) -> dict:
+    """The references of ``docs`` (their meta) in ``form``, with the counts the page shows.
+
+    ``{text, items, without, count}``: ``items`` documents had references, ``without`` had none,
+    ``count`` lines of references (``grouped``: entries; the others: output lines or addresses).
+    ``text`` is empty when none had any. Every surface (the HTTP route, ``annals references``,
+    MCP) reads references through here.
+    """
+    items = list(doc_reference_texts(((m, m.get("files", [])) for m in docs), read=read))
+    text = combine_references(items, title=title, form=form)
+    sections = [[s for t in texts for s in reference_sections(t)] for _, texts in items]
+    with_refs = sum(1 for secs in sections if secs)
+    if form == "grouped":
+        count = sum(len(reference_entries(s)) for secs in sections for s in secs)
+    else:  # one line per entry (deduped, after its heading) or per address
+        count = sum(
+            1 for ln in text.splitlines() if ln.strip() and not ln.startswith("#")
+        )
+    return {
+        "text": text,
+        "items": with_refs,
+        "without": len(docs) - with_refs,
+        "count": count,
+    }

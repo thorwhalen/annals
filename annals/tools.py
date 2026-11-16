@@ -575,6 +575,47 @@ def aggregate(
     return result.data.decode("utf-8")
 
 
+def references(
+    ref: str,
+    *,
+    form: str = "grouped",
+    target: str | None = None,
+    to: str | None = None,
+) -> str:
+    """The references of a document or a group, as its page's References action gives them.
+
+    ``ref`` is a group's or a document's id or link. ``form``: ``grouped`` (each document's
+    references section as it is), ``deduped`` (every entry once, numbers removed) or ``urls``
+    (one address per line, nothing else: what a notebook takes as pasted sources). Documents
+    with no references section are left out; none at all is an error.
+    """
+    from annals import references as refs
+
+    if form not in refs.FORMS:
+        raise ValueError(f"form must be one of {', '.join(refs.FORMS)}, not {form!r}")
+    store = _store(_readable(load_settings(target=target, to=to)))
+    kind, name = _parse_ref(ref)
+    try:
+        if kind == "doc":
+            raise KeyError(name)
+        g, docs = store.group_docs(name)
+        title = g.get("title") or g["id"]
+    except (KeyError, ValueError):
+        if kind == "group":
+            raise
+        meta = store.meta(name)
+        title, docs = meta.get("title") or meta["id"], [meta]
+    found = refs.collect(
+        [m for m in docs if not m.get("in_trash")],
+        read=store.read_text,
+        title=title,
+        form=form,
+    )
+    if not found["text"]:
+        raise ValueError(f"no references section in {title!r}")
+    return found["text"]
+
+
 def configure(
     *,
     target: str | None = None,
@@ -958,14 +999,34 @@ def listen(
     *,
     minutes: int = 5,
     force: bool = False,
+    also: list[str] | None = None,
     target: str | None = None,
     to: str | None = None,
 ) -> dict:
-    """Ask for a spoken overview of a document, as its page's Listen button does. Spends money."""
+    """Ask for a spoken overview of a document, as its page's Listen button does. Spends money.
+
+    ``also`` (more document ids) asks for ONE overview of all of them together, as the page
+    does for a pick: their text is put in one document (made when the worker starts the job),
+    and the same documents at the same versions reuse it. ``force`` then does not apply.
+    """
     from annals import overview
+    from annals.config import MAX_AGGREGATE_BYTES
 
     store, requests = _overviews_here(target=target, to=to)
-    return overview.request(store, requests, doc_id, minutes=minutes, force=force)
+    if not also:
+        return overview.request(store, requests, doc_id, minutes=minutes, force=force)
+    ids = list(dict.fromkeys([doc_id, *also]))
+    docs = [m for m in map(store.meta, ids) if not m.get("in_trash")]
+    if not docs:
+        raise ValueError("none of these documents can be read")
+    return overview.request_combined(
+        store,
+        requests,
+        docs,
+        title=f"{len(docs)} documents together",
+        minutes=minutes,
+        max_bytes=MAX_AGGREGATE_BYTES,
+    )
 
 
 def listen_work(
@@ -1027,6 +1088,7 @@ _dispatch_funcs[:] = [
     group,
     groups,
     aggregate,
+    references,
     copy,
     share,
     shares,
@@ -1056,6 +1118,7 @@ EFFECTS = {
     "group": "write",
     "groups": "read",
     "aggregate": "file",
+    "references": "read",
     "copy": "write",
     "share": "write",
     "shares": "read",

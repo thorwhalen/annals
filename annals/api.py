@@ -98,10 +98,7 @@ from annals.notebook import notebook_sources, source_scope
 from annals.references import (
     DFLT_FORM as DFLT_REFERENCE_FORM,
     FORMS as REFERENCE_FORMS,
-    combine_references,
-    doc_reference_texts,
-    reference_entries,
-    reference_sections,
+    collect as collect_references,
 )
 from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
@@ -716,37 +713,20 @@ def _mk_api(
 
         def make() -> Response:
             title, docs = _selection(doc, group)
-            items = list(
-                doc_reference_texts(
-                    ((m, m.get("files", [])) for m in docs), read=store.read_text
-                )
+            found = collect_references(
+                docs, read=store.read_text, title=title, form=form
             )
-            text = combine_references(items, title=title, form=form)
-            if not text:
+            if not found["text"]:
                 raise HTTPException(404, "no references section in these documents")
-            sections = [
-                [s for t in texts for s in reference_sections(t)] for _, texts in items
-            ]
-            with_refs = sum(1 for secs in sections if secs)
-            if form == "grouped":
-                count = sum(
-                    len(reference_entries(s)) for secs in sections for s in secs
-                )
-            else:  # one line per entry (deduped, after its heading) or per address
-                count = sum(
-                    1
-                    for ln in text.splitlines()
-                    if ln.strip() and not ln.startswith("#")
-                )
             response = markdown_response(
-                text,
+                found["text"],
                 title=f"{title} references",
                 download=download,
                 ext="txt" if form == "urls" else "md",
             )
-            response.headers["X-Annals-Items"] = str(with_refs)
-            response.headers["X-Annals-Without"] = str(len(docs) - with_refs)
-            response.headers["X-Annals-Count"] = str(count)
+            response.headers["X-Annals-Items"] = str(found["items"])
+            response.headers["X-Annals-Without"] = str(found["without"])
+            response.headers["X-Annals-Count"] = str(found["count"])
             return response
 
         return await anyio.to_thread.run_sync(make)

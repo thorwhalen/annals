@@ -490,3 +490,33 @@ def test_ls_may_filter_on_recorded_provenance_and_refuses_a_session_conflict(tmp
     err = io.StringIO()
     assert run(["ls", "--meta", "session=a", "--session", "b"], out=io.StringIO(), err=err) == 1
     assert "twice" in err.getvalue()
+
+
+def test_references_from_the_command_line_match_the_page(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    a, b = tmp_path / "a.md", tmp_path / "b.md"
+    a.write_text("# A\n\nBody.\n\n## References\n\n[1] Foo. https://example.com/foo\n")
+    b.write_text("# B\n\nNo references here.\n")
+    ids = [_json(["publish", str(p), "--json"])["id"] for p in (a, b)]
+    group = _json(["publish", str(a), "--json", "--group", "G"])["group_id"]
+    out = io.StringIO()
+    assert _run(["references", ids[0], "--form", "urls"], out) == 0
+    assert out.getvalue().strip() == "https://example.com/foo"
+    out = io.StringIO()
+    assert _run(["references", group], out) == 0 and "References for G" in out.getvalue()
+    err = io.StringIO()
+    assert run(["references", ids[1]], out=io.StringIO(), err=err) == 1 and "no references" in err.getvalue()
+
+
+def test_listen_takes_several_documents_for_one_overview(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    ids = []
+    for name in ("a", "b"):
+        f = tmp_path / f"{name}.md"
+        f.write_text(f"# {name}\n\nSome text about {name}.")
+        ids.append(_json(["publish", str(f), "--json"])["id"])
+    res = _json(["listen", ids[0], "--also", ids[1]])
+    assert res["doc"] is None  # the combined document is made when the worker starts the job
+    assert res["listen"]["state"] in {"queued", "waiting"}
+    err = io.StringIO()
+    assert run(["listen", ids[0], "--also", "nope-nope"], out=io.StringIO(), err=err) == 1
