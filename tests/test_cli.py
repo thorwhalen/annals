@@ -621,3 +621,25 @@ def test_export_errors_are_one_line(tmp_path, monkeypatch):
     _json(["trash", doc])
     err = io.StringIO()
     assert run(["shareable", doc], out=io.StringIO(), err=err) == 1 and "restore" in err.getvalue()
+
+
+def test_serve_can_turn_overviews_on_and_refuses_it_without_a_login_off_this_machine(monkeypatch):
+    import sys
+
+    import annals.api as api
+
+    seen = {}
+    monkeypatch.setattr(api, "mk_app", lambda **kw: seen.update(kw) or object())
+    monkeypatch.setitem(sys.modules, "uvicorn", type("U", (), {"run": staticmethod(lambda *a, **k: None)}))
+    for var in ("ANNALS_OVERVIEWS", "ANNALS_WHOAMI_URL", "ANNALS_BASIC_USER", "ANNALS_BASIC_PASSWORD", "ANNALS_ALLOWED_USERS"):
+        monkeypatch.delenv(var, raising=False)
+    assert run(["serve", "--overviews", "*"], out=io.StringIO(), err=io.StringIO()) == 0
+    assert seen["overviews"] == "*"
+    seen.clear()
+    assert run(["serve"], out=io.StringIO(), err=io.StringIO()) == 0 and seen["overviews"] is None
+    for argv, said in [
+        (["serve", "--overviews", "*", "--host", "0.0.0.0", "--allow-open"], "no login"),
+        (["serve", "--overviews", "me@example.com"], "login that names them"),
+    ]:
+        err = io.StringIO()
+        assert run(argv, out=io.StringIO(), err=err) == 1 and said in err.getvalue(), argv

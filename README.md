@@ -136,7 +136,7 @@ Or only for some readers. The others see no Listen button, the overview routes a
 app = mk_api(overviews={"me@example.com"})  # names as the login gives them
 ```
 
-`annals serve` and the `annals.api:mk_app` factory read the same choice from `ANNALS_OVERVIEWS`: unset for off, `*` for every reader, or names separated by commas.
+`annals serve --overviews '*'` turns it on without host code (or reader names separated by commas, as your login names them; with no login it is for this machine only, since anyone reaching the page could spend money); `annals serve` and the `annals.api:mk_app` factory also read the same choice from `ANNALS_OVERVIEWS`: unset for off, `*` for every reader, or names separated by commas. What the command may rely on and owes is written down in `misc/docs/design.md` ("The overview engine contract").
 
 A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:
 

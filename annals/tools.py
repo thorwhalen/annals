@@ -1064,6 +1064,7 @@ def serve(
     data_dir: str | None = None,
     base_path: str = "/annals",
     allow_open: bool = False,
+    overviews: str | None = None,
 ) -> None:
     """Serve the annals page and API (needs ``pip install 'annals[server]'``).
 
@@ -1071,6 +1072,11 @@ def serve(
     behind an existing login, ``ANNALS_BASIC_USER`` + ``ANNALS_BASIC_PASSWORD`` for HTTP Basic,
     nothing for an open server on localhost. A host reachable beyond this machine with no auth
     configured is refused unless ``allow_open`` (``--allow-open``) says something else gates it.
+    ``overviews`` (``--overviews '*'``, or reader names separated by commas) offers the Listen
+    button to those the login lets in (unset: ``ANNALS_OVERVIEWS`` decides, and unset it is
+    off; ``--overviews ''`` forces it off). It spends money, needs ``ANNALS_OVERVIEW_COMMAND``
+    and a worker (``annals listen-work`` on a timer), and a server with no login serves it
+    only on this machine.
     """
     from annals.api import serve as _serve
 
@@ -1080,6 +1086,7 @@ def serve(
         data_dir=data_dir,
         base_path=base_path,
         allow_open=allow_open,
+        overviews=overviews,
     )
 
 
