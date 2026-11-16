@@ -49,7 +49,12 @@ def test_publish_without_link_check_is_silent(tmp_path, monkeypatch):
 
 
 def test_a_colour_is_not_an_issue_but_a_real_reference_still_is():
-    got = [m.ref for m in unlinked_mentions("Surface #121212, text #0b0b12; fixed in #31 and o/r#121212.")]
+    got = [
+        m.ref
+        for m in unlinked_mentions(
+            "Surface #121212, text #0b0b12; fixed in #31 and o/r#121212."
+        )
+    ]
     assert got == ["#31", "o/r#121212"]
 
 
@@ -61,3 +66,33 @@ def test_the_shapes_of_one_message_are_still_found():
         "On 10-29 Karl wrote that it broke.",
     ]:
         assert [m.kind for m in unlinked_mentions(line)] == ["message"], line
+
+
+def test_more_real_shapes_are_found():
+    for line in [
+        "the Slack message 2026-10-29 says so",
+        "Karl's 10-29 message",
+        "Karl replied 10-29: fine.",
+        "- 10-29: Karl wrote that it broke",
+        "2026-10-29 Karl wrote that it broke",
+        "| Karl | said on 10-29 |",
+        "O'Brien's message of 10-29 and Jean-Luc's reply from 10-30",
+        "Karl's post of 10-29",
+    ]:
+        assert [m.kind for m in unlinked_mentions(line)] == ["message"], line
+
+
+def test_prose_with_a_date_and_a_conversation_word_far_apart_is_not_flagged():
+    for line in [
+        "Released on 2026-05-01; its documentation said nothing about this.",
+        "archived on 2026-09-18, as the README said",
+        "The deadline of 2026-12-01 was set; nobody replied.",
+        "Updated 10-29: the reply rate is 4.",
+        "at 10-29% load the message queue grows",
+        "| archived, last push 2026-09-18 | can post to a URL |",
+    ]:
+        assert unlinked_mentions(line) == [], line
+
+
+def test_eight_digit_colours_too():
+    assert unlinked_mentions("Overlay #12121280 on #121212.") == []

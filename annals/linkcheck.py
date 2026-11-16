@@ -9,7 +9,7 @@ Two kinds, both in markdown or plain text (code spans and fenced blocks are igno
 
 - ``issue``: a GitHub-style reference, ``owner/repo#12`` or a bare ``#12``, outside a link;
 - ``message``: a line that points at one message (a message, a thread, a DM, a reply, a
-  post, someone who asked, said or wrote, or a ``#channel``) tied to a date ("said on <date>", "message of <date>"),
+  post, someone who asked, said or wrote, or a ``#channel``) tied to a date,
   and has no web address at all. A dated pointer to a conversation names one message, so it should be
   its permalink. Headings and date ranges ("2026-10-04 → 2026-11-07") are periods, not
   messages, and are skipped.
@@ -50,26 +50,34 @@ URL = re.compile(r"https?://\S+")
 MD_LINK = re.compile(r"!?\[[^\]]*\]\([^)]*\)|<https?://[^>]+>")
 #: an inline code span
 CODE_SPAN = re.compile(r"`[^`]*`")
-#: a GitHub-style issue or PR reference, qualified or bare
-ISSUE_REF = re.compile(r"(?<![\w/&#])(?:[A-Za-z0-9][\w.-]*/[\w.-]+)?#\d+\b")
-#: a bare ``#`` and six digits (``#121212``) is a colour: no tracker has a hundred thousand issues
-COLOUR = re.compile(r"#\d{6}\b")
+#: a GitHub-style issue or PR reference, qualified or bare. A bare ``#`` and six or eight
+#: digits (``#121212``, ``#12121280``) is a colour far more often than an issue
+ISSUE_REF = re.compile(
+    r"(?<![\w/&#])(?:[A-Za-z0-9][\w.-]*/[\w.-]+#\d+|#(?!\d{6}\b|\d{8}\b)\d+)\b"
+)
 #: words that point at one message, and a #channel (letters, not a number)
 CONVERSATION = re.compile(
-    r"\b(?:message|thread|DM|e-?mail|reply|replied|posted|asked|said|wrote)\b"
+    r"\b(?:message|thread|DM|e-?mail|reply|replied|post|posted|asked|said|wrote)\b"
     r"|(?<![\w&/])#[a-z][\w-]*[a-z]\b",
     re.IGNORECASE,
 )
 #: a date: 2026-10-29, or the short 10-29 form reports use within one year
-_D = r"\b(?:\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])\b"
+_D = r"(?<![\d-])\b(?:\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])\b"
 DATE = re.compile(_D)
 #: a period between two dates, which names no single message
 DATE_RANGE = re.compile(_D + r"\s*(?:→|->|–|—|to|-)\s*" + _D)
-#: how many words may lie between a conversation word and its date: "said on <date>",
-#: "<name>'s message of <date>", "the thread from <date>"
-MAX_WORDS_APART = 4
-#: the word that ties them: "said ON <date>", "message OF <date>", "thread FROM <date>"
-LINKER = re.compile(r"\b(?:on|of|from|dated|at)\b", re.IGNORECASE)
+_W = CONVERSATION.pattern
+#: how a conversation word is tied to the date of one message. Never across clause
+#: punctuation (``; . |``) and never over more than a few words, so "its documentation
+#: said ... released 2026-05-01" and table cells of a survey are not messages:
+#: "said on <date>", "the thread from <date>"; "<date>: Karl wrote"; "Karl's <date> email"
+_GAP = r"[^\w;.|]+"
+MESSAGE_DATE = re.compile(
+    rf"(?:{_W})(?:{_GAP}[\w'’-]+){{0,3}}{_GAP}(?P<d>{_D})(?![%\d])"
+    rf"|(?:^\W*|\bon{_GAP})(?P<d2>{_D})(?:{_GAP}[\w'’-]+){{0,2}}{_GAP}(?:{_W})"
+    rf"|(?P<d3>{_D}){_GAP}(?:{_W})",
+    re.IGNORECASE,
+)
 #: how many mentions a warning lists before it says "and N more"
 MAX_LISTED = 5
 
@@ -95,17 +103,9 @@ def _prose_lines(text: str) -> Iterator[tuple[int, str]]:
 
 
 def _date_of_a_conversation(line: str) -> str | None:
-    """The date of the first conversation word and date that sit close together, else None."""
-    line = DATE_RANGE.sub(" ", line)
-    dates = list(DATE.finditer(line))
-    for word in CONVERSATION.finditer(line):
-        for date in dates:
-            lo, hi = sorted((word, date), key=lambda m: m.start())
-            between = line[lo.end() : hi.start()]
-            tied = LINKER.search(between) or LINKER.search(line[max(0, date.start() - 4) : date.start()])
-            if len(between.split()) <= MAX_WORDS_APART and tied:
-                return date.group(0)
-    return None
+    """The date of the first conversation word tied to a date, else None."""
+    m = MESSAGE_DATE.search(DATE_RANGE.sub(" ", line))
+    return m and (m.group("d") or m.group("d2") or m.group("d3"))
 
 
 def unlinked_mentions(text: str) -> list[Mention]:
@@ -114,13 +114,9 @@ def unlinked_mentions(text: str) -> list[Mention]:
     for n, line in _prose_lines(text):
         bare = MD_LINK.sub("", line)
         for m in ISSUE_REF.finditer(URL.sub("", bare)):
-            if "/" not in m.group(0) and COLOUR.fullmatch(m.group(0)):
-                continue
             found.append(Mention(n, "issue", m.group(0)))
         if line.lstrip().startswith("#") and not ISSUE_REF.match(line.lstrip()):
             continue  # a heading names a period or a subject, not one message
-        if line.lstrip().startswith("|"):
-            continue  # a table row is a survey cell, not a pointer to one message
         if not URL.search(line):
             date = _date_of_a_conversation(bare)
             if date:
