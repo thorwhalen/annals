@@ -48,3 +48,43 @@ def test_a_document_without_text_is_found_by_its_title(tmp_path):
     store.publish(img, title="Wasp photo")
     (row,) = list(records(target=str(tmp_path)))
     assert row["text"].startswith("Wasp photo")
+
+
+def test_html_and_folder_documents_bring_their_text(tmp_path):
+    store = _store(tmp_path)
+    store.publish(text="<html><body><script>var x=1</script><p>Wasps build paper nests.</p></body></html>", title="Page", filename="p.html")
+    folder = tmp_path / "f"
+    folder.mkdir()
+    (folder / "01-a.md").write_text("# A\n\nalpha text")
+    (folder / "02-b.md").write_text("# B\n\nbeta text")
+    store.publish(folder, title="Notes")
+    got = {r["title"]: r["text"] for r in records(target=str(tmp_path))}
+    assert "paper nests" in got["Page"] and "var x" not in got["Page"]
+    assert "alpha text" in got["Notes"] and "beta text" in got["Notes"]
+
+
+def test_tag_case_and_a_publisher_noindex_survive_an_owner_retag(tmp_path):
+    from annals.catalog import mk_catalog
+    from annals.sources import PUBLISHED, mk_key
+
+    store = _store(tmp_path)
+    store.publish(text="# One\n\nx", title="One", tags=["NoIndex"])
+    two = store.publish(text="# Two\n\nx", title="Two", tags=["private"])
+    mk_catalog(store).set_tags(mk_key(PUBLISHED, two["id"]), ["research"])  # the owner's tags replace it
+    assert list(records(target=str(tmp_path))) == []
+
+
+def test_a_remote_target_is_refused_not_indexed_partially(tmp_path):
+    import pytest
+
+    with pytest.raises(ValueError, match="where they are"):
+        list(records(target="somehost:/srv/annals"))
+
+
+def test_a_huge_text_is_cut(tmp_path, monkeypatch):
+    from annals import records as mod
+
+    monkeypatch.setattr(mod, "MAX_TEXT_CHARS", 50)
+    _store(tmp_path).publish(text="# Big\n\n" + "word " * 100, title="Big")
+    (row,) = list(records(target=str(tmp_path)))
+    assert len(row["text"]) == 50
