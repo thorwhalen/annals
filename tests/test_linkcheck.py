@@ -46,3 +46,18 @@ def test_publish_without_link_check_is_silent(tmp_path, monkeypatch):
     out, err = io.StringIO(), io.StringIO()
     assert run(["publish", str(src), "--no-link-check"], out=out, err=err) == 0
     assert "without a link" not in err.getvalue()
+
+
+def test_a_colour_is_not_an_issue_but_a_real_reference_still_is():
+    got = [m.ref for m in unlinked_mentions("Surface #121212, text #0b0b12; fixed in #31 and o/r#121212.")]
+    assert got == ["#31", "o/r#121212"]
+
+
+def test_the_shapes_of_one_message_are_still_found():
+    for line in [
+        "Karl said on 2026-10-29 that it broke.",
+        "See Karl's message of 10-29.",
+        "The thread from 2026-10-29 has it.",
+        "On 10-29 Karl wrote that it broke.",
+    ]:
+        assert [m.kind for m in unlinked_mentions(line)] == ["message"], line
