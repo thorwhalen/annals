@@ -304,7 +304,9 @@ class Requests:
         for path in self.folder.glob("*.json"):
             try:
                 stamped.append((path.stat().st_mtime, path.stem))
-            except FileNotFoundError:  # deleted since the listing: not a request any more
+            except (
+                FileNotFoundError
+            ):  # deleted since the listing: not a request any more
                 continue
         return [stem for _, stem in sorted(stamped)]
 
@@ -495,7 +497,9 @@ def _shown_unmade(state: dict, record: dict) -> bool:
     )
 
 
-def _unmade_combination(store, requests: Requests, rid: str, record: dict) -> dict | None:
+def _unmade_combination(
+    store, requests: Requests, rid: str, record: dict
+) -> dict | None:
     """An :func:`unmade` row for a queued combination: no ``doc``, but what to ask again with."""
     state = _combination_state(store, requests, rid)
     if not _shown_unmade(state, record):
@@ -789,17 +793,19 @@ def request_combined(
     rid = combined_request_id(key)
     if meta := find_combined(store, key):
         state = _combination_state(store, requests, rid)
-        if state["state"] == RUNNING:  # the worker is on it: it files the result, not this
+        if (
+            state["state"] == RUNNING
+        ):  # the worker is on it: it files the result, not this
             return {"doc": meta["id"], "listen": state}
-        requests.delete(rid)  # made since (or by a worker that stopped after): the document leads
+        requests.delete(
+            rid
+        )  # made since (or by a worker that stopped after): the document leads
         return {
             "doc": meta["id"],
             "listen": request(store, requests, meta["id"], minutes=minutes),
         }
     try:  # run to the end: the limit is on all the text, not on the first document
-        speakable = sum(
-            1 for _ in _combined_pairs(store, members, max_bytes=max_bytes)
-        )
+        speakable = sum(1 for _ in _combined_pairs(store, members, max_bytes=max_bytes))
     except TooLarge as e:
         raise ValueError(str(e)) from None
     if not speakable:
@@ -1084,9 +1090,13 @@ def _step(
         except Exception as e:  # e.g. nothing left to speak: the request fails, free
             return fail(e)
         if (other := requests.get(target)) and other.get("state") in ACTIVE | {DONE}:
-            requests.delete(doc_id)  # its document has the request already: nothing to spend
+            requests.delete(
+                doc_id
+            )  # its document has the request already: nothing to spend
             return {"doc": target, "state": other["state"]}
-        if requests.get(doc_id) is None:  # taken back (asked for again) while its document was made
+        if (
+            requests.get(doc_id) is None
+        ):  # taken back (asked for again) while its document was made
             return None
     if down:
         requests.put_mark({**requests.mark(), "tried": _now()})  # this one is the probe
@@ -1127,7 +1137,9 @@ def _step(
             held = state_of(store, requests, store.meta(target))["state"]
         except (KeyError, ValueError, OSError):
             held = NONE
-        if held != RUNNING:  # RUNNING: another worker's job; anything else yields to this result
+        if (
+            held != RUNNING
+        ):  # RUNNING: another worker's job; anything else yields to this result
             requests.put(
                 target, {k: v for k, v in done.items() if k not in ("kind", "combine")}
             )
