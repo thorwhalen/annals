@@ -12,7 +12,17 @@ from annals.tools import _dispatch_funcs
 
 #: the shape ``publish`` (or ``share``) returns for one link; only that shape prints bare
 PUBLISH_KEYS = frozenset(
-    {"id", "title", "url", "group_id", "group_url", "warning", "note", "markdown", "pdf"}
+    {
+        "id",
+        "title",
+        "url",
+        "group_id",
+        "group_url",
+        "warning",
+        "note",
+        "markdown",
+        "pdf",
+    }
 )
 #: a share's other forms, said on stderr beside the bare link: (key, what it is for)
 LINK_FORMS = (

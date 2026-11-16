@@ -146,7 +146,10 @@ class RenderSlots:
 
     def acquire(self, key: str) -> bool:
         with self._lock:
-            if sum(self._busy.values()) >= self.total or self._busy.get(key, 0) >= self.per_key:
+            if (
+                sum(self._busy.values()) >= self.total
+                or self._busy.get(key, 0) >= self.per_key
+            ):
                 return False
             self._busy[key] = self._busy.get(key, 0) + 1
             return True
@@ -417,7 +420,10 @@ def mk_share_api(
             raise HTTPException(413, "this page is too large to share")
         text = path.read_text(encoding="utf-8", errors="replace")
         body = _filtered(rec, request, doc_id, rel, files, text).encode("utf-8")
-        body = with_base(serve_html(body, media_relay=False), scope.raw_url(doc_id, dir_of(rel) + "/" if dir_of(rel) else ""))
+        body = with_base(
+            serve_html(body, media_relay=False),
+            scope.raw_url(doc_id, dir_of(rel) + "/" if dir_of(rel) else ""),
+        )
         csp = f"{RAW_SANDBOX_CSP}; frame-ancestors 'none'"
         headers = {**NO_STORE, "Content-Security-Policy": csp}
         return Response(body, media_type="text/html; charset=utf-8", headers=headers)
@@ -514,9 +520,7 @@ def mk_share_api(
         """One document's page, or, as ``<id>.md`` / ``<id>.pdf``, that document as a file."""
         stem, dot, ext = doc_id.rpartition(".")
         if dot and ext in _FILE_FORMATS:
-            return await _as_file(
-                token, request, ext, only=stem, form_when_locked=True
-            )
+            return await _as_file(token, request, ext, only=stem, form_when_locked=True)
         return await anyio.to_thread.run_sync(_page, token, request, doc_id)
 
     @app.get(f"/{{token}}/{SHARE_FILE}.{{ext}}")

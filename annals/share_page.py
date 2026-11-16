@@ -143,7 +143,9 @@ def designed_page(meta: Mapping, files: Sequence[str]) -> str | None:
 
 _BASE_RE = re.compile(rb"<base\b[^>]*>", re.I)
 #: a page's own referrer policy would override the share's ``no-referrer`` (the link is a key)
-_REFERRER_META_RE = re.compile(rb"<meta\b[^>]*\bname\s*=\s*[\"']?referrer\b[^>]*>", re.I)
+_REFERRER_META_RE = re.compile(
+    rb"<meta\b[^>]*\bname\s*=\s*[\"']?referrer\b[^>]*>", re.I
+)
 _DOCTYPE_AT_START = re.compile(rb"(?:\xef\xbb\xbf)?\s*<!doctype[^>]*>", re.I)
 
 
@@ -214,7 +216,9 @@ def _doc_html(
                     f'<p class="muted"><a href="{html.escape(designed)}">'
                     "Open the page as designed</a></p>"
                 )
-            parts.append(_html_doc(text, doc_id, rel, files, scope=scope, demote=demote))
+            parts.append(
+                _html_doc(text, doc_id, rel, files, scope=scope, demote=demote)
+            )
         shown |= set(references(text, kind_of(rel), from_dir=dir_of(rel))["files"])
     if not shown:
         images = [f for f in files if kind_of(f) == "image"][:STATIC_MAX_IMAGES]
