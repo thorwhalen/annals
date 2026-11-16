@@ -300,8 +300,13 @@ class Requests:
         """Documents with a request, oldest request first."""
         if not self.folder.is_dir():
             return []
-        paths = sorted(self.folder.glob("*.json"), key=lambda p: p.stat().st_mtime)
-        return [p.stem for p in paths]
+        stamped = []
+        for path in self.folder.glob("*.json"):
+            try:
+                stamped.append((path.stat().st_mtime, path.stem))
+            except FileNotFoundError:  # deleted since the listing: not a request any more
+                continue
+        return [stem for _, stem in sorted(stamped)]
 
     def started_today(self) -> int:
         """How many overviews were started in the last 24 hours."""
@@ -496,9 +501,20 @@ def _unmade_combination(store, requests: Requests, rid: str, record: dict) -> di
     if not _shown_unmade(state, record):
         return None
     spec = record.get("combine") or {}
+    made = None  # failed after its document was made: ask again on the document
+    try:
+        found = find_combined(
+            store,
+            combined_key(
+                _members(store, [store.meta(i) for i in spec.get("docs") or []])
+            ),
+        )
+        made = found["id"] if found else None
+    except (KeyError, ValueError, OSError):
+        pass
     return {
         **state,
-        "doc": None,
+        "doc": made,
         "title": spec.get("title") or "Documents together",
         "created": None,
         "requested": record.get("requested"),
@@ -772,6 +788,9 @@ def request_combined(
     key = combined_key(members)
     rid = combined_request_id(key)
     if meta := find_combined(store, key):
+        state = _combination_state(store, requests, rid)
+        if state["state"] == RUNNING:  # the worker is on it: it files the result, not this
+            return {"doc": meta["id"], "listen": state}
         requests.delete(rid)  # made since (or by a worker that stopped after): the document leads
         return {
             "doc": meta["id"],
@@ -793,7 +812,22 @@ def request_combined(
                 "group": group, "max_bytes": max_bytes,
             },
         )  # fmt: skip
+    _forget_failed_combinations(requests, rid, members)
     return {"doc": None, "listen": _combination_state(store, requests, rid)}
+
+
+def _forget_failed_combinations(requests: Requests, keep: str, members) -> None:
+    """Drop older failed requests for the same documents: this one is their retry."""
+    ids = {m["id"] for m in members}
+    for rid in requests.ids():
+        record = requests.get(rid) or {}
+        if (
+            rid != keep
+            and record.get("kind") == COMBINE_KIND
+            and record.get("state") == FAILED
+            and set((record.get("combine") or {}).get("docs") or []) == ids
+        ):
+            requests.delete(rid)
 
 
 def _make_combined(store, record: dict) -> str:
@@ -1052,6 +1086,8 @@ def _step(
         if (other := requests.get(target)) and other.get("state") in ACTIVE | {DONE}:
             requests.delete(doc_id)  # its document has the request already: nothing to spend
             return {"doc": target, "state": other["state"]}
+        if requests.get(doc_id) is None:  # taken back (asked for again) while its document was made
+            return None
     if down:
         requests.put_mark({**requests.mark(), "tried": _now()})  # this one is the probe
     requests.note_start(doc_id)
@@ -1087,7 +1123,11 @@ def _step(
     if target == doc_id:
         requests.put(doc_id, done)
     else:  # a combination: its document now holds the request, as any other document does
-        if (requests.get(target) or {}).get("state") not in ACTIVE:  # not one asked for since
+        try:
+            held = state_of(store, requests, store.meta(target))["state"]
+        except (KeyError, ValueError, OSError):
+            held = NONE
+        if held != RUNNING:  # RUNNING: another worker's job; anything else yields to this result
             requests.put(
                 target, {k: v for k, v in done.items() if k not in ("kind", "combine")}
             )

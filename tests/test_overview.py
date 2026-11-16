@@ -700,3 +700,44 @@ def test_unmade_lists_a_combination_with_what_to_ask_again_with(client, store, t
     assert again["doc"] is None and len(requests.ids()) == 1
     _work(store, requests, tmp_path)
     assert client.get("/audio").json()["unmade"] == []
+
+
+def test_ids_tolerates_a_request_deleted_while_it_lists(requests, monkeypatch):
+    from pathlib import Path
+
+    requests.put("a", {"state": "queued"})
+    requests.put("b", {"state": "queued"})
+    real = Path.stat
+
+    def stat(self, *args, **kwargs):
+        if self.name == "a.json":
+            raise FileNotFoundError(self.name)
+        return real(self, *args, **kwargs)
+
+    monkeypatch.setattr(Path, "stat", stat)
+    assert requests.ids() == ["b"]
+
+
+def test_a_second_press_while_the_worker_runs_it_leaves_one_request(client, store, trio, requests, tmp_path):
+    group, ids = trio
+    body = {"docs": ids, "group": group["id"]}
+    client.post("/overviews", json=body)
+    (rid,) = requests.ids()
+    record = requests.get(rid)
+    doc = overview._make_combined(store, record)
+    requests.put(rid, {**record, "state": "running", "started": overview._now()})  # the worker is on it
+    out = client.post("/overviews", json=body).json()
+    assert out["doc"] == doc and out["listen"]["state"] == "running"
+    assert requests.ids() == [rid]  # nothing queued on the document, the running one not deleted
+    assert requests.get(rid)["state"] == "running"
+
+
+def test_a_failed_combination_is_dropped_when_its_retry_succeeds_in_being_asked(client, store, trio, requests):
+    group, ids = trio
+    body = {"docs": ids, "group": group["id"]}
+    client.post("/overviews", json=body)
+    (rid,) = requests.ids()
+    requests.put(rid, {**requests.get(rid), "state": "failed", "error": "x"})
+    store.publish(text="# Bees\n\nChanged.", replace=ids[0])  # the retry is a new key
+    client.post("/overviews", json=body)
+    assert len(requests.ids()) == 1 and requests.ids() != [rid]
