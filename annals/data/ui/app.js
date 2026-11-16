@@ -1949,6 +1949,7 @@
      a retry adds nothing twice, and nothing heard while events were held back is lost. */
   function listenTracker(docId, onSaved) {
     var played = [], sentS = 0, duration = null, position = null, moved = false, ends = [], stopped = false, everPlayed = false;
+    var busy = false, again = false;   /* one report in flight at a time, so the last one drawn is the last one sent */
     function playId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
     var play = playId();
     function sample(s) {
@@ -1964,6 +1965,8 @@
     }
     function flush(leaving) {
       if (!moved && !ends.length) return Promise.resolve();
+      if (busy && !leaving) { again = true; return Promise.resolve(); }   /* sent when the current one is back; each report carries the whole played range */
+      busy = true;
       var body = { spans: played.slice(0, 500), duration: duration };
       if (moved) body.position = position;
       var end = ends[0], heard = total(played);
@@ -1973,10 +1976,14 @@
         .then(function (rec) {
           sentS = Math.max(sentS, heard);
           if (end && ends[0] === end) ends.shift();
-          if (ends.length) flush(leaving);
           if (rec && onSaved && !stopped) onSaved(rec);
-        })
-        .catch(function () { if (body.position !== undefined) moved = true; });  /* sent again next time */
+          return ends.length > 0;   /* another play ended meanwhile */
+        }, function () { if (body.position !== undefined) moved = true; return false; })  /* sent again next time */
+        .catch(function () { return false; })
+        .then(function (more) {
+          busy = false;
+          if (more || again) { again = false; flush(leaving); }
+        });
     }
     return {
       sample: sample, flush: flush, frame: null,

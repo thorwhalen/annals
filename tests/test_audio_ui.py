@@ -107,12 +107,33 @@ def test_listen_on_one_device_and_see_what_is_left_on_another(device, site):
     _status_line(tablet).wait_for()
     assert tablet.get_by_role("button", name="Start over").count() == 1
     tframe = tablet.frame_locator("iframe.frame")
+    flight = {"now": 0, "max": 0}  # progress reports in flight: one at a time, or the line can show an older record
+
+    def _sent(req):
+        if req.method == "POST" and "/listening/" in req.url:
+            flight["now"] += 1
+            flight["max"] = max(flight["max"], flight["now"])
+
+    def _done(req):
+        if req.method == "POST" and "/listening/" in req.url:
+            flight["now"] -= 1
+
+    tablet.on("request", _sent)
+    tablet.on("requestfinished", _done)
+    tablet.on("requestfailed", _done)
     tframe.locator("#play").click()  # picks up where the phone stopped
     tablet.wait_for_timeout(500)
     assert tframe.locator("body").evaluate("() => window.player.currentTime") >= 5
     # the rest of it here: between the two devices it was heard whole, so it counts as a listen
-    tablet.wait_for_function("document.querySelector('.listening [role=status]').textContent.indexOf('Done') === 0", timeout=15000)
+    # "Done" shows when the heard share reaches 100%; the listen to the end is recorded by the
+    # next report, so wait for that text instead of reading it the moment "Done" appears
+    tablet.wait_for_function(
+        "(t => t.indexOf('Done') === 0 && t.indexOf('heard to the end once') > 0)"
+        "(document.querySelector('.listening [role=status]').textContent)",
+        timeout=15000,
+    )
     assert "heard to the end once" in _status_line(tablet).inner_text()
+    assert flight["max"] == 1
 
     phone.goto(f"{site['base']}/audio")
     phone.locator(".audio-row").first.wait_for()
