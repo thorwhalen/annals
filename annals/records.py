@@ -61,9 +61,15 @@ def _text_of(store: DocStore, meta: dict) -> str:
             text = html_to_text(text) if meta["kind"] == "html" else text
         else:
             pairs = list(
-                doc_markdown_files([(meta, meta.get("files", []))], read=store.read_text)
+                doc_markdown_files(
+                    [(meta, meta.get("files", []))], read=store.read_text
+                )
             )
-            text = aggregate_markdown(dict(pairs), title=meta["title"], toc=False) if pairs else ""
+            text = (
+                aggregate_markdown(dict(pairs), title=meta["title"], toc=False)
+                if pairs
+                else ""
+            )
     except (KeyError, ValueError, OSError):
         text = ""
     return (text or f"{meta['title']}\n\n{meta.get('excerpt', '')}")[:MAX_TEXT_CHARS]
