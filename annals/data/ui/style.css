@@ -47,7 +47,7 @@ header.bar nav a { margin-left: 12px; font-size: .95rem; }
 .card.has-thumb { display: flex; gap: 12px; align-items: flex-start; }
 .card-body { min-width: 0; flex: 1 1 auto; }
 .thumb { flex: 0 0 76px; width: 76px; }
-.card .title { font-weight: 600; font-size: 1.02rem; margin: 0 0 2px; }
+.card .title { overflow-wrap: anywhere; font-weight: 600; font-size: 1.02rem; margin: 0 0 2px; }
 .meta { font-size: .82rem; color: var(--muted); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .card .excerpt { margin: 6px 0 0; font-size: .9rem; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2;
   -webkit-box-orient: vertical; overflow: hidden; }
