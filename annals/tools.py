@@ -333,7 +333,7 @@ def ls(
     ``to`` lists a named target instead of the default one. The rest are exact filters,
     all of which must hold, for tools that poll: ``since`` (an ISO date or time, or an age
     like ``6h`` or ``2d``: published or replaced at or after it), ``session`` (the publishing session's
-    name, whole, case-sensitive), ``tag`` (one tag, whole) and ``meta`` (``key=value``,
+    name, whole, case-sensitive), ``tag`` (one tag the publisher gave, whole; the owner's own tags set by ``annals tag`` are not searched here) and ``meta`` (``key=value``,
     several allowed, against the document's ``source``: ``corpus=annals``). A row is
     ``{id, title, kind, tags, created, updated, source, url}``; with ``--json`` that is the contract
     (``misc/docs/design.md``), and ``total`` counts the matches before ``limit``.
@@ -419,6 +419,41 @@ def trash(
     """Move documents to the recycle bin (restorable)."""
     store = _store(load_settings(target=target, to=to))
     return {"trashed": [store.trash(i)["id"] for i in _as_list(doc_ids)]}
+
+
+def purge(
+    doc_ids: list[str], *, target: str | None = None, to: str | None = None
+) -> dict:
+    """Delete documents that are in the bin for good (not restorable). One that is not in the bin is refused."""
+    from annals.catalog import mk_catalog, purge_document
+
+    store = _store(load_settings(target=target, to=to))
+    catalog = mk_catalog(store)
+    return {
+        "purged": [purge_document(store, catalog, i)["id"] for i in _as_list(doc_ids)]
+    }
+
+
+def tag(
+    doc_id: str,
+    tags: str = "",
+    *,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Set a document's tags (comma separated; empty clears them), as the page's tag editor does.
+
+    The tags are the owner's overlay, kept apart from the document: they replace the ones the
+    publisher gave. ``doc_id`` may be the document's link. Returns the item's row.
+    """
+    from annals.catalog import mk_catalog
+    from annals.sources import PUBLISHED, mk_key
+
+    store = _store(load_settings(target=target, to=to))
+    _, ref = _parse_ref(doc_id)
+    return mk_catalog(store).set_tags(
+        mk_key(PUBLISHED, ref), [t for t in tags.split(",") if t.strip()]
+    )
 
 
 def restore(
@@ -1017,6 +1052,8 @@ _dispatch_funcs[:] = [
     show,
     trash,
     restore,
+    purge,
+    tag,
     group,
     groups,
     aggregate,
@@ -1031,3 +1068,14 @@ _dispatch_funcs[:] = [
     listen_work,
     listen_down,
 ]
+
+
+#: what only a server or a timer runs, so no caller needs it as a tool
+SERVER_SIDE = frozenset({"serve", "page_shell", "listen_work"})
+#: the operations an agent or a tool may call: every function the CLI dispatches, minus
+#: :data:`SERVER_SIDE`. The MCP server reads this list, so no operation sits on one surface alone
+TOOLS = [f for f in _dispatch_funcs if f.__name__ not in SERVER_SIDE]
+#: those that read and change nothing, for a host that wants to expose only these
+READ_ONLY = frozenset({"ls", "show", "groups", "aggregate", "shares"})
+#: those that change a store, a setting, or spend money: the rest of :data:`TOOLS`
+SIDE_EFFECTS = frozenset(f.__name__ for f in TOOLS) - READ_ONLY

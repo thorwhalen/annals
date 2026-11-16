@@ -31,7 +31,6 @@ import mimetypes
 import ipaddress
 import os
 import re
-import shutil
 import tempfile
 import warnings
 from pathlib import Path
@@ -67,7 +66,13 @@ from annals.config import (
     MAX_INLINE_TEXT_BYTES,
     default_data_dir,
 )
-from annals.catalog import Catalog, default_tags, mk_catalog
+from annals.catalog import (
+    THUMB_CACHE,
+    Catalog,
+    default_tags,
+    mk_catalog,
+    purge_document,
+)
 from annals.export import (
     aggregate_response,
     markdown_response,
@@ -156,7 +161,6 @@ LINK_REWRITE_MAX_BYTES = 5_000_000
 # show them (markdown and friends are text to a reader).
 #: thumbnail widths served; a request snaps up to the nearest, so the cache stays bounded
 THUMB_WIDTHS = (160, 320, 640)
-THUMB_CACHE = "cache/thumbs"
 #: rasters Pillow can shrink; anything else (svg) is served as itself
 THUMBNAILABLE = frozenset({".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp", ".avif"})
 TEXT_TYPE_OVERRIDES = {
@@ -537,14 +541,9 @@ def _mk_api(
         """Delete forever; only allowed for a document already in the bin."""
         _meta_or_404(store, doc_id)
         try:
-            store.purge(doc_id)
+            return purge_document(store, catalog, doc_id)
         except PermissionError as e:
             raise HTTPException(409, str(e))
-        catalog.forget(mk_key(PUBLISHED, doc_id))
-        root = store.target.local_path(".")
-        if root is not None:
-            shutil.rmtree(root / THUMB_CACHE / doc_id, ignore_errors=True)
-        return {"ok": True, "id": doc_id}
 
     @api.get("/groups")
     def list_groups() -> dict:

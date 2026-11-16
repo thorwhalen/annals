@@ -349,3 +349,27 @@ def test_since_follows_a_replaced_document(tmp_path, monkeypatch):
     assert _json(["ls", "--since", "1h"])["total"] >= 1
     err = io.StringIO()
     assert run(["ls", "--since", "yesterday-ish"], out=io.StringIO(), err=err) == 1
+
+
+def test_every_surface_reads_one_function_list():
+    from annals import mcp, tools
+
+    names = [f.__name__ for f in tools._dispatch_funcs]
+    assert {r.split(":")[1] for r in mcp._refs()} == set(names) - tools.SERVER_SIDE
+    assert tools.SERVER_SIDE <= set(names)
+    assert tools.READ_ONLY <= {f.__name__ for f in tools.TOOLS}
+    assert not tools.READ_ONLY & tools.SIDE_EFFECTS
+    assert {"aggregate", "copy", "listen", "tag", "purge"} <= set(names) - tools.SERVER_SIDE
+
+
+def test_tag_then_purge_from_the_command_line(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nbody")
+    doc = _json(["publish", str(src), "--json"])["id"]
+    assert _json(["tag", doc, "a,b"])["tags"] == ["a", "b"]
+    err = io.StringIO()
+    assert run(["purge", doc], out=io.StringIO(), err=err) == 1 and "not in the trash" in err.getvalue()
+    _json(["trash", doc])
+    assert _json(["purge", doc]) == {"purged": [doc]}
+    assert _json(["ls", "--trash"])["total"] == 0
