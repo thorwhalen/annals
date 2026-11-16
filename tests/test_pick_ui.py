@@ -212,3 +212,121 @@ def test_the_links_sheet_hands_own_agents_the_private_address(chromium, site):
         assert "/shared/" not in copied
     finally:
         ctx.close()
+
+
+# -- Select on the main list, and Add to group… (thorwhalen/annals#50) ---------------
+
+
+def _main_list(page, site):
+    page.goto(f"{site['base']}/")
+    page.locator("a.card").first.wait_for()
+
+
+def _select(page):
+    page.get_by_role("button", name="Select", exact=True).click()
+    page.locator(".pick-row").first.wait_for()
+
+
+def _open_add_to_group(page):
+    page.locator(".selbar").get_by_role("button", name="More").click()
+    page.get_by_role("menuitem", name=re.compile("^Add to group")).click()
+
+
+def _no_sideways_scroll(page):
+    return not page.evaluate(
+        "document.documentElement.scrollWidth > document.documentElement.clientWidth"
+    )
+
+
+def test_select_on_the_main_list_ticks_without_opening(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.locator(".pick-row", has_text="Bees").locator(".card").click()
+    assert phone.url.rstrip("/").endswith("/annals")  # still on the list
+    assert phone.get_by_label("Pick “Bees”").is_checked()
+    assert phone.locator(".sel-count").inner_text() == "1 picked"
+    names = [b.inner_text().strip() for b in phone.locator(".selbar button.result").all()]
+    assert names == ["Links", "One file", "Listen"]
+    phone.get_by_role("button", name="Done", exact=True).click()
+    assert phone.locator(".selbar").is_hidden() and phone.locator(".pick-row").count() == 0
+
+
+def test_one_file_of_a_pick_from_the_list(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Tides”").check()
+    phone.locator(".selbar").get_by_role("button", name="One file").click()
+    phone.wait_for_function(
+        "document.querySelector('.sheet textarea.combine-text')?.value.includes('moon')"
+    )
+    assert "hives" not in phone.locator(".sheet textarea.combine-text").input_value()
+
+
+def test_links_of_a_list_pick_asks_for_a_group_first(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    phone.locator(".selbar").get_by_role("button", name="Links").click()
+    assert "make a group" in phone.locator(".sheet").inner_text().lower()
+    assert phone.get_by_role("button", name="Make the group").count() == 1
+
+
+def test_add_to_group_makes_a_group_of_the_picked_documents(phone, site):
+    store = site["store"]
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    phone.get_by_label("Pick “Tides”").check()
+    _open_add_to_group(phone)
+    title = phone.get_by_label("Name of the new group")
+    assert title.input_value().endswith("1 more")
+    title.fill("Made by hand")
+    phone.get_by_role("button", name="Make the group").click()
+    phone.locator(".add-open").wait_for()
+    made = [g for g in store.list_groups() if g["title"] == "Made by hand"]
+    assert len(made) == 1 and set(made[0]["docs"]) == {site["bees"]["id"], site["tides"]["id"]}
+    phone.locator(".add-open").click()
+    phone.locator(".doc-head h2").wait_for()
+    assert phone.locator(".doc-head h2").inner_text() == "Made by hand"
+
+
+def test_add_to_an_existing_group(phone, site):
+    store = site["store"]
+    extra = store.publish(text="# Extra\n\nmore", title="Extra", filename="extra.md")
+    target = store.make_group("Target", [site["bees"]["id"]])
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Extra”").check()
+    _open_add_to_group(phone)
+    phone.locator(".add-pick", has_text="Target").click()
+    phone.locator(".add-open").wait_for()
+    assert store.group(target["id"])["docs"] == [site["bees"]["id"], extra["id"]]
+
+
+def test_add_to_group_from_a_groups_bar(phone, site):
+    store = site["store"]
+    source = store.make_group("Source", [site["bees"]["id"], site["tides"]["id"]])
+    phone.goto(f"{site['base']}/g/{source['id']}")
+    phone.locator(".selbar").wait_for()
+    phone.get_by_label("Pick “Tides”").check()
+    _open_add_to_group(phone)
+    phone.get_by_label("Name of the new group").fill("From a group")
+    phone.get_by_role("button", name="Make the group").click()
+    phone.locator(".add-open").wait_for()
+    made = [g for g in store.list_groups() if g["title"] == "From a group"]
+    assert made and made[0]["docs"] == [site["tides"]["id"]]
+    # the group the pick came from is not offered as a place to add to
+    assert phone.locator(".add-pick", has_text="Source").count() == 0
+
+
+def test_select_mode_does_not_scroll_sideways_and_has_thumb_sized_targets(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    assert _no_sideways_scroll(phone)
+    for el in phone.locator(".select-btn, .pick-row > .pick, .selbar button.result").all():
+        box = el.bounding_box()
+        assert box["width"] >= 44 and box["height"] >= 44
+    _open_add_to_group(phone)
+    phone.locator(".add-title").wait_for()
+    assert _no_sideways_scroll(phone)

@@ -527,6 +527,11 @@
     var applied = h("div", { class: "applied", "aria-live": "polite" });
     var countEl = h("span", { class: "count" });
     var listEl = h("div", { class: "list" });
+    /* Select: only the published documents can be picked (a folder source's items are not documents) */
+    var canSelect = scope === "published";
+    var selecting = false, picked = {};   /* picked: id -> true */
+    var selBar = h("div", { class: "selbar", role: "toolbar", "aria-label": "Act on the picked documents", hidden: "" });
+    var shownIds = [];
 
     function anySelected() { return fams.some(function (f) { return sel[f.key].length; }); }
     function urlFor() {
@@ -612,9 +617,56 @@
       applied.appendChild(h("button", { class: "btn link", onclick: function () { fams.forEach(function (f) { sel[f.key] = []; }); commit(); } }, ["Clear all"]));
     }
 
+    function pickedRows() { return rows.filter(function (r) { return picked[r.id]; }); }
+    /* the picked rows need more than a listing row holds (files, review state): fetched when a result is pressed */
+    function resolvePick(sc) {
+      return Promise.all(sc.items.map(function (m) { return api("/docs/" + m.id); })).then(function (metas) {
+        var spoken = metas.filter(function (m) { return !!m.listen; })[0];
+        return { kind: "list", items: metas, total: metas.length, listen: spoken ? { choices: spoken.listen.choices } : null };
+      });
+    }
+    function listScope() { var p = pickedRows(); return { kind: "list", items: p, total: p.length, listen: null }; }
+    function drawBar() {
+      selBar.hidden = !selecting;
+      selBar.innerHTML = "";
+      if (!selecting) return;
+      var n = pickedRows().length;
+      var allBox = h("input", { type: "checkbox", "aria-label": "Pick all shown documents", onchange: function () {
+        picked = {};
+        if (allBox.checked) shownIds.forEach(function (id) { picked[id] = true; });
+        render();
+      } });
+      allBox.checked = n > 0 && shownIds.length > 0 && shownIds.every(function (id) { return picked[id]; });
+      selBar.appendChild(h("div", { class: "sel-row" }, [
+        h("label", { class: "sel-all" }, [allBox, " All"]),
+        h("span", { class: "sel-count", role: "status" }, [n ? n + " picked" : "Tap documents to pick them"]),
+        n ? h("button", { class: "btn link", type: "button", onclick: function () { picked = {}; render(); } }, ["Clear"]) : null
+      ]));
+      selBar.appendChild(h("div", { class: "sel-actions" }, resultButtons(listScope, resolvePick).concat([actionMenu([
+        addToGroupAction(listScope, { onDone: function () { picked = {}; selecting = false; syncSelectBtn(); load(); } })
+      ])])));
+    }
+    function setSelecting(on) { selecting = on; if (!on) picked = {}; syncSelectBtn(); render(); }
+    function pickRow(r) {
+      var input = h("input", { type: "checkbox", "aria-label": "Pick “" + (r.title || r.id) + "”", onchange: function () { flip(); } });
+      var body = h("div", { class: "pick-body" }, [card(r, null, { showSource: scope === "all" })]);
+      var row = h("div", { class: "pick-row" + (picked[r.id] ? " picked" : "") }, [h("label", { class: "pick" }, [input]), body]);
+      input.checked = !!picked[r.id];
+      function flip() {
+        if (input.checked) picked[r.id] = true; else delete picked[r.id];
+        row.classList.toggle("picked", input.checked);
+        drawBar();
+      }
+      /* in select mode a tap on the card ticks it instead of opening it */
+      body.addEventListener("click", function (e) { e.preventDefault(); e.stopPropagation(); input.checked = !input.checked; flip(); }, true);
+      return row;
+    }
+
     function render() {
       var counts = facetCounts(rows, fams, sel);
       renderFacets(counts); renderApplied();
+      shownIds = [];
+      drawBar();
       listEl.innerHTML = "";
       listEl.setAttribute("aria-busy", String(loading));
       if (loading) { countEl.textContent = ""; listEl.appendChild(h("p", { class: "muted" }, [state.q ? "Searching…" : "Loading…"])); return; }
@@ -626,10 +678,12 @@
       var byTime = state.sort === "newest" || state.sort === "oldest";
       var entries = byTime ? byDate(shown, gs, rows, state.sort === "newest") : shown.map(function (r) { return { doc: r }; });
       entries.slice(0, state.shown).forEach(function (e) {
-        if (e.group) return listEl.appendChild(groupCard(e.group, e.time));
+        if (e.group) { if (!selecting) listEl.appendChild(groupCard(e.group, e.time)); return; }
         var r = e.doc;
+        if (selecting) { shownIds.push(r.id); return listEl.appendChild(pickRow(r)); }
         listEl.appendChild(trash ? card(r, trashActions(r)) : card(r, null, { showSource: scope === "all" }));
       });
+      drawBar();
       if (entries.length > state.shown) {
         listEl.appendChild(h("button", { class: "btn more", onclick: function () { state.shown += LIST_PAGE; listShown = state.shown; render(); } },
           ["Show " + Math.min(LIST_PAGE, entries.length - state.shown) + " more of " + (entries.length - state.shown)]));
@@ -682,14 +736,21 @@
       } });
     var sortSel = h("select", { "aria-label": "Sort", onchange: function (e) { state.sort = e.target.value; writePref("sort", state.sort); render(); } },
       Object.keys(SORTS).map(function (k) { var o = h("option", { value: k }, [SORTS[k].label]); if (k === state.sort) o.selected = true; return o; }));
+    var selectBtn = canSelect && !trash ? h("button", { class: "btn select-btn", type: "button", "aria-pressed": "false", onclick: function () { setSelecting(!selecting); } }, ["Select"]) : null;
+    function syncSelectBtn() {
+      if (!selectBtn) return;
+      selectBtn.setAttribute("aria-pressed", String(selecting));
+      selectBtn.textContent = selecting ? "Done" : "Select";
+    }
     var title = trash ? "Recycle bin" : scope === "all" ? "Everything" : scope === "published" ? "" : sourceTitle(scope);
     page(title, mainNav(scope), [
       trash ? h("div", { class: "notice" }, ["Documents here stay until you delete them forever."]) : null,
       title && !trash ? h("h2", { class: "scope-title" }, [title]) : null,
-      h("div", { class: "controls" }, [search, sortSel]),
+      h("div", { class: "controls" }, [search, sortSel, selectBtn]),
       famBar, panel, applied,
       h("div", { class: "row", style: "margin-bottom:8px" }, [countEl]),
-      listEl
+      listEl,
+      selBar
     ]);
     /* named when it is left, so it says whether a search or filters were on */
     viewLabel = function () { return (title || sourceTitle(scope)) + (location.search ? ", filtered" : ""); };
@@ -1240,20 +1301,98 @@
   function scopeLabel(sc) {
     if (sc.kind === "doc") return sc.doc.title || sc.doc.id;
     var n = sc.items.length, of = sc.total;
+    if (sc.kind === "list") return n === 1 ? "1 document" : n + " documents";
     return n === of ? (of === 1 ? "1 document" : "all " + of + " documents") : n + " of " + of + " documents";
   }
   /* The result buttons for a scope that may change (a group's picks): each opens its sheet
      on the scope as it is when pressed. `getScope` is called again at every press. */
-  function resultButtons(getScope) {
+  /* `resolve(sc)` (optional) answers a promise of the full scope, for a pick whose rows lack
+     what the sheets need (the main list's): then all three buttons are offered and each
+     press first fetches the picked documents, the button pending meanwhile. */
+  function resultButtons(getScope, resolve) {
     var sc0 = getScope();
-    return RESULTS.filter(function (r) { return r.when(sc0); }).map(function (r) {
-      return h("button", { class: "btn result", type: "button", "data-result": r.id, "aria-haspopup": "dialog", onclick: function (e) {
+    return RESULTS.filter(function (r) { return resolve || r.when(sc0); }).map(function (r) {
+      var btn = h("button", { class: "btn result", type: "button", "data-result": r.id, "aria-haspopup": "dialog", onclick: function () {
+        if (btn.getAttribute("aria-busy") === "true") return;
         var sc = getScope();
         if (!sc.items.length) return toast("Pick at least one document");
-        if (!r.when(sc)) return toast(r.id === "file" ? "None of these has files that can be put in one file" : "None of these can be spoken");
-        taskSheet({ title: r.title, scope: scopeLabel(sc), hint: r.hint(sc), body: r.body(sc), returnTo: e.currentTarget });
+        function open(full) {
+          if (!r.when(full)) return toast(r.id === "file" ? "None of these has files that can be put in one file" : "None of these can be spoken");
+          taskSheet({ title: r.title, scope: scopeLabel(full), hint: r.hint(full), body: r.body(full), returnTo: btn });
+        }
+        if (!resolve) return open(sc);
+        btn.setAttribute("aria-busy", "true");
+        resolve(sc).then(open).catch(function (e) { toast("That did not work: " + (e.message || e), 4000); })
+          .then(function () { btn.removeAttribute("aria-busy"); });
       } }, [icon(r.icon), h("span", { class: "lbl" }, [r.label])]);
+      return btn;
     });
+  }
+
+  /* -------- Add to group…: make a group of the picked documents, or add them to one --- */
+  /* The only way groups are made by hand (POST /groups, POST /groups/{gid}/docs). `sc` is the
+     pick; `o.intro` says why the sheet is open when it was not asked for by name; `o.from` is
+     the group the pick is in, left out of the choices; `o.onDone` runs once it is done. */
+  var TITLE_MORE = " and ";
+  function dfltGroupTitle(items) {
+    var first = (items[0] && (items[0].title || items[0].id)) || "Group";
+    return items.length > 1 ? first + TITLE_MORE + (items.length - 1) + " more" : first;
+  }
+  function addToGroupBody(sc, o) {
+    o = o || {};
+    var ids = sc.items.map(function (m) { return m.id; });
+    var wrap = h("div", { class: "add-group" });
+    var status = h("div", { class: "add-status", role: "status" });
+    var form = h("div", { class: "add-form" });
+    var title = h("input", { type: "text", value: dfltGroupTitle(sc.items), autocomplete: "off", "aria-label": "Name of the new group", class: "add-title" });
+    var busy = false;
+    function done(g, verb) {
+      form.hidden = true;
+      status.innerHTML = "";
+      status.appendChild(h("p", null, [verb + " “" + (g.title || g.id) + "” (" + g.docs.length + (g.docs.length === 1 ? " document" : " documents") + "). "]));
+      status.appendChild(sheetLink(BASE + "/g/" + g.id, "Open the group", "btn primary add-open"));
+      lastList = null;
+      if (o.onDone) o.onDone(g);
+    }
+    function send(path, body, verb, btn) {
+      if (busy) return;
+      busy = true; btn.setAttribute("aria-busy", "true");
+      api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(function (g) { done(g, verb); })
+        .catch(function (e) { toast("That did not work: " + (e.message || e), 4000); })
+        .then(function () { busy = false; btn.removeAttribute("aria-busy"); });
+    }
+    var make = h("button", { class: "btn primary", type: "button", onclick: function () {
+      if (!title.value.trim()) return toast("Give the group a name");
+      send("/groups", { title: title.value.trim(), docs: ids }, "Made", make);
+    } }, [h("span", { class: "lbl" }, ["Make the group"])]);
+    var existing = h("div", { class: "add-existing" }, [h("p", { class: "muted" }, ["Loading groups…"])]);
+    form.appendChild(h("h4", null, ["A new group"]));
+    form.appendChild(h("label", { class: "add-label" }, ["Name ", title]));
+    form.appendChild(make);
+    form.appendChild(h("h4", null, ["Or add to a group you have"]));
+    form.appendChild(existing);
+    api("/groups").then(function (r) {
+      var gs = (r.groups || []).filter(function (g) { return g.id !== o.from; });
+      existing.innerHTML = "";
+      if (!gs.length) return existing.appendChild(h("p", { class: "muted" }, ["No other groups yet."]));
+      gs.forEach(function (g) {
+        var b = h("button", { class: "btn add-pick", type: "button", onclick: function () { send("/groups/" + g.id + "/docs", { docs: ids }, "Added to", b); } },
+          [h("span", { class: "lbl" }, [g.title || g.id]), h("span", { class: "muted" }, [" · " + g.docs.length])]);
+        existing.appendChild(b);
+      });
+    }).catch(function (e) { existing.innerHTML = ""; existing.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
+    if (o.intro) wrap.appendChild(h("p", { class: "muted" }, [o.intro]));
+    wrap.appendChild(status); wrap.appendChild(form);
+    return wrap;
+  }
+  /* The "Add to group…" row of a More menu, acting on the pick `getScope()` gives. */
+  function addToGroupAction(getScope, o) {
+    return { section: "manage", label: "Add to group…", hint: "Make a group of these documents, or add them to one", icon: "link", run: function () {
+      var sc = getScope();
+      if (!sc.items.length) return toast("Pick at least one document");
+      taskSheet({ title: "Add to group", scope: scopeLabel(sc), body: addToGroupBody(sc, o) });
+    } };
   }
 
   /* One sheet at a time, over the page: from the bottom on a phone, a drawer on a wide
@@ -1354,8 +1493,8 @@
         return row;
       });
       var more = actionMenu([
-        COPY_ADDRESS()
-        /* the seam for groups made by hand: "Add to group…" goes here, once the main list can pick too */
+        COPY_ADDRESS(),
+        addToGroupAction(scope, { from: g.id, onDone: function () { picked = {}; update(); } })
       ]);
       var bar = items.length ? h("div", { class: "selbar", role: "toolbar", "aria-label": "Act on the picked documents" }, [
         h("div", { class: "sel-row" }, [h("label", { class: "sel-all" }, [allBox, " All"]), count, clear]),
@@ -1408,8 +1547,9 @@
     ]);
   }
   function linksBody(sc) {
-    /* a share has one root, a document or a group (a pick from the whole list will get its
-       group first, through "Add to group…") */
+    /* a share has one root, a document or a group: a pick from the whole list has neither, so
+       it is offered its group first, and the link is made from the group's own page */
+    if (sc.kind === "list") return addToGroupBody(sc, { intro: "A link is made for one document or one group. Make a group of these documents, then press Links on it." });
     var ref = sc.ref;
     var mode = readPref("linkmode:" + sc.kind, sc.kind === "doc" ? "one" : "each");
     if (mode !== "one" && mode !== "each") mode = "one";

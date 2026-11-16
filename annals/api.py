@@ -18,7 +18,8 @@ Two factories, one implementation:
   html shell; the browser routes), and an auth gate around it all
   (see :mod:`annals.auth`).
 
-The reader's actions are the three the recycle bin needs, plus tagging. Publishing is not an HTTP
+The reader's actions are the three the recycle bin needs, plus tagging and making groups by
+hand (``POST /groups``, ``POST /groups/{gid}/docs``: the owner's, same-origin guarded). Publishing is not an HTTP
 operation here: it is a file write (see :mod:`annals.target`), which keeps this surface
 small and the documents' lifecycle independent of whatever serves them.
 """
@@ -549,6 +550,40 @@ def _mk_api(
     def list_groups() -> dict:
         """Every group, newest first."""
         return {"groups": store.list_groups()}
+
+    def _doc_ids(body: dict) -> list[str]:
+        """The ``docs`` of a request body: a non-empty list of ids of documents that exist."""
+        ids = body.get("docs")
+        if not (
+            isinstance(ids, list) and ids and all(isinstance(x, str) and x for x in ids)
+        ):
+            raise HTTPException(422, "send {'docs': [<document ids>]}")
+        for i in ids:
+            try:
+                store.meta(i)
+            except (KeyError, ValueError):
+                raise HTTPException(422, f"no such document: {i[:60]}")
+        return ids
+
+    @api.post("/groups", dependencies=[Depends(_require_same_origin)])
+    def make_group(body: dict = Body(...)) -> dict:
+        """Make a group by hand: ``{"title": str, "docs": [<document ids>]}``; returns it."""
+        title = body.get("title")
+        if not (isinstance(title, str) and title.strip()):
+            raise HTTPException(422, "send {'title': <text>, 'docs': [<document ids>]}")
+        return store.make_group(title.strip(), _doc_ids(body))
+
+    @api.post("/groups/{gid}/docs", dependencies=[Depends(_require_same_origin)])
+    def add_to_group(gid: str, body: dict = Body(...)) -> dict:
+        """Add documents to a group, keeping its order and skipping ones already in it.
+
+        ``{"docs": [<document ids>]}``; returns the group. Nothing is ever removed this way.
+        """
+        try:
+            store.group(gid)
+        except (KeyError, ValueError):
+            raise HTTPException(404, "no such group")
+        return store.add_to_group(gid, _doc_ids(body))
 
     @api.get("/groups/{gid}")
     def get_group(gid: str) -> dict:

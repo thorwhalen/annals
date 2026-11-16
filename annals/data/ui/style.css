@@ -382,3 +382,14 @@ html.sheet-open { overflow: hidden; }
 .agent-note p { flex: 1 1 220px; margin: 0; font-size: .9rem; }
 /* the overview maker is down (annals.overview.maker_down): what is wrong and what to do */
 .down { border: 1px solid var(--danger); border-radius: var(--radius); background: var(--card); padding: 8px 10px; margin: 4px 0 12px; overflow-wrap: anywhere; }
+
+/* Select on the main list, and the Add to group… sheet */
+.controls .select-btn { flex: 0 0 auto; min-height: 44px; }
+.controls .select-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.add-group h4 { margin: 14px 0 6px; font-size: .95rem; }
+.add-label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.add-title { width: 100%; box-sizing: border-box; min-height: 44px; font-size: 16px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); }
+.add-existing { display: flex; flex-direction: column; gap: 6px; }
+.add-pick { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; text-align: left; }
+.add-pick .lbl { overflow-wrap: anywhere; }
+.add-group .btn.primary, .add-open { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }

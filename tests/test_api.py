@@ -445,3 +445,39 @@ def test_html_print_variant_prints_on_load_and_is_never_cached(client, store, tm
     assert printed.content.index(b"print") < printed.content.index(b"</body>")
     assert printed.headers["content-security-policy"].startswith("sandbox")
     assert printed.headers["cache-control"] == "private, no-store" and "etag" not in printed.headers
+
+
+def test_owner_makes_a_group_and_adds_to_it(client, store):
+    first = store.list()[0]["id"]
+    second = store.publish(text="# Two", title="Two")["id"]
+    made = client.post("/annals/api/groups", json={"title": " Mine ", "docs": [first]})
+    assert made.status_code == 200
+    g = made.json()
+    assert g["title"] == "Mine" and g["docs"] == [first]
+    added = client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [second, first]})
+    assert added.json()["docs"] == [first, second]  # in order, no duplicate
+    assert store.group(g["id"])["docs"] == [first, second]
+    assert client.get("/annals/api/groups").json()["groups"][0]["id"] == g["id"]
+
+
+def test_group_writes_refuse_bad_input(client, store):
+    first = store.list()[0]["id"]
+    g = store.make_group("G", [first])
+    for body in ({}, {"title": "x"}, {"title": "x", "docs": []}, {"title": "x", "docs": [3]},
+                 {"title": "  ", "docs": [first]}, {"title": "x", "docs": ["20990101-000000-nope-abcd"]},
+                 {"title": "x", "docs": ["../etc"]}):
+        assert client.post("/annals/api/groups", json=body).status_code == 422, body
+    assert client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": []}).status_code == 422
+    assert client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": ["nope"]}).status_code == 422
+    assert client.post("/annals/api/groups/20990101-000000-nope-abcd/docs", json={"docs": [first]}).status_code == 404
+    assert [x["id"] for x in store.list_groups()] == [g["id"]]
+    assert store.group(g["id"])["docs"] == [first]
+
+
+def test_group_writes_refuse_cross_site_browsers(client, store):
+    first = store.list()[0]["id"]
+    g = store.make_group("G", [first])
+    evil = {"Sec-Fetch-Site": "cross-site"}
+    assert client.post("/annals/api/groups", json={"title": "x", "docs": [first]}, headers=evil).status_code == 403
+    assert client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [first]}, headers=evil).status_code == 403
+    assert len(store.list_groups()) == 1
