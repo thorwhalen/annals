@@ -55,7 +55,7 @@ def test_list_get_raw_and_bin(client, store):
 
 def test_groups_endpoint(client, store):
     a = store.publish(text="a", title="A")
-    g = store.make_group("Pair", [a["id"], "20200101-000000-gone-0000"])
+    g = store.make_group("Pair", [a["id"], "20200101-000000-gone-0000"], live_only=False)
     got = client.get(f"/annals/api/groups/{g['id']}").json()
     assert got["title"] == "Pair" and [m["id"] for m in got["items"]] == [a["id"]]
     assert client.get("/annals/api/groups").json()["groups"][0]["id"] == g["id"]
@@ -445,3 +445,188 @@ def test_html_print_variant_prints_on_load_and_is_never_cached(client, store, tm
     assert printed.content.index(b"print") < printed.content.index(b"</body>")
     assert printed.headers["content-security-policy"].startswith("sandbox")
     assert printed.headers["cache-control"] == "private, no-store" and "etag" not in printed.headers
+
+
+def test_owner_makes_a_group_and_adds_to_it(client, store):
+    first = store.list()[0]["id"]
+    second = store.publish(text="# Two", title="Two")["id"]
+    made = client.post("/annals/api/groups", json={"title": " Mine ", "docs": [first]})
+    assert made.status_code == 200
+    g = made.json()
+    assert g["title"] == "Mine" and g["docs"] == [first]
+    added = client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [second, first]})
+    assert added.json()["docs"] == [first, second]  # in order, no duplicate
+    assert store.group(g["id"])["docs"] == [first, second]
+    assert client.get("/annals/api/groups").json()["groups"][0]["id"] == g["id"]
+
+
+def test_group_writes_refuse_bad_input(client, store):
+    first = store.list()[0]["id"]
+    g = store.make_group("G", [first])
+    for body in ({}, {"title": "x"}, {"title": "x", "docs": []}, {"title": "x", "docs": [3]},
+                 {"title": "  ", "docs": [first]}, {"title": "x", "docs": ["20990101-000000-nope-abcd"]},
+                 {"title": "x", "docs": ["../etc"]}):
+        assert client.post("/annals/api/groups", json=body).status_code == 422, body
+    assert client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": []}).status_code == 422
+    assert client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": ["nope"]}).status_code == 422
+    assert client.post("/annals/api/groups/20990101-000000-nope-abcd/docs", json={"docs": [first]}).status_code == 404
+    assert [x["id"] for x in store.list_groups()] == [g["id"]]
+    assert store.group(g["id"])["docs"] == [first]
+
+
+def test_group_writes_refuse_cross_site_browsers(client, store):
+    first = store.list()[0]["id"]
+    g = store.make_group("G", [first])
+    evil = {"Sec-Fetch-Site": "cross-site"}
+    assert client.post("/annals/api/groups", json={"title": "x", "docs": [first]}, headers=evil).status_code == 403
+    assert client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [first]}, headers=evil).status_code == 403
+    assert len(store.list_groups()) == 1
+
+
+def test_group_writes_refuse_versions_and_binned_documents(client, store):
+    first = store.list()[0]["id"]
+    binned = store.publish(text="# Gone", title="Gone")["id"]
+    store.trash(binned)
+    g = store.make_group("G", [first])
+    for docs in ([first + "@1"], [binned], [first, binned]):
+        assert client.post("/annals/api/groups", json={"title": "x", "docs": docs}).status_code == 422
+        r = client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": docs})
+        assert r.status_code == 422, docs
+    assert store.group(g["id"])["docs"] == [first]
+
+
+def test_group_titles_are_cleaned_and_repeats_dropped(client, store):
+    first = store.list()[0]["id"]
+    r = client.post("/annals/api/groups", json={"title": "  a\n\tb‮  c\x00 ", "docs": [first, first]})
+    assert r.json()["title"] == "a b c" and r.json()["docs"] == [first]
+    too_long = client.post("/annals/api/groups", json={"title": "x" * 201, "docs": [first]})
+    assert too_long.status_code == 422
+    assert client.post("/annals/api/groups", json={"title": "‮\x01", "docs": [first]}).status_code == 422
+
+
+def test_concurrent_adds_to_one_group_all_land(client, store):
+    import threading
+
+    g = store.make_group("G", [store.list()[0]["id"]])
+    ids = [store.publish(text=f"# D{i}", title=f"D{i}")["id"] for i in range(16)]
+    codes = []
+    threads = [
+        threading.Thread(
+            target=lambda i=i: codes.append(
+                client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [i]}).status_code
+            )
+        )
+        for i in ids
+    ]
+    [t.start() for t in threads]
+    [t.join() for t in threads]
+    assert codes == [200] * len(ids)
+    assert set(ids) <= set(store.group(g["id"])["docs"])
+
+
+def test_the_group_tool_adds_to_an_existing_group(tmp_path):
+    from annals.tools import group
+
+    store = DocStore(tmp_path / "data")
+    a = store.publish(text="# A", title="A")["id"]
+    b = store.publish(text="# B", title="B")["id"]
+    made = group("Both", [a], target=str(tmp_path / "data"))
+    added = group("", [b], add_to=made["id"], target=str(tmp_path / "data"))
+    assert added["docs"] == [a, b] and added["id"] == made["id"]
+    with pytest.raises(ValueError):
+        group("x", ["20990101-000000-nope-abcd"], target=str(tmp_path / "data"))
+
+
+def test_publish_refuses_a_bad_group_before_publishing_anything(tmp_path):
+    from annals.tools import publish
+
+    target = str(tmp_path / "data")
+    store = DocStore(tmp_path / "data")
+    note = tmp_path / "n.md"
+    note.write_text("# N")
+    for bad in ({"group": "x" * 201}, {"group": "   "}, {"add_to": "20990101-000000-nope-abcd"}):
+        with pytest.raises(ValueError):
+            publish([str(note)], target=target, no_link_check=True, **bad)
+    assert store.list() == []  # nothing published, so a retry duplicates nothing
+
+
+def _hold_group_lock(store, gid):
+    from annals.store import GROUPS
+
+    lock = store._lock(GROUPS, gid, ttl=30)
+    assert lock
+    return lock
+
+
+def test_a_busy_group_gives_409_and_publish_names_the_ids(tmp_path, monkeypatch):
+    import annals.store as S
+    from annals.tools import publish
+
+    monkeypatch.setattr(S, "GROUP_LOCK_WAIT_S", 0.2)
+    store = DocStore(tmp_path / "data")
+    first = store.publish(text="# A", title="A")["id"]
+    g = store.make_group("G", [first])
+    _hold_group_lock(store, g["id"])
+    api_client = TestClient(mk_app(store=store, authorizer=no_auth), follow_redirects=False)
+    r = api_client.post(f"/annals/api/groups/{g['id']}/docs", json={"docs": [first]})
+    assert r.status_code == 409
+    note = tmp_path / "n.md"
+    note.write_text("# N")
+    out = publish([str(note)], add_to=g["id"], target=str(tmp_path / "data"), no_link_check=True)
+    assert out["id"] in out["warning"] and "not grouped" in out["warning"]
+    assert "group_id" not in out
+
+
+def test_a_dead_holders_group_lock_is_recovered_after_its_short_age(tmp_path, monkeypatch):
+    import json
+    import time
+
+    import annals.store as S
+
+    store = DocStore(tmp_path / "data")
+    first = store.publish(text="# A", title="A")["id"]
+    second = store.publish(text="# B", title="B")["id"]
+    g = store.make_group("G", [first])
+    lock = store.target._abs(f"{S.GROUPS}/{S.LOCK_PREFIX}{g['id']}")
+    lock.mkdir()
+    # held by another host, 60 s ago: stale for a group lock (30 s), long before the document one (600 s)
+    note = {"since": time.time() - 60, "host": "elsewhere", "pid": 1, "ttl": S.GROUP_LOCK_STALE_S}
+    (lock / S.LOCK_INFO).write_text(json.dumps(note))
+    assert store.add_to_group(g["id"], [second])["docs"] == [first, second]
+    note["since"] = time.time()  # a fresh one of another host is respected
+    lock.mkdir()
+    (lock / S.LOCK_INFO).write_text(json.dumps(note))
+    monkeypatch.setattr(S, "GROUP_LOCK_WAIT_S", 0.2)
+    with pytest.raises(RuntimeError):
+        store.add_to_group(g["id"], [second])
+
+
+def test_make_group_with_an_explicit_id_takes_the_lock(tmp_path, monkeypatch):
+    import annals.store as S
+
+    monkeypatch.setattr(S, "GROUP_LOCK_WAIT_S", 0.2)
+    store = DocStore(tmp_path / "data")
+    first = store.publish(text="# A", title="A")["id"]
+    g = store.make_group("G", [first])
+    _hold_group_lock(store, g["id"])
+    with pytest.raises(RuntimeError):
+        store.make_group("G again", [first], gid=g["id"])
+
+
+def test_adds_from_many_processes_all_land(tmp_path):
+    import subprocess
+    import sys
+
+    store = DocStore(tmp_path / "data")
+    g = store.make_group("G", [store.publish(text="# 0", title="Zero")["id"]])
+    ids = [store.publish(text=f"# {i}", title=f"D{i}")["id"] for i in range(8)]
+    code = (
+        "import sys; from annals.store import DocStore; "
+        "DocStore(sys.argv[1]).add_to_group(sys.argv[2], [sys.argv[3]])"
+    )
+    procs = [
+        subprocess.Popen([sys.executable, "-c", code, str(tmp_path / "data"), g["id"], i])
+        for i in ids
+    ]
+    assert [p.wait(timeout=60) for p in procs] == [0] * len(ids)
+    assert set(ids) <= set(store.group(g["id"])["docs"])

@@ -328,10 +328,15 @@ class SshTarget:
     def make_lock(self, rel: str, note: str) -> None:
         path = self._abs(rel)
         parent = _q(str(PurePosixPath(path).parent))
-        self._ssh(  # one remote shell: the note follows the mkdir within a millisecond
-            f"mkdir -p {parent} && mkdir {_q(path)} && cat > {_q(path + '/' + LOCK_NOTE)}",
-            stdin=note,
-        )
+        try:
+            self._ssh(  # one remote shell: the note follows the mkdir within a millisecond
+                f"mkdir -p {parent} && mkdir {_q(path)} && cat > {_q(path + '/' + LOCK_NOTE)}",
+                stdin=note,
+            )
+        except RuntimeError as e:
+            if "File exists" in str(e):  # held: the one failure that means "not yours"
+                raise FileExistsError(rel) from e
+            raise
 
     def file_sizes(self, rel: str, files: list[str]) -> dict[str, int]:
         if not files:

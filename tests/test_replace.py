@@ -407,8 +407,16 @@ def test_ssh_lock_is_created_with_its_note(tmp_path, loopback_ssh):
     t = SshTarget("loop", str(tmp_path / "remote"))
     t.make_lock("docs/.lock-a", '{"since": 1}')
     assert (tmp_path / "remote" / "docs" / ".lock-a" / "lock.json").read_text() == '{"since": 1}'
-    with pytest.raises(RuntimeError):
+    with pytest.raises(FileExistsError):  # held: the one failure that means "not yours"
         t.make_lock("docs/.lock-a", "{}")
+
+    def refused(script, *, stdin=None):
+        raise RuntimeError("ssh loop failed (255): Permission denied")
+
+    t._ssh = refused
+    with pytest.raises(RuntimeError):  # anything else is an error, not a held lock
+        t.make_lock("docs/.lock-b", "{}")
+    del t._ssh
     (tmp_path / "remote" / "docs" / "f").mkdir()
     (tmp_path / "remote" / "docs" / "f" / "a b.txt").write_text("hello")
     assert t.file_sizes("docs/f", ["a b.txt", "nope"]) == {"a b.txt": 5}

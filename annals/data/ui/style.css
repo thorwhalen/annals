@@ -90,7 +90,7 @@ pre.source { background: var(--code); border: 1px solid var(--line); border-radi
   overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .86rem; line-height: 1.45; user-select: text; -webkit-user-select: text; }
 iframe.frame { width: 100%; height: calc(100vh - 190px); min-height: 420px; border: 1px solid var(--line); border-radius: var(--radius); background: #fff; }
 .notice { background: var(--chip); border-radius: 10px; padding: 8px 12px; font-size: .9rem; margin-bottom: 10px; }
-.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+.toast { position: fixed; z-index: 60; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom)); transform: translateX(-50%);
   background: var(--fg); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: .9rem; opacity: 0; transition: opacity .2s; pointer-events: none; }
 .toast.show { opacity: .95; }
 .err { color: var(--danger); }
@@ -302,7 +302,7 @@ nav.back a { display: inline-flex; align-items: center; min-height: 32px; font-s
   background: var(--card); border-top: 1px solid var(--line); box-shadow: 0 -4px 16px rgb(0 0 0 / .06); }
 .sel-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; font-size: .92rem; }
 .sel-row .sel-count { flex: 1 1 auto; font-weight: 600; }
-.sel-all { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.sel-all { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; min-width: 44px; }
 .sel-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 @media (min-width: 641px) { .sel-actions .menu { top: auto; bottom: calc(100% + 6px); left: auto; right: 0; } }
 .btn.result { display: inline-flex; align-items: center; gap: 8px; }
@@ -382,3 +382,18 @@ html.sheet-open { overflow: hidden; }
 .agent-note p { flex: 1 1 220px; margin: 0; font-size: .9rem; }
 /* the overview maker is down (annals.overview.maker_down): what is wrong and what to do */
 .down { border: 1px solid var(--danger); border-radius: var(--radius); background: var(--card); padding: 8px 10px; margin: 4px 0 12px; overflow-wrap: anywhere; }
+
+/* Select on the main list, and the Add to group… sheet */
+.controls .select-btn { flex: 0 0 auto; min-height: 44px; }
+.controls .select-btn[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+.add-group h4 { margin: 14px 0 6px; font-size: .95rem; }
+.add-label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.add-title { width: 100%; box-sizing: border-box; min-height: 44px; font-size: 16px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); }
+.add-existing { display: flex; flex-direction: column; gap: 6px; }
+.add-pick { display: flex; justify-content: space-between; align-items: center; gap: 8px; min-height: 44px; text-align: left; }
+.add-pick .lbl { overflow-wrap: anywhere; }
+.add-group .btn.primary, .add-open { min-height: 44px; display: inline-flex; align-items: center; text-decoration: none; }
+.add-error:empty { display: none; }
+.add-error { margin: 8px 0; }
+.add-filter { width: 100%; box-sizing: border-box; min-height: 44px; font-size: 16px; padding: 8px 10px; margin-bottom: 6px; border: 1px solid var(--line); border-radius: 10px; background: var(--card); color: var(--fg); }
+.add-pick[aria-disabled="true"] { opacity: .55; }

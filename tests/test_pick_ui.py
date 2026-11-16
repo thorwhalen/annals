@@ -212,3 +212,301 @@ def test_the_links_sheet_hands_own_agents_the_private_address(chromium, site):
         assert "/shared/" not in copied
     finally:
         ctx.close()
+
+
+# -- Select on the main list, and Add to group… (thorwhalen/annals#50) ---------------
+
+
+def _main_list(page, site):
+    page.goto(f"{site['base']}/")
+    page.locator("a.card").first.wait_for()
+
+
+def _select(page):
+    page.get_by_role("button", name="Select", exact=True).click()
+    page.locator(".pick-row").first.wait_for()
+
+
+def _open_add_to_group(page):
+    page.locator(".selbar").get_by_role("button", name="More").click()
+    page.get_by_role("menuitem", name=re.compile("^Add to group")).click()
+
+
+def _no_sideways_scroll(page):
+    return not page.evaluate(
+        "document.documentElement.scrollWidth > document.documentElement.clientWidth"
+    )
+
+
+def test_select_on_the_main_list_ticks_without_opening(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.locator(".pick-row", has_text="Bees").locator(".card").click()
+    assert phone.url.rstrip("/").endswith("/annals")  # still on the list
+    assert phone.get_by_label("Pick “Bees”").is_checked()
+    assert phone.locator(".sel-count").inner_text() == "1 picked"
+    names = [b.inner_text().strip() for b in phone.locator(".selbar button.result").all()]
+    assert names == ["Links", "One file", "Listen"]
+    toggle = phone.get_by_role("button", name="Select", exact=True)
+    assert toggle.get_attribute("aria-pressed") == "true"  # the label stays, the state is pressed
+    toggle.click()
+    assert toggle.get_attribute("aria-pressed") == "false"
+    assert phone.locator(".selbar").is_hidden() and phone.locator(".pick-row").count() == 0
+
+
+def test_one_file_of_a_pick_from_the_list(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Tides”").check()
+    phone.locator(".selbar").get_by_role("button", name="One file").click()
+    phone.wait_for_function(
+        "document.querySelector('.sheet textarea.combine-text')?.value.includes('moon')"
+    )
+    assert "hives" not in phone.locator(".sheet textarea.combine-text").input_value()
+
+
+def test_add_to_group_makes_a_group_of_the_picked_documents(phone, site):
+    store = site["store"]
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    phone.get_by_label("Pick “Tides”").check()
+    _open_add_to_group(phone)
+    title = phone.get_by_label("Name of the new group")
+    assert title.input_value().endswith("1 more")
+    title.fill("Made by hand")
+    phone.get_by_role("button", name="Make the group").click()
+    phone.locator(".add-open").wait_for()
+    made = [g for g in store.list_groups() if g["title"] == "Made by hand"]
+    assert len(made) == 1 and set(made[0]["docs"]) == {site["bees"]["id"], site["tides"]["id"]}
+    phone.locator(".add-open").click()
+    phone.locator(".doc-head h2").wait_for()
+    assert phone.locator(".doc-head h2").inner_text() == "Made by hand"
+
+
+def test_add_to_an_existing_group(phone, site):
+    store = site["store"]
+    extra = store.publish(text="# Extra\n\nmore", title="Extra", filename="extra.md")
+    target = store.make_group("Target", [site["bees"]["id"]])
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Extra”").check()
+    _open_add_to_group(phone)
+    phone.locator(".add-pick", has_text="Target").click()
+    phone.locator(".add-open").wait_for()
+    assert store.group(target["id"])["docs"] == [site["bees"]["id"], extra["id"]]
+
+
+def test_add_to_group_from_a_groups_bar(phone, site):
+    store = site["store"]
+    source = store.make_group("Source", [site["bees"]["id"], site["tides"]["id"]])
+    phone.goto(f"{site['base']}/g/{source['id']}")
+    phone.locator(".selbar").wait_for()
+    phone.get_by_label("Pick “Tides”").check()
+    _open_add_to_group(phone)
+    phone.get_by_label("Name of the new group").fill("From a group")
+    phone.get_by_role("button", name="Make the group").click()
+    phone.locator(".add-open").wait_for()
+    made = [g for g in store.list_groups() if g["title"] == "From a group"]
+    assert made and made[0]["docs"] == [site["tides"]["id"]]
+    # the group the pick came from is not offered as a place to add to
+    assert phone.locator(".add-pick", has_text="Source").count() == 0
+
+
+def test_select_mode_does_not_scroll_sideways_and_has_thumb_sized_targets(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    assert _no_sideways_scroll(phone)
+    for el in phone.locator(".select-btn, .pick-row > .pick, .selbar button.result").all():
+        box = el.bounding_box()
+        assert box["width"] >= 44 and box["height"] >= 44
+    _open_add_to_group(phone)
+    phone.locator(".add-title").wait_for()
+    assert _no_sideways_scroll(phone)
+
+
+# -- review fixes for #50 -------------------------------------------------------------
+
+
+def test_a_failed_make_is_shown_in_the_sheet_and_keeps_the_form(phone, site):
+    phone.route(
+        "**/api/groups",
+        lambda route: route.fulfill(
+            status=422, content_type="application/json", body='{"detail": "no such document: x"}'
+        )
+        if route.request.method == "POST"
+        else route.continue_(),
+    )
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    _open_add_to_group(phone)
+    phone.get_by_role("button", name="Make the group").click()
+    alert = phone.locator(".sheet [role=alert]")
+    phone.wait_for_function("document.querySelector('.sheet [role=alert]').textContent.includes('no such document')")
+    assert alert.is_visible()
+    assert phone.get_by_label("Name of the new group").is_visible()  # the form stays to try again
+    # a toast is above the sheet
+    assert phone.evaluate(
+        "(() => { const t = document.createElement('div'); t.className = 'toast'; document.body.appendChild(t);"
+        " const z = +getComputedStyle(t).zIndex; t.remove(); return z > +getComputedStyle(document.querySelector('.sheet')).zIndex; })()"
+    )
+
+
+def test_enter_in_the_name_field_makes_the_group(phone, site):
+    store = site["store"]
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    _open_add_to_group(phone)
+    title = phone.get_by_label("Name of the new group")
+    title.focus()
+    assert phone.evaluate("(() => { const t = document.querySelector('.add-title'); return t.selectionStart === 0 && t.selectionEnd === t.value.length; })()")
+    title.fill("By enter")
+    title.press("Enter")
+    phone.locator(".add-open").wait_for()
+    assert [g for g in store.list_groups() if g["title"] == "By enter"]
+
+
+def test_select_mode_and_picks_survive_back_and_forward(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    phone.locator(".pick-row", has_text="Tides").locator(".pick").click()  # also ticks Tides
+    phone.get_by_label("Pick “Tides”").uncheck()
+    phone.goto(f"{site['base']}/d/{site['bees']['id']}")
+    phone.go_back()
+    phone.locator(".pick-row").first.wait_for()
+    assert phone.get_by_label("Pick “Bees”").is_checked()
+    assert not phone.get_by_label("Pick “Tides”").is_checked()
+    assert phone.locator(".sel-count").inner_text() == "1 picked"
+    phone.go_forward()  # on to the document and back again: the same state
+    phone.wait_for_function("location.pathname.includes('/d/')")
+    phone.go_back()
+    phone.locator(".pick-row").first.wait_for()
+    assert phone.get_by_label("Pick “Bees”").is_checked()
+    # the search box is a refinement of this entry: the picks stay when it changes what is shown
+    phone.get_by_label("Search").fill("Tides")
+    phone.wait_for_function("document.querySelectorAll('.pick-row').length === 1")
+    assert phone.locator(".sel-count").inner_text() == "1 picked, 1 not shown"
+    # and a pick the search does not show is still acted on after Back into the search
+    phone.goto(f"{site['base']}/d/{site['bees']['id']}")
+    phone.go_back()
+    phone.locator(".pick-row").first.wait_for()
+    assert phone.locator(".sel-count").inner_text() == "1 picked, 1 not shown"
+    phone.locator(".selbar").get_by_role("button", name="Links").click()
+    assert "a group is made" in phone.locator(".sheet").inner_text()  # not "Pick at least one"
+
+
+def test_all_picks_only_what_is_shown_and_group_cards_leave_select_mode(phone, site):
+    _main_list(phone, site)
+    assert phone.locator(f"a.card[href$='/g/{site['group']['id']}']").count() == 1
+    _select(phone)
+    assert phone.locator(f"a.card[href$='/g/{site['group']['id']}']").count() == 0
+    assert "group" not in phone.locator(".count").inner_text()
+    phone.get_by_label("Pick all shown documents").check()
+    n = phone.locator(".pick-row").count()
+    assert phone.locator(".sel-count").inner_text() == f"{n} picked"
+    phone.get_by_label("Pick all shown documents").uncheck()
+    assert phone.locator(".sel-count").inner_text() == "Tap documents to pick them"
+    # one tab stop per row: the card link is out of the tab order
+    assert phone.locator(".pick-row a.card[tabindex='-1'][aria-hidden='true']").count() == n
+
+
+def test_links_of_a_list_pick_says_a_group_is_made_then_shows_its_links(phone, site):
+    store = site["store"]
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    phone.locator(".selbar").get_by_role("button", name="Links").click()
+    assert "a group is made" in phone.locator(".sheet").inner_text()
+    phone.get_by_label("Name of the new group").fill("For links")
+    phone.get_by_role("button", name="Make the group").click()
+    phone.locator(".sheet .links-body").wait_for()  # the new group's own Links, not a dead end
+    assert [g for g in store.list_groups() if g["title"] == "For links"]
+    phone.wait_for_function("!document.querySelector('.selbar') || document.querySelector('.selbar').hidden")
+
+
+def test_existing_groups_can_be_filtered_and_marked_when_they_have_the_pick(phone, site):
+    store = site["store"]
+    for i in range(14):  # past the length a list gets a filter box at
+        store.make_group(f"Filler {i}", [site["tides"]["id"]])
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Tides”").check()
+    _open_add_to_group(phone)
+    phone.get_by_label("Find a group").fill("Filler 3")
+    phone.wait_for_function("document.querySelectorAll('.add-pick').length === 1")
+    pick = phone.locator(".add-pick")
+    assert pick.get_attribute("aria-disabled") == "true"  # it already has Tides
+    assert "already has these" in pick.inner_text()
+
+
+# -- second review pass for #50 ----------------------------------------------------------
+
+
+def test_back_after_making_a_group_finds_the_list_out_of_select_mode(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    _open_add_to_group(phone)
+    phone.get_by_label("Name of the new group").fill("Then back")
+    phone.get_by_role("button", name="Make the group").click()
+    phone.locator(".add-open").click()
+    phone.locator(".doc-head h2").wait_for()
+    phone.go_back()
+    phone.locator("a.card").first.wait_for()
+    assert phone.locator(".pick-row").count() == 0
+    assert phone.locator(".selbar").is_hidden()
+    assert phone.get_by_role("button", name="Select", exact=True).get_attribute("aria-pressed") == "false"
+
+
+def test_links_for_a_group_that_already_has_the_pick_opens_its_links_without_a_post(phone, site):
+    store = site["store"]
+    have = store.make_group("Already has Bees", [site["bees"]["id"]])
+    posts = []
+    phone.on("request", lambda r: posts.append(r.url) if r.method == "POST" and "/groups" in r.url else None)
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    phone.locator(".selbar").get_by_role("button", name="Links").click()
+    phone.locator(".add-pick", has_text="Already has Bees").click()
+    phone.locator(".sheet .links-body").wait_for()
+    assert posts == []
+    assert len(store.group(have["id"])["docs"]) == 1
+
+
+def test_the_name_suggestion_is_capped_and_the_field_has_a_maxlength(phone, site):
+    store = site["store"]
+    long_title = store.publish(text="# L", title="Longtitle " * 30, filename="long.md")
+    _main_list(phone, site)
+    _select(phone)
+    phone.locator(".pick-row", has_text="Longtitle").locator(".pick").click()
+    _open_add_to_group(phone)
+    field = phone.get_by_label("Name of the new group")
+    assert 0 < len(field.input_value()) <= 200 and field.get_attribute("maxlength") == "200"
+    assert long_title["id"]  # published, so the row existed to be ticked
+
+
+def test_the_done_message_is_in_a_live_region_that_was_there_from_the_start(phone, site):
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Bees”").check()
+    _open_add_to_group(phone)
+    status = phone.locator(".sheet .add-status[role=status]")
+    assert status.count() == 1 and status.inner_text() == ""
+    phone.get_by_role("button", name="Make the group").click()
+    phone.wait_for_function("document.querySelector('.sheet .add-status').textContent.includes('Made')")
+
+
+def test_picks_of_documents_since_binned_are_dropped(phone, site):
+    store = site["store"]
+    doomed = store.publish(text="# Doomed\n\nx", title="Doomed", filename="d.md")
+    _main_list(phone, site)
+    _select(phone)
+    phone.get_by_label("Pick “Doomed”").check()
+    store.trash(doomed["id"])
+    phone.reload()
+    phone.locator(".pick-row").first.wait_for()
+    assert phone.locator(".sel-count").inner_text() == "Tap documents to pick them"

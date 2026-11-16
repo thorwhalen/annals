@@ -38,7 +38,7 @@ import shutil
 import tempfile
 import time
 import unicodedata
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager, nullcontext, suppress
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable, Iterable
@@ -71,6 +71,14 @@ LOCK_PREFIX = ".lock-"
 LOCK_INFO = LOCK_NOTE
 #: a lock older than this was left by a crash: its work is finished or undone
 LOCK_STALE_S = 600
+#: how long a group write waits for another writer of the same group, and how often it looks
+GROUP_LOCK_WAIT_S = 10
+#: a group lock is held for milliseconds, so one older than this is a dead holder's (the
+#: lock's note carries it, so recovery on another machine knows)
+GROUP_LOCK_STALE_S = 30
+GROUP_LOCK_POLL_S = 0.02
+#: the longest title a group may have (a longer one is refused, not cut)
+MAX_GROUP_TITLE = 200
 #: a reader that misses a document being swapped waits for it this long, in steps
 SWAP_WAIT_S, SWAP_STEP_S = 2.0, 0.02
 #: a replacement is written under this hidden name, then renamed into place whole
@@ -130,6 +138,24 @@ def mk_id(title: str, *, when: datetime | None = None) -> str:
     """``YYYYMMDD-HHMMSS-<slug>-<4 hex>``: sortable by time, readable in a URL."""
     when = when or datetime.now(timezone.utc)
     return f"{when.strftime('%Y%m%d-%H%M%S')}-{slugify(title)}-{secrets.token_hex(2)}"
+
+
+def clean_title(title: str) -> str:
+    """A title as the page shows it: control and invisible format characters dropped,
+    whitespace collapsed. ``ValueError`` when blank or longer than ``MAX_GROUP_TITLE``."""
+    if not isinstance(title, str):
+        raise ValueError("the title must be text")
+    kept = "".join(
+        " " if c.isspace() else c
+        for c in title
+        if c.isspace() or unicodedata.category(c) not in ("Cc", "Cf")
+    )
+    kept = " ".join(kept.split())
+    if not kept:
+        raise ValueError("the title is blank")
+    if len(kept) > MAX_GROUP_TITLE:
+        raise ValueError(f"the title is longer than {MAX_GROUP_TITLE} characters")
+    return kept
 
 
 def check_id(doc_id: str) -> str:
@@ -498,14 +524,16 @@ class DocStore:
             self._unlock(lock)
         return applied
 
-    def _lock(self, root: str, base: str) -> str | None:
+    def _lock(self, root: str, base: str, *, ttl: int | None = None) -> str | None:
         """Take ``<root>/.lock-<base>`` (created with its note in one step); recover a
         stale one first. ``None`` when another reader holds it."""
         lock = f"{root}/{LOCK_PREFIX}{base}"
         for _ in range(2):
             try:
-                self.target.make_lock(lock, json.dumps(self._holder()))
-            except (OSError, RuntimeError):
+                self.target.make_lock(
+                    lock, json.dumps(self._holder(**({"ttl": ttl} if ttl else {})))
+                )
+            except OSError:  # it exists (an ssh failure of another kind is not "held")
                 if not self._recover(lock, root, base):
                     return None
                 continue
@@ -538,7 +566,7 @@ class DocStore:
     @staticmethod
     def _stale(info: dict) -> bool:
         """Old, or held by a process of this host that is gone."""
-        if time.time() - float(info.get("since", 0)) >= LOCK_STALE_S:
+        if time.time() - float(info.get("since", 0)) >= float(info.get("ttl", LOCK_STALE_S)):
             return True
         if info.get("host") == socket.gethostname() and info.get("pid"):
             try:
@@ -907,24 +935,81 @@ class DocStore:
     # -- groups -----------------------------------------------------------------------
 
     def make_group(
-        self, title: str, doc_ids: Iterable[str], *, gid: str | None = None
+        self,
+        title: str,
+        doc_ids: Iterable[str],
+        *,
+        gid: str | None = None,
+        live_only: bool = True,
     ) -> dict:
-        """Create (or overwrite) a group: a titled, ordered list of document ids."""
-        ids = [check_id(i) for i in doc_ids]
+        """Create (or overwrite) a group: a titled, ordered list of documents.
+
+        The title is cleaned (control characters dropped, whitespace collapsed, at most
+        ``MAX_GROUP_TITLE`` long, not blank); repeats are dropped, keeping the first; each
+        document must exist and not be in the bin unless ``live_only=False`` (a bundle that
+        keeps a document later binned). ``ValueError`` says which rule failed. An explicit
+        ``gid`` rewrites that group, under its lock.
+        """
+        title = clean_title(title)
+        ids = self._group_docs_checked(doc_ids, live_only=live_only)
+        explicit = bool(gid)
         gid = check_id(gid) if gid else mk_id(title)
         group = {"id": gid, "title": title, "docs": ids, "created": now_iso()}
-        self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
+        with self._group_locked(gid) if explicit else nullcontext():
+            self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
         return group
 
     def add_to_group(self, gid: str, doc_ids: Iterable[str]) -> dict:
-        """Append ids to an existing group, keeping order and skipping duplicates."""
-        group = self.group(gid)
-        for i in doc_ids:
-            if check_id(i) not in group["docs"]:
-                group["docs"].append(i)
-        group["updated"] = now_iso()
-        self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
+        """Append documents to an existing group, keeping order and skipping ones it has.
+
+        Each document must exist and not be in the bin; ``KeyError`` for a group that is not
+        there.
+        """
+        return self._append_to_group(gid, self._group_docs_checked(doc_ids))
+
+    def _group_docs_checked(
+        self, doc_ids: Iterable[str], *, live_only: bool = True
+    ) -> list[str]:
+        """The ids, well formed and de-duplicated in order; with ``live_only``, each also a
+        document that exists and is not in the bin."""
+        ids = list(dict.fromkeys(check_id(i) for i in doc_ids))
+        if not ids:
+            raise ValueError("no documents given")
+        if not live_only:
+            return ids
+        for i in ids:
+            try:
+                meta = self.meta(i, settle=False)
+            except (KeyError, ValueError):
+                raise ValueError(f"no such document: {i}")
+            if meta.get("in_trash"):
+                raise ValueError(f"{i} is in the bin")
+        return ids
+
+    def _append_to_group(self, gid: str, ids: list[str]) -> dict:
+        """Read, extend and write a group's file under its lock: concurrent adds all land."""
+        check_id(gid)
+        with self._group_locked(gid):
+            group = self.group(gid)
+            group["docs"] = list(dict.fromkeys([*group["docs"], *ids]))
+            group["updated"] = now_iso()
+            self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
         return group
+
+    @contextmanager
+    def _group_locked(self, gid: str):
+        """:meth:`_locked` for a group, waiting (up to ``GROUP_LOCK_WAIT_S``) for the holder."""
+        deadline = time.monotonic() + GROUP_LOCK_WAIT_S
+        lock = self._lock(GROUPS, gid, ttl=GROUP_LOCK_STALE_S)
+        while lock is None:
+            if time.monotonic() >= deadline:
+                raise RuntimeError(f"group {gid} is being changed right now; try again")
+            time.sleep(GROUP_LOCK_POLL_S)
+            lock = self._lock(GROUPS, gid, ttl=GROUP_LOCK_STALE_S)
+        try:
+            yield
+        finally:
+            self._unlock(lock)
 
     def group(self, gid: str) -> dict:
         """One group, by id."""
@@ -1028,5 +1113,7 @@ class HidingStore(DocStore):
         return self._without_hidden(self.whole.list_groups())
 
     def add_to_group(self, gid: str, doc_ids: Iterable[str]) -> dict:
-        """Append to the group's whole list (the hidden ids stay in it)."""
-        return self._without_hidden([self.whole.add_to_group(gid, doc_ids)])[0]
+        """Append to the group's whole list (the hidden ids stay in it); a hidden document
+        is refused as a missing one."""
+        ids = self._group_docs_checked(doc_ids)
+        return self._without_hidden([self.whole._append_to_group(gid, ids)])[0]
