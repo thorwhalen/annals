@@ -241,7 +241,9 @@ def collect(
     ``text`` is empty when none had any. Every surface (the HTTP route, ``annals references``,
     MCP) reads references through here.
     """
-    items = list(doc_reference_texts(((m, m.get("files", [])) for m in docs), read=read))
+    items = list(
+        doc_reference_texts(((m, m.get("files", [])) for m in docs), read=read)
+    )
     text = combine_references(items, title=title, form=form)
     sections = [[s for t in texts for s in reference_sections(t)] for _, texts in items]
     with_refs = sum(1 for secs in sections if secs)

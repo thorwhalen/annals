@@ -69,7 +69,9 @@ def _checked_output(output: str | None) -> Path | None:
         return None
     dest = Path(output).expanduser()
     if dest.is_dir() or not dest.parent.is_dir():
-        raise ValueError(f"cannot write {output}: it is a folder, or its folder does not exist")
+        raise ValueError(
+            f"cannot write {output}: it is a folder, or its folder does not exist"
+        )
     return dest
 
 
@@ -81,7 +83,9 @@ def _file_opener(store: DocStore, scratch: Path):
         check_rel(rel)
         doc_rel = store.doc_rel(doc_id)
         doc_dir = store.target.local_path(doc_rel)
-        if doc_dir is not None:  # a local store: in place, but never out of the document's folder
+        if (
+            doc_dir is not None
+        ):  # a local store: in place, but never out of the document's folder
             here = store.target.local_path(f"{doc_rel}/{rel}")
             if here is None or not here.is_relative_to(doc_dir) or not here.is_file():
                 raise FileNotFoundError(f"{rel}: not a file of this document")
@@ -95,7 +99,9 @@ def _file_opener(store: DocStore, scratch: Path):
     return open_path
 
 
-def _resolve_selection(store: DocStore, ref: str, *, also=None) -> tuple[str, list[dict]]:
+def _resolve_selection(
+    store: DocStore, ref: str, *, also=None
+) -> tuple[str, list[dict]]:
     """A title and the meta of what ``ref`` names: a group's documents, or a document (``also``: more documents).
 
     ``ref`` is a group's or a document's id or link; a bare id may be either. Raises a
@@ -675,16 +681,16 @@ def export(
             rel=rel,
             files=meta["files"],
             open_file=lambda r: open_path(meta["id"], r),
-            file_url=lambda r: None,  # a PDF made here links to nothing: the raw route's address is the server's
+            file_url=lambda r: (
+                None
+            ),  # a PDF made here links to nothing: the raw route's address is the server's
             created=meta.get("created", ""),
         )
     dest.write_bytes(pdf)
     return {"output": str(dest), "bytes": len(pdf)}
 
 
-def shareable(
-    doc_id: str, *, target: str | None = None, to: str | None = None
-) -> dict:
+def shareable(doc_id: str, *, target: str | None = None, to: str | None = None) -> dict:
     """What the Share dialog offers for a document: its files, and the other annals documents its text links to.
 
     ``{main, files: [{rel, kind, size, referenced}], pages: [{id, title, kind}]}``: the
@@ -1128,7 +1134,9 @@ def listen(
     if not also:
         return overview.request(store, requests, doc_id, minutes=minutes, force=force)
     if force:
-        raise ValueError("--force asks again for one document's overview; it does not apply to --also")
+        raise ValueError(
+            "--force asks again for one document's overview; it does not apply to --also"
+        )
     ids = list(dict.fromkeys(_parse_ref(i)[1] for i in [doc_id, *_as_list(also)]))
     docs = [store.meta(i) for i in ids]
     if binned := [m["id"] for m in docs if m.get("in_trash")]:
