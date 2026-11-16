@@ -75,7 +75,9 @@ def _parse_meta(meta) -> dict[str, str]:
     for item in [meta] if isinstance(meta, str) else list(meta or ()):
         key, eq, value = item.partition("=")
         if not eq or not key.strip():
-            raise ValueError(f"--meta takes key=value (for example corpus=annals), got {item!r}")
+            raise ValueError(
+                f"--meta takes key=value (for example corpus=annals), got {item!r}"
+            )
         if key.strip() in RESERVED_META:
             raise ValueError(
                 f"--meta cannot set {key.strip()!r}: annals records it (use --session for the session)"
