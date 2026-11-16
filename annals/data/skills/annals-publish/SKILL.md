@@ -53,9 +53,20 @@ The page shows the newest version, marked "updated", and lists the earlier ones 
 
 On a machine whose target is an outbox (`annals configure` shows `"outbox": true`: the server pulls the documents and empties the directory), the replacement is queued and applied when the server pulls it, about a minute later; the printed link is already the right one. Elsewhere it applies at once, and a `--replace` of an id that does not exist is an error.
 
+## What a published page cannot do
+
+Every raw file is served under `Content-Security-Policy: sandbox` without `allow-same-origin`, so a page has no origin of its own. That is deliberate (the page shares a host with every other document and the owner's login) and it has consequences:
+
+- A page can *include* a sibling file (`<img>`, `<audio>`, `<video>`, classic `<script src>`, `<link rel=stylesheet>`) but cannot *read* one: `fetch()`, `XMLHttpRequest`, a sibling web font and `new Worker(url)` fail.
+- Module scripts from this host (`<script type="module" src>`, `import`) fail, so a stock Vite or Rollup build does not load. An inline module without imports runs.
+- Storage throws: `localStorage`, `sessionStorage`, IndexedDB, cookies. Wrap every access in try/catch; one unguarded read at startup stops the whole page.
+- The frame grants no permission-policy features: Web MIDI, camera, microphone, fullscreen, `navigator.clipboard`.
+
+What works for an app: one html file with its script inline and classic (build to an IIFE, not ES modules); data delivered as classic scripts that call a global (`window.__data("name", "<base64>")`), a large file cut into chunks added to the page one at a time; workers made from a Blob; a file saved by building a Blob and a `<a download>`. Test it under `Content-Security-Policy: sandbox allow-scripts allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation allow-forms allow-modals allow-downloads` from a local server (opening from `file://` gives misleading failures). A page that needs storage or shared state can also be published as an Artifact (next section); there is no host for MIDI yet, and an Artifact has size limits (16 MB a page, 15 MB a binary file).
+
 ## Rich pages: link to an interactive Artifact
 
-A static html page is fully rendered here (scripts, CDN libraries, fonts). What annals does not have is what a Claude Artifact has: comments the publishing session can watch, per-viewer and shared state, asking Claude from the page, sharing by link. When a page needs those, publish it to both, Artifact first:
+A static html page is rendered here with its scripts, CDN libraries and CDN fonts, but in a sandbox (previous section). What annals does not have is what a Claude Artifact has: comments the publishing session can watch, per-viewer and shared state, asking Claude from the page, sharing by link. When a page needs those, publish it to both, Artifact first:
 
 ```bash
 # 1. publish page.html with the Artifact tool; it returns https://claude.ai/... (the artifact link)
