@@ -280,7 +280,7 @@ Bring documents back from the recycle bin.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
-### annals.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/annals', allow_open=False)
+### annals.tools.serve(, host='127.0.0.1', port=8765, data_dir=None, base_path='/annals', allow_open=False, overviews=None)
 
 Serve the annals page and API (needs `pip install 'annals[server]'`).
 
@@ -288,6 +288,11 @@ Auth comes from the environment: `ANNALS_WHOAMI_URL` + `ANNALS_ALLOWED_USERS` to
 behind an existing login, `ANNALS_BASIC_USER` + `ANNALS_BASIC_PASSWORD` for HTTP Basic,
 nothing for an open server on localhost. A host reachable beyond this machine with no auth
 configured is refused unless `allow_open` (`--allow-open`) says something else gates it.
+`overviews` (`--overviews '*'`, or reader names separated by commas) offers the Listen
+button to those the login lets in (unset: `ANNALS_OVERVIEWS` decides, and unset it is
+off; `--overviews ''` forces it off). It spends money, needs `ANNALS_OVERVIEW_COMMAND`
+and a worker (`annals listen-work` on a timer), and a server with no login serves it
+only on this machine.
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)

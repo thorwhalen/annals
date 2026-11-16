@@ -312,7 +312,7 @@ data-aria-dark="Switch to auto color mode">
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="n">app</span> <span class="o">=</span> <span class="n">mk_api</span><span class="p">(</span><span class="n">overviews</span><span class="o">=</span><span class="p">{</span><span class="s2">"me@example.com"</span><span class="p">})</span>  <span class="c1"># names as the login gives them</span>
 </span></pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code> and the <code class="docutils literal notranslate"><span class="pre">annals.api:mk_app</span></code> factory read the same choice from <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code>: unset for off, <code class="docutils literal notranslate"><span class="pre">*</span></code> for every reader, or names separated by commas.</p>
+<p><code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span> <span class="pre">--overviews</span> <span class="pre">'*'</span></code> turns it on without host code (or reader names separated by commas, as your login names them; with no login it is for this machine only, since anyone reaching the page could spend money); <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">serve</span></code> and the <code class="docutils literal notranslate"><span class="pre">annals.api:mk_app</span></code> factory also read the same choice from <code class="docutils literal notranslate"><span class="pre">ANNALS_OVERVIEWS</span></code>: unset for off, <code class="docutils literal notranslate"><span class="pre">*</span></code> for every reader, or names separated by commas. What the command may rely on and owes is written down in <code class="docutils literal notranslate"><span class="pre">misc/docs/design.md</span></code> (“The overview engine contract”).</p>
 <p>A worker on the same machine fulfils the requests. It runs a command you choose, which takes a text file and writes one HTML page, and publishes that page as a document of its own:</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="nb">export</span><span class="w"> </span><span class="nv">ANNALS_OVERVIEW_COMMAND</span><span class="o">=</span><span class="s1">'hailing overview {source} --minutes {minutes} --no-publish --player-to {out}'</span>
 </span><span data-line="2">annals<span class="w"> </span>listen-work<span class="w">                 </span><span class="c1"># fulfils what is queued, one at a time</span>
@@ -469,7 +469,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-16 03:56 UTC from <a href="https://github.com/thorwhalen/annals/commit/5f5ad672cd8a5ecf522aa534a617a9ce92f65f14">5f5ad67</a> (main) · annals 0.0.56 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-16 04:06 UTC from <a href="https://github.com/thorwhalen/annals/commit/7f411e2858f563374e87460a347bc1ded04ff736">7f411e2</a> (main) · annals 0.0.58 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -504,7 +504,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=8f83b1af"></script>
+      <script src="_static/documentation_options.js?v=c3e19674"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>
