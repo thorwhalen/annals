@@ -14,7 +14,7 @@ directory as a private page with search, sort, groups and a recycle bin.
 | [`group`](#annals.group)(title, doc_ids, \*[, target, base_url, to])    | Make a group (one URL for a set of documents) from existing document ids.                                                                                         |
 | [`groups`](#annals.groups)(\*[, target, base_url, to])                   | List groups, newest first.                                                                                                                                        |
 | [`load_settings`](#annals.load_settings)(\*[, target, base_url, to, ...])       | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                                                                                |
-| [`ls`](#annals.ls)([q, trash, limit, target, base_url, to])          | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
+| [`ls`](#annals.ls)([q, trash, limit, target, base_url, to, ...])     | List documents (newest first), optionally filtered by words or showing the bin.                                                                                   |
 | [`parse_target`](#annals.parse_target)(spec)                                   | `host:/path` becomes an [`SshTarget`](#annals.SshTarget); anything else a [`LocalTarget`](#annals.LocalTarget). |
 | [`publish`](#annals.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.                                                                                  |
 | [`restore`](#annals.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                                                                                                        |
@@ -277,11 +277,17 @@ and the file’s default target for this call (explicit arguments still win).
 * **Return type:**
   [`Settings`](annals.config.html.md#annals.config.Settings)
 
-### annals.ls(q='', , trash=False, limit=50, target=None, base_url=None, to=None)
+### annals.ls(q='', , trash=False, limit=50, target=None, base_url=None, to=None, since=None, session=None, tag=None, meta=None)
 
 List documents (newest first), optionally filtered by words or showing the bin.
 
-`to` lists a named target instead of the default one.
+`to` lists a named target instead of the default one. The rest are exact filters,
+all of which must hold, for tools that poll: `since` (an ISO date or time, or an age
+like `6h` or `2d`: published or replaced at or after it), `session` (the publishing session’s
+name, whole, case-sensitive), `tag` (one tag, whole) and `meta` (`key=value`,
+several allowed, against the document’s `source`: `corpus=annals`). A row is
+`{id, title, kind, tags, created, updated, source, url}`; with `--json` that is the contract
+(`misc/docs/design.md`), and `total` counts the matches before `limit`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -293,7 +299,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 * **Return type:**
   [`Target`](annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -318,6 +324,15 @@ version” button. Publish the Artifact first, then the same page here with its 
 A markdown or text document that mentions an issue or a Slack/email/chat message
 without linking to it gets a warning on stderr ([`annals.linkcheck`](annals.linkcheck.html.md#module-annals.linkcheck)); it is
 published either way. `no_link_check` turns that check off.
+
+`meta` (`--meta key=value [key=value ...]`) records what the document belongs to, next
+to `host`, `cwd` and `session` in its `source`: by convention `corpus` (the
+repository or body of work), `repo`, `issue` (the issue it answers), `item` (a
+desk item) and `kind` (report, brief, overview, render); other keys are kept as given.
+`ls --session/--meta` finds them again. The CLI’s `--json` prints the result below
+(`id`, `title`, `url`, and with a group `group_id` and `group_url`; several
+paths give `docs`) as JSON and nothing else on stdout; that shape is a contract
+(`misc/docs/design.md`).
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

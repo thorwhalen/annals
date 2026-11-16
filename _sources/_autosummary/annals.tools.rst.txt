@@ -8,6 +8,7 @@ annals.tools
 
    .. autosummary::
    
+      RESERVED_META
       LINK_CHECKED_SUFFIXES
    
    .. rubric:: Functions
@@ -24,6 +25,7 @@ annals.tools
       listen_work
       ls
       page_shell
+      parse_since
       publish
       restore
       serve
