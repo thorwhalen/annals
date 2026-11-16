@@ -1648,12 +1648,12 @@
         if (sc.group) body.group = sc.group.id;
         done = api("/overviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
           .then(function (out) {
-            var s = out.listen || {}, where = sheetLink(BASE + "/d/" + out.doc, "their combined document");
+            var s = out.listen || {}, where = out.doc ? sheetLink(BASE + "/d/" + out.doc, "their combined document") : "their combined document";
             status.innerHTML = "";
             if (s.state === "done" && s.overview) {
               status.appendChild(h("p", { role: "status" }, ["One review of all " + n + " already exists (" + s.minutes + " min). ", sheetLink(BASE + "/d/" + s.overview, "▶ Play it", "btn primary")]));
             } else {
-              status.appendChild(h("p", { role: "status" }, [(s.state === "waiting" ? "One " + (s.minutes || minutes) + " minute review of all " + n + " is waiting, and will be made once listening works again. It will be on " : "Preparing one " + (s.minutes || minutes) + " minute review of all " + n + ". It takes about 2 minutes, and you can leave. It will be on "), where, sc.group ? ", now in this group." : "."]));
+              status.appendChild(h("p", { role: "status" }, [(s.state === "waiting" ? "One " + (s.minutes || minutes) + " minute review of all " + n + " is waiting, and will be made once listening works again. It will be on " : "Preparing one " + (s.minutes || minutes) + " minute review of all " + n + ". It takes about 2 minutes, and you can leave. It will be on "), where, out.doc ? (sc.group ? ", now in this group." : ".") : (sc.group ? ", which is made when the review starts and joins this group." : ", which is made when the review starts.")]));
             }
             start.hidden = true; modeSeg.hidden = true; lenSeg.hidden = true; cost.hidden = true;
           });
@@ -2131,9 +2131,9 @@
        a toggle (opened below it), with Try again beside the text rather than under it. No Try
        again while the maker is down: it cannot work, and what waits is made once it does. */
     function unmadeRow(u) {
-      var href = BASE + "/d/" + u.doc, making = u.state === "queued" || u.state === "running";
+      var href = u.doc ? BASE + "/d/" + u.doc : u.combine && u.combine.group ? BASE + "/g/" + u.combine.group : null, making = u.state === "queued" || u.state === "running";
       var waiting = u.state === "waiting";
-      var link = h("a", { class: "title", href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [u.title]);
+      var link = href ? h("a", { class: "title", href: href, onclick: function (e) { if (e.metaKey || e.ctrlKey) return; e.preventDefault(); go(href); } }, [u.title]) : h("span", { class: "title" }, [u.title]);
       var why = h("p", { class: "why", hidden: true }, [u.error || ""]);
       var whyBtn = u.error && !making && !(waiting && down) ? h("button", { class: "btn link", type: "button", "aria-expanded": "false", onclick: function () {
         var open = whyBtn.getAttribute("aria-expanded") !== "true";
@@ -2152,8 +2152,9 @@
       var retry = h("button", { class: "btn", type: "button", onclick: function () {
         if (isPending(retry)) return;
         pending(retry, true);
-        api("/docs/" + encodeURIComponent(u.doc) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: u.minutes }) })
-          .then(function (s) { Object.assign(u, s, { requested: new Date().toISOString(), finished: null }); render(); watch(); })
+        var ask = u.combine ? api("/overviews", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ docs: u.combine.docs, group: u.combine.group || undefined, minutes: u.minutes }) }).then(function (out) { return out.listen; })
+          : api("/docs/" + encodeURIComponent(u.doc) + "/overview", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: u.minutes }) });
+        ask.then(function (s) { Object.assign(u, s, { requested: new Date().toISOString(), finished: null }); render(); watch(); })
           .catch(function (e) { pending(retry, false); toast("Could not ask again: " + (e.message || e)); });
       } }, ["Try again"]);
       return h("div", { class: "unmade-row failed" }, [text, retry]);

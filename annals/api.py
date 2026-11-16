@@ -582,7 +582,9 @@ def _mk_api(
         Their text is put in one document (added to ``group`` when given; the documents must
         then be in it), and that document gets an ordinary overview; the same documents at
         the same versions reuse it, and a combined document among them counts as what it
-        combines. This spends money. Returns ``{"doc": <id>, "listen": <state>}``.
+        combines. The document is made by the worker when it starts the job, so ``doc`` is
+        ``None`` until then (and for good if no worker ever runs it). This spends money.
+        Returns ``{"doc": <id or None>, "listen": <state>}``.
         """
         if not requests:
             raise HTTPException(404, "overviews are not offered here")
