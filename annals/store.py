@@ -1121,3 +1121,93 @@ class HidingStore(DocStore):
         is refused as a missing one."""
         ids = self._group_docs_checked(doc_ids)
         return self._without_hidden([self.whole._append_to_group(gid, ids)])[0]
+
+
+#: what a document's meta says about where it came from: ``source`` (the publisher's host,
+#: cwd, session and ``--meta`` keys) and ``artifact`` (a claude.ai link only the owner can
+#: open). ``copy`` to a room drops them from what it writes.
+PROVENANCE_KEYS = ("source", "artifact")
+#: the fields of a document's meta an outside audience may see (a room): everything a
+#: reader's page needs, and nothing else, so a field added later stays out until named here
+ROOM_META_KEYS = frozenset(
+    {
+        "id",
+        "title",
+        "kind",
+        "main",
+        "files",
+        "sizes",
+        "size",
+        "tags",
+        "excerpt",
+        "created",
+        "updated",
+        "version",
+        "versions",
+        "version_of",
+        "in_trash",
+    }
+)
+#: the fields of a version entry (``meta["versions"]``) a room shows
+_ROOM_VERSION_KEYS = ("n", "title", "kind", "size", "created")
+
+
+def without_provenance(meta: dict, *, keys: Iterable[str] = PROVENANCE_KEYS) -> dict:
+    """``meta`` without the keys that say where it came from.
+
+    >>> without_provenance({"id": "a", "source": {"host": "h"}, "artifact": "x"})
+    {'id': 'a'}
+    """
+    keys = frozenset(keys)
+    return {k: v for k, v in meta.items() if k not in keys}
+
+
+def room_meta(meta: dict, *, keys: Iterable[str] = ROOM_META_KEYS) -> dict:
+    """Only the fields of ``meta`` a room shows (:data:`ROOM_META_KEYS`).
+
+    >>> room_meta({"id": "a", "source": {"host": "h"}, "from_pending": "p", "versions": [{"n": 1, "from_pending": "p"}]})
+    {'id': 'a', 'versions': [{'n': 1}]}
+    """
+    keys = frozenset(keys)
+    out = {k: v for k, v in meta.items() if k in keys}
+    if isinstance(out.get("versions"), list):
+        out["versions"] = [
+            {k: v[k] for k in _ROOM_VERSION_KEYS if k in v}
+            for v in out["versions"]
+            if isinstance(v, dict)
+        ]
+    return out
+
+
+class RoomStore(HidingStore):
+    """The documents of ``store`` as an outside audience reads them (a room).
+
+    Nothing in the bin: a binned document is absent, as in :class:`HidingStore`, so the
+    owner withdraws a document from a room by binning it; a group left with no document
+    to show is absent too (its title included). And only the fields in
+    :data:`ROOM_META_KEYS`: every meta read through this store (one, a listing, a search,
+    a group's) comes without the rest, so whatever an API builds from it cannot show or
+    match them. Writes go to ``store`` unchanged. Reading may still settle a pending
+    replacement the publisher left, as the owner's store does.
+    """
+
+    def __init__(self, store: DocStore, *, keys: Iterable[str] = ROOM_META_KEYS):
+        super().__init__(store, hide=lambda meta: bool(meta.get("in_trash")))
+        self.keys = frozenset(keys)
+
+    def list(self, *, trash: bool = False) -> list[dict]:
+        if trash:  # a room has no bin
+            return []
+        return [room_meta(m, keys=self.keys) for m in super().list()]
+
+    def meta(self, doc_id: str, *, settle: bool = True) -> dict:
+        return room_meta(super().meta(doc_id, settle=settle), keys=self.keys)
+
+    def group(self, gid: str) -> dict:
+        g = super().group(gid)
+        if not g["docs"]:
+            raise KeyError(gid)
+        return g
+
+    def list_groups(self) -> list[dict]:
+        return [g for g in super().list_groups() if g["docs"]]

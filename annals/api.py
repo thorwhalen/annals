@@ -104,6 +104,7 @@ from annals.store import (
     DocStore,
     THUMB_CACHE,
     HidingStore,
+    RoomStore,
     TEXT_KINDS,
     check_artifact_url,
     kind_of,
@@ -112,6 +113,7 @@ from annals.store import (
 from annals.tags import TAGS_DIR, TAGS_FILE, JsonTagStore
 from annals.tables import add_table_tools, tables_version
 from annals.target import check_rel
+from starlette.routing import Match
 
 UI_DIR = Path(__file__).parent / "data" / "ui"
 DFLT_BASE_PATH = f"/{APP_NAME}"
@@ -286,6 +288,7 @@ def mk_api(
     listening: listen_log.ForReader | bool | None = True,
     reader: Callable[[Request], str] | None = None,
     title: str = APP_NAME,
+    room: bool = False,
 ) -> FastAPI:
     """The JSON API, raw files and page assets, rooted at ``/``, with no auth of its own.
 
@@ -313,8 +316,28 @@ def mk_api(
     ``True`` for one JSON file per reader under a local data root, any ``(reader) -> store``
     callable, or ``None`` to keep none. ``reader`` names the caller of a request; by default
     :func:`reader_of` (the login's email, else ``"owner"``).
+    ``room`` serves the documents to an outside audience (a client, a team) rather than to
+    the owner: read only (the routes in :data:`ROOM_ROUTES`, ``GET`` alone), nothing in the
+    bin, and only the meta fields a reader needs, so no provenance (see
+    :class:`annals.store.RoomStore`); who may read is the host's login. No sources beside the
+    documents, no overviews, no listening, no shares. Asking for any of those with it is an
+    error. The documents still arrive as files (``annals publish/copy --to <room target>``).
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
+    if room:
+        asked = {
+            "sources": bool(sources),
+            "overviews": bool(overviews),
+            "share_base_url": bool(share_base_url),
+            "listening": callable(listening),
+            "reader": reader is not None,
+        }
+        if any(asked.values()):
+            raise ValueError(
+                "a room serves documents only; it takes none of: "
+                + ", ".join(k for k, v in asked.items() if v)
+            )
+        return _mk_room(store, thumbnailer=thumbnailer, tags=tags, title=title)
     offered = overview.readers_offered(overviews)
     local = isinstance(store.target, LocalTarget)
     if offered and not local:
@@ -354,6 +377,57 @@ def mk_api(
     return api
 
 
+#: the routes a room answers (all ``GET``): reading, finding and downloading documents and
+#: groups. Everything else (writes, shares, overviews, listening, folder sources) is a 404,
+#: or a 405 for any other method, so a route added later is out of a room until named here.
+ROOM_ROUTES = frozenset(
+    {
+        "/health",
+        "/docs",
+        "/docs/{doc_id}",
+        "/groups",
+        "/groups/{gid}",
+        "/groups/{gid}/aggregate",
+        "/aggregate",
+        "/combine/formats",
+        "/references",
+        "/sources",
+        "/items",
+        "/items/{key:path}",
+        "/tags",
+        "/raw/{doc_id}/{rel:path}",
+        "/export/{doc_id}",
+        "/thumb/{doc_id}/{rel:path}",
+        "/ui",
+    }
+)
+
+
+def _mk_room(
+    store: DocStore,
+    *,
+    thumbnailer: Thumbnailer | None | bool,
+    tags: MutableMapping[str, list[str]] | None,
+    title: str,
+) -> FastAPI:
+    """:func:`mk_api` with ``room=True``: the API over a :class:`RoomStore`, gated by route."""
+    room_store = RoomStore(store)
+    api = _mk_api(
+        room_store,
+        requests=None,
+        thumbnailer=default_thumbnailer() if thumbnailer is True else thumbnailer,
+        sources={},
+        tags=default_tags(store) if tags is None else tags,
+        share_base=None,
+        listening=None,
+        reader=reader_of,
+        title=title,
+        room=True,
+    )
+    api.add_middleware(_RoomGate, routes=api.router.routes, allowed=ROOM_ROUTES)
+    return api
+
+
 def _mk_api(
     store: DocStore,
     *,
@@ -365,6 +439,7 @@ def _mk_api(
     listening: listen_log.ForReader | None,
     reader: Callable[[Request], str],
     title: str,
+    room: bool = False,
 ) -> FastAPI:
     """The API of :func:`mk_api` over ``store``, every default already resolved."""
     shares = Shares(store)
@@ -378,7 +453,9 @@ def _mk_api(
 
     @api.get("/health")
     def health() -> dict:
-        """Cheap liveness probe (also says which data dir is served)."""
+        """Cheap liveness probe (also says which data dir is served, except in a room)."""
+        if room:
+            return {"ok": True, "room": True}
         return {"ok": True, "target": store.target.describe()}
 
     @api.get("/docs")
@@ -900,8 +977,9 @@ def _mk_api(
 
     @api.get("/sources")
     def list_sources() -> dict:
-        """The sources listed, in order (``published`` first)."""
-        return {"sources": catalog.sources_info()}
+        """The sources listed, in order (``published`` first); ``room`` tells the page to
+        show a reader's view (no owner controls)."""
+        return {"sources": catalog.sources_info(), "room": room}
 
     @api.get("/items")
     def list_items(q: str = "", source: str = "", trash: bool = False) -> dict:
@@ -1355,6 +1433,38 @@ class _ByReader:
             Exception
         ):  # a host's reader or predicate failing: fail closed, not a 500
             return False
+
+
+class _RoomGate:
+    """Pure ASGI middleware: answer only ``GET`` on the ``allowed`` route paths.
+
+    The route is found the way the router finds it (``route.matches``), so a mount prefix
+    is handled exactly as routing handles it; an unknown path or route is a 404 and any
+    other method a 405, before the app sees the request.
+    """
+
+    def __init__(self, app, *, routes, allowed: frozenset[str]):
+        self.app, self.routes, self.allowed = app, routes, allowed
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] == "http":
+            refused = self._refusal(scope)
+            if refused:
+                status, detail = refused
+                await JSONResponse({"detail": detail}, status_code=status)(
+                    scope, receive, send
+                )
+                return
+        await self.app(scope, receive, send)
+
+    def _refusal(self, scope) -> tuple[int, str] | None:
+        if scope.get("method") not in ("GET", "HEAD"):
+            return 405, "this room is read only"
+        for route in self.routes:
+            match, _ = route.matches(scope)
+            if match == Match.FULL:
+                return None if route.path in self.allowed else (404, "Not Found")
+        return 404, "Not Found"
 
 
 class _AuthGate:

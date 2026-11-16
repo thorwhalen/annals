@@ -27,6 +27,10 @@ fetches documents from it rather than being written to): a replacement published
 travels as it is and is applied where it lands (see :mod:`annals.store`). ``ANNALS_OUTBOX``
 overrides it.
 
+A fourth, ``room``, is true for a target an outside audience reads (a client's room, served
+with ``mk_api(room=True)``): ``publish`` and ``copy`` to it write no provenance (the
+publisher's host, cwd, session and ``--meta`` keys), so it never reaches that disk.
+
 The server side has two knobs of its own. ``ANNALS_DATA_DIR`` is the directory the API
 reads. It defaults to ``~/.local/share/annals``, which is also the default publish target,
 so with no configuration at all ``annals publish`` and ``annals serve`` meet in the same
@@ -99,6 +103,8 @@ class Settings:
     outbox: bool = False
     #: where share links point (``<this>/<token>/``); ``<base_url>/shared`` by default
     share_base_url: str = ""
+    #: an outside audience reads this target: what is written to it carries no provenance
+    room: bool = False
 
     def __post_init__(self):
         if not self.share_base_url:
@@ -139,6 +145,7 @@ def load_settings(
     to: str | None = None,
     outbox: bool | None = None,
     share_base_url: str | None = None,
+    room: bool | None = None,
     config_path: Path | None = None,
 ) -> Settings:
     """Resolve settings: arguments, then ``to``, env, the config file, then local defaults.
@@ -159,6 +166,7 @@ def load_settings(
         target = target or named["target"]
         outbox = outbox if outbox is not None else bool(named.get("outbox", False))
         share_base_url = share_base_url or named.get("share_base_url")
+        room = room if room is not None else bool(named.get("room", False))
         # Never fall through to the default's base url: links would name the wrong place.
         base_url = base_url or named.get("base_url")
         if not base_url:
@@ -187,6 +195,10 @@ def load_settings(
             else bool(file_values.get("outbox", False))
             and not (target or os.environ.get(ENV_TARGET))
         )
+    if room is None:
+        room = bool(file_values.get("room", False)) and not (
+            target or os.environ.get(ENV_TARGET)
+        )
     resolved_share = (
         share_base_url
         or (None if to else os.environ.get(ENV_SHARE_BASE_URL))
@@ -199,6 +211,7 @@ def load_settings(
         configured=configured,
         outbox=outbox,
         share_base_url=str(resolved_share).rstrip("/"),
+        room=room,
     )
 
 
@@ -223,6 +236,8 @@ def write_config(
     values: dict = {"target": settings.target, "base_url": settings.base_url}
     if settings.outbox:
         values["outbox"] = True
+    if settings.room:
+        values["room"] = True
     if settings.share_base_url != f"{settings.base_url}/shared":
         values["share_base_url"] = settings.share_base_url  # only when not the default
     if to:

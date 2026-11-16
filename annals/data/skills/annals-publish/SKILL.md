@@ -143,7 +143,7 @@ annals copy <link-or-id> --to inoocq                    # copy a document or a w
 annals copy <link-or-id> --to inoocq --source other     # read from a named target instead of the default
 ```
 
-Without `--to` documents go to the default target, as always. Use `--to <name>` only when you were told to (for example: material meant for the whole inoocq team goes `--to inoocq`, private notes do not). `copy` reads the documents from a place this machine can read (a directory or `ssh`), so it works where the documents live, not from a machine that only has the link. An unknown name is an error that lists the known ones.
+A target saved with `--room` is a room: a page an outside audience reads (a client). Put something there only when the owner asks, preferably `annals copy <link> --to <room>` of a document the owner has already read; what reaches a room carries no host, cwd or session. Without `--to` documents go to the default target, as always. Use `--to <name>` only when you were told to (for example: material meant for the whole inoocq team goes `--to inoocq`, private notes do not). `copy` reads the documents from a place this machine can read (a directory or `ssh`), so it works where the documents live, not from a machine that only has the link. An unknown name is an error that lists the known ones.
 
 ## Sharing one page with someone else
 
