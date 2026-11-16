@@ -65,7 +65,9 @@ SINCE_UNITS = {"m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
 
 def parse_iso(text: str) -> datetime:
     """An ISO date or time as an aware datetime; one with no offset is local time."""
-    text = re.sub(r"(?<=\d) (?=\d\d:\d\d$)", "+", text.strip())  # a "+" in a URL query arrives as a space
+    text = re.sub(
+        r"(?<=\d) (?=\d\d:\d\d$)", "+", text.strip()
+    )  # a "+" in a URL query arrives as a space
     dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
     return dt if dt.tzinfo else dt.astimezone()
 
