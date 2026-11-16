@@ -1691,6 +1691,14 @@
       /* no copy here on its own: it would run after the network wait, which iOS refuses */
       result.appendChild(copyField(url, { name: "Share link", copyName: "Copy the share link", copied: "Link copied" }));
       result.appendChild(h("p", { class: "muted" }, ["Anyone with it can open " + (sc.kind === "doc" ? "this document" : "these documents") + " without an account · " + shareSummary(s)]));
+      /* the same link as one file (annals.share_page): text for an agent, a PDF with the images */
+      var base = url.replace(/\/?$/, "/");
+      result.appendChild(h("details", { class: "share-forms" }, [
+        h("summary", null, ["Same link as Markdown or PDF"]),
+        h("p", { class: "muted" }, ["The link above already carries its text, so a person or NotebookLM can read it. Markdown suits an agent; the PDF keeps the images."]),
+        copyField(base + "share.md", { name: "Markdown link", copyName: "Copy the Markdown link", copied: "Markdown link copied" }),
+        copyField(base + "share.pdf", { name: "PDF link", copyName: "Copy the PDF link", copied: "PDF link copied" })
+      ]));
       if (sentPw) {
         result.appendChild(h("p", { class: "muted" }, ["Send the password separately:"]));
         result.appendChild(copyField(sentPw, { name: "Password", copyName: "Copy the password", copied: "Password copied" }));

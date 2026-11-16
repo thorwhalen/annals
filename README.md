@@ -188,6 +188,16 @@ annals unshare <link-or-token>                               # off at once
 
 The link is `<share_base_url>/<token>/`: 128 random bits, `noindex`, `no-referrer`. Every request is checked against the share's record (`shares/<token>.json` under the data root), so a file you did not choose is a 404 even beside the shared page, a revoke or an expiry takes effect on the next request, and references to anything outside the share (an image you left out, a link to another annals page or to anything else on your annals' host, an annals id in the text) are removed from every text file before it is sent (markdown, html, plain text, svg). A linked page you tick goes with the files it shows, not every file beside it. The password is a gate on the link, not an account: at least 8 characters, stored hashed (stdlib scrypt), with attempts limited per client and per link, and a correct one earns a cookie scoped to that link. Links are read-only and last 7 days unless you say otherwise.
 
+**One link, readable without script.** The page a link opens carries the shared text in its html (markdown rendered, html reduced to its words and structure, images as links into the share), and the viewer's script replaces it with the usual view when it runs. So a person, NotebookLM, a link preview or `curl` all read the document, not only its title. The same link also answers as one file, under the same token, expiry, password and revocation:
+
+| form | address | give it to |
+|---|---|---|
+| page | `<link>/` (a group: every document, in order); `<link>/d/<id>` one of them | a person, NotebookLM or any web reader |
+| Markdown | `<link>/share.md`; `<link>/d/<id>.md` | an agent: the whole share as one text |
+| PDF | `<link>/share.pdf`; `<link>/d/<id>.pdf` | someone who wants the images in one file, or an upload (needs the `pdf` extra) |
+
+The page names the other two in `<link rel="alternate">`, `annals share` prints all three, and the Share sheet offers them under "Same link as Markdown or PDF".
+
 Where the links are served:
 
 - **Standalone** (`annals serve`): at `/annals/shared/<token>/`, outside the login, with nothing to configure.

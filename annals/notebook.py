@@ -18,7 +18,8 @@ decides what becomes a source and how one looks::
 - :func:`notebook_sources`: the ``{doc, file, title, url}`` rows of a share, in its order.
 - :func:`source_scope`: what a notebook share includes of a document: its source pages
   and the files they show, never the rest of a folder.
-- :func:`render_source`: one markdown file as its source page, shared-text rules applied
+- :func:`render_source`: one markdown file as its source page (:func:`render_source_body`
+  is the page's body alone, which the share page embeds), shared-text rules applied
   twice: to the text (:func:`annals.share.filter_refs`), then to every link and image of
   the rendered page (:func:`annals.share.ref_decider` over markdown-it's tokens), and
   any annals id left in it removed. Cached, and rendered only up to
@@ -274,11 +275,18 @@ def source_link_rewriter(
     return rewrite
 
 
+def render_source(text: str, *, title: str, **scope) -> str:
+    """One markdown file of a share as its source page (see the module docstring).
+
+    ``scope`` is :func:`render_source_body`'s; the page adds the ``<title>``.
+    """
+    return source_page(title, render_source_body(text, **scope))
+
+
 @functools.lru_cache(maxsize=SOURCE_CACHE_SIZE)
-def render_source(
+def render_source_body(
     text: str,
     *,
-    title: str,
     link: str,
     doc_id: str,
     rel: str,
@@ -288,9 +296,9 @@ def render_source(
     root_id: str = "",
     private_hosts: tuple[str, ...] = (),
 ) -> str:
-    """One markdown file of a share as its source page (see the module docstring).
+    """One markdown file of a share as safe html, links and images made absolute.
 
-    Every argument is hashable, so a page is rendered once per text and scope.
+    Every argument is hashable, so a body is rendered once per text and scope.
     ``shared_ids`` are the annals ids the share includes (opened at ``<link>/d/<id>``),
     ``root_id`` the shared group's (opened at ``<link>/``).
     """
@@ -323,7 +331,7 @@ def render_source(
             decide, link=link, doc_id=doc_id, from_dir=from_dir, sources=sources
         )
         body = markdown_html(text, rewrite_url=rewrite)
-    return source_page(title, remove_unshared_ids(body, shared))
+    return remove_unshared_ids(body, shared)
 
 
 def source_page(title: str, body_html: str) -> str:

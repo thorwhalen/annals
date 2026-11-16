@@ -168,6 +168,8 @@ def test_share_shares_unshare(tmp_path, monkeypatch):
     link = out.getvalue().strip()
     assert re.match(r"^https://example\.com/annals/shared/[A-Za-z0-9_-]{22}/$", link)
     assert "password-protected" in err.getvalue() and "2 files" in err.getvalue()
+    assert f"as Markdown, for an agent: {link}share.md" in err.getvalue()
+    assert f"as PDF, images inside: {link}share.pdf" in err.getvalue()
     token = link.rstrip("/").rsplit("/", 1)[1]
 
     # what the CLI wrote is what the server serves

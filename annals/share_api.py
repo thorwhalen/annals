@@ -6,7 +6,9 @@ enlace platform runs it as a separate ``public`` app). Its only key is the link'
 (:mod:`annals.share`); every request re-reads the share record and is checked against it,
 so a revoke, an expiry or a changed password takes effect on the next request::
 
-    GET  /{token}/                  the page (or the password form); /{token}/d/{id} too
+    GET  /{token}/                  the page, its text in the html (or the password form);
+                                    /{token}/d/{id} one document's (annals.share_page)
+    GET  /{token}/share.md|.pdf     the whole share as one file; /{token}/d/{id}.md|.pdf one document
     POST /{token}/unlock            a password, form-encoded; a cookie scoped to the link
     GET  /{token}/share             the share: title, root, its documents
     GET  /{token}/docs/{id}         one shared document: its included files, its text
@@ -21,7 +23,9 @@ Unknown, revoked and out-of-scope all answer 404; an expired link 410; a locked 
 Every response is ``noindex`` and ``no-referrer`` (as heed's review pages are), JSON and
 pages are ``no-store``, and the page runs under a CSP that allows only its own script.
 The page is annals' own ``app.js`` in share mode, so a shared report looks like the
-owner's view of it, without the owner's controls.
+owner's view of it, without the owner's controls; before the script runs (and for every
+reader that runs none: NotebookLM, a link preview, ``curl``) the page is the shared text
+itself, rendered here.
 """
 
 from __future__ import annotations
@@ -78,6 +82,7 @@ from annals.notebook import (
     source_title,
 )
 from annals.share import Shares, dir_of, filter_refs
+from annals.share_page import SHARE_FILE, ShareScope, alternate_links, page_body
 from annals.sources import with_thumb
 from annals.store import PAGE_KINDS, TEXT_KINDS, DocStore, kind_of
 
@@ -105,6 +110,8 @@ DFLT_TRUSTED_PROXIES = ("127.0.0.1", "::1")
 MAX_FORM_BYTES = 4096
 #: a shared page is filtered whole in memory before it is sent; larger ones are refused
 MAX_SHARED_PAGE_BYTES = 20_000_000
+#: the share as one file, at ``share.<ext>`` and ``d/<id>.<ext>`` (:mod:`annals.share_page`)
+_FILE_FORMATS = ("md", "pdf")
 
 
 def _csp(nonce: str) -> str:
@@ -116,14 +123,15 @@ def _csp(nonce: str) -> str:
     )
 
 
-def _head(title: str, ui: str) -> str:
+def _head(title: str, ui: str, *, extra: str = "") -> str:
+    """The page's ``<head>``; ``extra`` is html added to it (a description, alternates)."""
     return (
         '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
         '<meta name="robots" content="noindex, nofollow">\n'
         '<meta name="referrer" content="no-referrer">\n'
         '<meta name="color-scheme" content="light dark">\n'
-        f"<title>{html.escape(title)}</title>\n"
+        f"<title>{html.escape(title)}</title>\n{extra}"
         f'<link rel="stylesheet" href="{html.escape(ui)}/style.css">\n</head>\n'
     )
 
@@ -284,7 +292,47 @@ def mk_share_api(
 
     # -- the page --------------------------------------------------------------------
 
-    def _page(token: str, request: Request) -> Response:
+    def _static(rec: dict, request: Request, doc_id: str | None) -> tuple[str, str]:
+        """The page's own content (its text, for a reader that runs no script) and its
+        ``<head>`` additions; :mod:`annals.share_page`."""
+        root = rec["root"]
+        link = _link(request, rec["token"])
+        scope = ShareScope(
+            link=link,
+            shared_ids=tuple(rec["docs"]),
+            root_id=root.get("id", "") if root.get("kind") == "group" else "",
+            private_hosts=tuple(sorted(_private_hosts(request))),
+        )
+        if doc_id is None and root.get("kind") == "doc":
+            doc_id_shown, alt_id = root["id"], None
+        else:
+            doc_id_shown, alt_id = doc_id, doc_id
+        if doc_id_shown is None:
+            docs = shares.included(rec)
+            name = rec.get("title") or title
+        else:
+            meta, files = _shared_files(rec, doc_id_shown)
+            docs = [(meta, files)]
+            name = (
+                meta.get("title") or doc_id_shown
+                if doc_id is not None
+                else rec.get("title") or meta.get("title") or title
+            )
+
+        def read_text(i: str, rel: str) -> str:
+            path = doc_file_path(store, i, rel)
+            return path.read_text(encoding="utf-8", errors="replace")
+
+        content, description = page_body(
+            docs, title=name, read_text=read_text, scope=scope, doc_id=alt_id
+        )
+        extra = (
+            f'<meta name="description" content="{html.escape(description)}">\n'
+            + alternate_links(link, alt_id)
+        )
+        return content, extra
+
+    def _page(token: str, request: Request, doc_id: str | None = None) -> Response:
         ui = f"{_root(request)}/ui"
         state, rec = shares.status(token)
         if state == "missing":
@@ -315,9 +363,19 @@ def mk_share_api(
             "share": {"root": rec["root"], "expires": rec.get("expires")},
         }
         cfg_js = json.dumps(cfg).replace("<", "\\u003c")
+        try:
+            content, extra = _static(rec, request, doc_id)
+        except HTTPException:
+            return _message_page(
+                "Not in this share",
+                "This document is not part of the link you were given.",
+                ui,
+                status=404,
+            )
         body = (
-            _head(cfg["title"], ui)
-            + '<body>\n<div id="app" aria-live="polite"><p class="muted">Loading…</p></div>\n'
+            _head(cfg["title"], ui, extra=extra)
+            + '<body>\n<div id="app" aria-live="polite"><div class="wrap share-static">'
+            f"<main>\n{content}\n</main></div></div>\n"
             f'<script nonce="{nonce}">window.ANNALS = {cfg_js};</script>\n'
             f'<script src="{html.escape(ui)}/app.js"></script>\n</body>\n</html>\n'
         )
@@ -334,8 +392,24 @@ def mk_share_api(
         return _page(token, request)
 
     @app.get("/{token}/d/{doc_id}", include_in_schema=False)
-    def doc_page(token: str, doc_id: str, request: Request) -> Response:
-        return _page(token, request)
+    async def doc_page(token: str, doc_id: str, request: Request) -> Response:
+        """One document's page, or, as ``<id>.md`` / ``<id>.pdf``, that document as a file."""
+        stem, dot, ext = doc_id.rpartition(".")
+        if dot and ext in _FILE_FORMATS:
+            return await _as_file(token, request, ext, only=stem)
+        return await anyio.to_thread.run_sync(_page, token, request, doc_id)
+
+    @app.get(f"/{{token}}/{SHARE_FILE}.{{ext}}")
+    async def share_file(token: str, ext: str, request: Request) -> Response:
+        """The whole share as one Markdown file (``share.md``) or PDF (``share.pdf``).
+
+        The same token, expiry, password and revocation as the page; the same text the
+        recipient could open one file at a time (it is ``/aggregate``, by a name a reader
+        recognises).
+        """
+        if ext not in _FILE_FORMATS:
+            raise HTTPException(404, "no such representation of this share")
+        return await _as_file(token, request, ext)
 
     @app.post("/{token}/unlock", include_in_schema=False)
     async def unlock(token: str, request: Request) -> Response:
@@ -557,8 +631,23 @@ def mk_share_api(
         Only files the share includes are read, text through the same filter, so the
         combined file shows nothing the recipient could not already open one file at a time.
         """
+        return await _as_file(token, request, format, download=download)
+
+    async def _as_file(
+        token: str,
+        request: Request,
+        format: str,
+        *,
+        download: bool = False,
+        only: str | None = None,
+    ) -> Response:
+        """The share (or its document ``only``) combined into one ``format`` file."""
         rec = _open(token, request)
         docs = await anyio.to_thread.run_sync(shares.included, rec)
+        if only is not None:
+            docs = [(m, f) for m, f in docs if m["id"] == only]
+            if not docs:
+                raise HTTPException(404, "no such document in this share")
         allowed = {meta["id"]: files for meta, files in docs}
 
         def read(doc_id: str, rel: str) -> str:
@@ -583,7 +672,11 @@ def mk_share_api(
                 read=read,
                 open_path=functools.partial(doc_file_path, store),
                 read_bytes=read_bytes,
-                title=rec.get("title") or title,
+                title=(
+                    docs[0][0].get("title") or only
+                    if only is not None
+                    else rec.get("title") or title
+                ),
                 download=download,
                 fmt=format,
             )
