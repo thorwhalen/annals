@@ -164,8 +164,8 @@ and never blocks: the author decides.</p>
 <ul class="simple">
 <li><p><code class="docutils literal notranslate"><span class="pre">issue</span></code>: a GitHub-style reference, <code class="docutils literal notranslate"><span class="pre">owner/repo#12</span></code> or a bare <code class="docutils literal notranslate"><span class="pre">#12</span></code>, outside a link;</p></li>
 <li><p><code class="docutils literal notranslate"><span class="pre">message</span></code>: a line that points at one message (a message, a thread, a DM, a reply, a
-post, someone who asked, said or wrote, or a <code class="docutils literal notranslate"><span class="pre">#channel</span></code>), carries a date, and has no
-web address at all. A dated pointer to a conversation names one message, so it should be
+post, someone who asked, said or wrote, or a <code class="docutils literal notranslate"><span class="pre">#channel</span></code>) tied to a date,
+and has no web address at all. A dated pointer to a conversation names one message, so it should be
 its permalink. Headings and date ranges (“2026-10-04 → 2026-11-07”) are periods, not
 messages, and are skipped.</p></li>
 </ul>
@@ -182,6 +182,17 @@ messages, and are skipped.</p></li>
 </span><span data-line="11"><span class="go">[(2, 'message', 'Slack/chat message of 2026-10-29'), (4, 'issue', 'inoocq/meta#7'), (4, 'issue', '#12')]</span>
 </span></pre></div>
 </div>
+<p>Ordinary prose is not flagged: a colour, a date that is not tied to the conversation word, a
+table row.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">prose</span> <span class="o">=</span> <span class="s1">'''A base surface of #121212 and #0b0b12.</span>
+</span><span data-line="2"><span class="gp">... </span><span class="s1">The composition review of 2026-11-12 [19] found that the owner's reply reaches an agent.</span>
+</span><span data-line="3"><span class="gp">... </span><span class="s1">| library | archived, last push 2026-09-18 | can post to a URL |</span>
+</span><span data-line="4"><span class="gp">... </span><span class="s1">Released 2026-05-01; its documentation said nothing about this.</span>
+</span><span data-line="5"><span class="gp">... </span><span class="s1">'''</span>
+</span><span data-line="6"><span class="gp">&gt;&gt;&gt; </span><span class="n">unlinked_mentions</span><span class="p">(</span><span class="n">prose</span><span class="p">)</span>
+</span><span data-line="7"><span class="go">[]</span>
+</span></pre></div>
+</div>
 <p class="rubric">Module Attributes</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
@@ -196,7 +207,7 @@ messages, and are skipped.</p></li>
 <td><p>an inline code span</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.linkcheck.ISSUE_REF" title="annals.linkcheck.ISSUE_REF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ISSUE_REF</span></code></a></p></td>
-<td><p>a GitHub-style issue or PR reference, qualified or bare</p></td>
+<td><p>a GitHub-style issue or PR reference, qualified or bare.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.linkcheck.CONVERSATION" title="annals.linkcheck.CONVERSATION"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CONVERSATION</span></code></a></p></td>
 <td><p>words that point at one message, and a #channel (letters, not a number)</p></td>
@@ -247,14 +258,15 @@ messages, and are skipped.</p></li>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="annals.linkcheck.DATE_RANGE">
-<span class="sig-prename descclassname"><span class="pre">annals.linkcheck.</span></span><span class="sig-name descname"><span class="pre">DATE_RANGE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('\\b(?:\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])\\b\\s*(?:→|-&gt;|–|—|to|-)\\s*\\b(?:\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])\\b')</span></span><a class="headerlink" href="#annals.linkcheck.DATE_RANGE" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.linkcheck.</span></span><span class="sig-name descname"><span class="pre">DATE_RANGE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('(?&lt;![\\d-])\\b(?:\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])\\b\\s*(?:→|-&gt;|–|—|to|-)\\s*(?&lt;![\\d-])\\b(?:\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])\\b')</span></span><a class="headerlink" href="#annals.linkcheck.DATE_RANGE" title="Link to this definition">#</a></dt>
 <dd><p>a period between two dates, which names no single message</p>
 </dd></dl>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="annals.linkcheck.ISSUE_REF">
-<span class="sig-prename descclassname"><span class="pre">annals.linkcheck.</span></span><span class="sig-name descname"><span class="pre">ISSUE_REF</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('(?&lt;![\\w/&amp;#])(?:[A-Za-z0-9][\\w.-]*/[\\w.-]+)?#\\d+\\b')</span></span><a class="headerlink" href="#annals.linkcheck.ISSUE_REF" title="Link to this definition">#</a></dt>
-<dd><p>a GitHub-style issue or PR reference, qualified or bare</p>
+<span class="sig-prename descclassname"><span class="pre">annals.linkcheck.</span></span><span class="sig-name descname"><span class="pre">ISSUE_REF</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">re.compile('(?&lt;![\\w/&amp;#])(?:[A-Za-z0-9][\\w.-]*/[\\w.-]+#\\d+|#(?!\\d{6}\\b|\\d{8}\\b)\\d+)\\b')</span></span><a class="headerlink" href="#annals.linkcheck.ISSUE_REF" title="Link to this definition">#</a></dt>
+<dd><p>a GitHub-style issue or PR reference, qualified or bare. A bare <code class="docutils literal notranslate"><span class="pre">#</span></code> and six or eight
+digits (<code class="docutils literal notranslate"><span class="pre">#121212</span></code>, <code class="docutils literal notranslate"><span class="pre">#12121280</span></code>) is a colour far more often than an issue</p>
 </dd></dl>
 
 <dl class="py data">
@@ -354,7 +366,7 @@ messages, and are skipped.</p></li>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=4f34e5f2"></script>
+      <script src="../_static/documentation_options.js?v=a72e4630"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

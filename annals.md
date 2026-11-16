@@ -1,4 +1,4 @@
-> built 2026-11-16 01:47 UTC from c11c825 (main) · annals 0.0.47. Details: build_info.json
+> built 2026-11-16 01:51 UTC from 57bdc90 (main) · annals 0.0.48. Details: build_info.json
 
 # index.html.md
 
@@ -1612,8 +1612,8 @@ Two kinds, both in markdown or plain text (code spans and fenced blocks are igno
 
 - `issue`: a GitHub-style reference, `owner/repo#12` or a bare `#12`, outside a link;
 - `message`: a line that points at one message (a message, a thread, a DM, a reply, a
-  post, someone who asked, said or wrote, or a `#channel`), carries a date, and has no
-  web address at all. A dated pointer to a conversation names one message, so it should be
+  post, someone who asked, said or wrote, or a `#channel`) tied to a date,
+  and has no web address at all. A dated pointer to a conversation names one message, so it should be
   its permalink. Headings and date ranges (“2026-10-04 → 2026-11-07”) are periods, not
   messages, and are skipped.
 
@@ -1631,13 +1631,26 @@ Two kinds, both in markdown or plain text (code spans and fenced blocks are igno
 [(2, 'message', 'Slack/chat message of 2026-10-29'), (4, 'issue', 'inoocq/meta#7'), (4, 'issue', '#12')]
 ```
 
+Ordinary prose is not flagged: a colour, a date that is not tied to the conversation word, a
+table row.
+
+```pycon
+>>> prose = '''A base surface of #121212 and #0b0b12.
+... The composition review of 2026-11-12 [19] found that the owner's reply reaches an agent.
+... | library | archived, last push 2026-09-18 | can post to a URL |
+... Released 2026-05-01; its documentation said nothing about this.
+... '''
+>>> unlinked_mentions(prose)
+[]
+```
+
 ### Module Attributes
 
 | [`URL`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.URL)          | a web address anywhere on a line                                        |
 |---------------------------------------------------------------|-------------------------------------------------------------------------|
 | [`MD_LINK`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.MD_LINK)      | a markdown link or image `[text](url)`, or an autolink `<url>`          |
 | [`CODE_SPAN`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.CODE_SPAN)    | an inline code span                                                     |
-| [`ISSUE_REF`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.ISSUE_REF)    | a GitHub-style issue or PR reference, qualified or bare                 |
+| [`ISSUE_REF`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.ISSUE_REF)    | a GitHub-style issue or PR reference, qualified or bare.                |
 | [`CONVERSATION`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.CONVERSATION) | words that point at one message, and a #channel (letters, not a number) |
 | [`DATE_RANGE`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.DATE_RANGE)   | a period between two dates, which names no single message               |
 | [`MAX_LISTED`](_autosummary/annals.linkcheck.html.md#annals.linkcheck.MAX_LISTED)   | how many mentions a warning lists before it says "and N more"           |
@@ -1661,13 +1674,14 @@ an inline code span
 
 words that point at one message, and a #channel (letters, not a number)
 
-### annals.linkcheck.DATE_RANGE *= re.compile('\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b\\\\s\*(?:→|->|–|—|to|-)\\\\s\*\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b')*
+### annals.linkcheck.DATE_RANGE *= re.compile('(?<![\\\\d-])\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b\\\\s\*(?:→|->|–|—|to|-)\\\\s\*(?<![\\\\d-])\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b')*
 
 a period between two dates, which names no single message
 
-### annals.linkcheck.ISSUE_REF *= re.compile('(?<![\\\\w/&#])(?:[A-Za-z0-9][\\\\w.-]\*/[\\\\w.-]+)?#\\\\d+\\\\b')*
+### annals.linkcheck.ISSUE_REF *= re.compile('(?<![\\\\w/&#])(?:[A-Za-z0-9][\\\\w.-]\*/[\\\\w.-]+#\\\\d+|#(?!\\\\d{6}\\\\b|\\\\d{8}\\\\b)\\\\d+)\\\\b')*
 
-a GitHub-style issue or PR reference, qualified or bare
+a GitHub-style issue or PR reference, qualified or bare. A bare `#` and six or eight
+digits (`#121212`, `#12121280`) is a colour far more often than an issue
 
 ### annals.linkcheck.MAX_LISTED *= 5*
 
@@ -4301,16 +4315,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 01:47 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/c11c825cfa94fc66b178eb1989c8620b4859d0d3"><code>c11c825</code></a> on branch <code>main</code>, for **annals 0.0.47** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-16 01:51 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/57bdc9045aa29226081c298b99ca2b9513ad2382"><code>57bdc90</code></a> on branch <code>main</code>, for **annals 0.0.48** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.48) is ahead of the latest release on PyPI (0.0.47): these docs describe unreleased code.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/c11c825cfa94fc66b178eb1989c8620b4859d0d3"><code>c11c825cfa94fc66b178eb1989c8620b4859d0d3</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/57bdc9045aa29226081c298b99ca2b9513ad2382"><code>57bdc9045aa29226081c298b99ca2b9513ad2382</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -4321,9 +4337,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43787871214">43787871214</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43788343539">43788343539</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>c11c825cfa94fc66b178eb1989c8620b4859d0d3</code> (in the history of the built commit) |
+| Event commit | <code>57bdc9045aa29226081c298b99ca2b9513ad2382</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -4348,13 +4364,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.47/">0.0.47</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.47/">0.0.47</a>, older than the documented version (0.0.48).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout c11c825cfa94fc66b178eb1989c8620b4859d0d3
+git checkout 57bdc9045aa29226081c298b99ca2b9513ad2382
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

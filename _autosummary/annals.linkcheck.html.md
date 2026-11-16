@@ -11,8 +11,8 @@ Two kinds, both in markdown or plain text (code spans and fenced blocks are igno
 
 - `issue`: a GitHub-style reference, `owner/repo#12` or a bare `#12`, outside a link;
 - `message`: a line that points at one message (a message, a thread, a DM, a reply, a
-  post, someone who asked, said or wrote, or a `#channel`), carries a date, and has no
-  web address at all. A dated pointer to a conversation names one message, so it should be
+  post, someone who asked, said or wrote, or a `#channel`) tied to a date,
+  and has no web address at all. A dated pointer to a conversation names one message, so it should be
   its permalink. Headings and date ranges (“2026-10-04 → 2026-11-07”) are periods, not
   messages, and are skipped.
 
@@ -30,13 +30,26 @@ Two kinds, both in markdown or plain text (code spans and fenced blocks are igno
 [(2, 'message', 'Slack/chat message of 2026-10-29'), (4, 'issue', 'inoocq/meta#7'), (4, 'issue', '#12')]
 ```
 
+Ordinary prose is not flagged: a colour, a date that is not tied to the conversation word, a
+table row.
+
+```pycon
+>>> prose = '''A base surface of #121212 and #0b0b12.
+... The composition review of 2026-11-12 [19] found that the owner's reply reaches an agent.
+... | library | archived, last push 2026-09-18 | can post to a URL |
+... Released 2026-05-01; its documentation said nothing about this.
+... '''
+>>> unlinked_mentions(prose)
+[]
+```
+
 ### Module Attributes
 
 | [`URL`](#annals.linkcheck.URL)          | a web address anywhere on a line                                        |
 |---------------------------------------------------------------|-------------------------------------------------------------------------|
 | [`MD_LINK`](#annals.linkcheck.MD_LINK)      | a markdown link or image `[text](url)`, or an autolink `<url>`          |
 | [`CODE_SPAN`](#annals.linkcheck.CODE_SPAN)    | an inline code span                                                     |
-| [`ISSUE_REF`](#annals.linkcheck.ISSUE_REF)    | a GitHub-style issue or PR reference, qualified or bare                 |
+| [`ISSUE_REF`](#annals.linkcheck.ISSUE_REF)    | a GitHub-style issue or PR reference, qualified or bare.                |
 | [`CONVERSATION`](#annals.linkcheck.CONVERSATION) | words that point at one message, and a #channel (letters, not a number) |
 | [`DATE_RANGE`](#annals.linkcheck.DATE_RANGE)   | a period between two dates, which names no single message               |
 | [`MAX_LISTED`](#annals.linkcheck.MAX_LISTED)   | how many mentions a warning lists before it says "and N more"           |
@@ -60,13 +73,14 @@ an inline code span
 
 words that point at one message, and a #channel (letters, not a number)
 
-### annals.linkcheck.DATE_RANGE *= re.compile('\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b\\\\s\*(?:→|->|–|—|to|-)\\\\s\*\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b')*
+### annals.linkcheck.DATE_RANGE *= re.compile('(?<![\\\\d-])\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b\\\\s\*(?:→|->|–|—|to|-)\\\\s\*(?<![\\\\d-])\\\\b(?:\\\\d{4}-)?(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\\\d|3[01])\\\\b')*
 
 a period between two dates, which names no single message
 
-### annals.linkcheck.ISSUE_REF *= re.compile('(?<![\\\\w/&#])(?:[A-Za-z0-9][\\\\w.-]\*/[\\\\w.-]+)?#\\\\d+\\\\b')*
+### annals.linkcheck.ISSUE_REF *= re.compile('(?<![\\\\w/&#])(?:[A-Za-z0-9][\\\\w.-]\*/[\\\\w.-]+#\\\\d+|#(?!\\\\d{6}\\\\b|\\\\d{8}\\\\b)\\\\d+)\\\\b')*
 
-a GitHub-style issue or PR reference, qualified or bare
+a GitHub-style issue or PR reference, qualified or bare. A bare `#` and six or eight
+digits (`#121212`, `#12121280`) is a colour far more often than an issue
 
 ### annals.linkcheck.MAX_LISTED *= 5*
 

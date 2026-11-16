@@ -1,32 +1,32 @@
 {
   "schema_version": 1,
-  "built_at": "2026-11-16T01:47:15Z",
+  "built_at": "2026-11-16T01:51:35Z",
   "package": {
     "name": "annals",
-    "version": "0.0.47",
+    "version": "0.0.48",
     "display_name": "annals",
     "source": "pyproject.toml"
   },
   "git": {
     "available": true,
-    "commit": "c11c825cfa94fc66b178eb1989c8620b4859d0d3",
-    "short_commit": "c11c825",
+    "commit": "57bdc9045aa29226081c298b99ca2b9513ad2382",
+    "short_commit": "57bdc90",
     "branch": "main",
     "tags": [],
     "dirty": false,
     "remote_url": "https://github.com/thorwhalen/annals",
-    "commit_url": "https://github.com/thorwhalen/annals/commit/c11c825cfa94fc66b178eb1989c8620b4859d0d3",
+    "commit_url": "https://github.com/thorwhalen/annals/commit/57bdc9045aa29226081c298b99ca2b9513ad2382",
     "error": null
   },
   "ci": {
     "provider": "github",
     "repository": "thorwhalen/annals",
-    "sha": "c11c825cfa94fc66b178eb1989c8620b4859d0d3",
+    "sha": "57bdc9045aa29226081c298b99ca2b9513ad2382",
     "sha_in_history": true,
     "ref": "refs/heads/main",
     "ref_name": "main",
-    "run_id": "43787871214",
-    "run_url": "https://github.com/thorwhalen/annals/actions/runs/43787871214",
+    "run_id": "43788343539",
+    "run_url": "https://github.com/thorwhalen/annals/actions/runs/43788343539",
     "server_url": "https://github.com"
   },
   "tools": {
@@ -61,13 +61,15 @@
   "pypi": {
     "checked": true,
     "latest": "0.0.47",
-    "relation": "same",
+    "relation": "ahead",
     "error": null
   },
-  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout c11c825cfa94fc66b178eb1989c8620b4859d0d3\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
+  "reproduce": "git clone https://github.com/thorwhalen/annals && cd annals\ngit checkout 57bdc9045aa29226081c298b99ca2b9513ad2382\npip install \"epythet==0.2.22\"\nepythet quickstart . --ignore tests/ scrap/ examples/",
   "warnings": [],
   "alignment": {
-    "aligned": true,
-    "notes": []
+    "aligned": false,
+    "notes": [
+      "The documented version (0.0.48) is ahead of the latest release on PyPI (0.0.47): these docs describe unreleased code."
+    ]
   }
 }
