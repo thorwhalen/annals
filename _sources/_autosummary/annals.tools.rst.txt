@@ -10,6 +10,8 @@ annals.tools
    
       RESERVED_META
       LINK_CHECKED_SUFFIXES
+      EFFECTS
+      DFLT_EFFECTS
    
    .. rubric:: Functions
 
@@ -27,11 +29,14 @@ annals.tools
       page_shell
       parse_since
       publish
+      purge
       restore
       serve
       share
       shares
       show
+      tag
+      tools_with
       trash
       unshare
    

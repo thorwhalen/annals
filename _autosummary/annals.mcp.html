@@ -105,6 +105,7 @@ data-aria-dark="Switch to auto color mode">
       <i class="i-lucide close"></i>
     </button>
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.mcp.ENV_EFFECTS"><code class="docutils literal notranslate"><span class="pre">ENV_EFFECTS</span></code></a></li>
 <li><a class="reference internal" href="#annals.mcp.mk_server"><code class="docutils literal notranslate"><span class="pre">mk_server()</span></code></a></li>
 </ul>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
@@ -148,21 +149,42 @@ data-aria-dark="Switch to auto color mode">
 <span id="annals-mcp"></span><h1>annals.mcp<a class="headerlink" href="#module-annals.mcp" title="Link to this heading">#</a></h1>
 <p>MCP surface: the same operations as the CLI, from <a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.tools</span></code></a>, via <code class="docutils literal notranslate"><span class="pre">py2mcp</span></code>.</p>
 <p>Run with <code class="docutils literal notranslate"><span class="pre">python</span> <span class="pre">-m</span> <span class="pre">annals.mcp</span></code> (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[mcp]'</span></code>). String refs keep the
-core free of any MCP import; the function list is the one the CLI dispatches.</p>
+core free of any MCP import; the function list is the CLI’s (<code class="docutils literal notranslate"><span class="pre">annals.tools.EFFECTS</span></code> classifies
+each operation), narrowed to the effects the host allows: by default read and write, not the
+destructive <code class="docutils literal notranslate"><span class="pre">purge</span></code> or <code class="docutils literal notranslate"><span class="pre">listen</span></code>, which spends money.</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.mcp.ENV_EFFECTS" title="annals.mcp.ENV_EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ENV_EFFECTS</span></code></a></p></td>
+<td><p>the environment variable that widens (or narrows) what the server offers</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.mcp.mk_server" title="annals.mcp.mk_server"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_server</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.mcp.mk_server" title="annals.mcp.mk_server"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_server</span></code></a>(*[, effects])</p></td>
 <td><p>Build the MCP server over <a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.tools</span></code></a>.</p></td>
 </tr>
 </tbody>
 </table>
 </div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.mcp.ENV_EFFECTS">
+<span class="sig-prename descclassname"><span class="pre">annals.mcp.</span></span><span class="sig-name descname"><span class="pre">ENV_EFFECTS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ANNALS_MCP_EFFECTS'</span></span><a class="headerlink" href="#annals.mcp.ENV_EFFECTS" title="Link to this definition">#</a></dt>
+<dd><p>the environment variable that widens (or narrows) what the server offers</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.mcp.mk_server">
-<span class="sig-prename descclassname"><span class="pre">annals.mcp.</span></span><span class="sig-name descname"><span class="pre">mk_server</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/mcp.html#mk_server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.mcp.mk_server" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.mcp.</span></span><span class="sig-name descname"><span class="pre">mk_server</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">effects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/mcp.html#mk_server"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.mcp.mk_server" title="Link to this definition">#</a></dt>
 <dd><p>Build the MCP server over <a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.tools</span></code></a>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">effects</span></code> (default <code class="docutils literal notranslate"><span class="pre">read</span></code> and <code class="docutils literal notranslate"><span class="pre">write</span></code>, or the comma separated <code class="docutils literal notranslate"><span class="pre">ANNALS_MCP_EFFECTS</span></code>)
+says which operations to serve; <code class="docutils literal notranslate"><span class="pre">destructive</span></code> adds <code class="docutils literal notranslate"><span class="pre">purge</span></code>, <code class="docutils literal notranslate"><span class="pre">spend</span></code> adds <code class="docutils literal notranslate"><span class="pre">listen</span></code>
+(it costs money), <code class="docutils literal notranslate"><span class="pre">file</span></code> adds <code class="docutils literal notranslate"><span class="pre">aggregate</span> <span class="pre">--output</span></code>.</p>
 </dd></dl>
 
 </section>
@@ -207,7 +229,7 @@ core free of any MCP import; the function list is the one the CLI dispatches.</p
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=0356c229"></script>
+      <script src="../_static/documentation_options.js?v=e072a57b"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

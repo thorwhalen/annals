@@ -9,32 +9,52 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Module Attributes
 
-| [`RESERVED_META`](#annals.tools.RESERVED_META)         | provenance annals fills in itself; `--meta` cannot overwrite it               |
-|------------------------------------------------------------------------|-------------------------------------------------------------------------------|
-| [`LINK_CHECKED_SUFFIXES`](#annals.tools.LINK_CHECKED_SUFFIXES) | the suffixes whose text the link check reads (prose an author writes by hand) |
+| [`RESERVED_META`](#annals.tools.RESERVED_META)         | provenance annals fills in itself; `--meta` cannot overwrite it                   |
+|------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
+| [`LINK_CHECKED_SUFFIXES`](#annals.tools.LINK_CHECKED_SUFFIXES) | the suffixes whose text the link check reads (prose an author writes by hand)     |
+| [`EFFECTS`](#annals.tools.EFFECTS)               | a surface serves the levels its caller allows.                                    |
+| [`DFLT_EFFECTS`](#annals.tools.DFLT_EFFECTS)          | what an agent or a tool is offered unless its host asks for more (MCP reads this) |
 
 ### Functions
 
-| [`aggregate`](#annals.tools.aggregate)(group_id, \*[, format, output, ...])     | The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).      |
-|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------|
-| [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.                     |
-| [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.                 |
-| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.                          |
-| [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                         |
-| [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                         |
-| [`listen_down`](#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.               |
-| [`listen_work`](#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).              |
-| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to, ...])   | List documents (newest first), optionally filtered by words or showing the bin.                    |
-| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                        |
-| [`parse_since`](#annals.tools.parse_since)(since, \*[, now])                      | A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age. |
-| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                   |
-| [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                         |
-| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                              |
-| [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.             |
-| [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                              |
-| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, and the groups it is in (`to`: on a named target).                    |
-| [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                                    |
-| [`unshare`](#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.                          |
+| [`aggregate`](#annals.tools.aggregate)(group_id, \*[, format, output, ...])     | The files of a group (or one document) as ONE markdown, html or pdf file (nothing is stored).             |
+|-----------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| [`configure`](#annals.tools.configure)(\*[, target, base_url, to, outbox, ...]) | Write the publisher config (where to publish, what link to print) and show it.                            |
+| [`copy`](#annals.tools.copy)(refs, \*, to[, source, target, base_url])     | Copy documents or groups to a named target, keeping their ids; print the new link.                        |
+| [`group`](#annals.tools.group)(title, doc_ids, \*[, target, base_url, to])  | Make a group (one URL for a set of documents) from existing document ids.                                 |
+| [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                                |
+| [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, target, to])   | Ask for a spoken overview of a document, as its page's Listen button does.                                |
+| [`listen_down`](#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.                      |
+| [`listen_work`](#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).                     |
+| [`ls`](#annals.tools.ls)([q, trash, limit, target, base_url, to, ...])   | List documents (newest first), optionally filtered by words or showing the bin.                           |
+| [`page_shell`](#annals.tools.page_shell)(\*[, api, base, title])                 | The page's html shell, for a host that serves the API under its own prefix.                               |
+| [`parse_since`](#annals.tools.parse_since)(since, \*[, now])                      | A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.        |
+| [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                          |
+| [`purge`](#annals.tools.purge)(doc_ids, \*[, target, to])                   | Delete documents that are in the bin for good (not restorable).                                           |
+| [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                                |
+| [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                                     |
+| [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.                    |
+| [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                                     |
+| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, and the groups it is in (`to`: on a named target).                           |
+| [`tag`](#annals.tools.tag)(doc_id, tags, \*[, target, to])                | Set a document's tags (comma separated; "" clears them), as the page's tag editor does.                   |
+| [`tools_with`](#annals.tools.tools_with)([effects])                              | The operations whose effect is in `effects`, in the CLI's order: the list a caller-facing surface serves. |
+| [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                                           |
+| [`unshare`](#annals.tools.unshare)(links, \*[, target, to])                   | Revoke share links (their token or full link): they stop working at once.                                 |
+
+### annals.tools.DFLT_EFFECTS *= frozenset({'read', 'write'})*
+
+what an agent or a tool is offered unless its host asks for more (MCP reads this)
+
+### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
+
+a surface serves the levels its caller
+allows. `read` changes nothing; `write` changes the store or a setting and can be undone
+or repeated; `file` writes a path on the machine that runs it; `destructive` cannot be
+undone; `spend` costs money or queues work that does; `server` is run by a server or a
+timer, never by a caller.
+
+* **Type:**
+  what a function does to the world, least to most
 
 ### annals.tools.LINK_CHECKED_SUFFIXES *= frozenset({'.markdown', '.md', '.txt'})*
 
@@ -147,7 +167,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 `to` lists a named target instead of the default one. The rest are exact filters,
 all of which must hold, for tools that poll: `since` (an ISO date or time, or an age
 like `6h` or `2d`: published or replaced at or after it), `session` (the publishing session’s
-name, whole, case-sensitive), `tag` (one tag, whole) and `meta` (`key=value`,
+name, whole, case-sensitive), `tag` (one tag, whole: the owner’s own tags, set by `annals tag`, win over the publisher’s) and `meta` (`key=value`,
 several allowed, against the document’s `source`: `corpus=annals`). A row is
 `{id, title, kind, tags, created, updated, source, url}`; with `--json` that is the contract
 (`misc/docs/design.md`), and `total` counts the matches before `limit`.
@@ -219,6 +239,13 @@ paths give `docs`) as JSON and nothing else on stdout; that shape is a contract
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
+### annals.tools.purge(doc_ids, , target=None, to=None)
+
+Delete documents that are in the bin for good (not restorable). One that is not in the bin is refused.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.tools.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
@@ -270,6 +297,29 @@ links. To read the text, use `annals aggregate <link>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.tag(doc_id, tags, , target=None, to=None)
+
+Set a document’s tags (comma separated; “” clears them), as the page’s tag editor does.
+
+The tags are the owner’s overlay, kept apart from the document and shown by `ls` and
+`show` in place of the publisher’s. They live where the documents do, so this refuses an
+outbox or a remote target. `doc_id` may be the document’s link. Returns `{id, tags}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.tools_with(effects=frozenset({'read', 'write'}))
+
+The operations whose effect is in `effects`, in the CLI’s order: the list a caller-facing surface serves.
+
+```pycon
+>>> [f.__name__ for f in tools_with({"read"})]
+['ls', 'show', 'groups', 'shares']
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)
 
 ### annals.tools.trash(doc_ids, , target=None, to=None)
 

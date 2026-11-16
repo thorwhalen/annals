@@ -598,7 +598,7 @@ and the file’s default target for this call (explicit arguments still win).</p
 <p><code class="docutils literal notranslate"><span class="pre">to</span></code> lists a named target instead of the default one. The rest are exact filters,
 all of which must hold, for tools that poll: <code class="docutils literal notranslate"><span class="pre">since</span></code> (an ISO date or time, or an age
 like <code class="docutils literal notranslate"><span class="pre">6h</span></code> or <code class="docutils literal notranslate"><span class="pre">2d</span></code>: published or replaced at or after it), <code class="docutils literal notranslate"><span class="pre">session</span></code> (the publishing session’s
-name, whole, case-sensitive), <code class="docutils literal notranslate"><span class="pre">tag</span></code> (one tag, whole) and <code class="docutils literal notranslate"><span class="pre">meta</span></code> (<code class="docutils literal notranslate"><span class="pre">key=value</span></code>,
+name, whole, case-sensitive), <code class="docutils literal notranslate"><span class="pre">tag</span></code> (one tag, whole: the owner’s own tags, set by <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">tag</span></code>, win over the publisher’s) and <code class="docutils literal notranslate"><span class="pre">meta</span></code> (<code class="docutils literal notranslate"><span class="pre">key=value</span></code>,
 several allowed, against the document’s <code class="docutils literal notranslate"><span class="pre">source</span></code>: <code class="docutils literal notranslate"><span class="pre">corpus=annals</span></code>). A row is
 <code class="docutils literal notranslate"><span class="pre">{id,</span> <span class="pre">title,</span> <span class="pre">kind,</span> <span class="pre">tags,</span> <span class="pre">created,</span> <span class="pre">updated,</span> <span class="pre">source,</span> <span class="pre">url}</span></code>; with <code class="docutils literal notranslate"><span class="pre">--json</span></code> that is the contract
 (<code class="docutils literal notranslate"><span class="pre">misc/docs/design.md</span></code>), and <code class="docutils literal notranslate"><span class="pre">total</span></code> counts the matches before <code class="docutils literal notranslate"><span class="pre">limit</span></code>.</p>
@@ -809,7 +809,7 @@ links. To read the text, use <code class="docutils literal notranslate"><span cl
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=0356c229"></script>
+      <script src="../_static/documentation_options.js?v=e072a57b"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

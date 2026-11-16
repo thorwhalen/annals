@@ -4,6 +4,12 @@ annals.mcp
 .. automodule:: annals.mcp
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ENV_EFFECTS
+   
    .. rubric:: Functions
 
    .. autosummary::

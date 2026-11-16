@@ -284,7 +284,7 @@ List documents (newest first), optionally filtered by words or showing the bin.
 `to` lists a named target instead of the default one. The rest are exact filters,
 all of which must hold, for tools that poll: `since` (an ISO date or time, or an age
 like `6h` or `2d`: published or replaced at or after it), `session` (the publishing session’s
-name, whole, case-sensitive), `tag` (one tag, whole) and `meta` (`key=value`,
+name, whole, case-sensitive), `tag` (one tag, whole: the owner’s own tags, set by `annals tag`, win over the publisher’s) and `meta` (`key=value`,
 several allowed, against the document’s `source`: `corpus=annals`). A row is
 `{id, title, kind, tags, created, updated, source, url}`; with `--json` that is the contract
 (`misc/docs/design.md`), and `total` counts the matches before `limit`.

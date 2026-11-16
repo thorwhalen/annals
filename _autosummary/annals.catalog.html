@@ -114,8 +114,10 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.catalog.Catalog.tag_counts"><code class="docutils literal notranslate"><span class="pre">Catalog.tag_counts()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#annals.catalog.THUMB_CACHE"><code class="docutils literal notranslate"><span class="pre">THUMB_CACHE</span></code></a></li>
 <li><a class="reference internal" href="#annals.catalog.default_tags"><code class="docutils literal notranslate"><span class="pre">default_tags()</span></code></a></li>
 <li><a class="reference internal" href="#annals.catalog.mk_catalog"><code class="docutils literal notranslate"><span class="pre">mk_catalog()</span></code></a></li>
+<li><a class="reference internal" href="#annals.catalog.purge_document"><code class="docutils literal notranslate"><span class="pre">purge_document()</span></code></a></li>
 </ul>
 </div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
   </aside>
@@ -170,6 +172,16 @@ store, never in the item), <a class="reference internal" href="#annals.catalog.C
 <p>Facets (kind, session, date, tag) are not computed here: the page counts them over the rows
 it received, so every toggle is instant and the counts are always the ones the current
 query would give.</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.catalog.THUMB_CACHE" title="annals.catalog.THUMB_CACHE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">THUMB_CACHE</span></code></a></p></td>
+<td><p>where the page's thumbnails are cached, under the data root</p></td>
+</tr>
+</tbody>
+</table>
+</div>
 <p class="rubric">Functions</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
@@ -179,6 +191,9 @@ query would give.</p>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.catalog.mk_catalog" title="annals.catalog.mk_catalog"><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_catalog</span></code></a>(store, *[, sources, tags])</p></td>
 <td><p>The published documents first, then the extra sources; the owner's tags beside them.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.catalog.purge_document" title="annals.catalog.purge_document"><code class="xref py py-obj docutils literal notranslate"><span class="pre">purge_document</span></code></a>(store, catalog, doc_id)</p></td>
+<td><p>Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.</p></td>
 </tr>
 </tbody>
 </table>
@@ -268,6 +283,12 @@ query would give.</p>
 
 </dd></dl>
 
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.catalog.THUMB_CACHE">
+<span class="sig-prename descclassname"><span class="pre">annals.catalog.</span></span><span class="sig-name descname"><span class="pre">THUMB_CACHE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'cache/thumbs'</span></span><a class="headerlink" href="#annals.catalog.THUMB_CACHE" title="Link to this definition">#</a></dt>
+<dd><p>where the page’s thumbnails are cached, under the data root</p>
+</dd></dl>
+
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.catalog.default_tags">
 <span class="sig-prename descclassname"><span class="pre">annals.catalog.</span></span><span class="sig-name descname"><span class="pre">default_tags</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/catalog.html#default_tags"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.catalog.default_tags" title="Link to this definition">#</a></dt>
@@ -291,6 +312,18 @@ The API, and any CLI or agent tool that tags items, build their catalog here.</p
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference internal" href="#annals.catalog.Catalog" title="annals.catalog.Catalog"><code class="xref py py-class docutils literal notranslate"><span class="pre">Catalog</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.catalog.purge_document">
+<span class="sig-prename descclassname"><span class="pre">annals.catalog.</span></span><span class="sig-name descname"><span class="pre">purge_document</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">catalog</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/catalog.html#purge_document"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.catalog.purge_document" title="Link to this definition">#</a></dt>
+<dd><p>Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.</p>
+<p><code class="docutils literal notranslate"><span class="pre">PermissionError</span></code> for one that is not in the bin. Every surface purges through here.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -337,7 +370,7 @@ The API, and any CLI or agent tool that tags items, build their catalog here.</p
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=0356c229"></script>
+      <script src="../_static/documentation_options.js?v=e072a57b"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

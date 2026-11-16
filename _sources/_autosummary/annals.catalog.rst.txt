@@ -4,12 +4,19 @@ annals.catalog
 .. automodule:: annals.catalog
 
    
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      THUMB_CACHE
+   
    .. rubric:: Functions
 
    .. autosummary::
    
       default_tags
       mk_catalog
+      purge_document
    
    .. rubric:: Classes
 

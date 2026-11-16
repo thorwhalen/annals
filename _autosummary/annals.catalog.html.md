@@ -16,11 +16,17 @@ Facets (kind, session, date, tag) are not computed here: the page counts them ov
 it received, so every toggle is instant and the counts are always the ones the current
 query would give.
 
+### Module Attributes
+
+| [`THUMB_CACHE`](#annals.catalog.THUMB_CACHE)   | where the page's thumbnails are cached, under the data root   |
+|----------------------------------------------------------------|---------------------------------------------------------------|
+
 ### Functions
 
 | [`default_tags`](#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
 |-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [`mk_catalog`](#annals.catalog.mk_catalog)(store, \*[, sources, tags]) | The published documents first, then the extra sources; the owner's tags beside them.                                                                 |
+| [`purge_document`](#annals.catalog.purge_document)(store, catalog, doc_id) | Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.                                                           |
 
 ### Classes
 
@@ -75,6 +81,10 @@ Every tag in use on a listed item, with how many items carry it.
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
 
+### annals.catalog.THUMB_CACHE *= 'cache/thumbs'*
+
+where the page’s thumbnails are cached, under the data root
+
 ### annals.catalog.default_tags(store)
 
 Where the owner’s tags live by default: one JSON file under the data root
@@ -94,3 +104,12 @@ The API, and any CLI or agent tool that tags items, build their catalog here.
 
 * **Return type:**
   [`Catalog`](#annals.catalog.Catalog)
+
+### annals.catalog.purge_document(store, catalog, doc_id)
+
+Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.
+
+`PermissionError` for one that is not in the bin. Every surface purges through here.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
