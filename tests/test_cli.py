@@ -257,3 +257,95 @@ def test_an_audio_file_takes_its_timed_text_along_as_one_document(tmp_path, monk
     shown = json.loads(out.getvalue())
     assert shown["kind"] == "audio" and shown["main"] == "talk.mp3"
     assert sorted(shown["files"]) == ["talk.chapters.vtt", "talk.mp3", "talk.vtt"]
+
+
+def _env(tmp_path, monkeypatch):
+    monkeypatch.setenv("ANNALS_TARGET", str(tmp_path / "data"))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://example.com/annals/")
+    monkeypatch.delenv("ANNALS_CONFIG", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+
+
+def _json(argv):
+    out = io.StringIO()
+    assert _run(argv, out) == 0
+    return json.loads(out.getvalue())
+
+
+def test_publish_json_is_the_contract_and_meta_lands_in_source(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nbody")
+    res = _json(["publish", str(src), "--json", "--meta", "corpus=annals", "--meta", "issue=64", "--group", "G"])
+    assert set(res) == {"id", "title", "url", "group_id", "group_url"}
+    got = _json(["show", res["id"]])
+    assert got["source"]["corpus"] == "annals" and got["source"]["issue"] == "64"
+
+
+def test_publish_json_with_a_warning_keeps_stdout_pure(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nFixed in #4.")
+    out, err = io.StringIO(), io.StringIO()
+    assert run(["publish", str(src), "--json"], out=out, err=err) == 0
+    assert "url" in json.loads(out.getvalue()) and "warning" in err.getvalue()
+
+
+def test_ls_filters_are_exact(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    for name, session, tags in [("a", "sess-1", "x"), ("b", "sess-10", "xy")]:
+        f = tmp_path / f"{name}.md"
+        f.write_text(f"# {name}\n\nbody")
+        _json(["publish", str(f), "--json", "--session", session, "--tags", tags, "--meta", f"kind={name}"])
+    assert [d["title"] for d in _json(["ls", "--session", "sess-1"])["docs"]] == ["a"]
+    assert [d["title"] for d in _json(["ls", "--tag", "x"])["docs"]] == ["a"]
+    assert [d["title"] for d in _json(["ls", "--meta", "kind=b"])["docs"]] == ["b"]
+    assert _json(["ls", "--since", "1h"])["total"] == 2
+    assert _json(["ls", "--since", "2999-01-01"])["total"] == 0
+    row = _json(["ls", "--session", "sess-10"])["docs"][0]
+    assert set(row) == {"id", "title", "kind", "tags", "created", "updated", "source", "url"}
+    assert row["source"]["session"] == "sess-10" and row["source"]["kind"] == "b"
+
+
+def test_meta_repeats_and_a_path_may_follow_it(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nbody")
+    res = _json(["publish", "--meta", "corpus=c", "--meta", "item=i7", str(src), "--json"])
+    src_meta = _json(["show", res["id"]])["source"]
+    assert (src_meta["corpus"], src_meta["item"]) == ("c", "i7")
+
+
+def test_meta_cannot_overwrite_recorded_provenance(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nbody")
+    err = io.StringIO()
+    assert run(["publish", str(src), "--meta", "host=x"], out=io.StringIO(), err=err) == 1
+    assert "cannot set 'host'" in err.getvalue()
+
+
+def test_several_paths_give_docs_and_bare_links_stay_the_default(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    a, b = tmp_path / "a.md", tmp_path / "b.md"
+    a.write_text("# A\n\nx")
+    b.write_text("# B\n\ny")
+    res = _json(["publish", str(a), str(b), "--json"])
+    assert [set(d) for d in res["docs"]] == [{"id", "title", "url"}] * 2
+    out = io.StringIO()
+    _run(["publish", str(a)], out)
+    assert out.getvalue().startswith("https://example.com/annals/d/")
+
+
+def test_since_follows_a_replaced_document(tmp_path, monkeypatch):
+    _env(tmp_path, monkeypatch)
+    src = tmp_path / "r.md"
+    src.write_text("# R\n\nv1")
+    first = _json(["publish", str(src), "--json"])
+    src.write_text("# R\n\nv2")
+    _json(["publish", str(src), "--replace", first["id"], "--json"])
+    row = _json(["ls"])["docs"][0]
+    assert row["updated"] and row["updated"] >= row["created"]
+    assert _json(["ls", "--since", "1h"])["total"] >= 1
+    err = io.StringIO()
+    assert run(["ls", "--since", "yesterday-ish"], out=io.StringIO(), err=err) == 1

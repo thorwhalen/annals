@@ -10,7 +10,9 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import socket
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from annals.config import Settings, default_data_dir, load_settings, write_config
@@ -47,6 +49,78 @@ def _default_source() -> dict:
             src["session"] = os.environ[key]
             break
     return src
+
+
+#: provenance annals fills in itself; ``--meta`` cannot overwrite it
+RESERVED_META = frozenset({"host", "cwd", "session"})
+
+
+def _parse_meta(meta) -> dict[str, str]:
+    """``["corpus=x", "issue=12"]`` (or one such string) as ``{"corpus": "x", "issue": "12"}``.
+
+    >>> _parse_meta(["corpus=annals", "issue=64"])
+    {'corpus': 'annals', 'issue': '64'}
+    >>> _parse_meta(None)
+    {}
+    >>> _parse_meta("oops")
+    Traceback (most recent call last):
+    ...
+    ValueError: --meta takes key=value (for example corpus=annals), got 'oops'
+    >>> _parse_meta(["host=h"])
+    Traceback (most recent call last):
+    ...
+    ValueError: --meta cannot set 'host': annals records it (use --session for the session)
+    """
+    out = {}
+    for item in [meta] if isinstance(meta, str) else list(meta or ()):
+        key, eq, value = item.partition("=")
+        if not eq or not key.strip():
+            raise ValueError(f"--meta takes key=value (for example corpus=annals), got {item!r}")
+        if key.strip() in RESERVED_META:
+            raise ValueError(
+                f"--meta cannot set {key.strip()!r}: annals records it (use --session for the session)"
+            )
+        out[key.strip()] = value
+    return out
+
+
+_SINCE_UNITS = {"m": "minutes", "h": "hours", "d": "days", "w": "weeks"}
+
+
+def _parse_iso(text: str) -> datetime:
+    """An ISO date or time as an aware datetime; one with no offset is local time."""
+    dt = datetime.fromisoformat(text.strip().replace("Z", "+00:00"))
+    return dt if dt.tzinfo else dt.astimezone()
+
+
+def parse_since(since: str, *, now: datetime | None = None) -> datetime:
+    """A moment, as an aware datetime: an ISO date or time (local time when it has no offset), or an age.
+
+    >>> parse_since("2026-11-12T09:00+00:00").isoformat()
+    '2026-11-12T09:00:00+00:00'
+    >>> parse_since("2d", now=datetime(2026, 11, 14, tzinfo=timezone.utc)).date().isoformat()
+    '2026-11-12'
+    """
+    bad = ValueError(
+        f"--since takes an ISO date or time (2026-11-12, 2026-11-12T09:00; local time unless it has an offset) "
+        f"or an age (6h, 2d), got {since!r}"
+    )
+    m = re.fullmatch(r"(\d+)\s*([mhdw])", since.strip().lower())
+    try:
+        if m:
+            age = timedelta(**{_SINCE_UNITS[m.group(2)]: int(m.group(1))})
+            return (now or datetime.now(timezone.utc)) - age
+        return _parse_iso(since)
+    except (ValueError, OverflowError):
+        raise bad from None
+
+
+def _changed_at(meta: dict) -> datetime | None:
+    """When a document last changed: a replaced one counts from its newest version."""
+    try:
+        return _parse_iso(str(meta.get("updated") or meta.get("created", "")))
+    except ValueError:
+        return None
 
 
 def _as_list(x) -> list[str]:
@@ -120,6 +194,7 @@ def publish(
     replace: str | None = None,
     artifact: str | None = None,
     no_link_check: bool = False,
+    meta: list[str] | None = None,
 ) -> dict:
     """Publish one document and print its link; several paths become several documents.
 
@@ -144,6 +219,15 @@ def publish(
     A markdown or text document that mentions an issue or a Slack/email/chat message
     without linking to it gets a warning on stderr (:mod:`annals.linkcheck`); it is
     published either way. ``no_link_check`` turns that check off.
+
+    ``meta`` (``--meta key=value [key=value ...]``) records what the document belongs to, next
+    to ``host``, ``cwd`` and ``session`` in its ``source``: by convention ``corpus`` (the
+    repository or body of work), ``repo``, ``issue`` (the issue it answers), ``item`` (a
+    desk item) and ``kind`` (report, brief, overview, render); other keys are kept as given.
+    ``ls --session/--meta`` finds them again. The CLI's ``--json`` prints the result below
+    (``id``, ``title``, ``url``, and with a group ``group_id`` and ``group_url``; several
+    paths give ``docs``) as JSON and nothing else on stdout; that shape is a contract
+    (``misc/docs/design.md``).
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
     if artifact is not None:
@@ -153,6 +237,7 @@ def publish(
     store = _store(settings)
     tag_list = [t for t in tags.split(",") if t.strip()]
     source = _default_source()
+    source.update(_parse_meta(meta))
     if session:
         source["session"] = session
     docs = []
@@ -236,14 +321,37 @@ def ls(
     target: str | None = None,
     base_url: str | None = None,
     to: str | None = None,
+    since: str | None = None,
+    session: str | None = None,
+    tag: str | None = None,
+    meta: list[str] | None = None,
 ) -> dict:
     """List documents (newest first), optionally filtered by words or showing the bin.
 
-    ``to`` lists a named target instead of the default one.
+    ``to`` lists a named target instead of the default one. The rest are exact filters,
+    all of which must hold, for tools that poll: ``since`` (an ISO date or time, or an age
+    like ``6h`` or ``2d``: published or replaced at or after it), ``session`` (the publishing session's
+    name, whole, case-sensitive), ``tag`` (one tag, whole) and ``meta`` (``key=value``,
+    several allowed, against the document's ``source``: ``corpus=annals``). A row is
+    ``{id, title, kind, tags, created, updated, source, url}``; with ``--json`` that is the contract
+    (``misc/docs/design.md``), and ``total`` counts the matches before ``limit``.
     """
     settings = load_settings(target=target, base_url=base_url, to=to)
     store = _store(settings)
     docs = store.search(q, trash=trash) if q else store.list(trash=trash)
+    wanted = _parse_meta(meta)
+    if session:
+        wanted["session"] = session
+    if since:
+        cutoff = parse_since(since)
+        docs = [m for m in docs if (t := _changed_at(m)) and t >= cutoff]
+    if tag:
+        docs = [m for m in docs if tag in m.get("tags", [])]
+    docs = [
+        m
+        for m in docs
+        if all(m.get("source", {}).get(k) == v for k, v in wanted.items())
+    ]
     return {
         "docs": [
             {
@@ -252,6 +360,8 @@ def ls(
                 "kind": m["kind"],
                 "tags": m.get("tags", []),
                 "created": m.get("created"),
+                "updated": m.get("updated"),
+                "source": m.get("source", {}),
                 "url": _doc_url(settings, m["id"]),
             }
             for m in docs[:limit]

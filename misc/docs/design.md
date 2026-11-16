@@ -24,7 +24,7 @@ annals is an in-tray for AI agents: an agent publishes a document (text, a page,
 
 Surfaces: the CLI (`cw` over `annals/tools.py`), the Python API, MCP (`py2mcp` over string refs to the same functions), the shipped skill, and the FastAPI app. All of them read one function list, so there is nothing to keep in parity.
 
-NOT seams, written directly on purpose: the id format, the `meta.json` shape, the bin semantics (a move), the page's framework (none), the sort keys, the full-text matching (every word, substring, over cached text), the facet counting (in the page, flat families), the date ranges.
+NOT seams, written directly on purpose: the id format, the `meta.json` shape (the file; the result of `publish` and the rows of `ls` are a contract, see "The machine contract"), the bin semantics (a move), the page's framework (none), the sort keys, the full-text matching (every word, substring, over cached text), the facet counting (in the page, flat families), the date ranges.
 
 ## Decisions
 
@@ -51,6 +51,14 @@ NOT seams, written directly on purpose: the id format, the `meta.json` shape, th
 **One list, every source.** Each source yields rows of one shape (`key` = `<source>:<id>`, `title`, `kind`, `session`, `time`, `size`, `tags`, `excerpt`), so search, filters, sorting and tagging are written once. Full-text search runs on the server (the page never downloads the texts); facet counts run in the page over the rows a search returned, so a toggle costs no round trip and every count is the one that choice would give (a family's own selection is left out of its counts: OR within a family, AND across).
 
 **Tags apart from items.** The owner's tags are an overlay keyed by item key: an entry, once written, is the item's whole tag list, so a publisher's tag can be removed too, and deleting the entry falls back to the item's own. One JSON file, written atomically, re-read when another process changed it; a database replaces it at the `tags=` seam.
+
+## The machine contract
+
+Other packages call the CLI and parse what it prints, so two shapes are a contract, changed only by adding keys. Everything else (`show`, the page's JSON, `meta.json`) may change.
+
+- `annals publish ... --json` (any command takes `--json`): the result dict on stdout and nothing else; warnings and notes stay on stderr. One document: `{id, title, url}`; with `--group` or `--add-to` also `group_id`, `group_url`; several paths: `{docs: [{id, title, url}, ...]}` (plus the group keys). Without `--json`, a person gets bare links.
+- `annals publish --meta key=value ...` writes `source`, beside `host`, `cwd` and `session`. By convention `corpus`, `repo`, `issue`, `item`, `kind` (the docstring of `annals.tools.publish` is where they are written down); other keys are kept.
+- `annals ls`: `{docs: [{id, title, kind, tags, created, updated, source, url}], total}`, newest first. `--since` (ISO date or time, or an age such as `6h`, `2d`), `--session`, `--tag` and `--meta key=value` match whole values, not substrings, and all must hold; `--since` counts a replaced document from its newest version (`updated`). `total` counts matches before `--limit`, so a poller that sees `total` above its `--limit` raises the limit. Meta values are always strings; `host`, `cwd` and `session` cannot be set by `--meta`. `ls` prints JSON with or without `--json`. A failure is exit code 1, empty stdout and one line on stderr. `--since` is the feed to poll: no webhook or event bus.
 
 ## Ledgers from several machines
 

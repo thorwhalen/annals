@@ -24,8 +24,24 @@ EXPECTED_ERRORS = (
 )
 
 
-def _egress(result, *, out=None, err=None) -> int:
-    """Print a link when there is one (that is what an agent wants back), else JSON."""
+#: the flag that turns any command's result into JSON on stdout, whatever its shape
+JSON_FLAG = "--json"
+
+
+def _decode(param, hint):
+    """cw's usual decoding, except ``--meta`` repeats (``--meta a=1 --meta b=2``) instead of
+    taking the values after one flag, so a path may follow it and no earlier one is lost."""
+    if param.name == "meta":
+        return {"action": "extend", "nargs": 1}
+    return cw.convention.argh_decode(param, hint)
+
+
+def _egress(result, *, out=None, err=None, as_json: bool = False) -> int:
+    """Print a link when there is one (that is what an agent wants back), else JSON.
+
+    ``as_json`` prints the result dict as JSON and nothing else on stdout, for a program
+    that calls the CLI. Warnings and notes stay on stderr either way.
+    """
     out = out or sys.stdout
     if result is None:
         return 0
@@ -33,6 +49,9 @@ def _egress(result, *, out=None, err=None) -> int:
         print(f"annals: warning: {result.pop('warning')}", file=err or sys.stderr)
     if isinstance(result, dict) and result.get("note"):
         print(f"annals: {result.pop('note')}", file=err or sys.stderr)
+    if as_json and not isinstance(result, str):
+        print(json.dumps(result, indent=1, ensure_ascii=False), file=out)
+        return 0
     if isinstance(result, str):
         print(result, file=out, end="" if result.endswith("\n") else "\n")
         return 0
@@ -52,13 +71,17 @@ def _egress(result, *, out=None, err=None) -> int:
 
 def run(argv=None, *, out=None, err=None) -> int:
     """Dispatch ``argv`` (default ``sys.argv[1:]``) and return the exit code."""
+    argv = list(sys.argv[1:] if argv is None else argv)
+    as_json = JSON_FLAG in argv
+    argv = [a for a in argv if a != JSON_FLAG]
     try:
         return cw.dispatch(
             _dispatch_funcs,
             argv,
             prog="annals",
             convention=cw.MODERN,
-            egress=_egress,
+            decode=_decode,
+            egress=lambda result, **kw: _egress(result, as_json=as_json, **kw),
             out=out,
             err=err,
         )
