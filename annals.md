@@ -1,4 +1,4 @@
-> built 2026-11-16 16:07 UTC from df4a2a7 (main) · annals 0.0.60. Details: build_info.json
+> built 2026-11-17 17:04 UTC from 53c5440 (main) · annals 0.0.61. Details: build_info.json
 
 # index.html.md
 
@@ -5114,18 +5114,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-16 16:07 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/df4a2a7755fb160f4c1f40dfe46f3116836e7d58"><code>df4a2a7</code></a> on branch <code>main</code>, for **annals 0.0.60** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-17 17:04 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/53c5440ff1e582981ba539ca8ddfeaf82d94439e"><code>53c5440</code></a> on branch <code>main</code>, for **annals 0.0.61** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.60) is behind the latest release on PyPI (0.0.61): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/df4a2a7755fb160f4c1f40dfe46f3116836e7d58"><code>df4a2a7755fb160f4c1f40dfe46f3116836e7d58</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/53c5440ff1e582981ba539ca8ddfeaf82d94439e"><code>53c5440ff1e582981ba539ca8ddfeaf82d94439e</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -5136,9 +5134,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/43903065532">43903065532</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/44131946684">44131946684</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>df4a2a7755fb160f4c1f40dfe46f3116836e7d58</code> (in the history of the built commit) |
+| Event commit | <code>53c5440ff1e582981ba539ca8ddfeaf82d94439e</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5163,13 +5161,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.61/">0.0.61</a>, newer than the documented version (0.0.60).
+Latest release: <a href="https://pypi.org/project/annals/0.0.61/">0.0.61</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout df4a2a7755fb160f4c1f40dfe46f3116836e7d58
+git checkout 53c5440ff1e582981ba539ca8ddfeaf82d94439e
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
