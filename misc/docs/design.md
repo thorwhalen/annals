@@ -18,7 +18,7 @@ annals is an in-tray for AI agents: an agent publishes a document (text, a page,
 | 6 | host, `mk_api` vs `mk_app` | mounted inside an app platform that owns login and routing (`mk_api` + a page shell); `annals serve` standalone otherwise | none needed: both exist |
 | 7 | thumbnails, `thumbnailer=` | Pillow when installed, cached under the data root's `cache/thumbs`; else the original | a blob store's own image resizing, or poster frames for video via ffmpeg |
 | 8 | what a directory publish skips, `exclude=` | `.*`, `__pycache__`, `*.pyc` | per-call patterns (`--all-files` keeps everything) |
-| 9 | item sources, `mk_api(sources=)` (`annals.sources`) | the published documents plus named local folders read in place (`FolderSource`) | other personal-file folders; one mirror per machine for ledgers written on several machines (see "Ledgers from several machines") |
+| 9 | item sources, `mk_api(sources=)` (`annals.sources`) | the published documents plus named local folders read in place (`FolderSource`) | other personal-file folders; ledgers from several machines as one source over per-machine mirrors (see "Ledgers from several machines") |
 | 10 | the owner's tags, `mk_api(tags=)` (`annals.tags`) | `JsonTagStore`: one JSON file under the data root | the database for app JSON (tw_platform#291) |
 | 11 | how the page reaches items | `@zodal/store-http`'s `createHttpProvider` over `/items` (vendored, 7 KB) | the schema-driven zodal page (roadmap); any zodal `DataProvider` |
 
@@ -75,7 +75,7 @@ annals owns the request queue, the daily limit, the progress relay and the heard
 
 ## Ledgers from several machines
 
-Ledgers are written on the Mac, on the server and on a third machine; the server's folder holds only what was copied there. annals reads one folder per source, so the open question is how the copies meet, not how annals reads them. Proposed (not built, waiting on the owner): each machine pushes its own ledger folder into a per-machine mirror on the server (`~/.local/share/crowsnest/ledger-hosts/<host>/`, an `rsync` without `--delete` from the same timer that already pushes the crowsnest page every minute), and annals lists each mirror as a source (`ledgers-mac`, `ledgers-iq`) or one source over all of them with the machine as a facet. Reading the other machines live over ssh is the alternative, and a worse one: a closed laptop would empty the list.
+Ledgers are written on several machines, and annals reads one folder per source, so the copies have to meet in one place. Each machine's scheduled `crowsnest publish` pushes its whole ledger folder into its own mirror on the server, `~/.local/share/crowsnest/ledger-hosts/<machine>/` (crowsnest's `[ledgers] mirror`: `rsync -a --update`, never `--delete`; a local copy on the server itself). The host lists the parent as one source, `FolderSource(ledger_hosts, name="ledgers", session_of=...)`, whose `session_of` reads the session from the path below the machine's folder (`laptop/lookout.md` -> `lookout`), so equal names on two machines never overwrite each other and a ledger's page is `/i/ledgers/<machine>/<name>.md`. Nothing in annals changed for this: `session_of` was already the seam. crowsnest flags a ledger that has not reached its mirror (`crowsnest ledger --stale`, and a `!!` line on its roster). Reading the other machines live over ssh was the alternative, and a worse one: a closed laptop would empty the list.
 
 ## Where the data lives
 
