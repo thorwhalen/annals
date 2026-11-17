@@ -7,7 +7,6 @@ Things deliberately left out of v1, each at a seam that already exists.
 - **retention** for the bin (auto-purge after N days), as a `annals serve` option.
 - **a second annals** in one page (several targets, several base urls) if the owner ever runs more than one host.
 - **the page on the schema-driven stack**: when the flat-plus-tags CRUD package (zodal family) exists, the page becomes one of its UIs; annals' store is one of its backends. Items already go through `@zodal/store-http`; facets and the tag editor move to `@zodal/groups-*` once its facet panel is fast enough for ~600 items x ~500 values (issue filed in zodal-groups).
-- **ledgers from every machine**: a per-machine mirror on the server, one source each (design.md, "Ledgers from several machines"); waiting on the owner's choice.
 - **tags as agent tools**: `annals tag <key> <tags>` and the MCP twin, so a session can file what it publishes.
 - **video poster frames and image blur placeholders**, computed at publish time (ffmpeg, Pillow) and carried in `meta.json`, so a gallery paints before any byte of media arrives.
 - **an http ingest endpoint for media from machines with no ssh route** (seam 1), the same as for text.
