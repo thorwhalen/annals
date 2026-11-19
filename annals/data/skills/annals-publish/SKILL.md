@@ -29,11 +29,15 @@ The annals is private: fetching a `.../annals/d/<id>` or `.../annals/g/<id>` lin
 
 ```bash
 annals aggregate <link>           # the document's text (a group: every document's), as one markdown on stdout
-annals show <link>                # its metadata: files, tags, versions, and the groups it is in
+annals show <link>                # its metadata: files, tags, versions, the groups it is in, and `links`
 annals aggregate <link> --format pdf --output all.pdf
 ```
 
-Images, audio and video are not in that text: separate files are named on stderr as left out, and a page's own images stay as `![](fig.png)` references you cannot open. A machine whose target is an outbox (`annals configure` shows `"outbox": true`) cannot read the annals; the commands say so, and so should you.
+A link finds its own annals: the host in it is matched against every place the config knows (the default and each `[targets.NAME]`), so a link to any configured annals needs no `--to`. `show` lists, under `links`, the other annals documents and groups the document links to, on any annals this machine can read; follow them the same way. Other pages it links to (an app behind the same login) are not readable this way. A link on a host this machine is not configured for is looked up in the default annals. Only reads follow the link: commands that change an annals (`share`, `tag`, `trash`, `copy`) still take `--to`.
+
+Images, audio and video are not in that text: separate files are named on stderr as left out, and a page's own images stay as `![](fig.png)` references you cannot open. A machine whose only copy of an annals is an outbox (`annals configure` shows `"outbox": true`) cannot read it; the commands say so, and so should you.
+
+With no shell (a claude.ai conversation), read the link through an MCP connector that serves these two commands, if the owner has one, giving it the link exactly as you were handed it.
 
 ## Link everything you mention
 

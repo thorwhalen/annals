@@ -14,7 +14,13 @@ import socket
 from pathlib import Path
 
 from annals.catalog import owner_tags, with_owner_tags
-from annals.config import Settings, default_data_dir, load_settings, write_config
+from annals.config import (
+    Settings,
+    default_data_dir,
+    link_target,
+    load_settings,
+    write_config,
+)
 from annals.docfilter import DocFilter, parse_meta
 from annals.store import (
     META,
@@ -401,12 +407,15 @@ def show(
     base_url: str | None = None,
     to: str | None = None,
 ) -> dict:
-    """A document's metadata, link, and the groups it is in (``to``: on a named target).
+    """A document's metadata, link, the groups it is in, and the annals links in its text.
 
-    ``doc_id`` may be the document's link; a group's link gives the group and its documents'
-    links. To read the text, use ``annals aggregate <link>``.
+    ``doc_id`` may be the document's link, on any annals this machine is configured for: the
+    link finds its own place (``to`` names one explicitly). A group's link gives the group
+    and its documents' links. ``links`` are the links to other annals documents and groups
+    found in the document's text files, on any annals this machine can read: follow them
+    with ``annals show`` or ``annals aggregate``. To read the text, use ``annals aggregate <link>``.
     """
-    settings = _readable(load_settings(target=target, base_url=base_url, to=to))
+    settings = _read_settings(doc_id, target=target, to=to, base_url=base_url)
     store = _store(settings)
     kind, ref = _parse_ref(doc_id)
     if kind == "group":  # a group's link: the group, with its documents' links
@@ -422,7 +431,89 @@ def show(
         {**g, "url": _group_url(settings, g["id"])}
         for g in store.groups_of(meta.get("version_of") or ref)
     ]
+    meta["links"] = [u for u in _annals_links(store, meta) if u != meta["url"]]
     return meta
+
+
+def _read_settings(
+    ref: str,
+    *,
+    target: str | None = None,
+    to: str | None = None,
+    base_url: str | None = None,
+) -> Settings:
+    """The readable settings a read of ``ref`` uses: the place given, else the one its link names.
+
+    An explicit ``target`` or ``to`` wins; otherwise a link finds its own annals among the
+    configured ones (:func:`annals.config.link_target`) and a bare id reads the default. A
+    link on a host this machine is not configured for is looked up in the default, as
+    before links named their place: ids are unique across annals, so that read finds the
+    document (a copy keeps its id) or says there is none.
+
+    Only reads route by link. Commands that change an annals (``share``, ``tag``,
+    ``trash``, ``copy``'s destination) take ``--to`` explicitly, so a pasted link never
+    redirects a write.
+    """
+    if not (target or to):
+        try:
+            to = link_target(ref)
+        except ValueError:
+            to = None
+    return _readable(load_settings(target=target, base_url=base_url, to=to))
+
+
+#: the suffixes whose text :func:`show` reads for the annals links a document makes
+LINKS_READ_SUFFIXES = frozenset({".md", ".markdown", ".txt", ".html", ".htm"})
+#: :func:`show` reads at most this many of a document's text files for links ...
+LINKS_MAX_FILES = 20
+#: ... and none larger than this (bytes, from the document's meta)
+LINKS_MAX_FILE_BYTES = 1_000_000
+
+
+def _annals_links(store: DocStore, meta: dict) -> list[str]:
+    """The links to annals documents and groups in ``meta``'s text files, on an annals this machine can read.
+
+    Best effort, and cheap: the document's directory is found once, at most
+    :data:`LINKS_MAX_FILES` files no larger than :data:`LINKS_MAX_FILE_BYTES` are read, and
+    a file that cannot be read is skipped (``show`` still answers). Links whose only place
+    here is an outbox are left out, since they cannot be read.
+    """
+    from annals.share import annals_urls
+
+    sizes = meta.get("sizes") or {}
+    rels = [
+        rel
+        for rel in meta.get("files", [])
+        if Path(rel).suffix.lower() in LINKS_READ_SUFFIXES
+        and sizes.get(rel, 0) <= LINKS_MAX_FILE_BYTES
+    ][:LINKS_MAX_FILES]
+    if not rels:
+        return []
+    try:
+        doc_rel = store.doc_rel(meta["id"])
+    except Exception:  # noqa: BLE001 -- links are extra; never fail show for them
+        return []
+    readable: dict = {}
+
+    def can_read(url: str) -> bool:
+        try:
+            place = link_target(url)
+        except ValueError:
+            return False  # an annals on a host this machine does not know
+        if place not in readable:
+            readable[place] = not load_settings(to=place).outbox
+        return readable[place]
+
+    found: list[str] = []
+    for rel in rels:
+        try:
+            text = store.target.read_text(f"{doc_rel}/{rel}")
+        except Exception:  # noqa: BLE001 -- ssh failures raise RuntimeError; skip the file
+            continue
+        for url in annals_urls(text):
+            if url not in found and can_read(url):
+                found.append(url)
+    return found
 
 
 def _readable(settings: Settings) -> Settings:
@@ -594,7 +685,7 @@ def aggregate(
         raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
     if format == "pdf" and not output:
         raise ValueError("a PDF is a binary file: name it with --output FILE")
-    store = _store(_readable(load_settings(target=target, to=to)))
+    store = _store(_read_settings(group_id, target=target, to=to))
     title, metas = _resolve_selection(store, group_id)
     with tempfile.TemporaryDirectory(prefix="annals-aggregate-") as scratch:
         open_path = _file_opener(store, Path(scratch))
@@ -660,7 +751,7 @@ def export(
         raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
     if format == "pdf" and not output:
         raise ValueError("a PDF is a binary file: name it with --output FILE")
-    settings = _readable(load_settings(target=target, to=to))
+    settings = _read_settings(doc_id, target=target, to=to)
     store = _store(settings)
     dest = _checked_output(output)
     meta = _document_meta(store, doc_id)
@@ -700,7 +791,7 @@ def shareable(doc_id: str, *, target: str | None = None, to: str | None = None) 
     ``{main, files: [{rel, kind, size, referenced}], pages: [{id, title, kind}]}``: the
     choices ``annals share`` takes for what a link may show.
     """
-    settings = _readable(load_settings(target=target, to=to))
+    settings = _read_settings(doc_id, target=target, to=to)
     store = _store(settings)
     return _shares(settings).resources(_document_meta(store, doc_id)["id"])
 
@@ -725,7 +816,7 @@ def references(
 
     if form not in refs.FORMS:
         raise ValueError(f"form must be one of {', '.join(refs.FORMS)}, not {form!r}")
-    store = _store(_readable(load_settings(target=target, to=to)))
+    store = _store(_read_settings(ref, target=target, to=to))
     title, docs = _resolve_selection(store, ref, also=also)
     found = refs.collect(
         [m for m in docs if not m.get("in_trash")],

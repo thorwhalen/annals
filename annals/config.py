@@ -31,6 +31,13 @@ A fourth, ``room``, is true for a target an outside audience reads (a client's r
 with ``mk_api(room=True)``): ``publish`` and ``copy`` to it write no provenance (the
 publisher's host, cwd, session and ``--meta`` keys), so it never reaches that disk.
 
+A link names its own place. :func:`link_target` reads the instance out of a document's or
+group's link by matching it against every configured ``base_url`` (the default's and each
+named target's), so ``annals aggregate <link>`` reads the right annals without ``--to``. The
+config file stays the one list of the annals this machine can read. :func:`link_target`
+itself refuses a link to any other host; the read commands then fall back to the default
+annals (ids are unique across annals, so that read finds the document or says there is none).
+
 The server side has two knobs of its own. ``ANNALS_DATA_DIR`` is the directory the API
 reads. It defaults to ``~/.local/share/annals``, which is also the default publish target,
 so with no configuration at all ``annals publish`` and ``annals serve`` meet in the same
@@ -213,6 +220,89 @@ def load_settings(
         share_base_url=str(resolved_share).rstrip("/"),
         room=room,
     )
+
+
+_DEFAULT_PORTS = {"http": 80, "https": 443}
+
+
+def _url_key(url: str) -> tuple[str, str]:
+    """``(host, path)`` of an http(s) url as a browser would reach it, for prefix tests.
+
+    The host loses any userinfo, a trailing dot and its scheme's default port, and is
+    lower-cased; the path is normalised (``..`` and ``.`` segments resolved, no trailing slash).
+
+    >>> _url_key("https://u@Apps.Example.com.:443/annals/x/../d/1/")
+    ('apps.example.com', '/annals/d/1')
+    >>> _url_key("https://a.example.com:8443/annals")
+    ('a.example.com:8443', '/annals')
+    """
+    import posixpath
+    from urllib.parse import urlsplit
+
+    u = urlsplit(url.strip())
+    host = (u.hostname or "").rstrip(".")
+    try:
+        port = u.port
+    except ValueError:
+        port = None  # a malformed port names no configured place
+    if port and port != _DEFAULT_PORTS.get(u.scheme):
+        host = f"{host}:{port}"
+    path = posixpath.normpath(u.path) if u.path else ""
+    return host, "" if path in (".", "/") else path.rstrip("/")
+
+
+def link_target(ref: str, *, config_path: Path | None = None) -> str | None:
+    """The configured place a document's or group's link lives in: ``None`` (the default) or a target's name.
+
+    ``ref`` that is not an http(s) link (a bare id) names no place, so the answer is
+    ``None``: read the default. A link is matched against the default ``base_url`` and
+    every ``[targets.NAME]`` one; the longest matching ``base_url`` wins, and among equals
+    a readable target beats an outbox (an outbox is written to, never read). Hosts and
+    paths are compared as a browser reaches them (:func:`_url_key`). A link that matches
+    none raises ``ValueError`` naming the places this machine knows.
+
+    >>> import tempfile, pathlib
+    >>> cfg = pathlib.Path(tempfile.mkdtemp()) / "config.toml"
+    >>> _ = cfg.write_text('''[annals]
+    ... target = "/srv/annals"
+    ... base_url = "https://apps.example.com/annals"
+    ... [targets.team]
+    ... target = "team:/var/lib/annals"
+    ... base_url = "https://annals.team.example.org/annals"
+    ... ''')
+    >>> link_target("https://annals.team.example.org/annals/d/20261119-075018-a-4a58", config_path=cfg)
+    'team'
+    >>> link_target("https://APPS.example.com/annals/g/20261119-075018-b?f=x", config_path=cfg) is None
+    True
+    >>> link_target("20261119-075018-a-4a58", config_path=cfg) is None
+    True
+    """
+    from urllib.parse import urlsplit
+
+    if urlsplit(ref.strip()).scheme not in ("http", "https"):
+        return None
+    host, path = _url_key(ref)
+    default = load_settings(config_path=config_path)
+    places: list[tuple[str | None, str, bool]] = [
+        (None, default.base_url, default.outbox)
+    ]
+    for name, table in named_targets(config_path=config_path).items():
+        if table.get("target") and isinstance(table.get("base_url"), str):
+            places.append((name, table["base_url"], bool(table.get("outbox", False))))
+
+    def matches(base: str) -> bool:
+        b_host, b_path = _url_key(base)
+        return b_host == host and (path == b_path or path.startswith(b_path + "/"))
+
+    found = [(name, base, outbox) for name, base, outbox in places if matches(base)]
+    if not found:
+        known = ", ".join(dict.fromkeys(base for _, base, _ in places))
+        raise ValueError(
+            f"{ref} is not on an annals this machine knows ({known}). "
+            "Add its place with `annals configure --to NAME --target ... --base-url ...`."
+        )
+    found.sort(key=lambda f: (-len(_url_key(f[1])[1]), f[2]))
+    return found[0][0]
 
 
 def write_config(

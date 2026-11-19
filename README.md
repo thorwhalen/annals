@@ -34,8 +34,10 @@ Handed an annals link to read? It is private, so fetching it gets a login page. 
 
 ```bash
 annals aggregate <link>   # the text of a document, or of every document in a group, as one markdown on stdout
-annals show <link>        # its metadata, including the groups it is in
+annals show <link>        # its metadata, the groups it is in, and the annals links in its text
 ```
+
+A link finds its own annals: its host is matched against every place the config knows (the default `base_url` and each named target's), so a link to a second annals reads from there without `--to`.
 
 What each kind looks like on the page:
 
