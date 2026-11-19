@@ -44,6 +44,8 @@ from pathlib import Path
 from typing import Callable, Iterable
 from urllib.parse import urlsplit
 
+from annals.pagepdf import DFLT as DFLT_RENDERER
+from annals.pagepdf import PdfRenderer, attach_pdf
 from annals.target import LOCK_NOTE, LocalTarget, Target
 
 DOCS = "docs"
@@ -375,6 +377,8 @@ class DocStore:
         exclude: Iterable[str] = DFLT_EXCLUDE,
         replace: str | None = None,
         artifact: str | None = None,
+        pdf: bool = True,
+        pdf_renderer: PdfRenderer | None | str = DFLT_RENDERER,
     ) -> dict:
         """Publish files (or a directory, or ``text``) as ONE document; return its meta.
 
@@ -391,6 +395,10 @@ class DocStore:
         ``artifact`` (a claude.ai artifact link, see :func:`check_artifact_url`) is the
         interactive version of the page: the document's page links out to it. A
         replacement that names none keeps the document's current one.
+
+        An html page gets its own Download PDF button, and ``<stem>.pdf`` printed beside
+        it by ``pdf_renderer`` unless it has one (:mod:`annals.pagepdf`, which says how a
+        page declares or opts out). ``pdf=False`` leaves the page as it is.
         """
         if artifact is not None:
             artifact = check_artifact_url(artifact)
@@ -413,6 +421,11 @@ class DocStore:
                 if missing:
                     raise FileNotFoundError(", ".join(missing))
                 main, kind, files = _stage(paths, tmp, exclude=exclude)
+            page_pdf = None
+            if pdf and kind == "html":
+                files, page_pdf = attach_pdf(
+                    tmp, str(main.relative_to(tmp)), files, pdf_renderer=pdf_renderer
+                )
             default_title = (
                 paths[0].name if kind == FOLDER and text is None else main.stem
             )
@@ -440,6 +453,8 @@ class DocStore:
             }
             if artifact:
                 meta["artifact"] = artifact
+            if page_pdf:  # the page's PDF: a file of the document, or the url it declared
+                meta["pdf"] = page_pdf
             if replace is not None:
                 meta.update(replaces=replace, pending_id=mk_pending_id(replace))
             (tmp / META).write_text(json.dumps(meta, indent=1), encoding="utf-8")

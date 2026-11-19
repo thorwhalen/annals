@@ -48,6 +48,7 @@ from caplinks import (  # noqa: F401  (ScryptHasher, is_expired, parse_expires: 
     parse_expires,
 )
 
+from annals.pagepdf import button_href, strip_button
 from annals.store import DocStore, check_id, kind_of
 
 SHARES = "shares"
@@ -247,6 +248,8 @@ def filter_refs(
     decide = ref_decider(
         from_dir=from_dir, files=set(files), shared=shared, private_hosts=private_hosts
     )
+    if (pdf := button_href(text)) is not None and decide(pdf) is None:
+        text = strip_button(text)  # a PDF button whose PDF is not shared: no dead chip
 
     def md_link(m: re.Match) -> str:
         new = decide(m.group("url"))

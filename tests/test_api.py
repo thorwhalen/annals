@@ -438,7 +438,7 @@ def test_html_print_variant_prints_on_load_and_is_never_cached(client, store, tm
     d = tmp_path / "pr"
     d.mkdir()
     (d / "index.html").write_text("<title>P</title><body><p>hi</p></body>")
-    m = store.publish(d)
+    m = store.publish(d, pdf=False)  # the page's own PDF button aside
     url = f"/annals/api/raw/{m['id']}/index.html"
     plain, printed = client.get(url), client.get(url + "?print=1")
     assert b"print" not in plain.content.replace(b"<p>hi</p>", b"")

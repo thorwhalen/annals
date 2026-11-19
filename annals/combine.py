@@ -530,9 +530,15 @@ def html_body(
 
     >>> html_body('<body><script>x()</script><h1 onclick="x()">Hi</h1><a href="javascript:x()">y</a></body>')
     '<h1>Hi</h1><a>y</a>'
+
+    The Download PDF button annals put in the page (:mod:`annals.pagepdf`) is not content,
+    so it is left out too.
     """
     from html.parser import HTMLParser
 
+    from annals.pagepdf import strip_button
+
+    text = strip_button(text)
     out: list[str] = []
     open_tags: list[str] = []
     skip: list[str] = []  # the dropped elements we are inside

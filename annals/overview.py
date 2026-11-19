@@ -139,9 +139,11 @@ class _Text(HTMLParser):
 
 
 def html_to_text(html: str) -> str:
-    """The readable text of a page: no markup, scripts or styles."""
+    """The readable text of a page: no markup, scripts or styles (nor its PDF button)."""
+    from annals.pagepdf import strip_button
+
     parser = _Text()
-    parser.feed(html)
+    parser.feed(strip_button(html))
     blocks = (" ".join(b.split()) for b in "".join(parser.parts).split("\n\n"))
     return "\n\n".join(b for b in blocks if b)
 

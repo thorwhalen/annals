@@ -50,7 +50,7 @@ def test_publish_html_directory_picks_index(store, tmp_path):
     (d / "style.css").write_text("body{}")
     meta = store.publish(d)
     assert meta["title"] == "My artifact" and meta["kind"] == "html"
-    assert meta["main"] == "index.html" and sorted(meta["files"]) == ["index.html", "style.css"]
+    assert meta["main"] == "index.html" and sorted(meta["files"]) == ["index.html", "index.pdf", "style.css"]
 
 
 def test_publish_text_and_list_order(store):
