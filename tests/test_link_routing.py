@@ -59,9 +59,9 @@ def test_a_link_to_another_annals_is_read_there_without_to(env):
     code, text, err = _run(["aggregate", url])
     assert code == 0, err
     assert "body of b" in text
-    # the bare id still means the default annals, where it is not
-    code, _, err = _run(["aggregate", url.rsplit("/", 1)[1]])
-    assert code == 1 and "no such document" in err
+    # the bare id is found too: ids are unique across annals, so every readable one is searched
+    code, text, err = _run(["aggregate", url.rsplit("/", 1)[1]])
+    assert code == 0 and "body of b" in text, err
 
 
 def test_show_lists_the_annals_links_a_document_makes_on_every_known_annals(env):
@@ -199,3 +199,34 @@ def test_show_survives_an_unreadable_file_and_skips_links_it_cannot_read(
     code, out, err = _run(["show", url])
     assert code == 0, err
     assert json.loads(out)["links"] == [a]  # the outbox-only link is left out
+
+
+def test_a_bare_id_found_nowhere_names_every_annals_looked_in(env):
+    _configure(env)
+    _publish(env, "a", "# A\n\ntext")  # so the default store exists
+    code, _, err = _run(["show", "20261119-075018-nowhere-4a58"])
+    assert code == 1
+    assert "no such document or group: 20261119-075018-nowhere-4a58" in err
+    assert "https://a.test/annals" in err and "https://b.test/annals" in err
+
+
+def test_a_bare_id_prefers_the_default_and_skips_an_outbox(env):
+    _configure(env)
+    code, _, err = _run(
+        [
+            "configure",
+            "--to",
+            "box",
+            "--target",
+            str(env / "box"),
+            "--base-url",
+            "https://c.test/annals",
+            "--outbox",
+        ]
+    )
+    assert code == 0, err
+    a = _publish(env, "a", "# A\n\ndefault copy")
+    doc_id = a.rsplit("/", 1)[1]
+    code, out, err = _run(["show", doc_id])
+    assert code == 0, err
+    assert json.loads(out)["url"] == a
