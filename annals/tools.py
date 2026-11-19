@@ -19,6 +19,7 @@ from annals.config import (
     default_data_dir,
     link_target,
     load_settings,
+    named_targets,
     write_config,
 )
 from annals.docfilter import DocFilter, parse_meta
@@ -445,21 +446,50 @@ def _read_settings(
     """The readable settings a read of ``ref`` uses: the place given, else the one its link names.
 
     An explicit ``target`` or ``to`` wins; otherwise a link finds its own annals among the
-    configured ones (:func:`annals.config.link_target`) and a bare id reads the default. A
-    link on a host this machine is not configured for is looked up in the default, as
-    before links named their place: ids are unique across annals, so that read finds the
-    document (a copy keeps its id) or says there is none.
+    configured ones (:func:`annals.config.link_target`). A bare id, or a link on a host this
+    machine is not configured for, is looked for in every annals this machine can read, the
+    default first (:func:`_settings_holding`): ids are unique across annals.
 
     Only reads route by link. Commands that change an annals (``share``, ``tag``,
     ``trash``, ``copy``'s destination) take ``--to`` explicitly, so a pasted link never
     redirects a write.
     """
-    if not (target or to):
+    if target or to:
+        return _readable(load_settings(target=target, base_url=base_url, to=to))
+    from urllib.parse import urlsplit
+
+    if urlsplit(ref.strip()).scheme in ("http", "https"):
         try:
-            to = link_target(ref)
+            return _readable(load_settings(base_url=base_url, to=link_target(ref)))
         except ValueError:
-            to = None
-    return _readable(load_settings(target=target, base_url=base_url, to=to))
+            pass  # a link on a host this machine does not know: look for its id
+    return _settings_holding(_parse_ref(ref)[1], base_url=base_url)
+
+
+def _settings_holding(name: str, *, base_url: str | None = None) -> Settings:
+    """The readable annals that holds ``name``: the default first, then each named target.
+
+    Ids are unique across annals, so a bare id (one a conversation copied out of a link,
+    say) is found wherever this machine can read it. Outboxes are skipped. Found nowhere:
+    a ``ValueError`` naming every place looked in.
+    """
+    places: list = [None, *named_targets()]
+    looked: list[str] = []
+    for place in places:
+        try:
+            settings = _readable(load_settings(base_url=base_url, to=place))
+        except (ValueError, RuntimeError):
+            continue  # an outbox, or a table that is not a readable place
+        if place is None and not settings.configured:
+            return settings  # nothing configured: the local default, as always
+        looked.append(settings.base_url)
+        if _store(settings).holds(name):
+            return settings
+    if not looked:  # no annals here can be read: say why, as the default does
+        return _readable(load_settings(base_url=base_url))
+    raise ValueError(
+        f"no such document or group: {name} (looked in {', '.join(looked)})"
+    )
 
 
 #: the suffixes whose text :func:`show` reads for the annals links a document makes

@@ -463,6 +463,17 @@ class DocStore:
 
     # -- versions: replacements and their application ---------------------------------
 
+    def holds(self, ref_id: str) -> bool:
+        """Whether a document (or a version of one) or a group with this id is here, in the bin or not."""
+        base = split_version(ref_id)[0]
+        try:
+            check_id(base)
+        except ValueError:
+            return False
+        return self._root_of(base) is not None or self.target.exists(
+            f"{GROUPS}/{base}.json"
+        )
+
     def _root_of(self, doc_id: str) -> str | None:
         """``docs`` or ``trash``: where a document (not a version) lives, if anywhere."""
         for root in (DOCS, TRASH):
