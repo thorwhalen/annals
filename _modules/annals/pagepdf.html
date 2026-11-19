@@ -435,11 +435,13 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="274">            <span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="n">pdf_rel</span><span class="p">)</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="n">pdf_renderer</span><span class="p">(</span><span class="n">path</span><span class="p">))</span>
 </span><span data-line="275">            <span class="n">files</span><span class="p">,</span> <span class="n">pdf</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="o">*</span><span class="n">files</span><span class="p">,</span> <span class="n">pdf_rel</span><span class="p">}),</span> <span class="n">pdf_rel</span>
 </span><span data-line="276">        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># noqa: BLE001 - any failure falls back to print</span>
-</span><span data-line="277">            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"annals: no PDF for </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">); the button prints instead"</span><span class="p">,</span> <span class="n">main</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
-</span><span data-line="278">    <span class="k">if</span> <span class="n">href</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pdf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="279">        <span class="n">href</span> <span class="o">=</span> <span class="n">quote</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-</span><span data-line="280">    <span class="n">path</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="n">add_button</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">href</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="s2">"surrogateescape"</span><span class="p">))</span>
-</span><span data-line="281">    <span class="k">return</span> <span class="n">files</span><span class="p">,</span> <span class="n">pdf</span></div>
+</span><span data-line="277">            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+</span><span data-line="278">                <span class="s2">"annals: no PDF for </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">); the button prints instead"</span><span class="p">,</span> <span class="n">main</span><span class="p">,</span> <span class="n">e</span>
+</span><span data-line="279">            <span class="p">)</span>
+</span><span data-line="280">    <span class="k">if</span> <span class="n">href</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pdf</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="281">        <span class="n">href</span> <span class="o">=</span> <span class="n">quote</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">pdf</span><span class="p">)</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</span><span data-line="282">    <span class="n">path</span><span class="o">.</span><span class="n">write_bytes</span><span class="p">(</span><span class="n">add_button</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="n">href</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">,</span> <span class="s2">"surrogateescape"</span><span class="p">))</span>
+</span><span data-line="283">    <span class="k">return</span> <span class="n">files</span><span class="p">,</span> <span class="n">pdf</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -468,7 +470,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=7ada5fdd"></script>
+      <script src="../../_static/documentation_options.js?v=b153cf10"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
