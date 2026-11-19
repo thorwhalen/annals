@@ -9,6 +9,9 @@ annals.tools
    .. autosummary::
    
       LINK_CHECKED_SUFFIXES
+      LINKS_READ_SUFFIXES
+      LINKS_MAX_FILES
+      LINKS_MAX_FILE_BYTES
       EFFECTS
       DFLT_EFFECTS
    

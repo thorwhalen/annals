@@ -9,10 +9,13 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 ### Module Attributes
 
-| [`LINK_CHECKED_SUFFIXES`](#annals.tools.LINK_CHECKED_SUFFIXES)   | the suffixes whose text the link check reads (prose an author writes by hand)     |
-|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------|
-| [`EFFECTS`](#annals.tools.EFFECTS)                 | a surface serves the levels its caller allows.                                    |
-| [`DFLT_EFFECTS`](#annals.tools.DFLT_EFFECTS)            | what an agent or a tool is offered unless its host asks for more (MCP reads this) |
+| [`LINK_CHECKED_SUFFIXES`](#annals.tools.LINK_CHECKED_SUFFIXES)   | the suffixes whose text the link check reads (prose an author writes by hand)                                               |
+|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| [`LINKS_READ_SUFFIXES`](#annals.tools.LINKS_READ_SUFFIXES)     | the suffixes whose text [`show()`](#annals.tools.show) reads for the annals links a document makes |
+| [`LINKS_MAX_FILES`](#annals.tools.LINKS_MAX_FILES)         | [`show()`](#annals.tools.show) reads at most this many of a document's text files for links ...    |
+| [`LINKS_MAX_FILE_BYTES`](#annals.tools.LINKS_MAX_FILE_BYTES)    |                                                                                                                             |
+| [`EFFECTS`](#annals.tools.EFFECTS)                 | a surface serves the levels its caller allows.                                                                              |
+| [`DFLT_EFFECTS`](#annals.tools.DFLT_EFFECTS)            | what an agent or a tool is offered unless its host asks for more (MCP reads this)                                           |
 
 ### Functions
 
@@ -37,7 +40,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.                    |
 | [`shareable`](#annals.tools.shareable)(doc_id, \*[, target, to])                | What the Share dialog offers for a document: its files, and the other annals documents its text links to. |
 | [`shares`](#annals.tools.shares)(\*[, all, target, base_url, to])            | List share links, newest first (`all`: revoked and expired ones too).                                     |
-| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, and the groups it is in (`to`: on a named target).                           |
+| [`show`](#annals.tools.show)(doc_id, \*[, target, base_url, to])           | A document's metadata, link, the groups it is in, and the annals links in its text.                       |
 | [`tag`](#annals.tools.tag)(doc_id, tags, \*[, target, to])                | Set a document's tags (comma separated; "" clears them), as the page's tag editor does.                   |
 | [`tools_with`](#annals.tools.tools_with)([effects])                              | The operations whose effect is in `effects`, in the CLI's order: the list a caller-facing surface serves. |
 | [`trash`](#annals.tools.trash)(doc_ids, \*[, target, to])                   | Move documents to the recycle bin (restorable).                                                           |
@@ -57,6 +60,18 @@ timer, never by a caller.
 
 * **Type:**
   what a function does to the world, least to most
+
+### annals.tools.LINKS_MAX_FILES *= 20*
+
+[`show()`](#annals.tools.show) reads at most this many of a document’s text files for links …
+
+### annals.tools.LINKS_MAX_FILE_BYTES *= 1000000*
+
+… and none larger than this (bytes, from the document’s meta)
+
+### annals.tools.LINKS_READ_SUFFIXES *= frozenset({'.htm', '.html', '.markdown', '.md', '.txt'})*
+
+the suffixes whose text [`show()`](#annals.tools.show) reads for the annals links a document makes
 
 ### annals.tools.LINK_CHECKED_SUFFIXES *= frozenset({'.markdown', '.md', '.txt'})*
 
@@ -340,10 +355,13 @@ List share links, newest first (`all`: revoked and expired ones too).
 
 ### annals.tools.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata, link, and the groups it is in (`to`: on a named target).
+A document’s metadata, link, the groups it is in, and the annals links in its text.
 
-`doc_id` may be the document’s link; a group’s link gives the group and its documents’
-links. To read the text, use `annals aggregate <link>`.
+`doc_id` may be the document’s link, on any annals this machine is configured for: the
+link finds its own place (`to` names one explicitly). A group’s link gives the group
+and its documents’ links. `links` are the links to other annals documents and groups
+found in the document’s text files, on any annals this machine can read: follow them
+with `annals show` or `annals aggregate`. To read the text, use `annals aggregate <link>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

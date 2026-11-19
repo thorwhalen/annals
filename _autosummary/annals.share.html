@@ -122,6 +122,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.share.Shares.unlocked"><code class="docutils literal notranslate"><span class="pre">Shares.unlocked()</span></code></a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#annals.share.annals_urls"><code class="docutils literal notranslate"><span class="pre">annals_urls()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.dir_of"><code class="docutils literal notranslate"><span class="pre">dir_of()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.filter_refs"><code class="docutils literal notranslate"><span class="pre">filter_refs()</span></code></a></li>
 <li><a class="reference internal" href="#annals.share.ref_decider"><code class="docutils literal notranslate"><span class="pre">ref_decider()</span></code></a></li>
@@ -212,28 +213,31 @@ password or revoking the link ends every open session.</p>
 <div class="table-wrapper autosummary longtable docutils container">
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.dir_of" title="annals.share.dir_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dir_of</span></code></a>(rel)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.annals_urls" title="annals.share.annals_urls"><code class="xref py py-obj docutils literal notranslate"><span class="pre">annals_urls</span></code></a>(text)</p></td>
+<td><p>The absolute links to annals document and group pages in <code class="docutils literal notranslate"><span class="pre">text</span></code>, once each, in order.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.dir_of" title="annals.share.dir_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dir_of</span></code></a>(rel)</p></td>
 <td><p>The directory part of a relative path, with its trailing slash (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> at the top).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_refs</span></code></a>(text, kind, *, files, shared[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.filter_refs" title="annals.share.filter_refs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">filter_refs</span></code></a>(text, kind, *, files, shared[, ...])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every reference outside the share removed (or rewritten).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.ref_decider" title="annals.share.ref_decider"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ref_decider</span></code></a>(*, from_dir, files, shared[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.ref_decider" title="annals.share.ref_decider"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ref_decider</span></code></a>(*, from_dir, files, shared[, ...])</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">url</span> <span class="pre">-&gt;</span> <span class="pre">new</span> <span class="pre">url</span></code> (often the same) or <code class="docutils literal notranslate"><span class="pre">None</span></code> (remove it).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.references" title="annals.share.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a>(text, kind, *[, from_dir])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.references" title="annals.share.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a>(text, kind, *[, from_dir])</p></td>
 <td><p>What a page points at: files of its document, and annals pages (by id).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.remove_unshared_ids" title="annals.share.remove_unshared_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_unshared_ids</span></code></a>(text, shared)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.remove_unshared_ids" title="annals.share.remove_unshared_ids"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_unshared_ids</span></code></a>(text, shared)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">text</span></code> with every annals id that <code class="docutils literal notranslate"><span class="pre">shared</span></code> does not map replaced by a marker.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.resolve_rel" title="annals.share.resolve_rel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_rel</span></code></a>(url[, from_dir])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.resolve_rel" title="annals.share.resolve_rel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_rel</span></code></a>(url[, from_dir])</p></td>
 <td><p>A relative url as a file path inside the document, or <code class="docutils literal notranslate"><span class="pre">None</span></code> if it is not one.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.share_links" title="annals.share.share_links"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_links</span></code></a>(base, token)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.share_links" title="annals.share.share_links"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_links</span></code></a>(base, token)</p></td>
 <td><p>The forms of one share link: <code class="docutils literal notranslate"><span class="pre">page</span></code> (people, and fetchers that run no script), <code class="docutils literal notranslate"><span class="pre">markdown</span></code> (agents: the whole share as one text) and <code class="docutils literal notranslate"><span class="pre">pdf</span></code> (images inside, or for an upload); empty when no share server is configured.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.share.share_url" title="annals.share.share_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_url</span></code></a>(base, token)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.share.share_url" title="annals.share.share_url"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share_url</span></code></a>(base, token)</p></td>
 <td><p>The link a recipient opens, or <code class="docutils literal notranslate"><span class="pre">None</span></code> when no share server is configured.</p></td>
 </tr>
 </tbody>
@@ -394,6 +398,26 @@ links; <code class="docutils literal notranslate"><span class="pre">pages</span>
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.share.annals_urls">
+<span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">annals_urls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">text</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#annals_urls"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.annals_urls" title="Link to this definition">#</a></dt>
+<dd><p>The absolute links to annals document and group pages in <code class="docutils literal notranslate"><span class="pre">text</span></code>, once each, in order.</p>
+<p>Any host: which annals a link belongs to is the reader’s config to decide
+(<a class="reference internal" href="annals.config.html#annals.config.link_target" title="annals.config.link_target"><code class="xref py py-func docutils literal notranslate"><span class="pre">annals.config.link_target()</span></code></a>). Relative links (<code class="docutils literal notranslate"><span class="pre">../d/&lt;id&gt;</span></code>) are not found:
+a document’s own links to its annals are absolute, as <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span></code> prints them.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">annals_urls</span><span class="p">(</span><span class="s2">"see **[map](https://a.example.io/annals/d/20261119-075018-the-map-4a58)**, "</span>
+</span><span data-line="2"><span class="gp">... </span>            <span class="s2">"&lt;https://b.example.com/annals/g/20261117-163049-set?f=x&gt; and "</span>
+</span><span data-line="3"><span class="gp">... </span>            <span class="s2">"https://a.example.io/annals/d/20261119-075018-the-map-4a58 again"</span><span class="p">)</span>
+</span><span data-line="4"><span class="go">['https://a.example.io/annals/d/20261119-075018-the-map-4a58', 'https://b.example.com/annals/g/20261117-163049-set']</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.share.dir_of">
 <span class="sig-prename descclassname"><span class="pre">annals.share.</span></span><span class="sig-name descname"><span class="pre">dir_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rel</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/share.html#dir_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.share.dir_of" title="Link to this definition">#</a></dt>
 <dd><p>The directory part of a relative path, with its trailing slash (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> at the top).</p>
@@ -544,7 +568,7 @@ upload); empty when no share server is configured. <a class="reference internal"
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=e95a51ae"></script>
+      <script src="../_static/documentation_options.js?v=dea2dbc4"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

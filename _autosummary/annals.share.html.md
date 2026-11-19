@@ -40,8 +40,9 @@ password or revoking the link ends every open session.
 
 ### Functions
 
-| [`dir_of`](#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).                                                                                                                                      |
+| [`annals_urls`](#annals.share.annals_urls)(text)                                 | The absolute links to annals document and group pages in `text`, once each, in order.                                                                                                                                  |
 |----------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`dir_of`](#annals.share.dir_of)(rel)                                       | The directory part of a relative path, with its trailing slash (`""` at the top).                                                                                                                                      |
 | [`filter_refs`](#annals.share.filter_refs)(text, kind, \*, files, shared[, ...]) | `text` with every reference outside the share removed (or rewritten).                                                                                                                                                  |
 | [`ref_decider`](#annals.share.ref_decider)(\*, from_dir, files, shared[, ...])   | `url -> new url` (often the same) or `None` (remove it).                                                                                                                                                               |
 | [`references`](#annals.share.references)(text, kind, \*[, from_dir])            | What a page points at: files of its document, and annals pages (by id).                                                                                                                                                |
@@ -157,6 +158,24 @@ Whether a cookie value is a live unlock of this record (no password: always).
 
 * **Return type:**
   [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.share.annals_urls(text)
+
+The absolute links to annals document and group pages in `text`, once each, in order.
+
+Any host: which annals a link belongs to is the reader’s config to decide
+([`annals.config.link_target()`](annals.config.html.md#annals.config.link_target)). Relative links (`../d/<id>`) are not found:
+a document’s own links to its annals are absolute, as `annals publish` prints them.
+
+```pycon
+>>> annals_urls("see **[map](https://a.example.io/annals/d/20261119-075018-the-map-4a58)**, "
+...             "<https://b.example.com/annals/g/20261117-163049-set?f=x> and "
+...             "https://a.example.io/annals/d/20261119-075018-the-map-4a58 again")
+['https://a.example.io/annals/d/20261119-075018-the-map-4a58', 'https://b.example.com/annals/g/20261117-163049-set']
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 ### annals.share.dir_of(rel)
 

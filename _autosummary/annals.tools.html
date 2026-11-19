@@ -110,6 +110,9 @@ data-aria-dark="Switch to auto color mode">
     <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
 <li><a class="reference internal" href="#annals.tools.DFLT_EFFECTS"><code class="docutils literal notranslate"><span class="pre">DFLT_EFFECTS</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.EFFECTS"><code class="docutils literal notranslate"><span class="pre">EFFECTS</span></code></a></li>
+<li><a class="reference internal" href="#annals.tools.LINKS_MAX_FILES"><code class="docutils literal notranslate"><span class="pre">LINKS_MAX_FILES</span></code></a></li>
+<li><a class="reference internal" href="#annals.tools.LINKS_MAX_FILE_BYTES"><code class="docutils literal notranslate"><span class="pre">LINKS_MAX_FILE_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.tools.LINKS_READ_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">LINKS_READ_SUFFIXES</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.LINK_CHECKED_SUFFIXES"><code class="docutils literal notranslate"><span class="pre">LINK_CHECKED_SUFFIXES</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.aggregate"><code class="docutils literal notranslate"><span class="pre">aggregate()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.configure"><code class="docutils literal notranslate"><span class="pre">configure()</span></code></a></li>
@@ -188,10 +191,19 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.LINK_CHECKED_SUFFIXES" title="annals.tools.LINK_CHECKED_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LINK_CHECKED_SUFFIXES</span></code></a></p></td>
 <td><p>the suffixes whose text the link check reads (prose an author writes by hand)</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.EFFECTS" title="annals.tools.EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EFFECTS</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.LINKS_READ_SUFFIXES" title="annals.tools.LINKS_READ_SUFFIXES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LINKS_READ_SUFFIXES</span></code></a></p></td>
+<td><p>the suffixes whose text <a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-func docutils literal notranslate"><span class="pre">show()</span></code></a> reads for the annals links a document makes</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.LINKS_MAX_FILES" title="annals.tools.LINKS_MAX_FILES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LINKS_MAX_FILES</span></code></a></p></td>
+<td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-func docutils literal notranslate"><span class="pre">show()</span></code></a> reads at most this many of a document's text files for links ...</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.LINKS_MAX_FILE_BYTES" title="annals.tools.LINKS_MAX_FILE_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LINKS_MAX_FILE_BYTES</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.EFFECTS" title="annals.tools.EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EFFECTS</span></code></a></p></td>
 <td><p>a surface serves the levels its caller allows.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.DFLT_EFFECTS" title="annals.tools.DFLT_EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_EFFECTS</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.DFLT_EFFECTS" title="annals.tools.DFLT_EFFECTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_EFFECTS</span></code></a></p></td>
 <td><p>what an agent or a tool is offered unless its host asks for more (MCP reads this)</p></td>
 </tr>
 </tbody>
@@ -262,7 +274,7 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <td><p>List share links, newest first (<code class="docutils literal notranslate"><span class="pre">all</span></code>: revoked and expired ones too).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
-<td><p>A document's metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p></td>
+<td><p>A document's metadata, link, the groups it is in, and the annals links in its text.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.tag" title="annals.tools.tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag</span></code></a>(doc_id, tags, *[, target, to])</p></td>
 <td><p>Set a document's tags (comma separated; &quot;&quot; clears them), as the page's tag editor does.</p></td>
@@ -298,6 +310,24 @@ timer, never by a caller.</p>
 <dd class="field-odd"><p>what a function does to the world, least to most</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.tools.LINKS_MAX_FILES">
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">LINKS_MAX_FILES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20</span></span><a class="headerlink" href="#annals.tools.LINKS_MAX_FILES" title="Link to this definition">#</a></dt>
+<dd><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-func docutils literal notranslate"><span class="pre">show()</span></code></a> reads at most this many of a document’s text files for links …</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.tools.LINKS_MAX_FILE_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">LINKS_MAX_FILE_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">1000000</span></span><a class="headerlink" href="#annals.tools.LINKS_MAX_FILE_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>… and none larger than this (bytes, from the document’s meta)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.tools.LINKS_READ_SUFFIXES">
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">LINKS_READ_SUFFIXES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'.htm',</span> <span class="pre">'.html',</span> <span class="pre">'.markdown',</span> <span class="pre">'.md',</span> <span class="pre">'.txt'})</span></span><a class="headerlink" href="#annals.tools.LINKS_READ_SUFFIXES" title="Link to this definition">#</a></dt>
+<dd><p>the suffixes whose text <a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-func docutils literal notranslate"><span class="pre">show()</span></code></a> reads for the annals links a document makes</p>
 </dd></dl>
 
 <dl class="py data">
@@ -645,9 +675,12 @@ choices <code class="docutils literal notranslate"><span class="pre">annals</spa
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.tools.show">
 <span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.show" title="Link to this definition">#</a></dt>
-<dd><p>A document’s metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p>
-<p><code class="docutils literal notranslate"><span class="pre">doc_id</span></code> may be the document’s link; a group’s link gives the group and its documents’
-links. To read the text, use <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;link&gt;</span></code>.</p>
+<dd><p>A document’s metadata, link, the groups it is in, and the annals links in its text.</p>
+<p><code class="docutils literal notranslate"><span class="pre">doc_id</span></code> may be the document’s link, on any annals this machine is configured for: the
+link finds its own place (<code class="docutils literal notranslate"><span class="pre">to</span></code> names one explicitly). A group’s link gives the group
+and its documents’ links. <code class="docutils literal notranslate"><span class="pre">links</span></code> are the links to other annals documents and groups
+found in the document’s text files, on any annals this machine can read: follow them
+with <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">show</span></code> or <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span></code>. To read the text, use <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;link&gt;</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -748,7 +781,7 @@ outbox or a remote target. <code class="docutils literal notranslate"><span clas
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=e95a51ae"></script>
+      <script src="../_static/documentation_options.js?v=dea2dbc4"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

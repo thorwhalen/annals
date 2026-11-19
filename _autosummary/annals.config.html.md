@@ -33,6 +33,13 @@ A fourth, `room`, is true for a target an outside audience reads (a client’s r
 with `mk_api(room=True)`): `publish` and `copy` to it write no provenance (the
 publisher’s host, cwd, session and `--meta` keys), so it never reaches that disk.
 
+A link names its own place. [`link_target()`](#annals.config.link_target) reads the instance out of a document’s or
+group’s link by matching it against every configured `base_url` (the default’s and each
+named target’s), so `annals aggregate <link>` reads the right annals without `--to`. The
+config file stays the one list of the annals this machine can read. [`link_target()`](#annals.config.link_target)
+itself refuses a link to any other host; the read commands then fall back to the default
+annals (ids are unique across annals, so that read finds the document or says there is none).
+
 The server side has two knobs of its own. `ANNALS_DATA_DIR` is the directory the API
 reads. It defaults to `~/.local/share/annals`, which is also the default publish target,
 so with no configuration at all `annals publish` and `annals serve` meet in the same
@@ -47,12 +54,13 @@ read in place (`ledgers=~/.local/share/crowsnest/ledger`; several, comma-separat
 
 ### Functions
 
-| [`default_config_path`](#annals.config.default_config_path)()                          | `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.                      |
-|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------|
-| [`default_data_dir`](#annals.config.default_data_dir)()                             | The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.                |
-| [`load_settings`](#annals.config.load_settings)(\*[, target, base_url, to, ...]) | Resolve settings: arguments, then `to`, env, the config file, then local defaults. |
-| [`named_targets`](#annals.config.named_targets)(\*[, config_path])               | The `[targets.NAME]` tables of the config file: name -> {target, base_url}.        |
-| [`write_config`](#annals.config.write_config)(settings, \*[, to, config_path])  | Write the config file (string keys only; no TOML writer dependency needed).        |
+| [`default_config_path`](#annals.config.default_config_path)()                          | `$ANNALS_CONFIG`, else `$XDG_CONFIG_HOME/annals/config.toml`.                                        |
+|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------|
+| [`default_data_dir`](#annals.config.default_data_dir)()                             | The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.                                  |
+| [`link_target`](#annals.config.link_target)(ref, \*[, config_path])            | The configured place a document's or group's link lives in: `None` (the default) or a target's name. |
+| [`load_settings`](#annals.config.load_settings)(\*[, target, base_url, to, ...]) | Resolve settings: arguments, then `to`, env, the config file, then local defaults.                   |
+| [`named_targets`](#annals.config.named_targets)(\*[, config_path])               | The `[targets.NAME]` tables of the config file: name -> {target, base_url}.                          |
+| [`write_config`](#annals.config.write_config)(settings, \*[, to, config_path])  | Write the config file (string keys only; no TOML writer dependency needed).                          |
 
 ### Classes
 
@@ -119,6 +127,38 @@ The local data root: `$ANNALS_DATA_DIR` or `~/.local/share/annals`.
 
 * **Return type:**
   [`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)
+
+### annals.config.link_target(ref, , config_path=None)
+
+The configured place a document’s or group’s link lives in: `None` (the default) or a target’s name.
+
+`ref` that is not an http(s) link (a bare id) names no place, so the answer is
+`None`: read the default. A link is matched against the default `base_url` and
+every `[targets.NAME]` one; the longest matching `base_url` wins, and among equals
+a readable target beats an outbox (an outbox is written to, never read). Hosts and
+paths are compared as a browser reaches them (`_url_key()`). A link that matches
+none raises `ValueError` naming the places this machine knows.
+
+```pycon
+>>> import tempfile, pathlib
+>>> cfg = pathlib.Path(tempfile.mkdtemp()) / "config.toml"
+>>> _ = cfg.write_text('''[annals]
+... target = "/srv/annals"
+... base_url = "https://apps.example.com/annals"
+... [targets.team]
+... target = "team:/var/lib/annals"
+... base_url = "https://annals.team.example.org/annals"
+... ''')
+>>> link_target("https://annals.team.example.org/annals/d/20261119-075018-a-4a58", config_path=cfg)
+'team'
+>>> link_target("https://APPS.example.com/annals/g/20261119-075018-b?f=x", config_path=cfg) is None
+True
+>>> link_target("20261119-075018-a-4a58", config_path=cfg) is None
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
 
 ### annals.config.load_settings(, target=None, base_url=None, to=None, outbox=None, share_base_url=None, room=None, config_path=None)
 

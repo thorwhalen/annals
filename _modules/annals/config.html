@@ -171,252 +171,345 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="31"><span class="sd">with ``mk_api(room=True)``): ``publish`` and ``copy`` to it write no provenance (the</span>
 </span><span data-line="32"><span class="sd">publisher's host, cwd, session and ``--meta`` keys), so it never reaches that disk.</span>
 </span><span data-line="33">
-</span><span data-line="34"><span class="sd">The server side has two knobs of its own. ``ANNALS_DATA_DIR`` is the directory the API</span>
-</span><span data-line="35"><span class="sd">reads. It defaults to ``~/.local/share/annals``, which is also the default publish target,</span>
-</span><span data-line="36"><span class="sd">so with no configuration at all ``annals publish`` and ``annals serve`` meet in the same</span>
-</span><span data-line="37"><span class="sd">place. ``ANNALS_SOURCES`` names extra folders the page lists beside the published documents,</span>
-</span><span data-line="38"><span class="sd">read in place (``ledgers=~/.local/share/crowsnest/ledger``; several, comma-separated).</span>
-</span><span data-line="39"><span class="sd">"""</span>
+</span><span data-line="34"><span class="sd">A link names its own place. :func:`link_target` reads the instance out of a document's or</span>
+</span><span data-line="35"><span class="sd">group's link by matching it against every configured ``base_url`` (the default's and each</span>
+</span><span data-line="36"><span class="sd">named target's), so ``annals aggregate &lt;link&gt;`` reads the right annals without ``--to``. The</span>
+</span><span data-line="37"><span class="sd">config file stays the one list of the annals this machine can read. :func:`link_target`</span>
+</span><span data-line="38"><span class="sd">itself refuses a link to any other host; the read commands then fall back to the default</span>
+</span><span data-line="39"><span class="sd">annals (ids are unique across annals, so that read finds the document or says there is none).</span>
 </span><span data-line="40">
-</span><span data-line="41"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
-</span><span data-line="42">
-</span><span data-line="43"><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
-</span><span data-line="44"><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-</span><span data-line="45"><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
-</span><span data-line="46"><span class="kn">import</span><span class="w"> </span><span class="nn">tomllib</span>
-</span><span data-line="47"><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">asdict</span>
-</span><span data-line="48"><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span data-line="41"><span class="sd">The server side has two knobs of its own. ``ANNALS_DATA_DIR`` is the directory the API</span>
+</span><span data-line="42"><span class="sd">reads. It defaults to ``~/.local/share/annals``, which is also the default publish target,</span>
+</span><span data-line="43"><span class="sd">so with no configuration at all ``annals publish`` and ``annals serve`` meet in the same</span>
+</span><span data-line="44"><span class="sd">place. ``ANNALS_SOURCES`` names extra folders the page lists beside the published documents,</span>
+</span><span data-line="45"><span class="sd">read in place (``ledgers=~/.local/share/crowsnest/ledger``; several, comma-separated).</span>
+</span><span data-line="46"><span class="sd">"""</span>
+</span><span data-line="47">
+</span><span data-line="48"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
 </span><span data-line="49">
-</span><span data-line="50"><span class="n">APP_NAME</span> <span class="o">=</span> <span class="s2">"annals"</span>
-</span><span data-line="51"><span class="n">ENV_TARGET</span> <span class="o">=</span> <span class="s2">"ANNALS_TARGET"</span>
-</span><span data-line="52"><span class="n">ENV_BASE_URL</span> <span class="o">=</span> <span class="s2">"ANNALS_BASE_URL"</span>
-</span><span data-line="53"><span class="n">ENV_DATA_DIR</span> <span class="o">=</span> <span class="s2">"ANNALS_DATA_DIR"</span>
-</span><span data-line="54"><span class="c1">#: where the public share server answers (a share link is ``&lt;this&gt;/&lt;token&gt;/``)</span>
-</span><span data-line="55"><span class="n">ENV_SHARE_BASE_URL</span> <span class="o">=</span> <span class="s2">"ANNALS_SHARE_BASE_URL"</span>
-</span><span data-line="56"><span class="c1">#: extra folders the page lists beside the published documents: "name=path, name2=path2"</span>
-</span><span data-line="57"><span class="n">ENV_SOURCES</span> <span class="o">=</span> <span class="s2">"ANNALS_SOURCES"</span>
-</span><span data-line="58"><span class="n">ENV_CONFIG</span> <span class="o">=</span> <span class="s2">"ANNALS_CONFIG"</span>
-</span><span data-line="59"><span class="n">ENV_OUTBOX</span> <span class="o">=</span> <span class="s2">"ANNALS_OUTBOX"</span>
-</span><span data-line="60"><span class="n">_TRUE</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"1"</span><span class="p">,</span> <span class="s2">"true"</span><span class="p">,</span> <span class="s2">"yes"</span><span class="p">,</span> <span class="s2">"on"</span><span class="p">})</span>
-</span><span data-line="61"><span class="n">DFLT_SERVE_PORT</span> <span class="o">=</span> <span class="mi">8765</span>
-</span><span data-line="62"><span class="n">_NAME_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^[A-Za-z0-9_-]+$"</span><span class="p">)</span>
-</span><span data-line="63"><span class="c1"># A document's content file is read whole into the API's JSON response; this is the cap.</span>
-</span><span data-line="64"><span class="n">MAX_INLINE_TEXT_BYTES</span> <span class="o">=</span> <span class="mi">2_000_000</span>
-</span><span data-line="65"><span class="c1"># All the markdown one combined download (annals.aggregate) may hold.</span>
-</span><span data-line="66"><span class="n">MAX_AGGREGATE_BYTES</span> <span class="o">=</span> <span class="mi">8_000_000</span>
-</span><span data-line="67"><span class="c1"># All the files (PDFs and images included) one combined download (annals.combine) may read.</span>
-</span><span data-line="68"><span class="n">MAX_COMBINE_BYTES</span> <span class="o">=</span> <span class="mi">120_000_000</span>
-</span><span data-line="69"><span class="c1"># How many documents' texts the published source keeps for search (least recently used out first).</span>
-</span><span data-line="70"><span class="n">DFLT_MAX_CACHED_TEXTS</span> <span class="o">=</span> <span class="mi">512</span>
-</span><span data-line="71">
-</span><span data-line="72">
+</span><span data-line="50"><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+</span><span data-line="51"><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+</span><span data-line="52"><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+</span><span data-line="53"><span class="kn">import</span><span class="w"> </span><span class="nn">tomllib</span>
+</span><span data-line="54"><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">asdict</span>
+</span><span data-line="55"><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span data-line="56">
+</span><span data-line="57"><span class="n">APP_NAME</span> <span class="o">=</span> <span class="s2">"annals"</span>
+</span><span data-line="58"><span class="n">ENV_TARGET</span> <span class="o">=</span> <span class="s2">"ANNALS_TARGET"</span>
+</span><span data-line="59"><span class="n">ENV_BASE_URL</span> <span class="o">=</span> <span class="s2">"ANNALS_BASE_URL"</span>
+</span><span data-line="60"><span class="n">ENV_DATA_DIR</span> <span class="o">=</span> <span class="s2">"ANNALS_DATA_DIR"</span>
+</span><span data-line="61"><span class="c1">#: where the public share server answers (a share link is ``&lt;this&gt;/&lt;token&gt;/``)</span>
+</span><span data-line="62"><span class="n">ENV_SHARE_BASE_URL</span> <span class="o">=</span> <span class="s2">"ANNALS_SHARE_BASE_URL"</span>
+</span><span data-line="63"><span class="c1">#: extra folders the page lists beside the published documents: "name=path, name2=path2"</span>
+</span><span data-line="64"><span class="n">ENV_SOURCES</span> <span class="o">=</span> <span class="s2">"ANNALS_SOURCES"</span>
+</span><span data-line="65"><span class="n">ENV_CONFIG</span> <span class="o">=</span> <span class="s2">"ANNALS_CONFIG"</span>
+</span><span data-line="66"><span class="n">ENV_OUTBOX</span> <span class="o">=</span> <span class="s2">"ANNALS_OUTBOX"</span>
+</span><span data-line="67"><span class="n">_TRUE</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"1"</span><span class="p">,</span> <span class="s2">"true"</span><span class="p">,</span> <span class="s2">"yes"</span><span class="p">,</span> <span class="s2">"on"</span><span class="p">})</span>
+</span><span data-line="68"><span class="n">DFLT_SERVE_PORT</span> <span class="o">=</span> <span class="mi">8765</span>
+</span><span data-line="69"><span class="n">_NAME_RE</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s2">"^[A-Za-z0-9_-]+$"</span><span class="p">)</span>
+</span><span data-line="70"><span class="c1"># A document's content file is read whole into the API's JSON response; this is the cap.</span>
+</span><span data-line="71"><span class="n">MAX_INLINE_TEXT_BYTES</span> <span class="o">=</span> <span class="mi">2_000_000</span>
+</span><span data-line="72"><span class="c1"># All the markdown one combined download (annals.aggregate) may hold.</span>
+</span><span data-line="73"><span class="n">MAX_AGGREGATE_BYTES</span> <span class="o">=</span> <span class="mi">8_000_000</span>
+</span><span data-line="74"><span class="c1"># All the files (PDFs and images included) one combined download (annals.combine) may read.</span>
+</span><span data-line="75"><span class="n">MAX_COMBINE_BYTES</span> <span class="o">=</span> <span class="mi">120_000_000</span>
+</span><span data-line="76"><span class="c1"># How many documents' texts the published source keeps for search (least recently used out first).</span>
+</span><span data-line="77"><span class="n">DFLT_MAX_CACHED_TEXTS</span> <span class="o">=</span> <span class="mi">512</span>
+</span><span data-line="78">
+</span><span data-line="79">
 <div class="viewcode-block" id="default_data_dir">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.default_data_dir">[docs]</a>
-</span><span data-line="73"><span class="k">def</span><span class="w"> </span><span class="nf">default_data_dir</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-</span><span data-line="74"><span class="w">    </span><span class="sd">"""The local data root: ``$ANNALS_DATA_DIR`` or ``~/.local/share/annals``."""</span>
-</span><span data-line="75">    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_DATA_DIR</span><span class="p">)</span>
-</span><span data-line="76">    <span class="k">if</span> <span class="n">env</span><span class="p">:</span>
-</span><span data-line="77">        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
-</span><span data-line="78">    <span class="n">xdg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"XDG_DATA_HOME"</span><span class="p">)</span>
-</span><span data-line="79">    <span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">xdg</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="k">if</span> <span class="n">xdg</span> <span class="k">else</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">".local"</span> <span class="o">/</span> <span class="s2">"share"</span>
-</span><span data-line="80">    <span class="k">return</span> <span class="n">base</span> <span class="o">/</span> <span class="n">APP_NAME</span></div>
+</span><span data-line="80"><span class="k">def</span><span class="w"> </span><span class="nf">default_data_dir</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+</span><span data-line="81"><span class="w">    </span><span class="sd">"""The local data root: ``$ANNALS_DATA_DIR`` or ``~/.local/share/annals``."""</span>
+</span><span data-line="82">    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_DATA_DIR</span><span class="p">)</span>
+</span><span data-line="83">    <span class="k">if</span> <span class="n">env</span><span class="p">:</span>
+</span><span data-line="84">        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+</span><span data-line="85">    <span class="n">xdg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"XDG_DATA_HOME"</span><span class="p">)</span>
+</span><span data-line="86">    <span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">xdg</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="k">if</span> <span class="n">xdg</span> <span class="k">else</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">".local"</span> <span class="o">/</span> <span class="s2">"share"</span>
+</span><span data-line="87">    <span class="k">return</span> <span class="n">base</span> <span class="o">/</span> <span class="n">APP_NAME</span></div>
 
-</span><span data-line="81">
-</span><span data-line="82">
+</span><span data-line="88">
+</span><span data-line="89">
 <div class="viewcode-block" id="default_config_path">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.default_config_path">[docs]</a>
-</span><span data-line="83"><span class="k">def</span><span class="w"> </span><span class="nf">default_config_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-</span><span data-line="84"><span class="w">    </span><span class="sd">"""``$ANNALS_CONFIG``, else ``$XDG_CONFIG_HOME/annals/config.toml``."""</span>
-</span><span data-line="85">    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_CONFIG</span><span class="p">)</span>
-</span><span data-line="86">    <span class="k">if</span> <span class="n">env</span><span class="p">:</span>
-</span><span data-line="87">        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
-</span><span data-line="88">    <span class="n">xdg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"XDG_CONFIG_HOME"</span><span class="p">)</span>
-</span><span data-line="89">    <span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">xdg</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="k">if</span> <span class="n">xdg</span> <span class="k">else</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">".config"</span>
-</span><span data-line="90">    <span class="k">return</span> <span class="n">base</span> <span class="o">/</span> <span class="n">APP_NAME</span> <span class="o">/</span> <span class="s2">"config.toml"</span></div>
+</span><span data-line="90"><span class="k">def</span><span class="w"> </span><span class="nf">default_config_path</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+</span><span data-line="91"><span class="w">    </span><span class="sd">"""``$ANNALS_CONFIG``, else ``$XDG_CONFIG_HOME/annals/config.toml``."""</span>
+</span><span data-line="92">    <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_CONFIG</span><span class="p">)</span>
+</span><span data-line="93">    <span class="k">if</span> <span class="n">env</span><span class="p">:</span>
+</span><span data-line="94">        <span class="k">return</span> <span class="n">Path</span><span class="p">(</span><span class="n">env</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span>
+</span><span data-line="95">    <span class="n">xdg</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"XDG_CONFIG_HOME"</span><span class="p">)</span>
+</span><span data-line="96">    <span class="n">base</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">xdg</span><span class="p">)</span><span class="o">.</span><span class="n">expanduser</span><span class="p">()</span> <span class="k">if</span> <span class="n">xdg</span> <span class="k">else</span> <span class="n">Path</span><span class="o">.</span><span class="n">home</span><span class="p">()</span> <span class="o">/</span> <span class="s2">".config"</span>
+</span><span data-line="97">    <span class="k">return</span> <span class="n">base</span> <span class="o">/</span> <span class="n">APP_NAME</span> <span class="o">/</span> <span class="s2">"config.toml"</span></div>
 
-</span><span data-line="91">
-</span><span data-line="92">
+</span><span data-line="98">
+</span><span data-line="99">
 <div class="viewcode-block" id="Settings">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.Settings">[docs]</a>
-</span><span data-line="93"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span data-line="94"><span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">:</span>
-</span><span data-line="95"><span class="w">    </span><span class="sd">"""Where to publish and what link to print. See the module docstring for precedence."""</span>
-</span><span data-line="96">
-</span><span data-line="97">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span>
-</span><span data-line="98">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span>
-</span><span data-line="99">    <span class="c1">#: False when nothing (argument, env, config file) named a target: publishing then lands</span>
-</span><span data-line="100">    <span class="c1">#: in the local data dir and the link points at a local server, which is rarely meant</span>
-</span><span data-line="101">    <span class="n">configured</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="102">    <span class="c1">#: the target is pulled and emptied by another machine; replacements apply there</span>
-</span><span data-line="103">    <span class="n">outbox</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="104">    <span class="c1">#: where share links point (``&lt;this&gt;/&lt;token&gt;/``); ``&lt;base_url&gt;/shared`` by default</span>
-</span><span data-line="105">    <span class="n">share_base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
-</span><span data-line="106">    <span class="c1">#: an outside audience reads this target: what is written to it carries no provenance</span>
-</span><span data-line="107">    <span class="n">room</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span data-line="108">
-</span><span data-line="109">    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span data-line="110">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">share_base_url</span><span class="p">:</span>
-</span><span data-line="111">            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"share_base_url"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/shared"</span><span class="p">)</span>
-</span><span data-line="112">
+</span><span data-line="100"><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="101"><span class="k">class</span><span class="w"> </span><span class="nc">Settings</span><span class="p">:</span>
+</span><span data-line="102"><span class="w">    </span><span class="sd">"""Where to publish and what link to print. See the module docstring for precedence."""</span>
+</span><span data-line="103">
+</span><span data-line="104">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="105">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span>
+</span><span data-line="106">    <span class="c1">#: False when nothing (argument, env, config file) named a target: publishing then lands</span>
+</span><span data-line="107">    <span class="c1">#: in the local data dir and the link points at a local server, which is rarely meant</span>
+</span><span data-line="108">    <span class="n">configured</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="109">    <span class="c1">#: the target is pulled and emptied by another machine; replacements apply there</span>
+</span><span data-line="110">    <span class="n">outbox</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="111">    <span class="c1">#: where share links point (``&lt;this&gt;/&lt;token&gt;/``); ``&lt;base_url&gt;/shared`` by default</span>
+</span><span data-line="112">    <span class="n">share_base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span>
+</span><span data-line="113">    <span class="c1">#: an outside audience reads this target: what is written to it carries no provenance</span>
+</span><span data-line="114">    <span class="n">room</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span data-line="115">
+</span><span data-line="116">    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span data-line="117">        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">share_base_url</span><span class="p">:</span>
+</span><span data-line="118">            <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"share_base_url"</span><span class="p">,</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/shared"</span><span class="p">)</span>
+</span><span data-line="119">
 <div class="viewcode-block" id="Settings.as_dict">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.Settings.as_dict">[docs]</a>
-</span><span data-line="113">    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="114"><span class="w">        </span><span class="sd">"""Plain dict, for the CLI and MCP surfaces."""</span>
-</span><span data-line="115">        <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</span><span data-line="120">    <span class="k">def</span><span class="w"> </span><span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="121"><span class="w">        </span><span class="sd">"""Plain dict, for the CLI and MCP surfaces."""</span>
+</span><span data-line="122">        <span class="k">return</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
 </div>
 
-</span><span data-line="116">
-</span><span data-line="117">
-</span><span data-line="118"><span class="k">def</span><span class="w"> </span><span class="nf">_read_toml</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="119">    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
-</span><span data-line="120">        <span class="k">return</span> <span class="p">{}</span>
-</span><span data-line="121">    <span class="k">with</span> <span class="n">path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-</span><span data-line="122">        <span class="k">return</span> <span class="n">tomllib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 </span><span data-line="123">
 </span><span data-line="124">
-</span><span data-line="125"><span class="k">def</span><span class="w"> </span><span class="nf">_read_config_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-</span><span data-line="126">    <span class="n">section</span> <span class="o">=</span> <span class="n">_read_toml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-</span><span data-line="127">    <span class="n">section</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">APP_NAME</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
-</span><span data-line="128">    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">section</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">))}</span>
-</span><span data-line="129">
+</span><span data-line="125"><span class="k">def</span><span class="w"> </span><span class="nf">_read_toml</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="126">    <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+</span><span data-line="127">        <span class="k">return</span> <span class="p">{}</span>
+</span><span data-line="128">    <span class="k">with</span> <span class="n">path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"rb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span data-line="129">        <span class="k">return</span> <span class="n">tomllib</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 </span><span data-line="130">
+</span><span data-line="131">
+</span><span data-line="132"><span class="k">def</span><span class="w"> </span><span class="nf">_read_config_file</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="133">    <span class="n">section</span> <span class="o">=</span> <span class="n">_read_toml</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span data-line="134">    <span class="n">section</span> <span class="o">=</span> <span class="n">section</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">APP_NAME</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+</span><span data-line="135">    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">section</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">))}</span>
+</span><span data-line="136">
+</span><span data-line="137">
 <div class="viewcode-block" id="named_targets">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.named_targets">[docs]</a>
-</span><span data-line="131"><span class="k">def</span><span class="w"> </span><span class="nf">named_targets</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
-</span><span data-line="132"><span class="w">    </span><span class="sd">"""The ``[targets.NAME]`` tables of the config file: name -&gt; {target, base_url}."""</span>
-</span><span data-line="133">    <span class="n">tables</span> <span class="o">=</span> <span class="n">_read_toml</span><span class="p">(</span><span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">())</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"targets"</span><span class="p">,</span> <span class="p">{})</span>
-</span><span data-line="134">    <span class="k">return</span> <span class="p">{</span>
-</span><span data-line="135">        <span class="n">name</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">))}</span>
-</span><span data-line="136">        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">tables</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-</span><span data-line="137">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
-</span><span data-line="138">    <span class="p">}</span></div>
+</span><span data-line="138"><span class="k">def</span><span class="w"> </span><span class="nf">named_targets</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]:</span>
+</span><span data-line="139"><span class="w">    </span><span class="sd">"""The ``[targets.NAME]`` tables of the config file: name -&gt; {target, base_url}."""</span>
+</span><span data-line="140">    <span class="n">tables</span> <span class="o">=</span> <span class="n">_read_toml</span><span class="p">(</span><span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">())</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"targets"</span><span class="p">,</span> <span class="p">{})</span>
+</span><span data-line="141">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="142">        <span class="n">name</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">))}</span>
+</span><span data-line="143">        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">tables</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</span><span data-line="144">        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+</span><span data-line="145">    <span class="p">}</span></div>
 
-</span><span data-line="139">
-</span><span data-line="140">
+</span><span data-line="146">
+</span><span data-line="147">
 <div class="viewcode-block" id="load_settings">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.load_settings">[docs]</a>
-</span><span data-line="141"><span class="k">def</span><span class="w"> </span><span class="nf">load_settings</span><span class="p">(</span>
-</span><span data-line="142">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="143">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="144">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="145">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="146">    <span class="n">outbox</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="147">    <span class="n">share_base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="148">    <span class="n">room</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="149">    <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="150"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Settings</span><span class="p">:</span>
-</span><span data-line="151"><span class="w">    </span><span class="sd">"""Resolve settings: arguments, then ``to``, env, the config file, then local defaults.</span>
-</span><span data-line="152">
-</span><span data-line="153"><span class="sd">    ``to`` names a ``[targets.NAME]`` table of the config file; it replaces the environment</span>
-</span><span data-line="154"><span class="sd">    and the file's default target for this call (explicit arguments still win).</span>
-</span><span data-line="155"><span class="sd">    """</span>
-</span><span data-line="156">    <span class="k">if</span> <span class="n">to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="157">        <span class="k">if</span> <span class="ow">not</span> <span class="n">_NAME_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">to</span><span class="p">):</span>
-</span><span data-line="158">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not a valid annals target name: </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="159">        <span class="n">known</span> <span class="o">=</span> <span class="n">named_targets</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">)</span>
-</span><span data-line="160">        <span class="k">if</span> <span class="n">to</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">known</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">known</span><span class="p">[</span><span class="n">to</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">):</span>
-</span><span data-line="161">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="162">                <span class="sa">f</span><span class="s2">"unknown annals target </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2">; known: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">known</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'none'</span><span class="si">}</span><span class="s2">. "</span>
-</span><span data-line="163">                <span class="sa">f</span><span class="s2">"Add one with `annals configure --to </span><span class="si">{</span><span class="n">to</span><span class="si">}</span><span class="s2"> --target ... --base-url ...`."</span>
-</span><span data-line="164">            <span class="p">)</span>
-</span><span data-line="165">        <span class="n">named</span> <span class="o">=</span> <span class="n">known</span><span class="p">[</span><span class="n">to</span><span class="p">]</span>
-</span><span data-line="166">        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span> <span class="ow">or</span> <span class="n">named</span><span class="p">[</span><span class="s2">"target"</span><span class="p">]</span>
-</span><span data-line="167">        <span class="n">outbox</span> <span class="o">=</span> <span class="n">outbox</span> <span class="k">if</span> <span class="n">outbox</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">bool</span><span class="p">(</span><span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outbox"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
-</span><span data-line="168">        <span class="n">share_base_url</span> <span class="o">=</span> <span class="n">share_base_url</span> <span class="ow">or</span> <span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"share_base_url"</span><span class="p">)</span>
-</span><span data-line="169">        <span class="n">room</span> <span class="o">=</span> <span class="n">room</span> <span class="k">if</span> <span class="n">room</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">bool</span><span class="p">(</span><span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"room"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
-</span><span data-line="170">        <span class="c1"># Never fall through to the default's base url: links would name the wrong place.</span>
-</span><span data-line="171">        <span class="n">base_url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="ow">or</span> <span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"base_url"</span><span class="p">)</span>
-</span><span data-line="172">        <span class="k">if</span> <span class="ow">not</span> <span class="n">base_url</span><span class="p">:</span>
-</span><span data-line="173">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="174">                <span class="sa">f</span><span class="s2">"annals target </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2"> has no base_url; set it with `annals configure --to </span><span class="si">{</span><span class="n">to</span><span class="si">}</span><span class="s2"> --base-url ...`"</span>
-</span><span data-line="175">            <span class="p">)</span>
-</span><span data-line="176">    <span class="n">file_values</span> <span class="o">=</span> <span class="n">_read_config_file</span><span class="p">(</span><span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">())</span>
-</span><span data-line="177">    <span class="n">resolved_target</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="178">        <span class="n">target</span>
-</span><span data-line="179">        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">)</span>
-</span><span data-line="180">        <span class="ow">or</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">)</span>
-</span><span data-line="181">        <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">default_data_dir</span><span class="p">())</span>
-</span><span data-line="182">    <span class="p">)</span>
-</span><span data-line="183">    <span class="n">resolved_base_url</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="184">        <span class="n">base_url</span>
-</span><span data-line="185">        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_BASE_URL</span><span class="p">)</span>
-</span><span data-line="186">        <span class="ow">or</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"base_url"</span><span class="p">)</span>
-</span><span data-line="187">        <span class="ow">or</span> <span class="sa">f</span><span class="s2">"http://127.0.0.1:</span><span class="si">{</span><span class="n">DFLT_SERVE_PORT</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2">"</span>
-</span><span data-line="188">    <span class="p">)</span>
-</span><span data-line="189">    <span class="n">configured</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">target</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">)</span> <span class="ow">or</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">))</span>
-</span><span data-line="190">    <span class="k">if</span> <span class="n">outbox</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="191">        <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_OUTBOX</span><span class="p">)</span>
-</span><span data-line="192">        <span class="n">outbox</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="193">            <span class="n">env</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">_TRUE</span>
-</span><span data-line="194">            <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-</span><span data-line="195">            <span class="k">else</span> <span class="nb">bool</span><span class="p">(</span><span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outbox"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
-</span><span data-line="196">            <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">target</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">))</span>
-</span><span data-line="197">        <span class="p">)</span>
-</span><span data-line="198">    <span class="k">if</span> <span class="n">room</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="199">        <span class="n">room</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"room"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
-</span><span data-line="200">            <span class="n">target</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">)</span>
-</span><span data-line="201">        <span class="p">)</span>
-</span><span data-line="202">    <span class="n">resolved_share</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="203">        <span class="n">share_base_url</span>
-</span><span data-line="204">        <span class="ow">or</span> <span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="n">to</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_SHARE_BASE_URL</span><span class="p">))</span>
-</span><span data-line="205">        <span class="ow">or</span> <span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="n">to</span> <span class="k">else</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"share_base_url"</span><span class="p">))</span>
-</span><span data-line="206">        <span class="ow">or</span> <span class="s2">""</span>
-</span><span data-line="207">    <span class="p">)</span>
-</span><span data-line="208">    <span class="k">return</span> <span class="n">Settings</span><span class="p">(</span>
-</span><span data-line="209">        <span class="n">target</span><span class="o">=</span><span class="n">resolved_target</span><span class="p">,</span>
-</span><span data-line="210">        <span class="n">base_url</span><span class="o">=</span><span class="n">resolved_base_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">),</span>
-</span><span data-line="211">        <span class="n">configured</span><span class="o">=</span><span class="n">configured</span><span class="p">,</span>
-</span><span data-line="212">        <span class="n">outbox</span><span class="o">=</span><span class="n">outbox</span><span class="p">,</span>
-</span><span data-line="213">        <span class="n">share_base_url</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">resolved_share</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">),</span>
-</span><span data-line="214">        <span class="n">room</span><span class="o">=</span><span class="n">room</span><span class="p">,</span>
-</span><span data-line="215">    <span class="p">)</span></div>
+</span><span data-line="148"><span class="k">def</span><span class="w"> </span><span class="nf">load_settings</span><span class="p">(</span>
+</span><span data-line="149">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="150">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="151">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="152">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="153">    <span class="n">outbox</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="154">    <span class="n">share_base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="155">    <span class="n">room</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="156">    <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="157"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Settings</span><span class="p">:</span>
+</span><span data-line="158"><span class="w">    </span><span class="sd">"""Resolve settings: arguments, then ``to``, env, the config file, then local defaults.</span>
+</span><span data-line="159">
+</span><span data-line="160"><span class="sd">    ``to`` names a ``[targets.NAME]`` table of the config file; it replaces the environment</span>
+</span><span data-line="161"><span class="sd">    and the file's default target for this call (explicit arguments still win).</span>
+</span><span data-line="162"><span class="sd">    """</span>
+</span><span data-line="163">    <span class="k">if</span> <span class="n">to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="164">        <span class="k">if</span> <span class="ow">not</span> <span class="n">_NAME_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">to</span><span class="p">):</span>
+</span><span data-line="165">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not a valid annals target name: </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="166">        <span class="n">known</span> <span class="o">=</span> <span class="n">named_targets</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">)</span>
+</span><span data-line="167">        <span class="k">if</span> <span class="n">to</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">known</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">known</span><span class="p">[</span><span class="n">to</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">):</span>
+</span><span data-line="168">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="169">                <span class="sa">f</span><span class="s2">"unknown annals target </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2">; known: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">known</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">'none'</span><span class="si">}</span><span class="s2">. "</span>
+</span><span data-line="170">                <span class="sa">f</span><span class="s2">"Add one with `annals configure --to </span><span class="si">{</span><span class="n">to</span><span class="si">}</span><span class="s2"> --target ... --base-url ...`."</span>
+</span><span data-line="171">            <span class="p">)</span>
+</span><span data-line="172">        <span class="n">named</span> <span class="o">=</span> <span class="n">known</span><span class="p">[</span><span class="n">to</span><span class="p">]</span>
+</span><span data-line="173">        <span class="n">target</span> <span class="o">=</span> <span class="n">target</span> <span class="ow">or</span> <span class="n">named</span><span class="p">[</span><span class="s2">"target"</span><span class="p">]</span>
+</span><span data-line="174">        <span class="n">outbox</span> <span class="o">=</span> <span class="n">outbox</span> <span class="k">if</span> <span class="n">outbox</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">bool</span><span class="p">(</span><span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outbox"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+</span><span data-line="175">        <span class="n">share_base_url</span> <span class="o">=</span> <span class="n">share_base_url</span> <span class="ow">or</span> <span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"share_base_url"</span><span class="p">)</span>
+</span><span data-line="176">        <span class="n">room</span> <span class="o">=</span> <span class="n">room</span> <span class="k">if</span> <span class="n">room</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">bool</span><span class="p">(</span><span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"room"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+</span><span data-line="177">        <span class="c1"># Never fall through to the default's base url: links would name the wrong place.</span>
+</span><span data-line="178">        <span class="n">base_url</span> <span class="o">=</span> <span class="n">base_url</span> <span class="ow">or</span> <span class="n">named</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"base_url"</span><span class="p">)</span>
+</span><span data-line="179">        <span class="k">if</span> <span class="ow">not</span> <span class="n">base_url</span><span class="p">:</span>
+</span><span data-line="180">            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="181">                <span class="sa">f</span><span class="s2">"annals target </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2"> has no base_url; set it with `annals configure --to </span><span class="si">{</span><span class="n">to</span><span class="si">}</span><span class="s2"> --base-url ...`"</span>
+</span><span data-line="182">            <span class="p">)</span>
+</span><span data-line="183">    <span class="n">file_values</span> <span class="o">=</span> <span class="n">_read_config_file</span><span class="p">(</span><span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">())</span>
+</span><span data-line="184">    <span class="n">resolved_target</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="185">        <span class="n">target</span>
+</span><span data-line="186">        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">)</span>
+</span><span data-line="187">        <span class="ow">or</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">)</span>
+</span><span data-line="188">        <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">default_data_dir</span><span class="p">())</span>
+</span><span data-line="189">    <span class="p">)</span>
+</span><span data-line="190">    <span class="n">resolved_base_url</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="191">        <span class="n">base_url</span>
+</span><span data-line="192">        <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_BASE_URL</span><span class="p">)</span>
+</span><span data-line="193">        <span class="ow">or</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"base_url"</span><span class="p">)</span>
+</span><span data-line="194">        <span class="ow">or</span> <span class="sa">f</span><span class="s2">"http://127.0.0.1:</span><span class="si">{</span><span class="n">DFLT_SERVE_PORT</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="195">    <span class="p">)</span>
+</span><span data-line="196">    <span class="n">configured</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">target</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">)</span> <span class="ow">or</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">))</span>
+</span><span data-line="197">    <span class="k">if</span> <span class="n">outbox</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="198">        <span class="n">env</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_OUTBOX</span><span class="p">)</span>
+</span><span data-line="199">        <span class="n">outbox</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="200">            <span class="n">env</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">_TRUE</span>
+</span><span data-line="201">            <span class="k">if</span> <span class="n">env</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+</span><span data-line="202">            <span class="k">else</span> <span class="nb">bool</span><span class="p">(</span><span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outbox"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+</span><span data-line="203">            <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">target</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">))</span>
+</span><span data-line="204">        <span class="p">)</span>
+</span><span data-line="205">    <span class="k">if</span> <span class="n">room</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="206">        <span class="n">room</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"room"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span>
+</span><span data-line="207">            <span class="n">target</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_TARGET</span><span class="p">)</span>
+</span><span data-line="208">        <span class="p">)</span>
+</span><span data-line="209">    <span class="n">resolved_share</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="210">        <span class="n">share_base_url</span>
+</span><span data-line="211">        <span class="ow">or</span> <span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="n">to</span> <span class="k">else</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ENV_SHARE_BASE_URL</span><span class="p">))</span>
+</span><span data-line="212">        <span class="ow">or</span> <span class="p">(</span><span class="kc">None</span> <span class="k">if</span> <span class="n">to</span> <span class="k">else</span> <span class="n">file_values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"share_base_url"</span><span class="p">))</span>
+</span><span data-line="213">        <span class="ow">or</span> <span class="s2">""</span>
+</span><span data-line="214">    <span class="p">)</span>
+</span><span data-line="215">    <span class="k">return</span> <span class="n">Settings</span><span class="p">(</span>
+</span><span data-line="216">        <span class="n">target</span><span class="o">=</span><span class="n">resolved_target</span><span class="p">,</span>
+</span><span data-line="217">        <span class="n">base_url</span><span class="o">=</span><span class="n">resolved_base_url</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">),</span>
+</span><span data-line="218">        <span class="n">configured</span><span class="o">=</span><span class="n">configured</span><span class="p">,</span>
+</span><span data-line="219">        <span class="n">outbox</span><span class="o">=</span><span class="n">outbox</span><span class="p">,</span>
+</span><span data-line="220">        <span class="n">share_base_url</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">resolved_share</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">),</span>
+</span><span data-line="221">        <span class="n">room</span><span class="o">=</span><span class="n">room</span><span class="p">,</span>
+</span><span data-line="222">    <span class="p">)</span></div>
 
-</span><span data-line="216">
-</span><span data-line="217">
+</span><span data-line="223">
+</span><span data-line="224">
+</span><span data-line="225"><span class="n">_DEFAULT_PORTS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"http"</span><span class="p">:</span> <span class="mi">80</span><span class="p">,</span> <span class="s2">"https"</span><span class="p">:</span> <span class="mi">443</span><span class="p">}</span>
+</span><span data-line="226">
+</span><span data-line="227">
+</span><span data-line="228"><span class="k">def</span><span class="w"> </span><span class="nf">_url_key</span><span class="p">(</span><span class="n">url</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="229"><span class="w">    </span><span class="sd">"""``(host, path)`` of an http(s) url as a browser would reach it, for prefix tests.</span>
+</span><span data-line="230">
+</span><span data-line="231"><span class="sd">    The host loses any userinfo, a trailing dot and its scheme's default port, and is</span>
+</span><span data-line="232"><span class="sd">    lower-cased; the path is normalised (``..`` and ``.`` segments resolved, no trailing slash).</span>
+</span><span data-line="233">
+</span><span data-line="234"><span class="sd">    &gt;&gt;&gt; _url_key("https://u@Apps.Example.com.:443/annals/x/../d/1/")</span>
+</span><span data-line="235"><span class="sd">    ('apps.example.com', '/annals/d/1')</span>
+</span><span data-line="236"><span class="sd">    &gt;&gt;&gt; _url_key("https://a.example.com:8443/annals")</span>
+</span><span data-line="237"><span class="sd">    ('a.example.com:8443', '/annals')</span>
+</span><span data-line="238"><span class="sd">    """</span>
+</span><span data-line="239">    <span class="kn">import</span><span class="w"> </span><span class="nn">posixpath</span>
+</span><span data-line="240">    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlsplit</span>
+</span><span data-line="241">
+</span><span data-line="242">    <span class="n">u</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">url</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+</span><span data-line="243">    <span class="n">host</span> <span class="o">=</span> <span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">hostname</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">)</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"."</span><span class="p">)</span>
+</span><span data-line="244">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="245">        <span class="n">port</span> <span class="o">=</span> <span class="n">u</span><span class="o">.</span><span class="n">port</span>
+</span><span data-line="246">    <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span data-line="247">        <span class="n">port</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># a malformed port names no configured place</span>
+</span><span data-line="248">    <span class="k">if</span> <span class="n">port</span> <span class="ow">and</span> <span class="n">port</span> <span class="o">!=</span> <span class="n">_DEFAULT_PORTS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">scheme</span><span class="p">):</span>
+</span><span data-line="249">        <span class="n">host</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="250">    <span class="n">path</span> <span class="o">=</span> <span class="n">posixpath</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="k">if</span> <span class="n">u</span><span class="o">.</span><span class="n">path</span> <span class="k">else</span> <span class="s2">""</span>
+</span><span data-line="251">    <span class="k">return</span> <span class="n">host</span><span class="p">,</span> <span class="s2">""</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"."</span><span class="p">,</span> <span class="s2">"/"</span><span class="p">)</span> <span class="k">else</span> <span class="n">path</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s2">"/"</span><span class="p">)</span>
+</span><span data-line="252">
+</span><span data-line="253">
+<div class="viewcode-block" id="link_target">
+<a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.link_target">[docs]</a>
+</span><span data-line="254"><span class="k">def</span><span class="w"> </span><span class="nf">link_target</span><span class="p">(</span><span class="n">ref</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="255"><span class="w">    </span><span class="sd">"""The configured place a document's or group's link lives in: ``None`` (the default) or a target's name.</span>
+</span><span data-line="256">
+</span><span data-line="257"><span class="sd">    ``ref`` that is not an http(s) link (a bare id) names no place, so the answer is</span>
+</span><span data-line="258"><span class="sd">    ``None``: read the default. A link is matched against the default ``base_url`` and</span>
+</span><span data-line="259"><span class="sd">    every ``[targets.NAME]`` one; the longest matching ``base_url`` wins, and among equals</span>
+</span><span data-line="260"><span class="sd">    a readable target beats an outbox (an outbox is written to, never read). Hosts and</span>
+</span><span data-line="261"><span class="sd">    paths are compared as a browser reaches them (:func:`_url_key`). A link that matches</span>
+</span><span data-line="262"><span class="sd">    none raises ``ValueError`` naming the places this machine knows.</span>
+</span><span data-line="263">
+</span><span data-line="264"><span class="sd">    &gt;&gt;&gt; import tempfile, pathlib</span>
+</span><span data-line="265"><span class="sd">    &gt;&gt;&gt; cfg = pathlib.Path(tempfile.mkdtemp()) / "config.toml"</span>
+</span><span data-line="266"><span class="sd">    &gt;&gt;&gt; _ = cfg.write_text('''[annals]</span>
+</span><span data-line="267"><span class="sd">    ... target = "/srv/annals"</span>
+</span><span data-line="268"><span class="sd">    ... base_url = "https://apps.example.com/annals"</span>
+</span><span data-line="269"><span class="sd">    ... [targets.team]</span>
+</span><span data-line="270"><span class="sd">    ... target = "team:/var/lib/annals"</span>
+</span><span data-line="271"><span class="sd">    ... base_url = "https://annals.team.example.org/annals"</span>
+</span><span data-line="272"><span class="sd">    ... ''')</span>
+</span><span data-line="273"><span class="sd">    &gt;&gt;&gt; link_target("https://annals.team.example.org/annals/d/20261119-075018-a-4a58", config_path=cfg)</span>
+</span><span data-line="274"><span class="sd">    'team'</span>
+</span><span data-line="275"><span class="sd">    &gt;&gt;&gt; link_target("https://APPS.example.com/annals/g/20261119-075018-b?f=x", config_path=cfg) is None</span>
+</span><span data-line="276"><span class="sd">    True</span>
+</span><span data-line="277"><span class="sd">    &gt;&gt;&gt; link_target("20261119-075018-a-4a58", config_path=cfg) is None</span>
+</span><span data-line="278"><span class="sd">    True</span>
+</span><span data-line="279"><span class="sd">    """</span>
+</span><span data-line="280">    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">urlsplit</span>
+</span><span data-line="281">
+</span><span data-line="282">    <span class="k">if</span> <span class="n">urlsplit</span><span class="p">(</span><span class="n">ref</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span><span class="o">.</span><span class="n">scheme</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"http"</span><span class="p">,</span> <span class="s2">"https"</span><span class="p">):</span>
+</span><span data-line="283">        <span class="k">return</span> <span class="kc">None</span>
+</span><span data-line="284">    <span class="n">host</span><span class="p">,</span> <span class="n">path</span> <span class="o">=</span> <span class="n">_url_key</span><span class="p">(</span><span class="n">ref</span><span class="p">)</span>
+</span><span data-line="285">    <span class="n">default</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">)</span>
+</span><span data-line="286">    <span class="n">places</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="287">        <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">default</span><span class="o">.</span><span class="n">base_url</span><span class="p">,</span> <span class="n">default</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span>
+</span><span data-line="288">    <span class="p">]</span>
+</span><span data-line="289">    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">named_targets</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">config_path</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span data-line="290">        <span class="k">if</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"base_url"</span><span class="p">),</span> <span class="nb">str</span><span class="p">):</span>
+</span><span data-line="291">            <span class="n">places</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">name</span><span class="p">,</span> <span class="n">table</span><span class="p">[</span><span class="s2">"base_url"</span><span class="p">],</span> <span class="nb">bool</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"outbox"</span><span class="p">,</span> <span class="kc">False</span><span class="p">))))</span>
+</span><span data-line="292">
+</span><span data-line="293">    <span class="k">def</span><span class="w"> </span><span class="nf">matches</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span data-line="294">        <span class="n">b_host</span><span class="p">,</span> <span class="n">b_path</span> <span class="o">=</span> <span class="n">_url_key</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+</span><span data-line="295">        <span class="k">return</span> <span class="n">b_host</span> <span class="o">==</span> <span class="n">host</span> <span class="ow">and</span> <span class="p">(</span><span class="n">path</span> <span class="o">==</span> <span class="n">b_path</span> <span class="ow">or</span> <span class="n">path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">b_path</span> <span class="o">+</span> <span class="s2">"/"</span><span class="p">))</span>
+</span><span data-line="296">
+</span><span data-line="297">    <span class="n">found</span> <span class="o">=</span> <span class="p">[(</span><span class="n">name</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">outbox</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">outbox</span> <span class="ow">in</span> <span class="n">places</span> <span class="k">if</span> <span class="n">matches</span><span class="p">(</span><span class="n">base</span><span class="p">)]</span>
+</span><span data-line="298">    <span class="k">if</span> <span class="ow">not</span> <span class="n">found</span><span class="p">:</span>
+</span><span data-line="299">        <span class="n">known</span> <span class="o">=</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">base</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">base</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">places</span><span class="p">))</span>
+</span><span data-line="300">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="301">            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">ref</span><span class="si">}</span><span class="s2"> is not on an annals this machine knows (</span><span class="si">{</span><span class="n">known</span><span class="si">}</span><span class="s2">). "</span>
+</span><span data-line="302">            <span class="s2">"Add its place with `annals configure --to NAME --target ... --base-url ...`."</span>
+</span><span data-line="303">        <span class="p">)</span>
+</span><span data-line="304">    <span class="n">found</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="nb">len</span><span class="p">(</span><span class="n">_url_key</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="mi">1</span><span class="p">])[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">f</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+</span><span data-line="305">    <span class="k">return</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span></div>
+
+</span><span data-line="306">
+</span><span data-line="307">
 <div class="viewcode-block" id="write_config">
 <a class="viewcode-back" href="../../_autosummary/annals.config.html#annals.write_config">[docs]</a>
-</span><span data-line="218"><span class="k">def</span><span class="w"> </span><span class="nf">write_config</span><span class="p">(</span>
-</span><span data-line="219">    <span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span>
-</span><span data-line="220">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="221">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="222">    <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="223"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
-</span><span data-line="224"><span class="w">    </span><span class="sd">"""Write the config file (string keys only; no TOML writer dependency needed).</span>
-</span><span data-line="225">
-</span><span data-line="226"><span class="sd">    With ``to``, ``settings`` is saved as the named target ``[targets.&lt;to&gt;]`` and the</span>
-</span><span data-line="227"><span class="sd">    default section is left as it was; without it the default section is replaced. Either</span>
-</span><span data-line="228"><span class="sd">    way the other tables are kept.</span>
-</span><span data-line="229"><span class="sd">    """</span>
-</span><span data-line="230">    <span class="n">path</span> <span class="o">=</span> <span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">()</span>
-</span><span data-line="231">    <span class="k">if</span> <span class="n">to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_NAME_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">to</span><span class="p">):</span>
-</span><span data-line="232">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not a valid annals target name: </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
-</span><span data-line="233">    <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span data-line="234">    <span class="n">default</span> <span class="o">=</span> <span class="n">_read_config_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
-</span><span data-line="235">    <span class="n">targets</span> <span class="o">=</span> <span class="n">named_targets</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
-</span><span data-line="236">    <span class="n">values</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"target"</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="s2">"base_url"</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="p">}</span>
-</span><span data-line="237">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span><span class="p">:</span>
-</span><span data-line="238">        <span class="n">values</span><span class="p">[</span><span class="s2">"outbox"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="239">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">room</span><span class="p">:</span>
-</span><span data-line="240">        <span class="n">values</span><span class="p">[</span><span class="s2">"room"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span data-line="241">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span> <span class="o">!=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/shared"</span><span class="p">:</span>
-</span><span data-line="242">        <span class="n">values</span><span class="p">[</span><span class="s2">"share_base_url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span>  <span class="c1"># only when not the default</span>
-</span><span data-line="243">    <span class="k">if</span> <span class="n">to</span><span class="p">:</span>
-</span><span data-line="244">        <span class="n">targets</span><span class="p">[</span><span class="n">to</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span>
-</span><span data-line="245">    <span class="k">else</span><span class="p">:</span>
-</span><span data-line="246">        <span class="n">default</span> <span class="o">=</span> <span class="n">values</span>
-</span><span data-line="247">    <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"# </span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2"> publisher settings. `annals configure` rewrites this file.</span><span class="se">\n</span><span class="s2">"</span>
-</span><span data-line="248">    <span class="k">if</span> <span class="n">default</span><span class="p">:</span>
-</span><span data-line="249">        <span class="n">body</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-</span><span data-line="250">            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">default</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-</span><span data-line="251">        <span class="p">)</span>
-</span><span data-line="252">    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-</span><span data-line="253">        <span class="n">body</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[targets.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-</span><span data-line="254">            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
-</span><span data-line="255">        <span class="p">)</span>
-</span><span data-line="256">    <span class="n">tmp</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">".tmp"</span><span class="p">)</span>
-</span><span data-line="257">    <span class="n">tmp</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
-</span><span data-line="258">    <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
-</span><span data-line="259">    <span class="k">return</span> <span class="n">path</span></div>
+</span><span data-line="308"><span class="k">def</span><span class="w"> </span><span class="nf">write_config</span><span class="p">(</span>
+</span><span data-line="309">    <span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span>
+</span><span data-line="310">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="311">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="312">    <span class="n">config_path</span><span class="p">:</span> <span class="n">Path</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="313"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Path</span><span class="p">:</span>
+</span><span data-line="314"><span class="w">    </span><span class="sd">"""Write the config file (string keys only; no TOML writer dependency needed).</span>
+</span><span data-line="315">
+</span><span data-line="316"><span class="sd">    With ``to``, ``settings`` is saved as the named target ``[targets.&lt;to&gt;]`` and the</span>
+</span><span data-line="317"><span class="sd">    default section is left as it was; without it the default section is replaced. Either</span>
+</span><span data-line="318"><span class="sd">    way the other tables are kept.</span>
+</span><span data-line="319"><span class="sd">    """</span>
+</span><span data-line="320">    <span class="n">path</span> <span class="o">=</span> <span class="n">config_path</span> <span class="ow">or</span> <span class="n">default_config_path</span><span class="p">()</span>
+</span><span data-line="321">    <span class="k">if</span> <span class="n">to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">_NAME_RE</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">to</span><span class="p">):</span>
+</span><span data-line="322">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"not a valid annals target name: </span><span class="si">{</span><span class="n">to</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="323">    <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span data-line="324">    <span class="n">default</span> <span class="o">=</span> <span class="n">_read_config_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span data-line="325">    <span class="n">targets</span> <span class="o">=</span> <span class="n">named_targets</span><span class="p">(</span><span class="n">config_path</span><span class="o">=</span><span class="n">path</span><span class="p">)</span>
+</span><span data-line="326">    <span class="n">values</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"target"</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="s2">"base_url"</span><span class="p">:</span> <span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="p">}</span>
+</span><span data-line="327">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span><span class="p">:</span>
+</span><span data-line="328">        <span class="n">values</span><span class="p">[</span><span class="s2">"outbox"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="329">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">room</span><span class="p">:</span>
+</span><span data-line="330">        <span class="n">values</span><span class="p">[</span><span class="s2">"room"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span data-line="331">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span> <span class="o">!=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/shared"</span><span class="p">:</span>
+</span><span data-line="332">        <span class="n">values</span><span class="p">[</span><span class="s2">"share_base_url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">share_base_url</span>  <span class="c1"># only when not the default</span>
+</span><span data-line="333">    <span class="k">if</span> <span class="n">to</span><span class="p">:</span>
+</span><span data-line="334">        <span class="n">targets</span><span class="p">[</span><span class="n">to</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span>
+</span><span data-line="335">    <span class="k">else</span><span class="p">:</span>
+</span><span data-line="336">        <span class="n">default</span> <span class="o">=</span> <span class="n">values</span>
+</span><span data-line="337">    <span class="n">body</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"# </span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2"> publisher settings. `annals configure` rewrites this file.</span><span class="se">\n</span><span class="s2">"</span>
+</span><span data-line="338">    <span class="k">if</span> <span class="n">default</span><span class="p">:</span>
+</span><span data-line="339">        <span class="n">body</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"[</span><span class="si">{</span><span class="n">APP_NAME</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="340">            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">default</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</span><span data-line="341">        <span class="p">)</span>
+</span><span data-line="342">    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">table</span> <span class="ow">in</span> <span class="n">targets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+</span><span data-line="343">        <span class="n">body</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">[targets.</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">]</span><span class="se">\n</span><span class="s2">"</span> <span class="o">+</span> <span class="s2">""</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+</span><span data-line="344">            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2"> = </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="si">}</span><span class="se">\n</span><span class="s2">"</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">table</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+</span><span data-line="345">        <span class="p">)</span>
+</span><span data-line="346">    <span class="n">tmp</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">".tmp"</span><span class="p">)</span>
+</span><span data-line="347">    <span class="n">tmp</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">body</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+</span><span data-line="348">    <span class="n">os</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+</span><span data-line="349">    <span class="k">return</span> <span class="n">path</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -445,7 +538,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=e95a51ae"></script>
+      <script src="../../_static/documentation_options.js?v=dea2dbc4"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

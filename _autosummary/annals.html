@@ -214,7 +214,7 @@ directory as a private page with search, sort, groups and a recycle bin.</p>
 <td><p>Bring documents back from the recycle bin.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.show" title="annals.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
-<td><p>A document's metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p></td>
+<td><p>A document's metadata, link, the groups it is in, and the annals links in its text.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.trash" title="annals.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Move documents to the recycle bin (restorable).</p></td>
@@ -700,9 +700,12 @@ paths give <code class="docutils literal notranslate"><span class="pre">docs</sp
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.show">
 <span class="sig-prename descclassname"><span class="pre">annals.</span></span><span class="sig-name descname"><span class="pre">show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#show"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.show" title="Link to this definition">#</a></dt>
-<dd><p>A document’s metadata, link, and the groups it is in (<code class="docutils literal notranslate"><span class="pre">to</span></code>: on a named target).</p>
-<p><code class="docutils literal notranslate"><span class="pre">doc_id</span></code> may be the document’s link; a group’s link gives the group and its documents’
-links. To read the text, use <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;link&gt;</span></code>.</p>
+<dd><p>A document’s metadata, link, the groups it is in, and the annals links in its text.</p>
+<p><code class="docutils literal notranslate"><span class="pre">doc_id</span></code> may be the document’s link, on any annals this machine is configured for: the
+link finds its own place (<code class="docutils literal notranslate"><span class="pre">to</span></code> names one explicitly). A group’s link gives the group
+and its documents’ links. <code class="docutils literal notranslate"><span class="pre">links</span></code> are the links to other annals documents and groups
+found in the document’s text files, on any annals this machine can read: follow them
+with <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">show</span></code> or <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span></code>. To read the text, use <code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">aggregate</span> <span class="pre">&lt;link&gt;</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -845,7 +848,7 @@ links. To read the text, use <code class="docutils literal notranslate"><span cl
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=e95a51ae"></script>
+      <script src="../_static/documentation_options.js?v=dea2dbc4"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

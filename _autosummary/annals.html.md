@@ -18,7 +18,7 @@ directory as a private page with search, sort, groups and a recycle bin.
 | [`parse_target`](#annals.parse_target)(spec)                                   | `host:/path` becomes an [`SshTarget`](#annals.SshTarget); anything else a [`LocalTarget`](#annals.LocalTarget). |
 | [`publish`](#annals.publish)(paths, \*[, title, tags, group, ...])        | Publish one document and print its link; several paths become several documents.                                                                                  |
 | [`restore`](#annals.restore)(doc_ids, \*[, target, to])                   | Bring documents back from the recycle bin.                                                                                                                        |
-| [`show`](#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata, link, and the groups it is in (`to`: on a named target).                                                                                   |
+| [`show`](#annals.show)(doc_id, \*[, target, base_url, to])             | A document's metadata, link, the groups it is in, and the annals links in its text.                                                                               |
 | [`trash`](#annals.trash)(doc_ids, \*[, target, to])                     | Move documents to the recycle bin (restorable).                                                                                                                   |
 
 ### Classes
@@ -368,10 +368,13 @@ Bring documents back from the recycle bin.
 
 ### annals.show(doc_id, , target=None, base_url=None, to=None)
 
-A document’s metadata, link, and the groups it is in (`to`: on a named target).
+A document’s metadata, link, the groups it is in, and the annals links in its text.
 
-`doc_id` may be the document’s link; a group’s link gives the group and its documents’
-links. To read the text, use `annals aggregate <link>`.
+`doc_id` may be the document’s link, on any annals this machine is configured for: the
+link finds its own place (`to` names one explicitly). A group’s link gives the group
+and its documents’ links. `links` are the links to other annals documents and groups
+found in the document’s text files, on any annals this machine can read: follow them
+with `annals show` or `annals aggregate`. To read the text, use `annals aggregate <link>`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
