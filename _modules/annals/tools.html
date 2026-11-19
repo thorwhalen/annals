@@ -958,9 +958,9 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="785">    <span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
 </span><span data-line="786">
 </span><span data-line="787">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_INLINE_TEXT_BYTES</span>
-</span><span data-line="788">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.export</span><span class="w"> </span><span class="kn">import</span> <span class="n">FORMATS</span>
-</span><span data-line="789">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDF_MAX_TEXT_BYTES</span><span class="p">,</span> <span class="n">markdown_to_pdf</span>
-</span><span data-line="790">
+</span><span data-line="788">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.render</span><span class="w"> </span><span class="kn">import</span> <span class="n">PDF_MAX_TEXT_BYTES</span><span class="p">,</span> <span class="n">markdown_to_pdf</span>
+</span><span data-line="789">
+</span><span data-line="790">    <span class="n">FORMATS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"md"</span><span class="p">,</span> <span class="s2">"pdf"</span><span class="p">)</span>  <span class="c1"># the server's page of its own (html) is a link, not a file</span>
 </span><span data-line="791">    <span class="k">if</span> <span class="nb">format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">FORMATS</span><span class="p">:</span>
 </span><span data-line="792">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"format must be one of </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">FORMATS</span><span class="p">)</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="nb">format</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 </span><span data-line="793">    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s2">"pdf"</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">output</span><span class="p">:</span>
@@ -1710,7 +1710,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=b153cf10"></script>
+      <script src="../../_static/documentation_options.js?v=152b4b09"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

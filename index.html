@@ -411,6 +411,7 @@ data-aria-dark="Switch to auto color mode">
 <section id="downloads">
 <h2>Downloads<a class="headerlink" href="#downloads" title="Link to this heading">#</a></h2>
 <p>Every markdown page offers two downloads made by the server, under <strong>One file</strong> and under <strong>⋯ More</strong>: <strong>Markdown (.md)</strong> and a titled <strong>PDF</strong> with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (<code class="docutils literal notranslate"><span class="pre">quarterly-report-q3.pdf</span></code>) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">&quot;annals[pdf]&quot;</span></code> (WeasyPrint, which uses Pango; <code class="docutils literal notranslate"><span class="pre">annals[server]</span></code> includes it); without it the PDF action answers with that hint. Pages (<code class="docutils literal notranslate"><span class="pre">/d/&lt;id&gt;</span></code>) are drawn in the browser by <code class="docutils literal notranslate"><span class="pre">app.js</span></code>, so a page that gains an action gains it for every existing document.</p>
+<p>A markdown page also opens <strong>as a web page of its own</strong> (<strong>⋯ More → Open as web page</strong>, <code class="docutils literal notranslate"><span class="pre">/api/annals/export/&lt;id&gt;?format=html</span></code>): the rendered text with its images inside, no script, no annals page around it, and the same <strong>↓ PDF</strong> button every annals-made html page carries, pointing at the PDF above. That is the link to open full page or send on; <strong>Open raw</strong> still gives the markdown itself.</p>
 </section>
 <section id="one-file-from-many-markdown-pdf-or-a-web-page">
 <h2>One file from many: Markdown, PDF or a web page<a class="headerlink" href="#one-file-from-many-markdown-pdf-or-a-web-page" title="Link to this heading">#</a></h2>
@@ -515,7 +516,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-19 12:50 UTC from <a href="https://github.com/thorwhalen/annals/commit/a921598f475dabcf4fe8cd399847eb7dd8d1ef8c">a921598</a> (main) · annals 0.0.64 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-19 12:58 UTC from <a href="https://github.com/thorwhalen/annals/commit/164e4412147d9330c53a5437b654c575bf600eb5">164e441</a> (main) · annals 0.0.65 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -550,7 +551,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=b153cf10"></script>
+      <script src="_static/documentation_options.js?v=152b4b09"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

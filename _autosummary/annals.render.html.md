@@ -29,7 +29,7 @@ this module already holds (`Embedded`).
 | `kind_of_mime`(rel)                                                                                 |                                                                                     |
 | [`markdown_to_html`](#annals.render.markdown_to_html)(text, \*, rel, files, ...[, ...]) | The html body of the markdown `text` (the file `rel` of a document) and its images. |
 | [`markdown_to_pdf`](#annals.render.markdown_to_pdf)(text, \*, title, rel, files, ...)  | A titled A4 PDF of the markdown `text` with its images inside (see the module doc). |
-| [`page_html`](#annals.render.page_html)(title, body, \*[, created])              | A standalone html page: the `title` as the document title, then `body`.             |
+| [`page_html`](#annals.render.page_html)(title, body, \*[, created, css, ...])    | A standalone html page: the `title` as the document title, then `body`.             |
 | [`resolve_ref`](#annals.render.resolve_ref)(href, \*, rel, files)                  | The document file a relative `href` of the markdown file `rel` names, or `None`.    |
 
 ### Classes
@@ -109,9 +109,13 @@ A titled A4 PDF of the markdown `text` with its images inside (see the module do
 * **Return type:**
   [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
 
-### annals.render.page_html(title, body, , created='')
+### annals.render.page_html(title, body, , created='', css='', heading=True)
 
 A standalone html page: the `title` as the document title, then `body`.
+
+`css` styles it on screen (a PDF brings its own); with it the page also gets a
+viewport, so a phone shows it at its own width. `heading=False` leaves the title out
+of the body (the text starts with its own).
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

@@ -214,7 +214,7 @@ this module already holds (<code class="xref py py-class docutils literal notran
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.markdown_to_pdf" title="annals.render.markdown_to_pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">markdown_to_pdf</span></code></a>(text, *, title, rel, files, ...)</p></td>
 <td><p>A titled A4 PDF of the markdown <code class="docutils literal notranslate"><span class="pre">text</span></code> with its images inside (see the module doc).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.render.page_html" title="annals.render.page_html"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_html</span></code></a>(title, body, *[, created])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.render.page_html" title="annals.render.page_html"><code class="xref py py-obj docutils literal notranslate"><span class="pre">page_html</span></code></a>(title, body, *[, created, css, ...])</p></td>
 <td><p>A standalone html page: the <code class="docutils literal notranslate"><span class="pre">title</span></code> as the document title, then <code class="docutils literal notranslate"><span class="pre">body</span></code>.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.render.resolve_ref" title="annals.render.resolve_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resolve_ref</span></code></a>(href, *, rel, files)</p></td>
@@ -338,8 +338,11 @@ sections of a combined output of their own).</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.render.page_html">
-<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">page_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">created</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#page_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.page_html" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.render.</span></span><span class="sig-name descname"><span class="pre">page_html</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">body</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">created</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">css</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/render.html#page_html"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.render.page_html" title="Link to this definition">#</a></dt>
 <dd><p>A standalone html page: the <code class="docutils literal notranslate"><span class="pre">title</span></code> as the document title, then <code class="docutils literal notranslate"><span class="pre">body</span></code>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">css</span></code> styles it on screen (a PDF brings its own); with it the page also gets a
+viewport, so a phone shows it at its own width. <code class="docutils literal notranslate"><span class="pre">heading=False</span></code> leaves the title out
+of the body (the text starts with its own).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -401,7 +404,7 @@ sections of a combined output of their own).</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=b153cf10"></script>
+      <script src="../_static/documentation_options.js?v=152b4b09"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

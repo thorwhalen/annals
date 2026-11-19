@@ -1,4 +1,4 @@
-> built 2026-11-19 12:50 UTC from a921598 (main) · annals 0.0.64. Details: build_info.json
+> built 2026-11-19 12:58 UTC from 164e441 (main) · annals 0.0.65. Details: build_info.json
 
 # index.html.md
 
@@ -233,6 +233,8 @@ then set `ANNALS_SHARE_BASE_URL` (or `annals configure --share-base-url ...`, or
 ## Downloads
 
 Every markdown page offers two downloads made by the server, under **One file** and under **⋯ More**: **Markdown (.md)** and a titled **PDF** with the images inside (audio, video and other files appear as a link to the resource). Both are named after the title (`quarterly-report-q3.pdf`) and are served under the same rules as the page: the owner’s login, or a share link’s scope (a recipient gets the filtered text and only the files the link includes). The PDF needs `pip install "annals[pdf]"` (WeasyPrint, which uses Pango; `annals[server]` includes it); without it the PDF action answers with that hint. Pages (`/d/<id>`) are drawn in the browser by `app.js`, so a page that gains an action gains it for every existing document.
+
+A markdown page also opens **as a web page of its own** (**⋯ More → Open as web page**, `/api/annals/export/<id>?format=html`): the rendered text with its images inside, no script, no annals page around it, and the same **↓ PDF** button every annals-made html page carries, pointing at the PDF above. That is the link to open full page or send on; **Open raw** still gives the markdown itself.
 
 ## One file from many: Markdown, PDF or a web page
 
@@ -3345,7 +3347,7 @@ this module already holds (`Embedded`).
 | `kind_of_mime`(rel)                                                                                 |                                                                                     |
 | [`markdown_to_html`](_autosummary/annals.render.html.md#annals.render.markdown_to_html)(text, \*, rel, files, ...[, ...]) | The html body of the markdown `text` (the file `rel` of a document) and its images. |
 | [`markdown_to_pdf`](_autosummary/annals.render.html.md#annals.render.markdown_to_pdf)(text, \*, title, rel, files, ...)  | A titled A4 PDF of the markdown `text` with its images inside (see the module doc). |
-| [`page_html`](_autosummary/annals.render.html.md#annals.render.page_html)(title, body, \*[, created])              | A standalone html page: the `title` as the document title, then `body`.             |
+| [`page_html`](_autosummary/annals.render.html.md#annals.render.page_html)(title, body, \*[, created, css, ...])    | A standalone html page: the `title` as the document title, then `body`.             |
 | [`resolve_ref`](_autosummary/annals.render.html.md#annals.render.resolve_ref)(href, \*, rel, files)                  | The document file a relative `href` of the markdown file `rel` names, or `None`.    |
 
 ### Classes
@@ -3425,9 +3427,13 @@ A titled A4 PDF of the markdown `text` with its images inside (see the module do
 * **Return type:**
   [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
 
-### annals.render.page_html(title, body, , created='')
+### annals.render.page_html(title, body, , created='', css='', heading=True)
 
 A standalone html page: the `title` as the document title, then `body`.
+
+`css` styles it on screen (a PDF brings its own); with it the page also gets a
+viewport, so a phone shows it at its own width. `heading=False` leaves the title out
+of the body (the text starts with its own).
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -5426,18 +5432,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-19 12:50 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/a921598f475dabcf4fe8cd399847eb7dd8d1ef8c"><code>a921598</code></a> on branch <code>main</code>, for **annals 0.0.64** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-19 12:58 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/164e4412147d9330c53a5437b654c575bf600eb5"><code>164e441</code></a> on branch <code>main</code>, for **annals 0.0.65** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.64) is behind the latest release on PyPI (0.0.65): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/a921598f475dabcf4fe8cd399847eb7dd8d1ef8c"><code>a921598f475dabcf4fe8cd399847eb7dd8d1ef8c</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/164e4412147d9330c53a5437b654c575bf600eb5"><code>164e4412147d9330c53a5437b654c575bf600eb5</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -5448,9 +5452,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/44526817205">44526817205</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/44528050404">44528050404</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>a921598f475dabcf4fe8cd399847eb7dd8d1ef8c</code> (in the history of the built commit) |
+| Event commit | <code>164e4412147d9330c53a5437b654c575bf600eb5</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5475,13 +5479,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.65/">0.0.65</a>, newer than the documented version (0.0.64).
+Latest release: <a href="https://pypi.org/project/annals/0.0.65/">0.0.65</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout a921598f475dabcf4fe8cd399847eb7dd8d1ef8c
+git checkout 164e4412147d9330c53a5437b654c575bf600eb5
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
