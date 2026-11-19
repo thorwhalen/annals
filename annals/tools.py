@@ -872,7 +872,8 @@ def configure(
                 target=target,
                 base_url=base_url,
                 outbox=outbox,
-                share_base_url=share_base_url,
+                # its own share address, never the default section's (or the environment's)
+                share_base_url=share_base_url or f"{base_url.rstrip('/')}/shared",
                 room=room,
             )
     else:

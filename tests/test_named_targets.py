@@ -169,3 +169,37 @@ def test_same_place_survives_an_unreachable_host(monkeypatch):
 
     monkeypatch.setattr(SshTarget, "_ssh", boom)
     assert not tools._same_place("tw:~/a", "tw:/root/a")
+
+
+def test_a_new_named_target_does_not_inherit_the_default_share_address(
+    env, monkeypatch
+):
+    assert (
+        _run(
+            [
+                "configure",
+                "--target",
+                str(env / "main"),
+                "--base-url",
+                "https://a.test/annals",
+                "--share-base-url",
+                "https://a.test/api/share",
+            ]
+        )[0]
+        == 0
+    )
+    monkeypatch.setenv("ANNALS_SHARE_BASE_URL", "https://env.test/share")
+    code, _, err = _run(
+        [
+            "configure",
+            "--to",
+            "team",
+            "--target",
+            str(env / "team"),
+            "--base-url",
+            "https://b.test/annals",
+        ]
+    )
+    assert code == 0, err
+    assert "share_base_url" not in named_targets()["team"]
+    assert load_settings(to="team").share_base_url == "https://b.test/annals/shared"
