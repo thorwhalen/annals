@@ -132,3 +132,70 @@ def test_a_longer_base_url_on_the_same_host_wins(env):
         ValueError, match="not on an annals"
     ):  # a prefix of a segment is no match
         link_target("https://a.test/annalsx/d/20261119-075018-x-4a58")
+
+
+def test_links_are_matched_as_a_browser_reaches_them(env):
+    _configure(env)
+    doc = "20261119-075018-x-4a58"
+    for link in [
+        f"https://b.test:443/annals/d/{doc}",
+        f"https://B.test./annals/d/{doc}",
+        f"https://a.test@b.test/annals/d/{doc}",
+        f"https://b.test/annals/x/../d/{doc}",
+    ]:
+        assert link_target(link) == "other", link
+    with pytest.raises(ValueError):
+        link_target(
+            f"https://b.test:8443/annals/d/{doc}"
+        )  # another port is another place
+
+
+def test_a_non_text_base_url_in_a_table_is_ignored_not_a_crash(env):
+    _configure(env)
+    cfg = env / "cfg" / "config.toml"
+    cfg.write_text(
+        cfg.read_text() + '\n[targets.broken]\ntarget = "/x"\nbase_url = true\n'
+    )
+    assert link_target("https://b.test/annals/d/20261119-075018-x-4a58") == "other"
+
+
+def test_show_survives_an_unreadable_file_and_skips_links_it_cannot_read(
+    env, monkeypatch
+):
+    _configure(env)
+    code, _, err = _run(
+        [
+            "configure",
+            "--to",
+            "box",
+            "--target",
+            str(env / "box"),
+            "--base-url",
+            "https://c.test/annals",
+            "--outbox",
+        ]
+    )
+    assert code == 0, err
+    a = _publish(env, "a", "# A\n\ntext")
+    folder = env / "folder"
+    folder.mkdir()
+    (folder / "index.md").write_text(
+        f"# F\n\n[a]({a}) and https://c.test/annals/d/20261119-075018-y-4a58"
+    )
+    (folder / "broken.md").write_text(f"[a]({a})")
+    code, url, err = _run(["publish", str(folder), "--to", "other"])
+    assert code == 0, err
+
+    from annals import target as target_mod
+
+    real = target_mod.LocalTarget.read_text
+
+    def flaky(self, rel):
+        if rel.endswith("broken.md"):
+            raise RuntimeError("ssh failed")  # what an SshTarget raises
+        return real(self, rel)
+
+    monkeypatch.setattr(target_mod.LocalTarget, "read_text", flaky)
+    code, out, err = _run(["show", url])
+    assert code == 0, err
+    assert json.loads(out)["links"] == [a]  # the outbox-only link is left out

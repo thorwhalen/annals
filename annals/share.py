@@ -61,7 +61,7 @@ _ID_IN_URL_RE = re.compile(
 )
 #: an absolute link to an annals document or group page (``.../d/<id>``, ``.../g/<id>``)
 _ANNALS_PAGE_URL_RE = re.compile(
-    rf"https?://[^\s<>()\"'\]\[*`]+?/(?:d|g)/{ANNALS_ID}(?![\w-])"
+    rf"https?://[^\s<>()\"'\]\[*`,|]+?/(?:d|g)/{ANNALS_ID}(?![\w-])"
 )
 REMOVED_LINK = "(link not shared)"
 REMOVED_ID = "(not shared)"
@@ -99,7 +99,8 @@ def annals_urls(text: str) -> list[str]:
     """The absolute links to annals document and group pages in ``text``, once each, in order.
 
     Any host: which annals a link belongs to is the reader's config to decide
-    (:func:`annals.config.link_target`).
+    (:func:`annals.config.link_target`). Relative links (``../d/<id>``) are not found:
+    a document's own links to its annals are absolute, as ``annals publish`` prints them.
 
     >>> annals_urls("see **[map](https://a.example.io/annals/d/20261119-075018-the-map-4a58)**, "
     ...             "<https://b.example.com/annals/g/20261117-163049-set?f=x> and "
