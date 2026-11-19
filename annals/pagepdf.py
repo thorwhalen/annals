@@ -218,7 +218,10 @@ def print_with_chromium(page: Path, *, timeout: float = DFLT_PRINT_TIMEOUT_S) ->
         try:
             _, err = proc.communicate(timeout=timeout)
         except subprocess.TimeoutExpired:
-            os.killpg(proc.pid, signal.SIGKILL)
+            if hasattr(os, "killpg"):  # POSIX: the whole group, browser included
+                os.killpg(proc.pid, signal.SIGKILL)
+            else:
+                proc.kill()
             proc.communicate()
             raise TimeoutError(f"printing took more than {timeout:g}s") from None
         if proc.returncode or not out.is_file():
