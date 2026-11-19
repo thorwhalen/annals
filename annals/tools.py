@@ -785,9 +785,9 @@ def export(
     import tempfile
 
     from annals.config import MAX_INLINE_TEXT_BYTES
-    from annals.export import FORMATS
     from annals.render import PDF_MAX_TEXT_BYTES, markdown_to_pdf
 
+    FORMATS = ("md", "pdf")  # the server's page of its own (html) is a link, not a file
     if format not in FORMATS:
         raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
     if format == "pdf" and not output:

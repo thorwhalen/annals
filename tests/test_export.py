@@ -97,6 +97,35 @@ def test_owner_pdf_has_title_images_and_media_links(doc):
     assert "alert(1)" in text  # raw html is shown as text, not run
 
 
+def test_owner_markdown_as_a_web_page_of_its_own(doc):
+    store, meta = doc
+    c = TestClient(mk_api(store=store, thumbnailer=None), base_url=f"http://{HOST}")
+    base = f"http://{HOST}/api/annals"
+    r = c.get(f"/export/{meta['id']}", params={"format": "html", "base": base})
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/html")
+    assert "attachment" not in r.headers.get("content-disposition", "")
+    assert r.headers["content-security-policy"].startswith("default-src 'none'")
+    page = r.text
+    assert page.startswith("<!doctype html>") and "<title>Quarterly Report: Q3!</title>"
+    assert "<strong>bold</strong>" in page and "<table" in page
+    assert page.count('src="data:image/') == 2  # its images inside: the page stands alone
+    assert "<script>alert(1)</script>" not in page  # raw html is text, not markup
+    assert 'name="viewport"' in page
+    assert page.count("Quarterly Report: Q3!</h1>") == 1  # its own title, not twice
+    # the Download PDF button: the same address, as a PDF
+    from urllib.parse import parse_qs, urlsplit
+
+    from annals.pagepdf import button_href
+
+    href = button_href(page)
+    assert href.startswith("?") and parse_qs(urlsplit(href).query) == {
+        "format": ["pdf"],
+        "base": [base],
+    }
+    pdf = c.get(f"/export/{meta['id']}{href}")
+    assert pdf.status_code == 200 and pdf.content.startswith(b"%PDF")
+
+
 def test_a_base_on_another_host_is_not_printed(doc):
     store, meta = doc
     c = TestClient(mk_api(store=store, thumbnailer=None))

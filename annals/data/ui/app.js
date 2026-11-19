@@ -1101,6 +1101,9 @@
       container.appendChild(h("div", { class: "empty" }, [h("a", { class: "btn primary", href: ctx.raw(rel), download: basename(rel) }, ["Download " + basename(rel)]),
         ctx.sizes[rel] ? h("p", { class: "muted" }, [size(ctx.sizes[rel])]) : null]));
     }
+    /* A markdown page on its own, rendered by the server: a link that can be opened full page
+       or sent on, with the Download PDF button every annals-made page carries. */
+    if (kind === "md" && ctx.exportUrl) actions.push({ section: "view", label: "Open as web page", hint: "The rendered page on its own, with a Download PDF button", icon: "open", href: ctx.exportUrl("html", rel), newTab: true });
     actions.push({ section: "view", label: kind === "html" ? "Open full page" : "Open raw", hint: "Open the file itself in a new tab", icon: "open", href: ctx.raw(rel), newTab: true });
     return { view: view, actions: actions.concat(downloadActions(ctx, rel, kind)) };
   }
