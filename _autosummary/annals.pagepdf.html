@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.pagepdf - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.records" href="annals.records.html" /><link rel="prev" title="annals.overview" href="annals.overview.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.pagepdf"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.pagepdf.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.docfilter.html">annals.docfilter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.linkcheck.html">annals.linkcheck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.listening.html">annals.listening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.pagepdf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.records.html">annals.records</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.pagepdf.DFLT"><code class="docutils literal notranslate"><span class="pre">DFLT</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.DFLT_PDF_RENDERER"><code class="docutils literal notranslate"><span class="pre">DFLT_PDF_RENDERER()</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.DFLT_PRINT_TIMEOUT_S"><code class="docutils literal notranslate"><span class="pre">DFLT_PRINT_TIMEOUT_S</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.PdfRenderer"><code class="docutils literal notranslate"><span class="pre">PdfRenderer</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.add_button"><code class="docutils literal notranslate"><span class="pre">add_button()</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.attach_pdf"><code class="docutils literal notranslate"><span class="pre">attach_pdf()</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.button_href"><code class="docutils literal notranslate"><span class="pre">button_href()</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.declared_pdf"><code class="docutils literal notranslate"><span class="pre">declared_pdf()</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.print_with_chromium"><code class="docutils literal notranslate"><span class="pre">print_with_chromium()</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.strip_button"><code class="docutils literal notranslate"><span class="pre">strip_button()</span></code></a></li>
+<li><a class="reference internal" href="#annals.pagepdf.wants_button"><code class="docutils literal notranslate"><span class="pre">wants_button()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.pagepdf</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.pagepdf">
+<span id="annals-pagepdf"></span><h1>annals.pagepdf<a class="headerlink" href="#module-annals.pagepdf" title="Link to this heading">#</a></h1>
+<p>Every published html page carries its own Download PDF button, and the PDF beside it.</p>
+<p>A page is often read without the annals page around it: opened full page, its raw url
+mailed on, or shared. So at publish time the stored html itself gets a small “Download
+PDF” link (hidden when printing), pointing at <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.pdf</span></code> in the same document:</p>
+<ol class="arabic">
+<li><p><strong>The page opts out</strong> (<code class="docutils literal notranslate"><span class="pre">data-annals-pdf=&quot;off&quot;</span></code> on <code class="docutils literal notranslate"><span class="pre">&lt;html&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;body&gt;</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">annals</span> <span class="pre">publish</span> <span class="pre">--no-pdf</span></code>): nothing is added.</p></li>
+<li><p><strong>The page has its own button</strong> (any element with <code class="docutils literal notranslate"><span class="pre">data-annals-pdf</span></code>): nothing is
+added; it already says where its PDF is.</p></li>
+<li><p><strong>The page declares its PDF</strong> (<code class="docutils literal notranslate"><span class="pre">&lt;link</span> <span class="pre">rel=&quot;alternate&quot;</span> <span class="pre">type=&quot;application/pdf&quot;</span>
+<span class="pre">href=&quot;...&quot;&gt;</span></code>): the button points there, and nothing is printed.</p></li>
+<li><p><strong>The document already holds</strong> <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.pdf</span></code> beside the page: the button points at it.</p></li>
+<li><p><strong>Otherwise the page is printed</strong> to <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.pdf</span></code> by <code class="docutils literal notranslate"><span class="pre">pdf_renderer</span></code> (default
+<a class="reference internal" href="#annals.pagepdf.print_with_chromium" title="annals.pagepdf.print_with_chromium"><code class="xref py py-func docutils literal notranslate"><span class="pre">print_with_chromium()</span></code></a>, pdfdol’s headless Chromium, in the <code class="docutils literal notranslate"><span class="pre">pdf</span></code> extra). When it</p>
+<blockquote>
+<div><p>cannot print (no Chromium, a page that will not load in time), the button calls the
+browser’s own print dialog instead, so it is never missing.</p>
+</div></blockquote>
+</li>
+</ol>
+<p>What this adds is one block wrapped in <code class="docutils literal notranslate"><span class="pre">&lt;!--annals-pdf--&gt;</span></code> markers (pure ASCII, so it
+suits a page in any charset), so publishing a page that already went through here (a new
+version through <code class="docutils literal notranslate"><span class="pre">--replace</span></code>) swaps the old button for a new one and prints the new page
+again. The page’s bytes are otherwise kept as they were, whatever their encoding.</p>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.pagepdf.PdfRenderer" title="annals.pagepdf.PdfRenderer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PdfRenderer</span></code></a></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">path</span> <span class="pre">of</span> <span class="pre">a</span> <span class="pre">staged</span> <span class="pre">html</span> <span class="pre">page</span> <span class="pre">-&gt;</span> <span class="pre">PDF</span> <span class="pre">bytes</span></code>; raises when it cannot print</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.pagepdf.DFLT_PRINT_TIMEOUT_S" title="annals.pagepdf.DFLT_PRINT_TIMEOUT_S"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_PRINT_TIMEOUT_S</span></code></a></p></td>
+<td><p>the longest a page may take to print, in seconds, before the button prints instead</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.pagepdf.DFLT_PDF_RENDERER" title="annals.pagepdf.DFLT_PDF_RENDERER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_PDF_RENDERER</span></code></a>(page, *[, timeout])</p></td>
+<td><p>what <a class="reference internal" href="#annals.pagepdf.attach_pdf" title="annals.pagepdf.attach_pdf"><code class="xref py py-func docutils literal notranslate"><span class="pre">attach_pdf()</span></code></a> prints with when not told; read at call time, so a test or an embedding app can swap it once</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.pagepdf.DFLT" title="annals.pagepdf.DFLT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT</span></code></a></p></td>
+<td><p>&quot;the default renderer&quot;, told apart from <code class="docutils literal notranslate"><span class="pre">None</span></code> (never print)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.pagepdf.DFLT_PDF_RENDERER" title="annals.pagepdf.DFLT_PDF_RENDERER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DFLT_PDF_RENDERER</span></code></a>(page, *[, timeout])</p></td>
+<td><p>what <a class="reference internal" href="#annals.pagepdf.attach_pdf" title="annals.pagepdf.attach_pdf"><code class="xref py py-func docutils literal notranslate"><span class="pre">attach_pdf()</span></code></a> prints with when not told; read at call time, so a test or an embedding app can swap it once</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.pagepdf.add_button" title="annals.pagepdf.add_button"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add_button</span></code></a>(page, href)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">page</span></code> with a Download PDF link to <code class="docutils literal notranslate"><span class="pre">href</span></code> (or a print button when <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.pagepdf.attach_pdf" title="annals.pagepdf.attach_pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">attach_pdf</span></code></a>(root, main, files, *[, pdf_renderer])</p></td>
+<td><p>Give the staged html page <code class="docutils literal notranslate"><span class="pre">root/main</span></code> its PDF button (and its PDF).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.pagepdf.button_href" title="annals.pagepdf.button_href"><code class="xref py py-obj docutils literal notranslate"><span class="pre">button_href</span></code></a>(page)</p></td>
+<td><p>Where the button annals put in <code class="docutils literal notranslate"><span class="pre">page</span></code> points (<code class="docutils literal notranslate"><span class="pre">None</span></code>: none, or a print button).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.pagepdf.declared_pdf" title="annals.pagepdf.declared_pdf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">declared_pdf</span></code></a>(page)</p></td>
+<td><p>The href of the page's own <code class="docutils literal notranslate"><span class="pre">&lt;link</span> <span class="pre">rel=&quot;alternate&quot;</span> <span class="pre">type=&quot;application/pdf&quot;&gt;</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.pagepdf.print_with_chromium" title="annals.pagepdf.print_with_chromium"><code class="xref py py-obj docutils literal notranslate"><span class="pre">print_with_chromium</span></code></a>(page, *[, timeout])</p></td>
+<td><p>Print an html file to PDF with headless Chromium (pdfdol), with its print css.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.pagepdf.strip_button" title="annals.pagepdf.strip_button"><code class="xref py py-obj docutils literal notranslate"><span class="pre">strip_button</span></code></a>(page)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">page</span></code> without what <a class="reference internal" href="#annals.pagepdf.add_button" title="annals.pagepdf.add_button"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_button()</span></code></a> put in it.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.pagepdf.wants_button" title="annals.pagepdf.wants_button"><code class="xref py py-obj docutils literal notranslate"><span class="pre">wants_button</span></code></a>(page)</p></td>
+<td><p>False when the page opts out, or already has a PDF button of its own.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.pagepdf.DFLT">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">DFLT</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'default'</span></span><a class="headerlink" href="#annals.pagepdf.DFLT" title="Link to this definition">#</a></dt>
+<dd><p>“the default renderer”, told apart from <code class="docutils literal notranslate"><span class="pre">None</span></code> (never print)</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.DFLT_PDF_RENDERER">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">DFLT_PDF_RENDERER</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#annals.pagepdf.DFLT_PDF_RENDERER" title="Link to this definition">#</a></dt>
+<dd><p>what <a class="reference internal" href="#annals.pagepdf.attach_pdf" title="annals.pagepdf.attach_pdf"><code class="xref py py-func docutils literal notranslate"><span class="pre">attach_pdf()</span></code></a> prints with when not told; read at call time, so a test or an
+embedding app can swap it once</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.pagepdf.DFLT_PRINT_TIMEOUT_S">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">DFLT_PRINT_TIMEOUT_S</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">60</span></span><a class="headerlink" href="#annals.pagepdf.DFLT_PRINT_TIMEOUT_S" title="Link to this definition">#</a></dt>
+<dd><p>the longest a page may take to print, in seconds, before the button prints instead</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.pagepdf.PdfRenderer">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">PdfRenderer</span></span><a class="headerlink" href="#annals.pagepdf.PdfRenderer" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">path</span> <span class="pre">of</span> <span class="pre">a</span> <span class="pre">staged</span> <span class="pre">html</span> <span class="pre">page</span> <span class="pre">-&gt;</span> <span class="pre">PDF</span> <span class="pre">bytes</span></code>; raises when it cannot print</p>
+<p>alias of <a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/library/pathlib.html#pathlib.Path" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Path</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a>]</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.add_button">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">add_button</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">href</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/pagepdf.html#add_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.pagepdf.add_button" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">page</span></code> with a Download PDF link to <code class="docutils literal notranslate"><span class="pre">href</span></code> (or a print button when <code class="docutils literal notranslate"><span class="pre">None</span></code>).</p>
+<p>One block goes right after <code class="docutils literal notranslate"><span class="pre">&lt;body&gt;</span></code> (or where the body would start): a <code class="docutils literal notranslate"><span class="pre">&lt;link</span>
+<span class="pre">rel=&quot;alternate&quot;&gt;</span></code> declaring the PDF, so readers and agents find it, its style, and
+the button. Any button added earlier is replaced. <code class="docutils literal notranslate"><span class="pre">href</span></code> is used as given (quote a
+file name first: <a class="reference internal" href="#annals.pagepdf.attach_pdf" title="annals.pagepdf.attach_pdf"><code class="xref py py-func docutils literal notranslate"><span class="pre">attach_pdf()</span></code></a> does).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">page</span> <span class="o">=</span> <span class="s2">"&lt;!doctype html&gt;&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;x&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;"</span>
+</span><span data-line="2"><span class="gp">&gt;&gt;&gt; </span><span class="n">out</span> <span class="o">=</span> <span class="n">add_button</span><span class="p">(</span><span class="n">page</span><span class="p">,</span> <span class="s2">"x.pdf"</span><span class="p">)</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="s1">'href="x.pdf"'</span> <span class="ow">in</span> <span class="n">out</span> <span class="ow">and</span> <span class="s1">'type="application/pdf"'</span> <span class="ow">in</span> <span class="n">out</span>
+</span><span data-line="4"><span class="go">True</span>
+</span><span data-line="5"><span class="gp">&gt;&gt;&gt; </span><span class="n">out</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"&lt;!doctype html&gt;"</span><span class="p">)</span>
+</span><span data-line="6"><span class="go">True</span>
+</span><span data-line="7"><span class="gp">&gt;&gt;&gt; </span><span class="s2">"window.print()"</span> <span class="ow">in</span> <span class="n">add_button</span><span class="p">(</span><span class="s2">"&lt;p&gt;x&lt;/p&gt;"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+</span><span data-line="8"><span class="go">True</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.attach_pdf">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">attach_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">main</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">files</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf_renderer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/pagepdf.html#attach_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.pagepdf.attach_pdf" title="Link to this definition">#</a></dt>
+<dd><p>Give the staged html page <code class="docutils literal notranslate"><span class="pre">root/main</span></code> its PDF button (and its PDF).</p>
+<p>Returns <code class="docutils literal notranslate"><span class="pre">(files,</span> <span class="pre">pdf)</span></code>: <code class="docutils literal notranslate"><span class="pre">files</span></code> (relative to <code class="docutils literal notranslate"><span class="pre">root</span></code>) gains <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.pdf</span></code> when it
+is printed here, and <code class="docutils literal notranslate"><span class="pre">pdf</span></code> is where the page’s PDF is (a file of the document, or
+the url the page declared), <code class="docutils literal notranslate"><span class="pre">None</span></code> when there is none. <code class="docutils literal notranslate"><span class="pre">pdf_renderer</span></code> defaults to
+<a class="reference internal" href="#annals.pagepdf.DFLT_PDF_RENDERER" title="annals.pagepdf.DFLT_PDF_RENDERER"><code class="xref py py-data docutils literal notranslate"><span class="pre">DFLT_PDF_RENDERER</span></code></a>; <code class="docutils literal notranslate"><span class="pre">None</span></code> never prints: the button links to a PDF the
+document or the page already has, else opens the print dialog. A renderer that fails
+is logged and treated the same way; publishing never fails for want of a PDF.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>], <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.button_href">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">button_href</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/pagepdf.html#button_href"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.pagepdf.button_href" title="Link to this definition">#</a></dt>
+<dd><p>Where the button annals put in <code class="docutils literal notranslate"><span class="pre">page</span></code> points (<code class="docutils literal notranslate"><span class="pre">None</span></code>: none, or a print button).</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">button_href</span><span class="p">(</span><span class="n">add_button</span><span class="p">(</span><span class="s2">"&lt;p&gt;x&lt;/p&gt;"</span><span class="p">,</span> <span class="s2">"x.pdf"</span><span class="p">))</span>
+</span><span data-line="2"><span class="go">'x.pdf'</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.declared_pdf">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">declared_pdf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/pagepdf.html#declared_pdf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.pagepdf.declared_pdf" title="Link to this definition">#</a></dt>
+<dd><p>The href of the page’s own <code class="docutils literal notranslate"><span class="pre">&lt;link</span> <span class="pre">rel=&quot;alternate&quot;</span> <span class="pre">type=&quot;application/pdf&quot;&gt;</span></code>.</p>
+<p>A link annals added itself does not count: that is not the page declaring one.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">declared_pdf</span><span class="p">(</span><span class="s1">'&lt;link rel="alternate" type="application/pdf" href="guide.pdf"&gt;'</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">'guide.pdf'</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">declared_pdf</span><span class="p">(</span><span class="s1">'&lt;link rel="stylesheet" href="a.css"&gt;'</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span>
+</span><span data-line="4"><span class="go">True</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a> | <span class="highlight sphinx_autodoc_typehints-value"><a class="reference external" href="https://docs.python.org/3/builtins/constants.html#None" title="(in Python v3.15)"><code class="xref py py-obj docutils literal notranslate"><span class="kc"><span class="pre">None</span></span></code></a></span></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.print_with_chromium">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">print_with_chromium</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">60</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/pagepdf.html#print_with_chromium"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.pagepdf.print_with_chromium" title="Link to this definition">#</a></dt>
+<dd><p>Print an html file to PDF with headless Chromium (pdfdol), with its print css.</p>
+<p>Needs the <code class="docutils literal notranslate"><span class="pre">pdf</span></code> extra and <code class="docutils literal notranslate"><span class="pre">playwright</span> <span class="pre">install</span> <span class="pre">chromium</span></code>. It runs in a child
+process, killed (with its browser) after <code class="docutils literal notranslate"><span class="pre">timeout</span></code> seconds. Images marked
+<code class="docutils literal notranslate"><span class="pre">loading=&quot;lazy&quot;</span></code> would print blank, so the page is printed from a copy without
+that attribute, beside it so its relative files still load.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#bytes" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bytes</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.strip_button">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">strip_button</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/pagepdf.html#strip_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.pagepdf.strip_button" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">page</span></code> without what <a class="reference internal" href="#annals.pagepdf.add_button" title="annals.pagepdf.add_button"><code class="xref py py-func docutils literal notranslate"><span class="pre">add_button()</span></code></a> put in it.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">strip_button</span><span class="p">(</span><span class="n">add_button</span><span class="p">(</span><span class="s2">"&lt;body&gt;&lt;p&gt;x&lt;/p&gt;&lt;/body&gt;"</span><span class="p">,</span> <span class="s2">"x.pdf"</span><span class="p">))</span>
+</span><span data-line="2"><span class="go">'&lt;body&gt;&lt;p&gt;x&lt;/p&gt;&lt;/body&gt;'</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.pagepdf.wants_button">
+<span class="sig-prename descclassname"><span class="pre">annals.pagepdf.</span></span><span class="sig-name descname"><span class="pre">wants_button</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">page</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/pagepdf.html#wants_button"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.pagepdf.wants_button" title="Link to this definition">#</a></dt>
+<dd><p>False when the page opts out, or already has a PDF button of its own.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">wants_button</span><span class="p">(</span><span class="s2">"&lt;p&gt;plain&lt;/p&gt;"</span><span class="p">)</span>
+</span><span data-line="2"><span class="go">True</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">wants_button</span><span class="p">(</span><span class="s1">'&lt;body data-annals-pdf="off"&gt;&lt;p&gt;x&lt;/p&gt;&lt;/body&gt;'</span><span class="p">)</span>
+</span><span data-line="4"><span class="go">False</span>
+</span><span data-line="5"><span class="gp">&gt;&gt;&gt; </span><span class="n">wants_button</span><span class="p">(</span><span class="s1">'&lt;a href="g.pdf" data-annals-pdf&gt;PDF&lt;/a&gt;'</span><span class="p">)</span>
+</span><span data-line="6"><span class="go">False</span>
+</span><span data-line="7"><span class="gp">&gt;&gt;&gt; </span><span class="n">wants_button</span><span class="p">(</span><span class="s1">'&lt;script&gt;"&lt;a data-annals-pdf&gt;"&lt;/script&gt;&lt;p data-annals-pdf-note=1&gt;'</span><span class="p">)</span>
+</span><span data-line="8"><span class="go">True</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.overview.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.overview</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.records.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.records</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=7ada5fdd"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

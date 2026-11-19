@@ -2,7 +2,7 @@
 <html lang="en" data-accent-color="violet" data-content_root="../">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.overview - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.records" href="annals.records.html" /><link rel="prev" title="annals.notebook" href="annals.notebook.html" /><script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.overview - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.pagepdf" href="annals.pagepdf.html" /><link rel="prev" title="annals.notebook" href="annals.notebook.html" /><script>
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
@@ -79,6 +79,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.pagepdf.html">annals.pagepdf</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.records.html">annals.records</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
@@ -318,7 +319,7 @@ waited.</p>
 <td><p>The combined document made for <code class="docutils literal notranslate"><span class="pre">key</span></code> (<a class="reference internal" href="#annals.overview.combined_key" title="annals.overview.combined_key"><code class="xref py py-func docutils literal notranslate"><span class="pre">combined_key()</span></code></a>), if there is one.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.overview.html_to_text" title="annals.overview.html_to_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">html_to_text</span></code></a>(html)</p></td>
-<td><p>The readable text of a page: no markup, scripts or styles.</p></td>
+<td><p>The readable text of a page: no markup, scripts or styles (nor its PDF button).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.overview.made_here" title="annals.overview.made_here"><code class="xref py py-obj docutils literal notranslate"><span class="pre">made_here</span></code></a>(meta)</p></td>
 <td><p>Whether the overview feature made this document: a spoken overview, or the text it combined to speak several documents as one.</p></td>
@@ -675,7 +676,7 @@ has text to speak, or past <code class="docutils literal notranslate"><span clas
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.overview.html_to_text">
 <span class="sig-prename descclassname"><span class="pre">annals.overview.</span></span><span class="sig-name descname"><span class="pre">html_to_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">html</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/overview.html#html_to_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.overview.html_to_text" title="Link to this definition">#</a></dt>
-<dd><p>The readable text of a page: no markup, scripts or styles.</p>
+<dd><p>The readable text of a page: no markup, scripts or styles (nor its PDF button).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
@@ -863,10 +864,10 @@ is tried every <a class="reference internal" href="#annals.overview.PROBE_EVERY_
         <span>Previous</span><div class="title">annals.notebook</div></div>
     </a>
   </div><div class="navigation-next">
-    <a href="annals.records.html">
+    <a href="annals.pagepdf.html">
       <div class="page-info">
         <span>Next</span>
-        <div class="title">annals.records</div>
+        <div class="title">annals.pagepdf</div>
       </div>
       <i class="i-lucide chevron-right"></i>
     </a>
@@ -891,7 +892,7 @@ is tried every <a class="reference internal" href="#annals.overview.PROBE_EVERY_
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=dea2dbc4"></script>
+      <script src="../_static/documentation_options.js?v=7ada5fdd"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

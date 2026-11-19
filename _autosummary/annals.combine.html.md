@@ -256,6 +256,9 @@ never swallow what is joined after it.
 '<h1>Hi</h1><a>y</a>'
 ```
 
+The Download PDF button annals put in the page ([`annals.pagepdf`](annals.pagepdf.html.md#module-annals.pagepdf)) is not content,
+so it is left out too.
+
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 

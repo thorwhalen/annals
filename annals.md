@@ -1,4 +1,4 @@
-> built 2026-11-19 09:49 UTC from 34795e1 (main) · annals 0.0.62. Details: build_info.json
+> built 2026-11-19 11:24 UTC from 5b733a1 (main) · annals 0.0.63. Details: build_info.json
 
 # index.html.md
 
@@ -65,6 +65,17 @@ A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-fi
 ### Links to what a document mentions
 
 The owner reads on a phone and clicks through, so a document that mentions an issue or a message should link to it. `annals publish` reads markdown and text documents before publishing and warns on stderr about bare issue references (`#12`, `owner/repo#12`) and dated mentions of a message (“Karl asked on 10-29 in #tech-app-test”) that have no link (`annals.linkcheck`). It is a warning, not a gate: the document is published either way. `--no-link-check` turns it off.
+
+### Every html page carries its own PDF button
+
+A page is often read without the annals page around it: opened full page, its raw link mailed on, or shared. So `annals publish` puts a small **↓ PDF** link inside the stored html itself (top right, hidden when printing), pointing at `<stem>.pdf` beside it in the same document, printed at publish time by headless Chromium with the page’s print css (the `pdf` extra, then `playwright install chromium`). Printing runs in a child process killed after 60 seconds (`annals.pagepdf.DFLT_PRINT_TIMEOUT_S`); without Chromium, or when the page does not print in time, the button opens the browser’s print dialog instead, so it is never missing. The `server` extra leaves Playwright out on purpose (a server publishes only its own overview pages), so those get the print button. The document’s meta records the PDF as `pdf`. A share of the page includes the PDF, since the page links to it.
+
+- A page that already has its PDF declares it, and nothing is printed: `<link rel="alternate" type="application/pdf" href="guide.pdf">` in its `<head>` (the button points there), or a `<stem>.pdf` published beside it.
+- A page with its own download button marks it with `data-annals-pdf` (any element), and nothing is added.
+- `data-annals-pdf="off"` on `<html>` or `<body>`, or `annals publish --no-pdf`, leaves the page as it is.
+- `--replace` swaps the old button for a new one and prints the new version again.
+
+In Python the printer is a seam: `DocStore.publish(..., pdf_renderer=fn)` takes any `fn(html_path) -> pdf bytes` (`None` never prints; the default is `annals.pagepdf.DFLT_PDF_RENDERER`, Chromium through pdfdol), and `pdf=False` turns it off. See `annals.pagepdf`.
 
 ### Living pages (`--replace`)
 
@@ -980,6 +991,9 @@ never swallow what is joined after it.
 '<h1>Hi</h1><a>y</a>'
 ```
 
+The Download PDF button annals put in the page ([`annals.pagepdf`](_autosummary/annals.pagepdf.html.md#module-annals.pagepdf)) is not content,
+so it is left out too.
+
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
@@ -1423,6 +1437,13 @@ The groups a document is in, newest first, each as `{"id", "title", "n"}`.
 * **Return type:**
   [`list`](_autosummary/annals.html.md#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+#### holds(ref_id)
+
+Whether a document (or a version of one) or a group with this id is here, in the bin or not.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).
@@ -1473,7 +1494,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](_autosummary/annals.html.md#annals.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None, pdf=True, pdf_renderer='default')
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -1490,6 +1511,10 @@ written as a pending replacement and applied at once when this store settles
 `artifact` (a claude.ai artifact link, see `check_artifact_url()`) is the
 interactive version of the page: the document’s page links out to it. A
 replacement that names none keeps the document’s current one.
+
+An html page gets its own Download PDF button, and `<stem>.pdf` printed beside
+it by `pdf_renderer` unless it has one ([`annals.pagepdf`](_autosummary/annals.pagepdf.html.md#module-annals.pagepdf), which says how a
+page declares or opts out). `pdf=False` leaves the page as it is.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -1671,7 +1696,7 @@ several allowed, against the document’s `source`: `corpus=annals`). A row is
 * **Return type:**
   [`Target`](_autosummary/annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, meta=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -1696,6 +1721,14 @@ version” button. Publish the Artifact first, then the same page here with its 
 A markdown or text document that mentions an issue or a Slack/email/chat message
 without linking to it gets a warning on stderr ([`annals.linkcheck`](_autosummary/annals.linkcheck.html.md#module-annals.linkcheck)); it is
 published either way. `no_link_check` turns that check off.
+
+An html page gets its own Download PDF button, inside the page, so it survives “open
+full page”, raw links and shares, and `<stem>.pdf` printed beside it (headless
+Chromium, the `pdf` extra; without it the button opens the print dialog). A page that
+already has its PDF says so with `<link rel="alternate" type="application/pdf"
+href="...">`; one with its own button marks it `data-annals-pdf`; `no_pdf` (or
+`data-annals-pdf="off"` on `<html>`/`<body>`) leaves the page as it is
+([`annals.pagepdf`](_autosummary/annals.pagepdf.html.md#module-annals.pagepdf)).
 
 `meta` (`--meta key=value [key=value ...]`) records what the document belongs to, next
 to `host`, `cwd` and `session` in its `source`: by convention `corpus` (the
@@ -1752,6 +1785,7 @@ Move documents to the recycle bin (restorable).
 | [`media`](_autosummary/annals.media.html.md#module-annals.media)               | The media relay for published html pages: what a framed page plays, told to the page around it.                                                    |
 | [`notebook`](_autosummary/annals.notebook.html.md#module-annals.notebook)         | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
 | [`overview`](_autosummary/annals.overview.html.md#module-annals.overview)         | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
+| [`pagepdf`](_autosummary/annals.pagepdf.html.md#module-annals.pagepdf)           | Every published html page carries its own Download PDF button, and the PDF beside it.                                                              |
 | [`records`](_autosummary/annals.records.html.md#module-annals.records)           | The published documents as records for a retrieval index, so an agent can find one by meaning.                                                     |
 | [`references`](_autosummary/annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`render`](_autosummary/annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
@@ -2528,7 +2562,7 @@ waited.
 | [`combined_request_id`](_autosummary/annals.overview.html.md#annals.overview.combined_request_id)(key)                           | The id a queued combination is filed under, before its document exists.                                                        |
 | [`eligible`](_autosummary/annals.overview.html.md#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.                                          |
 | [`find_combined`](_autosummary/annals.overview.html.md#annals.overview.find_combined)(store, key)                          | The combined document made for `key` ([`combined_key()`](_autosummary/annals.overview.html.md#annals.overview.combined_key)), if there is one.       |
-| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                                                     |
+| [`html_to_text`](_autosummary/annals.overview.html.md#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles (nor its PDF button).                                                |
 | [`made_here`](_autosummary/annals.overview.html.md#annals.overview.made_here)(meta)                                    | Whether the overview feature made this document: a spoken overview, or the text it combined to speak several documents as one. |
 | [`maker_down`](_autosummary/annals.overview.html.md#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.                                               |
 | [`mark_down`](_autosummary/annals.overview.html.md#annals.overview.mark_down)(requests[, reason, link])                | Say the maker is down, why, and where it is being fixed; keep what is not given.                                               |
@@ -2751,7 +2785,7 @@ The combined document made for `key` ([`combined_key()`](_autosummary/annals.ove
 
 ### annals.overview.html_to_text(html)
 
-The readable text of a page: no markup, scripts or styles.
+The readable text of a page: no markup, scripts or styles (nor its PDF button).
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
@@ -2886,6 +2920,183 @@ is tried every [`PROBE_EVERY_S`](_autosummary/annals.overview.html.md#annals.ove
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+
+# _autosummary/annals.pagepdf.html.md
+
+# annals.pagepdf
+
+Every published html page carries its own Download PDF button, and the PDF beside it.
+
+A page is often read without the annals page around it: opened full page, its raw url
+mailed on, or shared. So at publish time the stored html itself gets a small “Download
+PDF” link (hidden when printing), pointing at `<stem>.pdf` in the same document:
+
+1. **The page opts out** (`data-annals-pdf="off"` on `<html>` or `<body>`, or
+   `annals publish --no-pdf`): nothing is added.
+2. **The page has its own button** (any element with `data-annals-pdf`): nothing is
+   added; it already says where its PDF is.
+3. **The page declares its PDF** (`<link rel="alternate" type="application/pdf"
+   href="...">`): the button points there, and nothing is printed.
+4. **The document already holds** `<stem>.pdf` beside the page: the button points at it.
+5. **Otherwise the page is printed** to `<stem>.pdf` by `pdf_renderer` (default
+   [`print_with_chromium()`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.print_with_chromium), pdfdol’s headless Chromium, in the `pdf` extra). When it
+   > cannot print (no Chromium, a page that will not load in time), the button calls the
+   > browser’s own print dialog instead, so it is never missing.
+
+What this adds is one block wrapped in `<!--annals-pdf-->` markers (pure ASCII, so it
+suits a page in any charset), so publishing a page that already went through here (a new
+version through `--replace`) swaps the old button for a new one and prints the new page
+again. The page’s bytes are otherwise kept as they were, whatever their encoding.
+
+### Module Attributes
+
+| [`PdfRenderer`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.PdfRenderer)                            | `path of a staged html page -> PDF bytes`; raises when it cannot print                                                                                          |
+|-----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_PRINT_TIMEOUT_S`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.DFLT_PRINT_TIMEOUT_S)                   | the longest a page may take to print, in seconds, before the button prints instead                                                                              |
+| [`DFLT_PDF_RENDERER`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.DFLT_PDF_RENDERER)(page, \*[, timeout]) | what [`attach_pdf()`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.attach_pdf) prints with when not told; read at call time, so a test or an embedding app can swap it once |
+| [`DFLT`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.DFLT)                                   | "the default renderer", told apart from `None` (never print)                                                                                                    |
+
+### Functions
+
+| [`DFLT_PDF_RENDERER`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.DFLT_PDF_RENDERER)(page, \*[, timeout])            | what [`attach_pdf()`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.attach_pdf) prints with when not told; read at call time, so a test or an embedding app can swap it once   |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`add_button`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.add_button)(page, href)                            | `page` with a Download PDF link to `href` (or a print button when `None`).                                                                                        |
+| [`attach_pdf`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.attach_pdf)(root, main, files, \*[, pdf_renderer]) | Give the staged html page `root/main` its PDF button (and its PDF).                                                                                               |
+| [`button_href`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.button_href)(page)                                 | Where the button annals put in `page` points (`None`: none, or a print button).                                                                                   |
+| [`declared_pdf`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.declared_pdf)(page)                                | The href of the page's own `<link rel="alternate" type="application/pdf">`.                                                                                       |
+| [`print_with_chromium`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.print_with_chromium)(page, \*[, timeout])          | Print an html file to PDF with headless Chromium (pdfdol), with its print css.                                                                                    |
+| [`strip_button`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.strip_button)(page)                                | `page` without what [`add_button()`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.add_button) put in it.                                                                      |
+| [`wants_button`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.wants_button)(page)                                | False when the page opts out, or already has a PDF button of its own.                                                                                             |
+
+### annals.pagepdf.DFLT *= 'default'*
+
+“the default renderer”, told apart from `None` (never print)
+
+### annals.pagepdf.DFLT_PDF_RENDERER(page, , timeout=60)
+
+what [`attach_pdf()`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.attach_pdf) prints with when not told; read at call time, so a test or an
+embedding app can swap it once
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### annals.pagepdf.DFLT_PRINT_TIMEOUT_S *= 60*
+
+the longest a page may take to print, in seconds, before the button prints instead
+
+### annals.pagepdf.PdfRenderer
+
+`path of a staged html page -> PDF bytes`; raises when it cannot print
+
+alias of [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`Path`](https://docs.python.org/3/library/pathlib.html#pathlib.Path)], [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)]
+
+### annals.pagepdf.add_button(page, href)
+
+`page` with a Download PDF link to `href` (or a print button when `None`).
+
+One block goes right after `<body>` (or where the body would start): a `<link
+rel="alternate">` declaring the PDF, so readers and agents find it, its style, and
+the button. Any button added earlier is replaced. `href` is used as given (quote a
+file name first: [`attach_pdf()`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.attach_pdf) does).
+
+```pycon
+>>> page = "<!doctype html><html><head></head><body><p>x</p></body></html>"
+>>> out = add_button(page, "x.pdf")
+>>> 'href="x.pdf"' in out and 'type="application/pdf"' in out
+True
+>>> out.startswith("<!doctype html>")
+True
+>>> "window.print()" in add_button("<p>x</p>", None)
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.pagepdf.attach_pdf(root, main, files, , pdf_renderer='default')
+
+Give the staged html page `root/main` its PDF button (and its PDF).
+
+Returns `(files, pdf)`: `files` (relative to `root`) gains `<stem>.pdf` when it
+is printed here, and `pdf` is where the page’s PDF is (a file of the document, or
+the url the page declared), `None` when there is none. `pdf_renderer` defaults to
+[`DFLT_PDF_RENDERER`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.DFLT_PDF_RENDERER); `None` never prints: the button links to a PDF the
+document or the page already has, else opens the print dialog. A renderer that fails
+is logged and treated the same way; publishing never fails for want of a PDF.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)]
+
+### annals.pagepdf.button_href(page)
+
+Where the button annals put in `page` points (`None`: none, or a print button).
+
+```pycon
+>>> button_href(add_button("<p>x</p>", "x.pdf"))
+'x.pdf'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.pagepdf.declared_pdf(page)
+
+The href of the page’s own `<link rel="alternate" type="application/pdf">`.
+
+A link annals added itself does not count: that is not the page declaring one.
+
+```pycon
+>>> declared_pdf('<link rel="alternate" type="application/pdf" href="guide.pdf">')
+'guide.pdf'
+>>> declared_pdf('<link rel="stylesheet" href="a.css">') is None
+True
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+### annals.pagepdf.print_with_chromium(page, , timeout=60)
+
+Print an html file to PDF with headless Chromium (pdfdol), with its print css.
+
+Needs the `pdf` extra and `playwright install chromium`. It runs in a child
+process, killed (with its browser) after `timeout` seconds. Images marked
+`loading="lazy"` would print blank, so the page is printed from a copy without
+that attribute, beside it so its relative files still load.
+
+* **Return type:**
+  [`bytes`](https://docs.python.org/3/builtins/stdtypes.html#bytes)
+
+### annals.pagepdf.strip_button(page)
+
+`page` without what [`add_button()`](_autosummary/annals.pagepdf.html.md#annals.pagepdf.add_button) put in it.
+
+```pycon
+>>> strip_button(add_button("<body><p>x</p></body>", "x.pdf"))
+'<body><p>x</p></body>'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.pagepdf.wants_button(page)
+
+False when the page opts out, or already has a PDF button of its own.
+
+```pycon
+>>> wants_button("<p>plain</p>")
+True
+>>> wants_button('<body data-annals-pdf="off"><p>x</p></body>')
+False
+>>> wants_button('<a href="g.pdf" data-annals-pdf>PDF</a>')
+False
+>>> wants_button('<script>"<a data-annals-pdf>"</script><p data-annals-pdf-note=1>')
+True
+```
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
 
 
 # _autosummary/annals.records.html.md
@@ -3282,7 +3493,7 @@ Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#Runti
 
 A library an operation needs is not installed (the message says how to install it).
 
-### annals.requirements.PACKAGES *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]* *= {'PIL': ('pillow', ''), 'markdown_it': ('markdown-it-py', ''), 'markdownify': ('markdownify', ''), 'pdfdol': ('pdfdol', ''), 'pypdf': ('pypdf', ''), 'weasyprint': ('weasyprint', 'It also needs the Pango library (Debian/Ubuntu: apt install libpango-1.0-0).')}*
+### annals.requirements.PACKAGES *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]* *= {'PIL': ('pillow', ''), 'markdown_it': ('markdown-it-py', ''), 'markdownify': ('markdownify', ''), 'pdfdol': ('pdfdol', ''), 'playwright': ('playwright', 'Then fetch its browser: playwright install chromium'), 'pypdf': ('pypdf', ''), 'weasyprint': ('weasyprint', 'It also needs the Pango library (Debian/Ubuntu: apt install libpango-1.0-0).')}*
 
 module name -> (pip name, system hint or `""`)
 
@@ -4081,6 +4292,13 @@ The groups a document is in, newest first, each as `{"id", "title", "n"}`.
 * **Return type:**
   [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+#### holds(ref_id)
+
+Whether a document (or a version of one) or a group with this id is here, in the bin or not.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).
@@ -4131,7 +4349,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](_autosummary/annals.store.html.md#annals.store.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None, pdf=True, pdf_renderer='default')
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -4148,6 +4366,10 @@ written as a pending replacement and applied at once when this store settles
 `artifact` (a claude.ai artifact link, see [`check_artifact_url()`](_autosummary/annals.store.html.md#annals.store.check_artifact_url)) is the
 interactive version of the page: the document’s page links out to it. A
 replacement that names none keeps the document’s current one.
+
+An html page gets its own Download PDF button, and `<stem>.pdf` printed beside
+it by `pdf_renderer` unless it has one ([`annals.pagepdf`](_autosummary/annals.pagepdf.html.md#module-annals.pagepdf), which says how a
+page declares or opts out). `pdf=False` leaves the page as it is.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -5018,7 +5240,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, meta=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -5043,6 +5265,14 @@ version” button. Publish the Artifact first, then the same page here with its 
 A markdown or text document that mentions an issue or a Slack/email/chat message
 without linking to it gets a warning on stderr ([`annals.linkcheck`](_autosummary/annals.linkcheck.html.md#module-annals.linkcheck)); it is
 published either way. `no_link_check` turns that check off.
+
+An html page gets its own Download PDF button, inside the page, so it survives “open
+full page”, raw links and shares, and `<stem>.pdf` printed beside it (headless
+Chromium, the `pdf` extra; without it the button opens the print dialog). A page that
+already has its PDF says so with `<link rel="alternate" type="application/pdf"
+href="...">`; one with its own button marks it `data-annals-pdf`; `no_pdf` (or
+`data-annals-pdf="off"` on `<html>`/`<body>`) leaves the page as it is
+([`annals.pagepdf`](_autosummary/annals.pagepdf.html.md#module-annals.pagepdf)).
 
 `meta` (`--meta key=value [key=value ...]`) records what the document belongs to, next
 to `host`, `cwd` and `session` in its `source`: by convention `corpus` (the
@@ -5196,18 +5426,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-19 09:49 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/34795e1b3cdd79353d9bceb37329cd974467e0d7"><code>34795e1</code></a> on branch <code>main</code>, for **annals 0.0.62** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-19 11:24 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/5b733a1422949ee567e35fbc703d95a4e1dbc395"><code>5b733a1</code></a> on branch <code>main</code>, for **annals 0.0.63** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.62) is behind the latest release on PyPI (0.0.63): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/34795e1b3cdd79353d9bceb37329cd974467e0d7"><code>34795e1b3cdd79353d9bceb37329cd974467e0d7</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/5b733a1422949ee567e35fbc703d95a4e1dbc395"><code>5b733a1422949ee567e35fbc703d95a4e1dbc395</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -5218,9 +5446,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/44498582046">44498582046</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/44512639696">44512639696</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>34795e1b3cdd79353d9bceb37329cd974467e0d7</code> (in the history of the built commit) |
+| Event commit | <code>5b733a1422949ee567e35fbc703d95a4e1dbc395</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5245,13 +5473,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.63/">0.0.63</a>, newer than the documented version (0.0.62).
+Latest release: <a href="https://pypi.org/project/annals/0.0.63/">0.0.63</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 34795e1b3cdd79353d9bceb37329cd974467e0d7
+git checkout 5b733a1422949ee567e35fbc703d95a4e1dbc395
 pip install "epythet==0.2.22"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

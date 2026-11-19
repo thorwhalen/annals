@@ -49,6 +49,7 @@
    media
    notebook
    overview
+   pagepdf
    records
    references
    render

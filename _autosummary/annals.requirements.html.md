@@ -47,7 +47,7 @@ Bases: [`RuntimeError`](https://docs.python.org/3/builtins/exceptions.html#Runti
 
 A library an operation needs is not installed (the message says how to install it).
 
-### annals.requirements.PACKAGES *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]* *= {'PIL': ('pillow', ''), 'markdown_it': ('markdown-it-py', ''), 'markdownify': ('markdownify', ''), 'pdfdol': ('pdfdol', ''), 'pypdf': ('pypdf', ''), 'weasyprint': ('weasyprint', 'It also needs the Pango library (Debian/Ubuntu: apt install libpango-1.0-0).')}*
+### annals.requirements.PACKAGES *: [dict](https://docs.python.org/3/builtins/stdtypes.html#dict)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [tuple](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[str](https://docs.python.org/3/builtins/stdtypes.html#str), [str](https://docs.python.org/3/builtins/stdtypes.html#str)]]* *= {'PIL': ('pillow', ''), 'markdown_it': ('markdown-it-py', ''), 'markdownify': ('markdownify', ''), 'pdfdol': ('pdfdol', ''), 'playwright': ('playwright', 'Then fetch its browser: playwright install chromium'), 'pypdf': ('pypdf', ''), 'weasyprint': ('weasyprint', 'It also needs the Pango library (Debian/Ubuntu: apt install libpango-1.0-0).')}*
 
 module name -> (pip name, system hint or `""`)
 

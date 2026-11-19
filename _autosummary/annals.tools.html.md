@@ -232,7 +232,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, meta=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -257,6 +257,14 @@ version” button. Publish the Artifact first, then the same page here with its 
 A markdown or text document that mentions an issue or a Slack/email/chat message
 without linking to it gets a warning on stderr ([`annals.linkcheck`](annals.linkcheck.html.md#module-annals.linkcheck)); it is
 published either way. `no_link_check` turns that check off.
+
+An html page gets its own Download PDF button, inside the page, so it survives “open
+full page”, raw links and shares, and `<stem>.pdf` printed beside it (headless
+Chromium, the `pdf` extra; without it the button opens the print dialog). A page that
+already has its PDF says so with `<link rel="alternate" type="application/pdf"
+href="...">`; one with its own button marks it `data-annals-pdf`; `no_pdf` (or
+`data-annals-pdf="off"` on `<html>`/`<body>`) leaves the page as it is
+([`annals.pagepdf`](annals.pagepdf.html.md#module-annals.pagepdf)).
 
 `meta` (`--meta key=value [key=value ...]`) records what the document belongs to, next
 to `host`, `cwd` and `session` in its `source`: by convention `corpus` (the

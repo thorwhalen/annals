@@ -76,7 +76,7 @@ waited.
 | [`combined_request_id`](#annals.overview.combined_request_id)(key)                           | The id a queued combination is filed under, before its document exists.                                                        |
 | [`eligible`](#annals.overview.eligible)(meta)                                     | Whether a document can be spoken: readable text, current, and not itself an overview.                                          |
 | [`find_combined`](#annals.overview.find_combined)(store, key)                          | The combined document made for `key` ([`combined_key()`](#annals.overview.combined_key)), if there is one.       |
-| [`html_to_text`](#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles.                                                                     |
+| [`html_to_text`](#annals.overview.html_to_text)(html)                                 | The readable text of a page: no markup, scripts or styles (nor its PDF button).                                                |
 | [`made_here`](#annals.overview.made_here)(meta)                                    | Whether the overview feature made this document: a spoken overview, or the text it combined to speak several documents as one. |
 | [`maker_down`](#annals.overview.maker_down)(requests)                               | Why no overview can be made until someone acts, or `None` while the maker works.                                               |
 | [`mark_down`](#annals.overview.mark_down)(requests[, reason, link])                | Say the maker is down, why, and where it is being fixed; keep what is not given.                                               |
@@ -299,7 +299,7 @@ The combined document made for `key` ([`combined_key()`](#annals.overview.combin
 
 ### annals.overview.html_to_text(html)
 
-The readable text of a page: no markup, scripts or styles.
+The readable text of a page: no markup, scripts or styles (nor its PDF button).
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)

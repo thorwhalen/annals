@@ -62,6 +62,17 @@ A folder skips hidden files and caches (`.*`, `__pycache__`, `*.pyc`); `--all-fi
 
 The owner reads on a phone and clicks through, so a document that mentions an issue or a message should link to it. `annals publish` reads markdown and text documents before publishing and warns on stderr about bare issue references (`#12`, `owner/repo#12`) and dated mentions of a message (“Karl asked on 10-29 in #tech-app-test”) that have no link (`annals.linkcheck`). It is a warning, not a gate: the document is published either way. `--no-link-check` turns it off.
 
+### Every html page carries its own PDF button
+
+A page is often read without the annals page around it: opened full page, its raw link mailed on, or shared. So `annals publish` puts a small **↓ PDF** link inside the stored html itself (top right, hidden when printing), pointing at `<stem>.pdf` beside it in the same document, printed at publish time by headless Chromium with the page’s print css (the `pdf` extra, then `playwright install chromium`). Printing runs in a child process killed after 60 seconds (`annals.pagepdf.DFLT_PRINT_TIMEOUT_S`); without Chromium, or when the page does not print in time, the button opens the browser’s print dialog instead, so it is never missing. The `server` extra leaves Playwright out on purpose (a server publishes only its own overview pages), so those get the print button. The document’s meta records the PDF as `pdf`. A share of the page includes the PDF, since the page links to it.
+
+- A page that already has its PDF declares it, and nothing is printed: `<link rel="alternate" type="application/pdf" href="guide.pdf">` in its `<head>` (the button points there), or a `<stem>.pdf` published beside it.
+- A page with its own download button marks it with `data-annals-pdf` (any element), and nothing is added.
+- `data-annals-pdf="off"` on `<html>` or `<body>`, or `annals publish --no-pdf`, leaves the page as it is.
+- `--replace` swaps the old button for a new one and prints the new version again.
+
+In Python the printer is a seam: `DocStore.publish(..., pdf_renderer=fn)` takes any `fn(html_path) -> pdf bytes` (`None` never prints; the default is `annals.pagepdf.DFLT_PDF_RENDERER`, Chromium through pdfdol), and `pdf=False` turns it off. See `annals.pagepdf`.
+
 ### Living pages (`--replace`)
 
 `annals publish <path> --replace <link-or-id>` publishes a new version of an existing document: the id and the link stay, the page shows the new version marked “updated” and lists the earlier ones, each readable at `/d/<id>@<n>`. The previous files are kept under the document’s `.versions/<n>/`; nothing is deleted. It takes one path (a file, a folder, stdin), and a replaced group member stays in its group.

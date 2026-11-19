@@ -79,6 +79,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.pagepdf.html">annals.pagepdf</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.records.html">annals.records</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
@@ -116,6 +117,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.store.DocStore.group"><code class="docutils literal notranslate"><span class="pre">DocStore.group()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.group_docs"><code class="docutils literal notranslate"><span class="pre">DocStore.group_docs()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.groups_of"><code class="docutils literal notranslate"><span class="pre">DocStore.groups_of()</span></code></a></li>
+<li><a class="reference internal" href="#annals.store.DocStore.holds"><code class="docutils literal notranslate"><span class="pre">DocStore.holds()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.list"><code class="docutils literal notranslate"><span class="pre">DocStore.list()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.list_groups"><code class="docutils literal notranslate"><span class="pre">DocStore.list_groups()</span></code></a></li>
 <li><a class="reference internal" href="#annals.store.DocStore.make_group"><code class="docutils literal notranslate"><span class="pre">DocStore.make_group()</span></code></a></li>
@@ -455,6 +457,17 @@ there.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="annals.store.DocStore.holds">
+<span class="sig-name descname"><span class="pre">holds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.holds"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.holds" title="Link to this definition">#</a></dt>
+<dd><p>Whether a document (or a version of one) or a group with this id is here, in the bin or not.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="annals.store.DocStore.list">
 <span class="sig-name descname"><span class="pre">list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">trash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.list" title="Link to this definition">#</a></dt>
 <dd><p>Every document’s meta, last changed first (<code class="docutils literal notranslate"><span class="pre">updated</span></code>, else <code class="docutils literal notranslate"><span class="pre">created</span></code>).</p>
@@ -522,7 +535,7 @@ skips applying pending replacements (for a hot path such as a raw file).</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="annals.store.DocStore.publish">
-<span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'document.md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('.*',</span> <span class="pre">'__pycache__',</span> <span class="pre">'*.pyc',</span> <span class="pre">'*.pyo')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.publish" title="Link to this definition">#</a></dt>
+<span class="sig-name descname"><span class="pre">publish</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">sources</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">text</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'document.md'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclude</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('.*',</span> <span class="pre">'__pycache__',</span> <span class="pre">'*.pyc',</span> <span class="pre">'*.pyo')</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">replace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">artifact</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pdf_renderer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.publish"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.DocStore.publish" title="Link to this definition">#</a></dt>
 <dd><p>Publish files (or a directory, or <code class="docutils literal notranslate"><span class="pre">text</span></code>) as ONE document; return its meta.</p>
 <p>One markdown or html file is the common case. A directory is published whole, with
 <code class="docutils literal notranslate"><span class="pre">index.html</span></code> (or the first renderable file) as the page shown. <code class="docutils literal notranslate"><span class="pre">text</span></code> publishes a
@@ -535,6 +548,9 @@ written as a pending replacement and applied at once when this store settles
 <p><code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai artifact link, see <a class="reference internal" href="#annals.store.check_artifact_url" title="annals.store.check_artifact_url"><code class="xref py py-func docutils literal notranslate"><span class="pre">check_artifact_url()</span></code></a>) is the
 interactive version of the page: the document’s page links out to it. A
 replacement that names none keeps the document’s current one.</p>
+<p>An html page gets its own Download PDF button, and <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;.pdf</span></code> printed beside
+it by <code class="docutils literal notranslate"><span class="pre">pdf_renderer</span></code> unless it has one (<a class="reference internal" href="annals.pagepdf.html#module-annals.pagepdf" title="annals.pagepdf"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.pagepdf</span></code></a>, which says how a
+page declares or opts out). <code class="docutils literal notranslate"><span class="pre">pdf=False</span></code> leaves the page as it is.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
@@ -1117,7 +1133,7 @@ whitespace collapsed. <code class="docutils literal notranslate"><span class="pr
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=dea2dbc4"></script>
+      <script src="../_static/documentation_options.js?v=7ada5fdd"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

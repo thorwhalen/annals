@@ -136,6 +136,13 @@ The groups a document is in, newest first, each as `{"id", "title", "n"}`.
 * **Return type:**
   [`list`](#annals.store.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+#### holds(ref_id)
+
+Whether a document (or a version of one) or a group with this id is here, in the bin or not.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).
@@ -186,7 +193,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](#annals.store.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None, pdf=True, pdf_renderer='default')
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -203,6 +210,10 @@ written as a pending replacement and applied at once when this store settles
 `artifact` (a claude.ai artifact link, see [`check_artifact_url()`](#annals.store.check_artifact_url)) is the
 interactive version of the page: the document’s page links out to it. A
 replacement that names none keeps the document’s current one.
+
+An html page gets its own Download PDF button, and `<stem>.pdf` printed beside
+it by `pdf_renderer` unless it has one ([`annals.pagepdf`](annals.pagepdf.html.md#module-annals.pagepdf), which says how a
+page declares or opts out). `pdf=False` leaves the page as it is.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)

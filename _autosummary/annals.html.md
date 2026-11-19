@@ -73,6 +73,13 @@ The groups a document is in, newest first, each as `{"id", "title", "n"}`.
 * **Return type:**
   [`list`](#annals.DocStore.list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
 
+#### holds(ref_id)
+
+Whether a document (or a version of one) or a group with this id is here, in the bin or not.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
 #### list(, trash=False)
 
 Every document’s meta, last changed first (`updated`, else `created`).
@@ -123,7 +130,7 @@ Pending replacements (directory names), oldest first; of one document if given.
 * **Return type:**
   [`list`](#annals.DocStore.list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None)
+#### publish(\*sources, title=None, tags=(), source=None, text=None, filename='document.md', exclude=('.\*', '_\_pycache_\_', '\*.pyc', '\*.pyo'), replace=None, artifact=None, pdf=True, pdf_renderer='default')
 
 Publish files (or a directory, or `text`) as ONE document; return its meta.
 
@@ -140,6 +147,10 @@ written as a pending replacement and applied at once when this store settles
 `artifact` (a claude.ai artifact link, see `check_artifact_url()`) is the
 interactive version of the page: the document’s page links out to it. A
 replacement that names none keeps the document’s current one.
+
+An html page gets its own Download PDF button, and `<stem>.pdf` printed beside
+it by `pdf_renderer` unless it has one ([`annals.pagepdf`](annals.pagepdf.html.md#module-annals.pagepdf), which says how a
+page declares or opts out). `pdf=False` leaves the page as it is.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -321,7 +332,7 @@ several allowed, against the document’s `source`: `corpus=annals`). A row is
 * **Return type:**
   [`Target`](annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, meta=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -346,6 +357,14 @@ version” button. Publish the Artifact first, then the same page here with its 
 A markdown or text document that mentions an issue or a Slack/email/chat message
 without linking to it gets a warning on stderr ([`annals.linkcheck`](annals.linkcheck.html.md#module-annals.linkcheck)); it is
 published either way. `no_link_check` turns that check off.
+
+An html page gets its own Download PDF button, inside the page, so it survives “open
+full page”, raw links and shares, and `<stem>.pdf` printed beside it (headless
+Chromium, the `pdf` extra; without it the button opens the print dialog). A page that
+already has its PDF says so with `<link rel="alternate" type="application/pdf"
+href="...">`; one with its own button marks it `data-annals-pdf`; `no_pdf` (or
+`data-annals-pdf="off"` on `<html>`/`<body>`) leaves the page as it is
+([`annals.pagepdf`](annals.pagepdf.html.md#module-annals.pagepdf)).
 
 `meta` (`--meta key=value [key=value ...]`) records what the document belongs to, next
 to `host`, `cwd` and `session` in its `source`: by convention `corpus` (the
@@ -402,6 +421,7 @@ Move documents to the recycle bin (restorable).
 | [`media`](annals.media.html.md#module-annals.media)               | The media relay for published html pages: what a framed page plays, told to the page around it.                                                    |
 | [`notebook`](annals.notebook.html.md#module-annals.notebook)         | A share's documents as separate notebook sources: one plain web page per text file.                                                                |
 | [`overview`](annals.overview.html.md#module-annals.overview)         | Spoken overviews of a document: the request a page makes, and the worker that fulfils it.                                                          |
+| [`pagepdf`](annals.pagepdf.html.md#module-annals.pagepdf)           | Every published html page carries its own Download PDF button, and the PDF beside it.                                                              |
 | [`records`](annals.records.html.md#module-annals.records)           | The published documents as records for a retrieval index, so an agent can find one by meaning.                                                     |
 | [`references`](annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`render`](annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |

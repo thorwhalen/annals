@@ -1,0 +1,28 @@
+annals.pagepdf
+==============
+
+.. automodule:: annals.pagepdf
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      PdfRenderer
+      DFLT_PRINT_TIMEOUT_S
+      DFLT_PDF_RENDERER
+      DFLT
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      DFLT_PDF_RENDERER
+      add_button
+      attach_pdf
+      button_href
+      declared_pdf
+      print_with_chromium
+      strip_button
+      wants_button
+   
