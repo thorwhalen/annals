@@ -1066,7 +1066,8 @@ def _mk_api(
         file: str = "",
         base: str = "",
     ) -> Response:
-        """A markdown document as a ``.md`` or a titled ``.pdf`` download (images inside).
+        """A markdown document as a ``.md`` or a titled ``.pdf`` download (images inside),
+        or (``format=html``) as a web page of its own, with a Download PDF button.
 
         ``file`` names another markdown file of a folder document (default: the main
         one); ``base`` is the page's own url prefix, for the links to media in the PDF.
@@ -1090,6 +1091,7 @@ def _mk_api(
             open_file=functools.partial(doc_file_path, store, doc_id),
             file_url=file_url_builder(trusted_base(request, base), doc_id),
             created=meta.get("created", ""),
+            pdf_href=_same_with_format(request, "pdf") if format == "html" else None,
         )
 
     thumbs = ThumbServer(store, thumbnailer)
@@ -1305,6 +1307,14 @@ def links_open_apart(html: bytes, *, max_bytes: int = LINK_REWRITE_MAX_BYTES) ->
         prev = at
     parts.append(text[prev:])
     return "".join(parts).encode("utf-8", "surrogateescape")
+
+
+def _same_with_format(request: Request, fmt: str) -> str:
+    """This request's own url, relative (``?...``), with ``format`` set to ``fmt``."""
+    from urllib.parse import urlencode
+
+    query = [(k, v) for k, v in request.query_params.multi_items() if k != "format"]
+    return "?" + urlencode([("format", fmt), *query])
 
 
 def serve_html(html: bytes, *, media_relay: bool = True) -> bytes:

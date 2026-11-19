@@ -33,6 +33,7 @@ from annals.aggregate import TooLarge
 from annals.combine import (
     FORMATS as FORMATS_COMBINE,
     HTML_CSP,
+    HTML_CSS,
     Combined,
     NothingToCombine,
     Source,
@@ -50,11 +51,19 @@ from annals.render import (  # noqa: F401  (re-exported: the names tests and cal
     kind_of_mime,
     resolve_ref,
 )
+from annals.pagepdf import add_button
+from annals.render import inline_embedded, markdown_to_html, page_html
 from annals.render import markdown_to_pdf as _markdown_to_pdf
 from annals.requirements import MissingDependency
 from annals.store import kind_of, slugify
 
-FORMATS = ("md", "pdf")
+FORMATS = ("md", "pdf", "html")
+#: a page of its own is read on a phone: wide tables scroll inside themselves
+PAGE_CSS = HTML_CSS + (
+    "table { display: block; overflow-x: auto; }\n"
+    ".doc-meta { color: GrayText; font-size: .85em; }\n"
+)
+_H1_FIRST_RE = re.compile(r"\A\s*#\s+\S")
 #: PDFs rendered at once (each takes a core for a few seconds on a small server)
 PDF_CONCURRENCY = 2
 #: seconds a busy server tells a client to wait before asking again
@@ -98,6 +107,39 @@ def markdown_response(
     )
 
 
+def markdown_page(
+    text: str,
+    *,
+    title: str,
+    rel: str,
+    files: Sequence[str],
+    open_file: Callable[[str], Path],
+    file_url: Callable[[str], str | None],
+    created: str = "",
+    pdf_href: str | None = None,
+) -> str:
+    """The markdown ``text`` as a web page of its own: rendered, images inside, no script.
+
+    What the document's page shows, without the annals page around it, so its link can be
+    opened full page or sent on. ``pdf_href`` (the same page as a PDF) adds the Download
+    PDF button every annals-made page carries (:mod:`annals.pagepdf`).
+    """
+    try:
+        body, embedder = markdown_to_html(
+            text, rel=rel, files=files, open_file=open_file, file_url=file_url
+        )
+    except MissingDependency as e:
+        raise HTTPException(501, str(e))
+    page = page_html(
+        title,
+        inline_embedded(body, embedder),
+        created=created,
+        css=PAGE_CSS,
+        heading=not _H1_FIRST_RE.match(text),  # a text with its own title keeps only it
+    )
+    return add_button(page, pdf_href) if pdf_href else page
+
+
 def markdown_to_pdf(*args, **kwargs) -> bytes:
     """:func:`annals.render.markdown_to_pdf`, a missing library being a ``501`` here."""
     try:
@@ -116,14 +158,39 @@ def export_response(
     open_file: Callable[[str], Path],
     file_url: Callable[[str], str | None],
     created: str = "",
+    pdf_href: str | None = None,
 ) -> Response:
-    """The ``.md`` or ``.pdf`` download of ``text`` (the markdown file ``rel`` of a document).
+    """The ``.md`` or ``.pdf`` download of ``text`` (the markdown file ``rel`` of a document),
+    or (``html``) the page of its own that :func:`markdown_page` makes, shown in the browser.
 
     ``files`` are the files the caller may serve; ``open_file(rel)`` gives one's path;
-    ``file_url(rel)`` is the absolute url a reader of the PDF can open it at, or ``None``.
+    ``file_url(rel)`` is the absolute url a reader of the PDF can open it at, or ``None``;
+    ``pdf_href`` is where the html page's Download PDF button points.
     """
     if fmt == "md":
         return markdown_response(text, title=title)
+    if fmt == "html":
+        if len(text.encode("utf-8")) > PDF_MAX_TEXT_BYTES:
+            raise HTTPException(413, "this page is too large to show on its own")
+        page = markdown_page(
+            text,
+            title=title,
+            rel=rel,
+            files=files,
+            open_file=open_file,
+            file_url=file_url,
+            created=created,
+            pdf_href=pdf_href,
+        )
+        return Response(
+            page.encode("utf-8"),
+            media_type="text/html; charset=utf-8",
+            headers={
+                "Content-Security-Policy": HTML_CSP,
+                "Cache-Control": "private, no-store",
+                "X-Content-Type-Options": "nosniff",
+            },
+        )
     if fmt == "pdf":
         if len(text.encode("utf-8")) > PDF_MAX_TEXT_BYTES:
             raise HTTPException(413, "this page is too large to make a PDF of")

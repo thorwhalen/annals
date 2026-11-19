@@ -258,12 +258,26 @@ def markdown_to_html(
     return body, embedder
 
 
-def page_html(title: str, body: str, *, created: str = "") -> str:
-    """A standalone html page: the ``title`` as the document title, then ``body``."""
+def page_html(
+    title: str, body: str, *, created: str = "", css: str = "", heading: bool = True
+) -> str:
+    """A standalone html page: the ``title`` as the document title, then ``body``.
+
+    ``css`` styles it on screen (a PDF brings its own); with it the page also gets a
+    viewport, so a phone shows it at its own width. ``heading=False`` leaves the title out
+    of the body (the text starts with its own).
+    """
     meta = f'<p class="doc-meta">{html.escape(created[:10])}</p>' if created else ""
+    h1 = f'<h1 class="doc-title">{html.escape(title)}</h1>' if heading else ""
+    head = (
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        f"<style>{css}</style>"
+        if css
+        else ""
+    )
     return (
         f'<!doctype html><html><head><meta charset="utf-8"><title>{html.escape(title)}</title>'
-        f'</head><body><h1 class="doc-title">{html.escape(title)}</h1>{meta}{body}</body></html>'
+        f"{head}</head><body>{h1}{meta}{body}</body></html>"
     )
 
 
