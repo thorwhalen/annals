@@ -421,8 +421,9 @@ class DocStore:
                 if missing:
                     raise FileNotFoundError(", ".join(missing))
                 main, kind, files = _stage(paths, tmp, exclude=exclude)
+            page_pdf = None
             if pdf and kind == "html":
-                files = attach_pdf(
+                files, page_pdf = attach_pdf(
                     tmp, str(main.relative_to(tmp)), files, pdf_renderer=pdf_renderer
                 )
             default_title = (
@@ -452,6 +453,8 @@ class DocStore:
             }
             if artifact:
                 meta["artifact"] = artifact
+            if page_pdf:  # the page's PDF: a file of the document, or the url it declared
+                meta["pdf"] = page_pdf
             if replace is not None:
                 meta.update(replaces=replace, pending_id=mk_pending_id(replace))
             (tmp / META).write_text(json.dumps(meta, indent=1), encoding="utf-8")

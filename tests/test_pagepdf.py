@@ -26,6 +26,7 @@ def _page(tmp_path, body="<p>hello</p>", head="<title>Guide</title>", name="guid
 def test_an_html_page_gets_its_pdf_and_a_button_to_it(store, tmp_path, fake_pdf):
     meta = store.publish(_page(tmp_path))
     assert meta["files"] == ["guide.html", "guide.pdf"] and meta["main"] == "guide.html"
+    assert meta["pdf"] == "guide.pdf"
     assert _bytes(store, meta["id"], "guide.pdf") == fake_pdf
     page = store.read_text(meta["id"])
     assert 'id="annals-pdf"' in page and 'href="guide.pdf" download' in page
@@ -128,8 +129,10 @@ def test_add_button_without_head_or_body():
 def test_attach_pdf_in_a_subfolder(tmp_path):
     (tmp_path / "site").mkdir()
     (tmp_path / "site" / "index.html").write_text("<body><p>x</p></body>")
-    files = attach_pdf(tmp_path, "site/index.html", ["site/index.html"], pdf_renderer=lambda p: b"%PDF")
-    assert files == ["site/index.html", "site/index.pdf"]
+    files, pdf = attach_pdf(
+        tmp_path, "site/index.html", ["site/index.html"], pdf_renderer=lambda p: b"%PDF"
+    )
+    assert files == ["site/index.html", "site/index.pdf"] and pdf == "site/index.pdf"
     assert 'href="index.pdf"' in (tmp_path / "site" / "index.html").read_text()
 
 
@@ -153,3 +156,90 @@ def test_the_button_is_not_content_when_combined():
 
     page = add_button("<html><head></head><body><h1>Hi</h1></body></html>", "x.pdf")
     assert html_body(page) == "<h1>Hi</h1>"
+
+
+def test_the_button_never_lands_inside_a_script_or_before_the_doctype(store, tmp_path):
+    src = tmp_path / "src" / "s.html"
+    src.parent.mkdir()
+    src.write_text(
+        '<!doctype html><html><head><script>var s="<body class=x>";document.write("</head>")'
+        '</script></head><body onload="if(a>b){}"><p>x</p></body></html>'
+    )
+    page = store.read_text(store.publish(src)["id"])
+    assert page.index("<!--annals-pdf-->") == page.index('if(a>b){}">') + len('if(a>b){}">')
+    nobody = tmp_path / "src" / "n.html"
+    nobody.write_text("<!doctype html><title>t</title><p>x</p>")
+    assert store.read_text(store.publish(nobody)["id"]).startswith("<!doctype html><!--annals-pdf-->")
+
+
+def test_a_page_in_another_charset_keeps_its_bytes(store, tmp_path):
+    src = tmp_path / "src" / "l.html"
+    src.parent.mkdir()
+    raw = '<meta charset="iso-8859-1"><body><p>caf\xe9</p></body>'.encode("latin-1")
+    src.write_bytes(raw)
+    meta = store.publish(src)
+    stored = (store.target.root / "docs" / meta["id"] / "l.html").read_bytes()
+    assert b"caf\xe9" in stored and stored.isascii() is False
+    assert stored.replace(stored[stored.index(b"<!--annals-pdf-->") : stored.index(b"<!--/annals-pdf-->") + 18], b"") == raw
+
+
+def test_an_odd_file_name_is_quoted_in_the_link(store, tmp_path):
+    meta = store.publish(_page(tmp_path, name="Q #2.html"))
+    assert 'href="Q%20%232.pdf"' in store.read_text(meta["id"]) and meta["pdf"] == "Q #2.pdf"
+
+
+def test_a_share_without_the_pdf_has_no_dead_button(store, tmp_path):
+    from annals.share import filter_refs
+
+    meta = store.publish(_page(tmp_path))
+    page = store.read_text(meta["id"])
+    kept = filter_refs(page, "html", files=["guide.html", "guide.pdf"], shared=lambda i: None)
+    gone = filter_refs(page, "html", files=["guide.html"], shared=lambda i: None)
+    assert 'id="annals-pdf"' in kept and "annals-pdf" not in gone
+
+
+def test_the_button_is_not_in_a_page_s_text():
+    from annals.overview import html_to_text
+
+    assert html_to_text(add_button("<body><p>Hi</p></body>", "x.pdf")) == "Hi"
+
+
+def test_a_page_that_hangs_falls_back_to_print_in_time(tmp_path, monkeypatch):
+    pytest.importorskip("pdfdol.chromium")
+    pytest.importorskip("playwright")
+    import time
+
+    from annals import pagepdf
+
+    monkeypatch.setattr(pagepdf, "_PRINT_SCRIPT", "import time; time.sleep(30)")
+    page = tmp_path / "p.html"
+    page.write_text("<body>x</body>")
+    t0 = time.monotonic()
+    with pytest.raises(TimeoutError):
+        pagepdf.print_with_chromium(page, timeout=1)
+    assert time.monotonic() - t0 < 5 and not (tmp_path / ".annals-print-p.html").exists()
+
+
+def test_printing_works_inside_an_asyncio_loop(tmp_path):
+    import asyncio
+
+    pytest.importorskip("pdfdol.chromium")
+    pytest.importorskip("playwright")
+    from annals.pagepdf import print_with_chromium
+
+    page = tmp_path / "p.html"
+    page.write_text("<body><h1>Async</h1></body>")
+
+    async def go():
+        return print_with_chromium(page)
+
+    from concurrent.futures import ThreadPoolExecutor
+
+    try:  # a thread of its own: the browser tests may hold this thread's loop
+        with ThreadPoolExecutor(1) as ex:
+            pdf = ex.submit(asyncio.run, go()).result()
+    except RuntimeError as e:
+        if "Executable doesn't exist" in str(e) or "playwright install" in str(e):
+            pytest.skip(f"no Chromium: {e}")
+        raise
+    assert pdf.startswith(b"%PDF")
