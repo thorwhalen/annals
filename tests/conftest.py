@@ -2,8 +2,11 @@
 
 The browser tests skip where Playwright or its Chromium is missing; ``ANNALS_TEST_BROWSER``
 names a browser executable Playwright did not download. On CI (``CI`` set, as GitHub Actions
-does) a missing Chromium is installed once instead, so these tests run there rather than
-skipping: the wads workflow does not run ``[tool.wads.ci.commands] pre_test``.
+does) a missing browser is installed once instead, so these tests run there rather than
+skipping: the wads workflow does not run ``[tool.wads.ci.commands] pre_test``. Chromium must
+install. WebKit (with its system libraries) sometimes cannot within
+:data:`OPTIONAL_INSTALL_TIMEOUT_S` on a hosted runner; its tests then skip with the
+install's own output as the reason, rather than turn every run of main red.
 """
 
 import os
@@ -81,9 +84,41 @@ def _playwright():
         yield p
 
 
+#: the browsers CI must have; any other engine is tried, and skipped when it cannot install
+REQUIRED_ON_CI = frozenset({"chromium"})
+INSTALL_TIMEOUT_S = 600
+OPTIONAL_INSTALL_TIMEOUT_S = 240
+_install_failed: dict[str, str] = {}  # engine -> why, so a failed install is tried once
+
+
+def _install(engine: str) -> str | None:
+    """Install ``engine`` with its system libraries; ``None`` when done, else why not."""
+    if engine in _install_failed:
+        return _install_failed[engine]
+    required = engine in REQUIRED_ON_CI
+    cmd = [sys.executable, "-m", "playwright", "install", "--with-deps", engine]
+    try:
+        r = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=INSTALL_TIMEOUT_S if required else OPTIONAL_INSTALL_TIMEOUT_S,
+        )
+        why = None if r.returncode == 0 else f"exit {r.returncode}: {(r.stdout + r.stderr)[-1500:]}"
+    except subprocess.TimeoutExpired as e:
+        out = (e.stdout or b"") + (e.stderr or b"")
+        out = out.decode(errors="replace") if isinstance(out, bytes) else out
+        why = f"timed out after {e.timeout:g}s: {out[-1500:]}"
+    if why and required:
+        raise RuntimeError(f"could not install {engine} on CI: {why}")
+    if why:
+        _install_failed[engine] = why
+    return why
+
+
 def _browser(p, engine, *, executable_path=None):
     """A launched Playwright browser of ``engine`` (chromium, webkit, firefox), for a fixture to
-    yield. Skips where it is missing; on CI it is installed once instead."""
+    yield. Skips where it is missing; on CI it is installed once instead (see the module doc)."""
     from playwright.sync_api import Error
 
     def launch():
@@ -94,8 +129,9 @@ def _browser(p, engine, *, executable_path=None):
     except Error as e:
         if not os.environ.get("CI"):
             pytest.skip(f"no {engine} to run: {e}")
-        cmd = [sys.executable, "-m", "playwright", "install", "--with-deps", engine]
-        subprocess.run(cmd, check=True, timeout=600)
+        why = _install(engine)
+        if why:
+            pytest.skip(f"{engine} could not be installed on this runner ({why})")
         b = launch()
     yield b
     b.close()
