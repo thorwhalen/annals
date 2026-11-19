@@ -91,29 +91,48 @@ OPTIONAL_INSTALL_TIMEOUT_S = 240
 _install_failed: dict[str, str] = {}  # engine -> why, so a failed install is tried once
 
 
-def _install(engine: str) -> str | None:
-    """Install ``engine`` with its system libraries; ``None`` when done, else why not."""
-    if engine in _install_failed:
-        return _install_failed[engine]
-    required = engine in REQUIRED_ON_CI
-    cmd = [sys.executable, "-m", "playwright", "install", "--with-deps", engine]
+def _run_install(args: list[str], timeout: float) -> str | None:
+    """Run ``playwright <args>``; ``None`` when it worked, else why not (its output's tail)."""
+    cmd = [sys.executable, "-m", "playwright", *args]
     try:
-        r = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=INSTALL_TIMEOUT_S if required else OPTIONAL_INSTALL_TIMEOUT_S,
-        )
-        why = None if r.returncode == 0 else f"exit {r.returncode}: {(r.stdout + r.stderr)[-1500:]}"
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired as e:
         out = (e.stdout or b"") + (e.stderr or b"")
         out = out.decode(errors="replace") if isinstance(out, bytes) else out
-        why = f"timed out after {e.timeout:g}s: {out[-1500:]}"
-    if why and required:
+        return f"{' '.join(args)} timed out after {e.timeout:g}s: {out[-1500:]}"
+    if r.returncode:
+        return f"{' '.join(args)} exit {r.returncode}: {(r.stdout + r.stderr)[-1500:]}"
+    return None
+
+
+def _launch_installed(p, engine: str, launch):
+    """Install ``engine`` on CI and launch it; skip (an optional engine) or fail (a required one).
+
+    The browser comes from Playwright's own download, which is reliable; its system libraries
+    come from apt, whose mirrors a hosted runner sometimes cannot reach, and which the runner
+    image mostly has already. So the browser alone first, and apt only when it will not start.
+    """
+    from playwright.sync_api import Error
+
+    required = engine in REQUIRED_ON_CI
+    timeout = INSTALL_TIMEOUT_S if required else OPTIONAL_INSTALL_TIMEOUT_S
+    why = _install_failed.get(engine)
+    if why is None:
+        why = _run_install(["install", engine], timeout)
+    if why is None:
+        try:
+            return launch()
+        except Error:
+            why = _run_install(["install-deps", engine], timeout)
+    if why is None:
+        try:
+            return launch()
+        except Error as e:
+            why = f"installed, but it will not start: {e}"
+    _install_failed[engine] = why
+    if required:
         raise RuntimeError(f"could not install {engine} on CI: {why}")
-    if why:
-        _install_failed[engine] = why
-    return why
+    pytest.skip(f"{engine} could not be installed on this runner ({why})")
 
 
 def _browser(p, engine, *, executable_path=None):
@@ -129,10 +148,7 @@ def _browser(p, engine, *, executable_path=None):
     except Error as e:
         if not os.environ.get("CI"):
             pytest.skip(f"no {engine} to run: {e}")
-        why = _install(engine)
-        if why:
-            pytest.skip(f"{engine} could not be installed on this runner ({why})")
-        b = launch()
+        b = _launch_installed(p, engine, launch)
     yield b
     b.close()
 
