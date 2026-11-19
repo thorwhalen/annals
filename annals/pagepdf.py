@@ -274,7 +274,9 @@ def attach_pdf(
             (root / pdf_rel).write_bytes(pdf_renderer(path))
             files, pdf = sorted({*files, pdf_rel}), pdf_rel
         except Exception as e:  # noqa: BLE001 - any failure falls back to print
-            log.warning("annals: no PDF for %s (%s); the button prints instead", main, e)
+            log.warning(
+                "annals: no PDF for %s (%s); the button prints instead", main, e
+            )
     if href is None and pdf is not None:
         href = quote(Path(pdf).name)
     path.write_bytes(add_button(page, href).encode("utf-8", "surrogateescape"))

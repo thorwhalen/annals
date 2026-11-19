@@ -453,7 +453,9 @@ class DocStore:
             }
             if artifact:
                 meta["artifact"] = artifact
-            if page_pdf:  # the page's PDF: a file of the document, or the url it declared
+            if (
+                page_pdf
+            ):  # the page's PDF: a file of the document, or the url it declared
                 meta["pdf"] = page_pdf
             if replace is not None:
                 meta.update(replaces=replace, pending_id=mk_pending_id(replace))
