@@ -59,6 +59,10 @@ _ANNALS_ID_RE = re.compile(rf"(?<!\d)(?P<id>{ANNALS_ID})")
 _ID_IN_URL_RE = re.compile(
     rf"/(?P<seg>d|g|raw|thumb|docs|groups)/(?P<id>{ANNALS_ID})(?![\w-])"
 )
+#: an absolute link to an annals document or group page (``.../d/<id>``, ``.../g/<id>``)
+_ANNALS_PAGE_URL_RE = re.compile(
+    rf"https?://[^\s<>()\"'\]\[*`]+?/(?:d|g)/{ANNALS_ID}(?![\w-])"
+)
 REMOVED_LINK = "(link not shared)"
 REMOVED_ID = "(not shared)"
 
@@ -89,6 +93,20 @@ _SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
 _CSS_URL_RE = re.compile(r"url\(\s*(?P<q>['\"]?)(?P<url>[^'\")]*)(?P=q)\s*\)", re.I)
 #: ``<meta http-equiv=refresh content="0;url=...">``: the one ``content`` that is a url
 _REFRESH_RE = re.compile(r"^(?P<lead>\s*\d*\s*;?\s*url\s*=\s*)(?P<url>.*)$", re.I)
+
+
+def annals_urls(text: str) -> list[str]:
+    """The absolute links to annals document and group pages in ``text``, once each, in order.
+
+    Any host: which annals a link belongs to is the reader's config to decide
+    (:func:`annals.config.link_target`).
+
+    >>> annals_urls("see **[map](https://a.example.io/annals/d/20261119-075018-the-map-4a58)**, "
+    ...             "<https://b.example.com/annals/g/20261117-163049-set?f=x> and "
+    ...             "https://a.example.io/annals/d/20261119-075018-the-map-4a58 again")
+    ['https://a.example.io/annals/d/20261119-075018-the-map-4a58', 'https://b.example.com/annals/g/20261117-163049-set']
+    """
+    return list(dict.fromkeys(m.group(0) for m in _ANNALS_PAGE_URL_RE.finditer(text)))
 
 
 def resolve_rel(url: str, from_dir: str = "") -> str | None:

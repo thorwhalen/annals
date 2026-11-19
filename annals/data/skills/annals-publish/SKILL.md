@@ -29,11 +29,15 @@ The annals is private: fetching a `.../annals/d/<id>` or `.../annals/g/<id>` lin
 
 ```bash
 annals aggregate <link>           # the document's text (a group: every document's), as one markdown on stdout
-annals show <link>                # its metadata: files, tags, versions, and the groups it is in
+annals show <link>                # its metadata: files, tags, versions, the groups it is in, and `links`
 annals aggregate <link> --format pdf --output all.pdf
 ```
 
-Images, audio and video are not in that text: separate files are named on stderr as left out, and a page's own images stay as `![](fig.png)` references you cannot open. A machine whose target is an outbox (`annals configure` shows `"outbox": true`) cannot read the annals; the commands say so, and so should you.
+A link finds its own annals: the host in it is matched against every place the config knows (the default and each `[targets.NAME]`), so a link to the owner's annals or to the team's (`annals.apps.inoocq.io`) needs no `--to`. `show` lists, under `links`, the other annals documents and groups the document links to, on any annals this machine can read; follow them the same way. Other pages it links to (an app behind the same login, such as swatch) are not readable this way. A link on a host this machine is not configured for is looked up in the default annals.
+
+Images, audio and video are not in that text: separate files are named on stderr as left out, and a page's own images stay as `![](fig.png)` references you cannot open. A machine whose only copy of an annals is an outbox (`annals configure` shows `"outbox": true`) cannot read it; the commands say so, and so should you.
+
+In a claude.ai conversation there is no shell: the owner's **Bosun** connector reads annals links with its `read_document` (the text) and `document_info` (files, groups, `links`) tools. Give them the link as you were handed it.
 
 ## Link everything you mention
 

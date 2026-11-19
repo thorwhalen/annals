@@ -14,7 +14,13 @@ import socket
 from pathlib import Path
 
 from annals.catalog import owner_tags, with_owner_tags
-from annals.config import Settings, default_data_dir, load_settings, write_config
+from annals.config import (
+    Settings,
+    default_data_dir,
+    link_target,
+    load_settings,
+    write_config,
+)
 from annals.docfilter import DocFilter, parse_meta
 from annals.store import (
     META,
@@ -401,11 +407,15 @@ def show(
     base_url: str | None = None,
     to: str | None = None,
 ) -> dict:
-    """A document's metadata, link, and the groups it is in (``to``: on a named target).
+    """A document's metadata, link, the groups it is in, and the annals links in its text.
 
-    ``doc_id`` may be the document's link; a group's link gives the group and its documents'
-    links. To read the text, use ``annals aggregate <link>``.
+    ``doc_id`` may be the document's link, on any annals this machine is configured for: the
+    link finds its own place (``to`` names one explicitly). A group's link gives the group
+    and its documents' links. ``links`` are the links to other annals documents and groups
+    found in the document's text files, on any annals this machine can read: follow them
+    with ``annals show`` or ``annals aggregate``. To read the text, use ``annals aggregate <link>``.
     """
+    to = _place(doc_id, target=target, to=to)
     settings = _readable(load_settings(target=target, base_url=base_url, to=to))
     store = _store(settings)
     kind, ref = _parse_ref(doc_id)
@@ -422,7 +432,51 @@ def show(
         {**g, "url": _group_url(settings, g["id"])}
         for g in store.groups_of(meta.get("version_of") or ref)
     ]
+    meta["links"] = [u for u in _annals_links(store, meta) if u != meta["url"]]
     return meta
+
+
+def _place(ref: str, *, target: str | None, to: str | None) -> str | None:
+    """The ``to`` a read of ``ref`` uses: the one given, else the place its link names.
+
+    An explicit ``target`` or ``to`` wins; otherwise a link finds its own annals among the
+    configured ones (:func:`annals.config.link_target`), and a bare id reads the default.
+    A link on a host this machine is not configured for is looked up in the default, as
+    before links named their place: ids are unique across annals, so that read finds the
+    document (a copy keeps its id) or says there is none.
+    """
+    if target or to:
+        return to
+    try:
+        return link_target(ref)
+    except ValueError:
+        return None
+
+
+#: the suffixes whose text :func:`show` reads for the annals links a document makes
+LINKS_READ_SUFFIXES = frozenset({".md", ".markdown", ".txt", ".html", ".htm"})
+
+
+def _annals_links(store: DocStore, meta: dict) -> list[str]:
+    """The links to annals documents and groups, on any annals this machine knows, in ``meta``'s text files."""
+    from annals.share import annals_urls
+
+    found: list[str] = []
+    for rel in meta.get("files", []):
+        if Path(rel).suffix.lower() not in LINKS_READ_SUFFIXES:
+            continue
+        try:
+            text = store.read_text(meta["id"], rel)
+        except (OSError, ValueError, KeyError, UnicodeDecodeError):
+            continue  # an unreadable file has no links to offer; show still answers
+        for url in annals_urls(text):
+            try:
+                link_target(url)
+            except ValueError:
+                continue  # an annals on a host this machine cannot read
+            if url not in found:
+                found.append(url)
+    return found
 
 
 def _readable(settings: Settings) -> Settings:
@@ -594,6 +648,7 @@ def aggregate(
         raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
     if format == "pdf" and not output:
         raise ValueError("a PDF is a binary file: name it with --output FILE")
+    to = _place(group_id, target=target, to=to)
     store = _store(_readable(load_settings(target=target, to=to)))
     title, metas = _resolve_selection(store, group_id)
     with tempfile.TemporaryDirectory(prefix="annals-aggregate-") as scratch:
@@ -660,6 +715,7 @@ def export(
         raise ValueError(f"format must be one of {', '.join(FORMATS)}, not {format!r}")
     if format == "pdf" and not output:
         raise ValueError("a PDF is a binary file: name it with --output FILE")
+    to = _place(doc_id, target=target, to=to)
     settings = _readable(load_settings(target=target, to=to))
     store = _store(settings)
     dest = _checked_output(output)
@@ -700,6 +756,7 @@ def shareable(doc_id: str, *, target: str | None = None, to: str | None = None) 
     ``{main, files: [{rel, kind, size, referenced}], pages: [{id, title, kind}]}``: the
     choices ``annals share`` takes for what a link may show.
     """
+    to = _place(doc_id, target=target, to=to)
     settings = _readable(load_settings(target=target, to=to))
     store = _store(settings)
     return _shares(settings).resources(_document_meta(store, doc_id)["id"])
@@ -725,6 +782,7 @@ def references(
 
     if form not in refs.FORMS:
         raise ValueError(f"form must be one of {', '.join(refs.FORMS)}, not {form!r}")
+    to = _place(ref, target=target, to=to)
     store = _store(_readable(load_settings(target=target, to=to)))
     title, docs = _resolve_selection(store, ref, also=also)
     found = refs.collect(
