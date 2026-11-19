@@ -34,6 +34,7 @@ PACKAGES: dict[str, tuple[str, str]] = {
     "pypdf": ("pypdf", ""),
     "pdfdol": ("pdfdol", ""),
     "markdownify": ("markdownify", ""),
+    "playwright": ("playwright", "Then fetch its browser: playwright install chromium"),
     "PIL": ("pillow", ""),
 }
 

@@ -36,7 +36,7 @@ server = [
     "weasyprint>=62",
     "markdown-it-py>=3",
     "pypdf>=4",
-    "pdfdol>=0.1.26",
+    "pdfdol>=0.1.32",
     "markdownify>=0.11",
 ]
 pdf = [
@@ -44,8 +44,9 @@ pdf = [
     "markdown-it-py>=3",
     "pillow>=10",
     "pypdf>=4",
-    "pdfdol>=0.1.26",
+    "pdfdol>=0.1.32",
     "markdownify>=0.11",
+    "playwright>=1.40",
 ]
 mcp = [
     "py2mcp",
@@ -57,7 +58,7 @@ dev = [
     "weasyprint>=62",
     "markdown-it-py>=3",
     "pypdf>=4",
-    "pdfdol>=0.1.26",
+    "pdfdol>=0.1.32",
     "markdownify>=0.11",
     "pytest>=7.0",
     "pytest-cov>=4.0",

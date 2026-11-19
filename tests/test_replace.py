@@ -60,10 +60,10 @@ def test_replace_a_folder_and_list_versions(store, tmp_path):
     store.publish(site, replace=doc_id)
     _write(site / "index.html", "<title>Site</title>v3")
     meta = store.publish(site, replace=doc_id)
-    assert meta["version"] == 3 and sorted(meta["files"]) == ["img/new.css", "index.html"]
+    assert meta["version"] == 3 and sorted(meta["files"]) == ["img/new.css", "index.html", "index.pdf"]
     assert [v["n"] for v in store.versions(doc_id)] == [1, 2, 3]
     assert store.versions(doc_id)[-1]["current"] is True
-    assert store.meta(f"{doc_id}@1")["files"] == ["index.html", "old.css"]
+    assert store.meta(f"{doc_id}@1")["files"] == ["index.html", "index.pdf", "old.css"]
     assert store.read_text(f"{doc_id}@1", "old.css") == "a{}"
     assert store.read_text(f"{doc_id}@2").endswith("v2")
     on_disk = store.target.root / "docs" / doc_id / VERSIONS

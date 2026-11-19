@@ -19,6 +19,25 @@ from annals.api import mk_app
 from annals.auth import no_auth
 
 
+FAKE_PDF = b"%PDF-1.4 fake\n%%EOF\n"
+
+
+@pytest.fixture(autouse=True)
+def _fake_pdf_printer(monkeypatch):
+    """Html pages are "printed" to a stub PDF in tests: no Chromium launch per publish.
+
+    ``tests/test_pagepdf.py`` prints for real where Chromium is installed."""
+    import annals.pagepdf
+
+    monkeypatch.setattr(annals.pagepdf, "DFLT_PDF_RENDERER", lambda path: FAKE_PDF)
+
+
+@pytest.fixture
+def fake_pdf():
+    """What the stub printer above prints."""
+    return FAKE_PDF
+
+
 def _free_port():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
