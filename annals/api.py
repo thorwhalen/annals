@@ -704,7 +704,9 @@ def _mk_api(
             docs.append(row)
         out = {**group, "items": docs}
         # the sessions that made its documents, merged once here: the page only draws them
-        out["sessions"] = merged_sessions(*(d["sessions"] for d in docs if not d.get("in_trash")))
+        out["sessions"] = merged_sessions(
+            *(d["sessions"] for d in docs if not d.get("in_trash"))
+        )
         if requests:
             out["listen"] = {"choices": overview.choices()}
         return out

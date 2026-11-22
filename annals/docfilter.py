@@ -145,7 +145,9 @@ class DocFilter:
             return False
         have = doc.get("source") or {}
         if self.session is not None and self.session != have.get("session"):
-            if self.session not in session_names(doc):  # made a version of it, not the latest
+            if self.session not in session_names(
+                doc
+            ):  # made a version of it, not the latest
                 return False
         return all(have.get(k) == v for k, v in self.source.items())
 

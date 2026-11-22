@@ -71,7 +71,9 @@ def sessions_of(meta: Mapping) -> list[dict]:
     return [one] if one else []
 
 
-def merged_sessions(*lists: Iterable[dict | None], limit: int = MAX_SESSIONS) -> list[dict]:
+def merged_sessions(
+    *lists: Iterable[dict | None], limit: int = MAX_SESSIONS
+) -> list[dict]:
     """The sessions of ``lists`` in order, one entry each: the same link, or the same name
     when one of the two has no link, is the same session (the link is kept). At most
     ``limit``: the first session and the latest ones.
@@ -89,7 +91,11 @@ def merged_sessions(*lists: Iterable[dict | None], limit: int = MAX_SESSIONS) ->
                     o
                     for o in out
                     if (s["url"] and o["url"] == s["url"])
-                    or (s["name"] and o["name"] == s["name"] and not (s["url"] and o["url"]))
+                    or (
+                        s["name"]
+                        and o["name"] == s["name"]
+                        and not (s["url"] and o["url"])
+                    )
                 ),
                 None,
             )
