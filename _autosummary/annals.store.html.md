@@ -232,6 +232,26 @@ A document’s main file (or one of its files) as text.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### rename(doc_id, title)
+
+Give a document a title of the owner’s choosing; a later version keeps it.
+
+The title is cleaned as a group’s is ([`clean_title()`](#annals.store.clean_title)). A version or a pending
+replacement is refused (rename the document). Works in the bin too. Only `title`
+and `renamed` change in the stored meta, which is read again under the document’s
+lock: a document that moved meanwhile (trashed, restored, purged) is a
+`RuntimeError`, never a meta written where its files are not. Returns its meta.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### rename_group(gid, title)
+
+Give a group a new title (cleaned as at creation); its documents stay as they are.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 #### restore(doc_id)
 
 Move a document out of the bin (idempotent).

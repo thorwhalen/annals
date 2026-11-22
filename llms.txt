@@ -34,9 +34,10 @@
 - [annals.tables](_autosummary/annals.tables.html.md): Scrolling, zooming tables for published html pages.
 - [annals.tags](_autosummary/annals.tags.html.md): The owner’s tags: a &#96;MutableMapping&#96; from item key to tag list, kept apart from the items.
 - [annals.target](_autosummary/annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
+- [annals.titles](_autosummary/annals.titles.html.md): A title for a file whose name says nothing: &#96;overview.mp3&#96;, &#96;output.html&#96;, &#96;index.md&#96;.
 - [annals.tools](_autosummary/annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 - [For AI agents](ai-agents.html.md): &#96;annals&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-22 14:09 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-22 15:32 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

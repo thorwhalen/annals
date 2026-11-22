@@ -1,4 +1,4 @@
-> built 2026-11-22 14:09 UTC from a268747 (main) · annals 0.0.66. Details: build_info.json
+> built 2026-11-22 15:32 UTC from 04ff4f6 (main) · annals 0.0.67. Details: build_info.json
 
 # index.html.md
 
@@ -35,6 +35,7 @@ annals publish page.html --artifact <claude.ai artifact link>  # plus a button t
 annals publish r.md --session <name>             # the page links the Claude Code session that made it (never in a share)
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
+annals rename <link-or-id> "New title"           # rename a document or group (kept by later versions)
 ```
 
 Handed an annals link to read? It is private, so fetching it gets a login page. Read it through the same channel that publishes, on any machine where `annals publish` works; no share link is needed:
@@ -1536,6 +1537,26 @@ A document’s main file (or one of its files) as text.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### rename(doc_id, title)
+
+Give a document a title of the owner’s choosing; a later version keeps it.
+
+The title is cleaned as a group’s is (`clean_title()`). A version or a pending
+replacement is refused (rename the document). Works in the bin too. Only `title`
+and `renamed` change in the stored meta, which is read again under the document’s
+lock: a document that moved meanwhile (trashed, restored, purged) is a
+`RuntimeError`, never a meta written where its files are not. Returns its meta.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### rename_group(gid, title)
+
+Give a group a new title (cleaned as at creation); its documents stay as they are.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 #### restore(doc_id)
 
 Move a document out of the bin (idempotent).
@@ -1805,6 +1826,7 @@ Move documents to the recycle bin (restorable).
 | [`tables`](_autosummary/annals.tables.html.md#module-annals.tables)             | Scrolling, zooming tables for published html pages.                                                                                                |
 | [`tags`](_autosummary/annals.tags.html.md#module-annals.tags)                 | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
 | [`target`](_autosummary/annals.target.html.md#module-annals.target)             | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`titles`](_autosummary/annals.titles.html.md#module-annals.titles)             | A title for a file whose name says nothing: `overview.mp3`, `output.html`, `index.md`.                                                             |
 | [`tools`](_autosummary/annals.tools.html.md#module-annals.tools)               | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |
 
 
@@ -4514,6 +4536,26 @@ A document’s main file (or one of its files) as text.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### rename(doc_id, title)
+
+Give a document a title of the owner’s choosing; a later version keeps it.
+
+The title is cleaned as a group’s is ([`clean_title()`](_autosummary/annals.store.html.md#annals.store.clean_title)). A version or a pending
+replacement is refused (rename the document). Works in the bin too. Only `title`
+and `renamed` change in the stored meta, which is read again under the document’s
+lock: a document that moved meanwhile (trashed, restored, purged) is a
+`RuntimeError`, never a meta written where its files are not. Returns its meta.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### rename_group(gid, title)
+
+Give a group a new title (cleaned as at creation); its documents stay as they are.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 #### restore(doc_id)
 
 Move a document out of the bin (idempotent).
@@ -5131,6 +5173,100 @@ directory every call opens its own connection, as plain `ssh` would.
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`...`](https://docs.python.org/3/builtins/constants.html#Ellipsis)]
 
 
+# _autosummary/annals.titles.html.md
+
+# annals.titles
+
+A title for a file whose name says nothing: `overview.mp3`, `output.html`, `index.md`.
+
+A document is titled by what it says (a `# heading`, a `<title>`), else by its file
+name. Tools that make media often name every output the same (podpatch and hailing both
+write `<folder>/overview.mp3`), so seven audio overviews were all titled “overview”. When
+the file name is one of [`GENERIC_STEMS`](_autosummary/annals.titles.html.md#annals.titles.GENERIC_STEMS), the title comes from beside the file
+instead: the `title` of a JSON manifest in its folder ([`TITLE_FILES`](_autosummary/annals.titles.html.md#annals.titles.TITLE_FILES)), else the
+folder’s own name without its date and hash, but only when the folder was made by a tool
+(its name carries a date stamp or a short hash): a person’s folder (their home, a repo, a
+client’s) never names a document, since a title shows wherever the document is shared.
+
+```pycon
+>>> is_generic("overview") and is_generic("Final_Output") and not is_generic("theremin")
+True
+>>> folder_title("20261119-223540-theremin-and-gesture-controlled-7d32")
+'theremin and gesture controlled'
+```
+
+### Module Attributes
+
+| [`GENERIC_STEMS`](_autosummary/annals.titles.html.md#annals.titles.GENERIC_STEMS)         | file names (without extension) that never title a document on their own       |
+|------------------------------------------------------------------------|-------------------------------------------------------------------------------|
+| [`TITLE_FILES`](_autosummary/annals.titles.html.md#annals.titles.TITLE_FILES)           | files a maker writes beside its output whose `title` names it, tried in order |
+| [`MAX_TITLE`](_autosummary/annals.titles.html.md#annals.titles.MAX_TITLE)             | the longest title taken from a manifest (a rename allows as much)             |
+| [`UNINFORMATIVE_FOLDERS`](_autosummary/annals.titles.html.md#annals.titles.UNINFORMATIVE_FOLDERS) | folder names that say nothing either (a title from one would be noise)        |
+
+### Functions
+
+| [`folder_title`](_autosummary/annals.titles.html.md#annals.titles.folder_title)(name)              | A tool's output folder's name as a title: date stamp and trailing hash dropped, separators spaced; `""` for a folder no tool made (no stamp and no hash), or one whose words are only digits and hex (a uuid, a temporary folder's name).   |
+|----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`is_generic`](_autosummary/annals.titles.html.md#annals.titles.is_generic)(stem, \*[, generic]) | Whether a file name (without extension) says nothing about what it holds: one of `generic`, or two of them ("final output", "audio overview").                                                                                              |
+| [`title_beside`](_autosummary/annals.titles.html.md#annals.titles.title_beside)(path)              | A title for the file `path` from what is beside it (see the module doc), or `None` when its folder says nothing either.                                                                                                                     |
+
+### annals.titles.GENERIC_STEMS *= frozenset({'audio', 'document', 'export', 'file', 'final', 'index', 'main', 'narration', 'out', 'output', 'overview', 'page', 'player', 'recording', 'render', 'report', 'result', 'speech', 'summary', 'take', 'track', 'untitled', 'video', 'voice'})*
+
+file names (without extension) that never title a document on their own
+
+### annals.titles.MAX_TITLE *= 200*
+
+the longest title taken from a manifest (a rename allows as much)
+
+### annals.titles.TITLE_FILES *= ('manifest.json', 'meta.json', 'script.json', 'info.json')*
+
+files a maker writes beside its output whose `title` names it, tried in order
+
+### annals.titles.UNINFORMATIVE_FOLDERS *= frozenset({'desktop', 'documents', 'downloads', 'home', 'overviews', 'root', 'scratchpad', 'temp', 'tmp', 'work'})*
+
+folder names that say nothing either (a title from one would be noise)
+
+### annals.titles.folder_title(name)
+
+A tool’s output folder’s name as a title: date stamp and trailing hash dropped,
+separators spaced; `""` for a folder no tool made (no stamp and no hash), or one whose
+words are only digits and hex (a uuid, a temporary folder’s name).
+
+```pycon
+>>> folder_title("2026-11-22-tables-and-session-links"), folder_title("thorwhalen")
+('tables and session links', '')
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.titles.is_generic(stem, , generic=frozenset({'audio', 'desktop', 'document', 'documents', 'downloads', 'export', 'file', 'final', 'home', 'index', 'main', 'narration', 'out', 'output', 'overview', 'overviews', 'page', 'player', 'recording', 'render', 'report', 'result', 'root', 'scratchpad', 'speech', 'summary', 'take', 'temp', 'tmp', 'track', 'untitled', 'video', 'voice', 'work'}))
+
+Whether a file name (without extension) says nothing about what it holds: one of
+`generic`, or two of them (“final output”, “audio overview”).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.titles.title_beside(path)
+
+A title for the file `path` from what is beside it (see the module doc), or `None`
+when its folder says nothing either.
+
+```pycon
+>>> import tempfile, os
+>>> d = Path(tempfile.mkdtemp()) / "20261119-223540-theremin-7d32"; d.mkdir()
+>>> title_beside(d / "overview.mp3")
+'theremin'
+>>> _ = (d / "manifest.json").write_text('{"title": "The Theremin: Invention, Spies"}')
+>>> title_beside(d / "overview.mp3")
+'The Theremin: Invention, Spies'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+
 # _autosummary/annals.tools.html.md
 
 # annals.tools
@@ -5170,6 +5306,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`publish`](_autosummary/annals.tools.html.md#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                          |
 | [`purge`](_autosummary/annals.tools.html.md#annals.tools.purge)(doc_ids, \*[, target, to])                   | Delete documents that are in the bin for good (not restorable).                                           |
 | [`references`](_autosummary/annals.tools.html.md#annals.tools.references)(ref, \*[, form, also, target, to])      | The references of a document or a group, as its page's References action gives them.                      |
+| [`rename`](_autosummary/annals.tools.html.md#annals.tools.rename)(ref, title, \*[, target, to])               | Rename a document or a group (its link or id), as the page's Rename does.                                 |
 | [`restore`](_autosummary/annals.tools.html.md#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                                |
 | [`serve`](_autosummary/annals.tools.html.md#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                                     |
 | [`share`](_autosummary/annals.tools.html.md#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.                    |
@@ -5185,7 +5322,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 what an agent or a tool is offered unless its host asks for more (MCP reads this)
 
-### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
+### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'rename': 'write', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
 
 a surface serves the levels its caller
 allows. `read` changes nothing; `write` changes the store or a setting and can be undone
@@ -5437,6 +5574,16 @@ ids) takes the references of those documents together, as a pick on the page doe
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+### annals.tools.rename(ref, title, , target=None, to=None)
+
+Rename a document or a group (its link or id), as the page’s Rename does.
+
+The document keeps the owner’s title when a new version is published over it
+(`publish --replace`). Returns `{id, title}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 ### annals.tools.restore(doc_ids, , target=None, to=None)
 
 Bring documents back from the recycle bin.
@@ -5557,18 +5704,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-22 14:09 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/a268747f6d5b7cbdf51a367f6059bbae25f0da68"><code>a268747</code></a> on branch <code>main</code>, for **annals 0.0.66** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-22 15:32 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/04ff4f6cef72c9407bb169f83510034741925278"><code>04ff4f6</code></a> on branch <code>main</code>, for **annals 0.0.67** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.66) is behind the latest release on PyPI (0.0.67): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/a268747f6d5b7cbdf51a367f6059bbae25f0da68"><code>a268747f6d5b7cbdf51a367f6059bbae25f0da68</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/04ff4f6cef72c9407bb169f83510034741925278"><code>04ff4f6cef72c9407bb169f83510034741925278</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -5579,9 +5724,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45030871324">45030871324</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45038365379">45038365379</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>a268747f6d5b7cbdf51a367f6059bbae25f0da68</code> (in the history of the built commit) |
+| Event commit | <code>04ff4f6cef72c9407bb169f83510034741925278</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5606,13 +5751,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.67/">0.0.67</a>, newer than the documented version (0.0.66).
+Latest release: <a href="https://pypi.org/project/annals/0.0.67/">0.0.67</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout a268747f6d5b7cbdf51a367f6059bbae25f0da68
+git checkout 04ff4f6cef72c9407bb169f83510034741925278
 pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

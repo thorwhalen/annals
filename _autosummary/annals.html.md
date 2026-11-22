@@ -169,6 +169,26 @@ A document’s main file (or one of its files) as text.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
+#### rename(doc_id, title)
+
+Give a document a title of the owner’s choosing; a later version keeps it.
+
+The title is cleaned as a group’s is (`clean_title()`). A version or a pending
+replacement is refused (rename the document). Works in the bin too. Only `title`
+and `renamed` change in the stored meta, which is read again under the document’s
+lock: a document that moved meanwhile (trashed, restored, purged) is a
+`RuntimeError`, never a meta written where its files are not. Returns its meta.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+#### rename_group(gid, title)
+
+Give a group a new title (cleaned as at creation); its documents stay as they are.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
 #### restore(doc_id)
 
 Move a document out of the bin (idempotent).
@@ -438,4 +458,5 @@ Move documents to the recycle bin (restorable).
 | [`tables`](annals.tables.html.md#module-annals.tables)             | Scrolling, zooming tables for published html pages.                                                                                                |
 | [`tags`](annals.tags.html.md#module-annals.tags)                 | The owner's tags: a `MutableMapping` from item key to tag list, kept apart from the items.                                                         |
 | [`target`](annals.target.html.md#module-annals.target)             | The transport seam: a document tree lands in a directory, here or on another machine.                                                              |
+| [`titles`](annals.titles.html.md#module-annals.titles)             | A title for a file whose name says nothing: `overview.mp3`, `output.html`, `index.md`.                                                             |
 | [`tools`](annals.tools.html.md#module-annals.tools)               | The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.                                                                   |

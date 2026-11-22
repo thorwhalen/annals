@@ -92,6 +92,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.titles.html">annals.titles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
 </ul>
 </li>
@@ -125,6 +126,8 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.DocStore.publish"><code class="docutils literal notranslate"><span class="pre">DocStore.publish()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.purge"><code class="docutils literal notranslate"><span class="pre">DocStore.purge()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.read_text"><code class="docutils literal notranslate"><span class="pre">DocStore.read_text()</span></code></a></li>
+<li><a class="reference internal" href="#annals.DocStore.rename"><code class="docutils literal notranslate"><span class="pre">DocStore.rename()</span></code></a></li>
+<li><a class="reference internal" href="#annals.DocStore.rename_group"><code class="docutils literal notranslate"><span class="pre">DocStore.rename_group()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.restore"><code class="docutils literal notranslate"><span class="pre">DocStore.restore()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.search"><code class="docutils literal notranslate"><span class="pre">DocStore.search()</span></code></a></li>
 <li><a class="reference internal" href="#annals.DocStore.settle"><code class="docutils literal notranslate"><span class="pre">DocStore.settle()</span></code></a></li>
@@ -428,6 +431,33 @@ page declares or opts out). <code class="docutils literal notranslate"><span cla
 <dl class="field-list simple">
 <dt class="field-odd">Return type<span class="colon">:</span></dt>
 <dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.DocStore.rename">
+<span class="sig-name descname"><span class="pre">rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.DocStore.rename" title="Link to this definition">#</a></dt>
+<dd><p>Give a document a title of the owner’s choosing; a later version keeps it.</p>
+<p>The title is cleaned as a group’s is (<code class="xref py py-func docutils literal notranslate"><span class="pre">clean_title()</span></code>). A version or a pending
+replacement is refused (rename the document). Works in the bin too. Only <code class="docutils literal notranslate"><span class="pre">title</span></code>
+and <code class="docutils literal notranslate"><span class="pre">renamed</span></code> change in the stored meta, which is read again under the document’s
+lock: a document that moved meanwhile (trashed, restored, purged) is a
+<code class="docutils literal notranslate"><span class="pre">RuntimeError</span></code>, never a meta written where its files are not. Returns its meta.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.DocStore.rename_group">
+<span class="sig-name descname"><span class="pre">rename_group</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">gid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#DocStore.rename_group"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.DocStore.rename_group" title="Link to this definition">#</a></dt>
+<dd><p>Give a group a new title (cleaned as at creation); its documents stay as they are.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
 </dd>
 </dl>
 </dd></dl>
@@ -834,7 +864,10 @@ with <code class="docutils literal notranslate"><span class="pre">annals</span> 
 <tr class="row-even"><td><p><a class="reference internal" href="annals.target.html#module-annals.target" title="annals.target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">target</span></code></a></p></td>
 <td><p>The transport seam: a document tree lands in a directory, here or on another machine.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="annals.titles.html#module-annals.titles" title="annals.titles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">titles</span></code></a></p></td>
+<td><p>A title for a file whose name says nothing: <code class="docutils literal notranslate"><span class="pre">overview.mp3</span></code>, <code class="docutils literal notranslate"><span class="pre">output.html</span></code>, <code class="docutils literal notranslate"><span class="pre">index.md</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="annals.tools.html#module-annals.tools" title="annals.tools"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools</span></code></a></p></td>
 <td><p>The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.</p></td>
 </tr>
 </tbody>
@@ -882,7 +915,7 @@ with <code class="docutils literal notranslate"><span class="pre">annals</span> 
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=22d3c163"></script>
+      <script src="../_static/documentation_options.js?v=86ab457a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

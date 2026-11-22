@@ -63,4 +63,5 @@
    tables
    tags
    target
+   titles
    tools

@@ -89,6 +89,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tables.html">annals.tables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tags.html">annals.tags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.titles.html">annals.titles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tools.html">annals.tools</a></li>
 </ul>
 </li>
@@ -221,60 +222,66 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="73">
 <div class="viewcode-block" id="merged_sessions">
 <a class="viewcode-back" href="../../_autosummary/annals.sessions.html#annals.sessions.merged_sessions">[docs]</a>
-</span><span data-line="74"><span class="k">def</span><span class="w"> </span><span class="nf">merged_sessions</span><span class="p">(</span><span class="o">*</span><span class="n">lists</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">MAX_SESSIONS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="75"><span class="w">    </span><span class="sd">"""The sessions of ``lists`` in order, one entry each: the same link, or the same name</span>
-</span><span data-line="76"><span class="sd">    when one of the two has no link, is the same session (the link is kept). At most</span>
-</span><span data-line="77"><span class="sd">    ``limit``: the first session and the latest ones.</span>
-</span><span data-line="78">
-</span><span data-line="79"><span class="sd">    &gt;&gt;&gt; [s["name"] for s in merged_sessions([{"name": str(i), "url": ""} for i in range(20)], limit=4)]</span>
-</span><span data-line="80"><span class="sd">    ['0', '17', '18', '19']</span>
-</span><span data-line="81"><span class="sd">    """</span>
-</span><span data-line="82">    <span class="n">out</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="83">    <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">lists</span><span class="p">:</span>
-</span><span data-line="84">        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
-</span><span data-line="85">            <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
-</span><span data-line="86">                <span class="k">continue</span>
-</span><span data-line="87">            <span class="n">same</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
-</span><span data-line="88">                <span class="p">(</span>
-</span><span data-line="89">                    <span class="n">o</span>
-</span><span data-line="90">                    <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">out</span>
-</span><span data-line="91">                    <span class="k">if</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="ow">and</span> <span class="n">o</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">])</span>
-</span><span data-line="92">                    <span class="ow">or</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="ow">and</span> <span class="n">o</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="ow">and</span> <span class="n">o</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]))</span>
-</span><span data-line="93">                <span class="p">),</span>
-</span><span data-line="94">                <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="95">            <span class="p">)</span>
-</span><span data-line="96">            <span class="k">if</span> <span class="n">same</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span data-line="97">                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
-</span><span data-line="98">            <span class="k">else</span><span class="p">:</span>
-</span><span data-line="99">                <span class="n">same</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">same</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="ow">or</span> <span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span>
-</span><span data-line="100">                <span class="n">same</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">same</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="ow">or</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
-</span><span data-line="101">    <span class="k">return</span> <span class="n">out</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">limit</span> <span class="k">else</span> <span class="n">out</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">out</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">-</span> <span class="n">limit</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span></div>
+</span><span data-line="74"><span class="k">def</span><span class="w"> </span><span class="nf">merged_sessions</span><span class="p">(</span>
+</span><span data-line="75">    <span class="o">*</span><span class="n">lists</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span> <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">MAX_SESSIONS</span>
+</span><span data-line="76"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="77"><span class="w">    </span><span class="sd">"""The sessions of ``lists`` in order, one entry each: the same link, or the same name</span>
+</span><span data-line="78"><span class="sd">    when one of the two has no link, is the same session (the link is kept). At most</span>
+</span><span data-line="79"><span class="sd">    ``limit``: the first session and the latest ones.</span>
+</span><span data-line="80">
+</span><span data-line="81"><span class="sd">    &gt;&gt;&gt; [s["name"] for s in merged_sessions([{"name": str(i), "url": ""} for i in range(20)], limit=4)]</span>
+</span><span data-line="82"><span class="sd">    ['0', '17', '18', '19']</span>
+</span><span data-line="83"><span class="sd">    """</span>
+</span><span data-line="84">    <span class="n">out</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="85">    <span class="k">for</span> <span class="n">items</span> <span class="ow">in</span> <span class="n">lists</span><span class="p">:</span>
+</span><span data-line="86">        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">items</span><span class="p">:</span>
+</span><span data-line="87">            <span class="k">if</span> <span class="ow">not</span> <span class="n">s</span><span class="p">:</span>
+</span><span data-line="88">                <span class="k">continue</span>
+</span><span data-line="89">            <span class="n">same</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+</span><span data-line="90">                <span class="p">(</span>
+</span><span data-line="91">                    <span class="n">o</span>
+</span><span data-line="92">                    <span class="k">for</span> <span class="n">o</span> <span class="ow">in</span> <span class="n">out</span>
+</span><span data-line="93">                    <span class="k">if</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="ow">and</span> <span class="n">o</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">])</span>
+</span><span data-line="94">                    <span class="ow">or</span> <span class="p">(</span>
+</span><span data-line="95">                        <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
+</span><span data-line="96">                        <span class="ow">and</span> <span class="n">o</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">==</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
+</span><span data-line="97">                        <span class="ow">and</span> <span class="ow">not</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="ow">and</span> <span class="n">o</span><span class="p">[</span><span class="s2">"url"</span><span class="p">])</span>
+</span><span data-line="98">                    <span class="p">)</span>
+</span><span data-line="99">                <span class="p">),</span>
+</span><span data-line="100">                <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="101">            <span class="p">)</span>
+</span><span data-line="102">            <span class="k">if</span> <span class="n">same</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="103">                <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">s</span><span class="p">))</span>
+</span><span data-line="104">            <span class="k">else</span><span class="p">:</span>
+</span><span data-line="105">                <span class="n">same</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">=</span> <span class="n">same</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="ow">or</span> <span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span>
+</span><span data-line="106">                <span class="n">same</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">same</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="ow">or</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span>
+</span><span data-line="107">    <span class="k">return</span> <span class="n">out</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">limit</span> <span class="k">else</span> <span class="n">out</span><span class="p">[:</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">out</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)</span> <span class="o">-</span> <span class="n">limit</span> <span class="o">+</span> <span class="mi">1</span> <span class="p">:]</span></div>
 
-</span><span data-line="102">
-</span><span data-line="103">
+</span><span data-line="108">
+</span><span data-line="109">
 <div class="viewcode-block" id="session_names">
 <a class="viewcode-back" href="../../_autosummary/annals.sessions.html#annals.sessions.session_names">[docs]</a>
-</span><span data-line="104"><span class="k">def</span><span class="w"> </span><span class="nf">session_names</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
-</span><span data-line="105"><span class="w">    </span><span class="sd">"""The names of the sessions that made ``meta``'s document (for ``ls --session``)."""</span>
-</span><span data-line="106">    <span class="k">return</span> <span class="p">{</span><span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sessions_of</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]}</span></div>
+</span><span data-line="110"><span class="k">def</span><span class="w"> </span><span class="nf">session_names</span><span class="p">(</span><span class="n">meta</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span data-line="111"><span class="w">    </span><span class="sd">"""The names of the sessions that made ``meta``'s document (for ``ls --session``)."""</span>
+</span><span data-line="112">    <span class="k">return</span> <span class="p">{</span><span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sessions_of</span><span class="p">(</span><span class="n">meta</span><span class="p">)</span> <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]}</span></div>
 
-</span><span data-line="107">
-</span><span data-line="108">
+</span><span data-line="113">
+</span><span data-line="114">
 <div class="viewcode-block" id="checked_sessions">
 <a class="viewcode-back" href="../../_autosummary/annals.sessions.html#annals.sessions.checked_sessions">[docs]</a>
-</span><span data-line="109"><span class="k">def</span><span class="w"> </span><span class="nf">checked_sessions</span><span class="p">(</span><span class="n">sessions</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">check_url</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="110"><span class="w">    </span><span class="sd">"""``sessions`` with each link ``check_url`` refuses (it raises ``ValueError``) emptied:</span>
-</span><span data-line="111"><span class="sd">    a meta written by another publisher is checked again before a page shows its links."""</span>
-</span><span data-line="112">    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
-</span><span data-line="113">    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sessions</span><span class="p">:</span>
-</span><span data-line="114">        <span class="n">url</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span>
-</span><span data-line="115">        <span class="k">if</span> <span class="n">url</span><span class="p">:</span>
-</span><span data-line="116">            <span class="k">try</span><span class="p">:</span>
-</span><span data-line="117">                <span class="n">url</span> <span class="o">=</span> <span class="n">check_url</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-</span><span data-line="118">            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-</span><span data-line="119">                <span class="n">url</span> <span class="o">=</span> <span class="s2">""</span>
-</span><span data-line="120">        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
-</span><span data-line="121">    <span class="k">return</span> <span class="n">out</span></div>
+</span><span data-line="115"><span class="k">def</span><span class="w"> </span><span class="nf">checked_sessions</span><span class="p">(</span><span class="n">sessions</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span><span class="p">],</span> <span class="n">check_url</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="116"><span class="w">    </span><span class="sd">"""``sessions`` with each link ``check_url`` refuses (it raises ``ValueError``) emptied:</span>
+</span><span data-line="117"><span class="sd">    a meta written by another publisher is checked again before a page shows its links."""</span>
+</span><span data-line="118">    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+</span><span data-line="119">    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sessions</span><span class="p">:</span>
+</span><span data-line="120">        <span class="n">url</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span>
+</span><span data-line="121">        <span class="k">if</span> <span class="n">url</span><span class="p">:</span>
+</span><span data-line="122">            <span class="k">try</span><span class="p">:</span>
+</span><span data-line="123">                <span class="n">url</span> <span class="o">=</span> <span class="n">check_url</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+</span><span data-line="124">            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+</span><span data-line="125">                <span class="n">url</span> <span class="o">=</span> <span class="s2">""</span>
+</span><span data-line="126">        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"name"</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="s2">"url"</span><span class="p">:</span> <span class="n">url</span><span class="p">})</span>
+</span><span data-line="127">    <span class="k">return</span> <span class="n">out</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -303,7 +310,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=22d3c163"></script>
+      <script src="../../_static/documentation_options.js?v=86ab457a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

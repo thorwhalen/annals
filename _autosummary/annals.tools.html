@@ -2,7 +2,7 @@
 <html lang="en" data-accent-color="violet" data-content_root="../">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.tools - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="For AI agents" href="../ai-agents.html" /><link rel="prev" title="annals.target" href="annals.target.html" /><script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.tools - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="For AI agents" href="../ai-agents.html" /><link rel="prev" title="annals.titles" href="annals.titles.html" /><script>
     function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
     setColorMode(localStorage._theme||"auto");
   </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
@@ -92,6 +92,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.titles.html">annals.titles</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">annals.tools</a></li>
 </ul>
 </li>
@@ -131,6 +132,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#annals.tools.publish"><code class="docutils literal notranslate"><span class="pre">publish()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.purge"><code class="docutils literal notranslate"><span class="pre">purge()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.references"><code class="docutils literal notranslate"><span class="pre">references()</span></code></a></li>
+<li><a class="reference internal" href="#annals.tools.rename"><code class="docutils literal notranslate"><span class="pre">rename()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.restore"><code class="docutils literal notranslate"><span class="pre">restore()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.serve"><code class="docutils literal notranslate"><span class="pre">serve()</span></code></a></li>
 <li><a class="reference internal" href="#annals.tools.share"><code class="docutils literal notranslate"><span class="pre">share()</span></code></a></li>
@@ -260,34 +262,37 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.references" title="annals.tools.references"><code class="xref py py-obj docutils literal notranslate"><span class="pre">references</span></code></a>(ref, *[, form, also, target, to])</p></td>
 <td><p>The references of a document or a group, as its page's References action gives them.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.restore" title="annals.tools.restore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore</span></code></a>(doc_ids, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.rename" title="annals.tools.rename"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rename</span></code></a>(ref, title, *[, target, to])</p></td>
+<td><p>Rename a document or a group (its link or id), as the page's Rename does.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.restore" title="annals.tools.restore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restore</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Bring documents back from the recycle bin.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.serve" title="annals.tools.serve"><code class="xref py py-obj docutils literal notranslate"><span class="pre">serve</span></code></a>(*[, host, port, data_dir, base_path, ...])</p></td>
 <td><p>Serve the annals page and API (needs <code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">'annals[server]'</span></code>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.share" title="annals.tools.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a>(ref, *[, password, expires, include, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.share" title="annals.tools.share"><code class="xref py py-obj docutils literal notranslate"><span class="pre">share</span></code></a>(ref, *[, password, expires, include, ...])</p></td>
 <td><p>Make a public link to ONE document (or group) and print it; nothing else is reachable.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.shareable" title="annals.tools.shareable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shareable</span></code></a>(doc_id, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.shareable" title="annals.tools.shareable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shareable</span></code></a>(doc_id, *[, target, to])</p></td>
 <td><p>What the Share dialog offers for a document: its files, and the other annals documents its text links to.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.shares" title="annals.tools.shares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shares</span></code></a>(*[, all, target, base_url, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.shares" title="annals.tools.shares"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shares</span></code></a>(*[, all, target, base_url, to])</p></td>
 <td><p>List share links, newest first (<code class="docutils literal notranslate"><span class="pre">all</span></code>: revoked and expired ones too).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.show" title="annals.tools.show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">show</span></code></a>(doc_id, *[, target, base_url, to])</p></td>
 <td><p>A document's metadata, link, the groups it is in, and the annals links in its text.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.tag" title="annals.tools.tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag</span></code></a>(doc_id, tags, *[, target, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.tag" title="annals.tools.tag"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tag</span></code></a>(doc_id, tags, *[, target, to])</p></td>
 <td><p>Set a document's tags (comma separated; &quot;&quot; clears them), as the page's tag editor does.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.tools_with" title="annals.tools.tools_with"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools_with</span></code></a>([effects])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.tools_with" title="annals.tools.tools_with"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tools_with</span></code></a>([effects])</p></td>
 <td><p>The operations whose effect is in <code class="docutils literal notranslate"><span class="pre">effects</span></code>, in the CLI's order: the list a caller-facing surface serves.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.trash" title="annals.tools.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.trash" title="annals.tools.trash"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trash</span></code></a>(doc_ids, *[, target, to])</p></td>
 <td><p>Move documents to the recycle bin (restorable).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.tools.unshare" title="annals.tools.unshare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unshare</span></code></a>(links, *[, target, to])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.tools.unshare" title="annals.tools.unshare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unshare</span></code></a>(links, *[, target, to])</p></td>
 <td><p>Revoke share links (their token or full link): they stop working at once.</p></td>
 </tr>
 </tbody>
@@ -301,7 +306,7 @@ in parity. Nothing here prints or exits; the surfaces do that.</p>
 
 <dl class="py data">
 <dt class="sig sig-object py" id="annals.tools.EFFECTS">
-<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">EFFECTS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'aggregate':</span> <span class="pre">'file',</span> <span class="pre">'configure':</span> <span class="pre">'write',</span> <span class="pre">'copy':</span> <span class="pre">'write',</span> <span class="pre">'export':</span> <span class="pre">'file',</span> <span class="pre">'group':</span> <span class="pre">'write',</span> <span class="pre">'groups':</span> <span class="pre">'read',</span> <span class="pre">'listen':</span> <span class="pre">'spend',</span> <span class="pre">'listen_down':</span> <span class="pre">'spend',</span> <span class="pre">'listen_work':</span> <span class="pre">'server',</span> <span class="pre">'ls':</span> <span class="pre">'read',</span> <span class="pre">'overview_state':</span> <span class="pre">'read',</span> <span class="pre">'page_shell':</span> <span class="pre">'server',</span> <span class="pre">'publish':</span> <span class="pre">'write',</span> <span class="pre">'purge':</span> <span class="pre">'destructive',</span> <span class="pre">'references':</span> <span class="pre">'read',</span> <span class="pre">'restore':</span> <span class="pre">'write',</span> <span class="pre">'serve':</span> <span class="pre">'server',</span> <span class="pre">'share':</span> <span class="pre">'write',</span> <span class="pre">'shareable':</span> <span class="pre">'read',</span> <span class="pre">'shares':</span> <span class="pre">'read',</span> <span class="pre">'show':</span> <span class="pre">'read',</span> <span class="pre">'tag':</span> <span class="pre">'write',</span> <span class="pre">'trash':</span> <span class="pre">'write',</span> <span class="pre">'unshare':</span> <span class="pre">'write'}</span></span><a class="headerlink" href="#annals.tools.EFFECTS" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">EFFECTS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'aggregate':</span> <span class="pre">'file',</span> <span class="pre">'configure':</span> <span class="pre">'write',</span> <span class="pre">'copy':</span> <span class="pre">'write',</span> <span class="pre">'export':</span> <span class="pre">'file',</span> <span class="pre">'group':</span> <span class="pre">'write',</span> <span class="pre">'groups':</span> <span class="pre">'read',</span> <span class="pre">'listen':</span> <span class="pre">'spend',</span> <span class="pre">'listen_down':</span> <span class="pre">'spend',</span> <span class="pre">'listen_work':</span> <span class="pre">'server',</span> <span class="pre">'ls':</span> <span class="pre">'read',</span> <span class="pre">'overview_state':</span> <span class="pre">'read',</span> <span class="pre">'page_shell':</span> <span class="pre">'server',</span> <span class="pre">'publish':</span> <span class="pre">'write',</span> <span class="pre">'purge':</span> <span class="pre">'destructive',</span> <span class="pre">'references':</span> <span class="pre">'read',</span> <span class="pre">'rename':</span> <span class="pre">'write',</span> <span class="pre">'restore':</span> <span class="pre">'write',</span> <span class="pre">'serve':</span> <span class="pre">'server',</span> <span class="pre">'share':</span> <span class="pre">'write',</span> <span class="pre">'shareable':</span> <span class="pre">'read',</span> <span class="pre">'shares':</span> <span class="pre">'read',</span> <span class="pre">'show':</span> <span class="pre">'read',</span> <span class="pre">'tag':</span> <span class="pre">'write',</span> <span class="pre">'trash':</span> <span class="pre">'write',</span> <span class="pre">'unshare':</span> <span class="pre">'write'}</span></span><a class="headerlink" href="#annals.tools.EFFECTS" title="Link to this definition">#</a></dt>
 <dd><p>a surface serves the levels its caller
 allows. <code class="docutils literal notranslate"><span class="pre">read</span></code> changes nothing; <code class="docutils literal notranslate"><span class="pre">write</span></code> changes the store or a setting and can be undone
 or repeated; <code class="docutils literal notranslate"><span class="pre">file</span></code> writes a path on the machine that runs it; <code class="docutils literal notranslate"><span class="pre">destructive</span></code> cannot be
@@ -607,6 +612,19 @@ ids) takes the references of those documents together, as a pick on the page doe
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.tools.rename">
+<span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">rename</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#rename"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.rename" title="Link to this definition">#</a></dt>
+<dd><p>Rename a document or a group (its link or id), as the page’s Rename does.</p>
+<p>The document keeps the owner’s title when a new version is published over it
+(<code class="docutils literal notranslate"><span class="pre">publish</span> <span class="pre">--replace</span></code>). Returns <code class="docutils literal notranslate"><span class="pre">{id,</span> <span class="pre">title}</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.tools.restore">
 <span class="sig-prename descclassname"><span class="pre">annals.tools.</span></span><span class="sig-name descname"><span class="pre">restore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doc_ids</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">to</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/tools.html#restore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.tools.restore" title="Link to this definition">#</a></dt>
 <dd><p>Bring documents back from the recycle bin.</p>
@@ -760,10 +778,10 @@ outbox or a remote target. <code class="docutils literal notranslate"><span clas
   </svg>
   <span>Back to top</span>
 </button><div class="navigation flex print:hidden"><div class="navigation-prev">
-    <a href="annals.target.html">
+    <a href="annals.titles.html">
       <i class="i-lucide chevron-left"></i>
       <div class="page-info">
-        <span>Previous</span><div class="title">annals.target</div></div>
+        <span>Previous</span><div class="title">annals.titles</div></div>
     </a>
   </div><div class="navigation-next">
     <a href="../ai-agents.html">
@@ -794,7 +812,7 @@ outbox or a remote target. <code class="docutils literal notranslate"><span clas
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=22d3c163"></script>
+      <script src="../_static/documentation_options.js?v=86ab457a"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

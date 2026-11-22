@@ -89,6 +89,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tables.html">annals.tables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tags.html">annals.tags</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.titles.html">annals.titles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.tools.html">annals.tools</a></li>
 </ul>
 </li>
@@ -306,16 +307,18 @@ data-aria-dark="Switch to auto color mode">
 </span><span data-line="145">            <span class="k">return</span> <span class="kc">False</span>
 </span><span data-line="146">        <span class="n">have</span> <span class="o">=</span> <span class="n">doc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
 </span><span data-line="147">        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="o">!=</span> <span class="n">have</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"session"</span><span class="p">):</span>
-</span><span data-line="148">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">session_names</span><span class="p">(</span><span class="n">doc</span><span class="p">):</span>  <span class="c1"># made a version of it, not the latest</span>
-</span><span data-line="149">                <span class="k">return</span> <span class="kc">False</span>
-</span><span data-line="150">        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">have</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
+</span><span data-line="148">            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">session</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">session_names</span><span class="p">(</span>
+</span><span data-line="149">                <span class="n">doc</span>
+</span><span data-line="150">            <span class="p">):</span>  <span class="c1"># made a version of it, not the latest</span>
+</span><span data-line="151">                <span class="k">return</span> <span class="kc">False</span>
+</span><span data-line="152">        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">have</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="o">==</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">items</span><span class="p">())</span></div>
 
-</span><span data-line="151">
+</span><span data-line="153">
 <div class="viewcode-block" id="DocFilter.apply">
 <a class="viewcode-back" href="../../_autosummary/annals.docfilter.html#annals.docfilter.DocFilter.apply">[docs]</a>
-</span><span data-line="152">    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="153"><span class="w">        </span><span class="sd">"""The documents that pass, in their order."""</span>
-</span><span data-line="154">        <span class="k">return</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">d</span><span class="p">)]</span></div>
+</span><span data-line="154">    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">docs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">dict</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="155"><span class="w">        </span><span class="sd">"""The documents that pass, in their order."""</span>
+</span><span data-line="156">        <span class="k">return</span> <span class="p">[</span><span class="n">d</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">docs</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">matches</span><span class="p">(</span><span class="n">d</span><span class="p">)]</span></div>
 </div>
 
 </span></pre></div>
@@ -345,7 +348,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=22d3c163"></script>
+      <script src="../../_static/documentation_options.js?v=86ab457a"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

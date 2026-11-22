@@ -35,6 +35,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`publish`](#annals.tools.publish)(paths, \*[, title, tags, group, ...])      | Publish one document and print its link; several paths become several documents.                          |
 | [`purge`](#annals.tools.purge)(doc_ids, \*[, target, to])                   | Delete documents that are in the bin for good (not restorable).                                           |
 | [`references`](#annals.tools.references)(ref, \*[, form, also, target, to])      | The references of a document or a group, as its page's References action gives them.                      |
+| [`rename`](#annals.tools.rename)(ref, title, \*[, target, to])               | Rename a document or a group (its link or id), as the page's Rename does.                                 |
 | [`restore`](#annals.tools.restore)(doc_ids, \*[, target, to])                 | Bring documents back from the recycle bin.                                                                |
 | [`serve`](#annals.tools.serve)(\*[, host, port, data_dir, base_path, ...])  | Serve the annals page and API (needs `pip install 'annals[server]'`).                                     |
 | [`share`](#annals.tools.share)(ref, \*[, password, expires, include, ...])  | Make a public link to ONE document (or group) and print it; nothing else is reachable.                    |
@@ -50,7 +51,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 what an agent or a tool is offered unless its host asks for more (MCP reads this)
 
-### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
+### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'rename': 'write', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
 
 a surface serves the levels its caller
 allows. `read` changes nothing; `write` changes the store or a setting and can be undone
@@ -301,6 +302,16 @@ ids) takes the references of those documents together, as a pick on the page doe
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.tools.rename(ref, title, , target=None, to=None)
+
+Rename a document or a group (its link or id), as the page’s Rename does.
+
+The document keeps the owner’s title when a new version is published over it
+(`publish --replace`). Returns `{id, title}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
 
 ### annals.tools.restore(doc_ids, , target=None, to=None)
 

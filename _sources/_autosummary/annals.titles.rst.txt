@@ -1,0 +1,23 @@
+annals.titles
+=============
+
+.. automodule:: annals.titles
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      GENERIC_STEMS
+      TITLE_FILES
+      MAX_TITLE
+      UNINFORMATIVE_FOLDERS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      folder_title
+      is_generic
+      title_beside
+   

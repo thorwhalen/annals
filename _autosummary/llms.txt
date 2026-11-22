@@ -32,6 +32,7 @@
 - [annals.tables](annals.tables.html.md): Scrolling, zooming tables for published html pages.
 - [annals.tags](annals.tags.html.md): The owner’s tags: a &#96;MutableMapping&#96; from item key to tag list, kept apart from the items.
 - [annals.target](annals.target.html.md): The transport seam: a document tree lands in a directory, here or on another machine.
+- [annals.titles](annals.titles.html.md): A title for a file whose name says nothing: &#96;overview.mp3&#96;, &#96;output.html&#96;, &#96;index.md&#96;.
 - [annals.tools](annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 
 ## Optional
