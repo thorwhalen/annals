@@ -632,6 +632,42 @@ def _mk_api(
         _meta_or_404(store, doc_id)
         return store.restore(doc_id)
 
+    def _new_title(patch: dict) -> str:
+        if set(patch) != {"title"} or not isinstance(patch["title"], str):
+            raise HTTPException(422, 'send {"title": "..."}; the title is the only field renamed here')
+        return patch["title"]
+
+    @api.patch("/docs/{doc_id}", dependencies=[Depends(_require_same_origin)])
+    def rename_doc(doc_id: str, patch: dict = Body(...)) -> dict:
+        """Rename a document: ``{"title": "..."}``. A later version keeps the owner's name."""
+        title = _new_title(patch)
+        _meta_or_404(store, doc_id)
+        try:
+            return store.rename(doc_id, title)
+        except KeyError:  # gone between the check and the write
+            raise HTTPException(404, "no such document")
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        except RuntimeError as e:
+            raise HTTPException(409, str(e))
+
+    @api.patch("/groups/{gid}", dependencies=[Depends(_require_same_origin)])
+    def rename_group(gid: str, patch: dict = Body(...)) -> dict:
+        """Rename a group: ``{"title": "..."}``."""
+        title = _new_title(patch)
+        try:
+            store.group(gid)
+        except (KeyError, ValueError):
+            raise HTTPException(404, "no such group")
+        try:
+            return store.rename_group(gid, title)
+        except KeyError:
+            raise HTTPException(404, "no such group")
+        except ValueError as e:
+            raise HTTPException(422, str(e))
+        except RuntimeError as e:
+            raise HTTPException(409, str(e))
+
     @api.delete("/docs/{doc_id}", dependencies=[Depends(_require_same_origin)])
     def purge_doc(doc_id: str) -> dict:
         """Delete forever; only allowed for a document already in the bin."""

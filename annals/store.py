@@ -47,6 +47,7 @@ from urllib.parse import urlsplit
 from annals.pagepdf import DFLT as DFLT_RENDERER
 from annals.pagepdf import PdfRenderer, attach_pdf
 from annals.sessions import merged_sessions, sessions_of
+from annals.titles import is_generic, title_beside
 from annals.target import LOCK_NOTE, LocalTarget, Target
 
 DOCS = "docs"
@@ -430,6 +431,14 @@ class DocStore:
             default_title = (
                 paths[0].name if kind == FOLDER and text is None else main.stem
             )
+            if not title and text is None and kind != FOLDER and is_generic(main.stem):
+                # overview.mp3, output.html: what is beside the file names it, not its name
+                origin = next((p for p in paths if p.name == main.name), None)
+                if origin is None and paths[0].is_dir():  # a folder's page: the folder names it
+                    origin = paths[0] / main.name
+                title = _title_from_content(main, kind) or (
+                    title_beside(origin) if origin is not None else None
+                )
             title = (
                 title
                 or _title_from_content(main, kind)
@@ -761,6 +770,8 @@ class DocStore:
         made_by = merged_sessions(sessions_of(prev), sessions_of(new))
         if made_by:  # every session that made a version, the first publisher first
             meta["sessions"] = made_by
+        if prev.get("renamed"):  # the owner named it: a new version keeps that name
+            meta["title"], meta["renamed"] = prev.get("title", meta.get("title")), prev["renamed"]
         if "trashed" in prev:
             meta["trashed"] = prev["trashed"]
         nxt, old = f"{lock}/next", f"{lock}/old"
@@ -958,10 +969,41 @@ class DocStore:
         meta["in_trash"] = False
         return meta
 
+    def rename(self, doc_id: str, title: str) -> dict:
+        """Give a document a title of the owner's choosing; a later version keeps it.
+
+        The title is cleaned as a group's is (:func:`clean_title`). A version or a pending
+        replacement is refused (rename the document). Works in the bin too. Only ``title``
+        and ``renamed`` change in the stored meta, which is read again under the document's
+        lock: a document that moved meanwhile (trashed, restored, purged) is a
+        ``RuntimeError``, never a meta written where its files are not. Returns its meta."""
+        title = clean_title(title)
+        if PENDING_SEP in doc_id:
+            raise ValueError(f"{doc_id} is a pending replacement; rename the document")
+        meta = self._whole(doc_id)
+        root = TRASH if meta["in_trash"] else DOCS
+        path = f"{root}/{doc_id}/{META}"
+        with self._locked(root, doc_id):
+            if not self.target.exists(path):
+                raise RuntimeError(f"{doc_id} moved while being renamed; try again")
+            stored = json.loads(self.target.read_text(path))
+            stored["title"], stored["renamed"] = title, now_iso()
+            self.target.write_text(path, json.dumps(stored, indent=1))
+        return {**meta, "title": title, "renamed": stored["renamed"]}
+
+    def rename_group(self, gid: str, title: str) -> dict:
+        """Give a group a new title (cleaned as at creation); its documents stay as they are."""
+        title = clean_title(title)
+        with self._group_locked(check_id(gid)):
+            group = DocStore.group(self, gid)  # the whole record, hidden members kept
+            group["title"] = title
+            self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
+        return self.group(gid)  # as this store shows it: a hiding store hides members here too
+
     def _whole(self, doc_id: str) -> dict:
-        """The meta of a whole document; a version is not trashed or restored on its own."""
+        """The meta of a whole document; a version is not trashed, restored or renamed on its own."""
         if split_version(doc_id)[1] is not None:
-            raise ValueError(f"{doc_id} is a version; trash or restore the document")
+            raise ValueError(f"{doc_id} is a version; act on the document itself")
         return self.meta(doc_id)
 
     def purge(self, doc_id: str) -> None:

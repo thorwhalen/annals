@@ -29,6 +29,7 @@ annals publish page.html --artifact <claude.ai artifact link>  # plus a button t
 annals publish r.md --session <name>             # the page links the Claude Code session that made it (never in a share)
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
+annals rename <link-or-id> "New title"           # rename a document or group (kept by later versions)
 ```
 
 Handed an annals link to read? It is private, so fetching it gets a login page. Read it through the same channel that publishes, on any machine where `annals publish` works; no share link is needed:
