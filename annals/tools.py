@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+from contextlib import suppress
 import socket
 from pathlib import Path
 
@@ -35,6 +36,7 @@ from annals.store import (
     split_version,
     without_provenance,
 )
+from annals.sessions import session_url_from_env
 from annals.target import SshTarget, check_rel, parse_target
 
 _dispatch_funcs: list = []  # filled at the bottom; the SSOT list every surface reads
@@ -58,6 +60,9 @@ def _default_source() -> dict:
         if os.environ.get(key):
             src["session"] = os.environ[key]
             break
+    with suppress(ValueError):  # a bridge id that makes no valid link is left out
+        if url := session_url_from_env():
+            src["session_url"] = check_artifact_url(url)
     return src
 
 
@@ -203,6 +208,7 @@ def publish(
     group: str | None = None,
     add_to: str | None = None,
     session: str | None = None,
+    session_url: str | None = None,
     all_files: bool = False,
     target: str | None = None,
     base_url: str | None = None,
@@ -224,7 +230,11 @@ def publish(
     gallery of everything in it), or ``-`` for stdin (markdown). ``tags`` is comma separated. ``group``
     names a group to create from the published documents; the reply then carries
     ``group_url`` too. ``add_to`` appends them to an existing group instead (its id, as
-    printed in a group link), so a second batch lands under the link the owner already has. ``session`` records who published (the source shown on the page). A directory skips
+    printed in a group link), so a second batch lands under the link the owner already has. ``session`` records who published (the source shown on the page), and ``session_url``
+    the claude.ai link that opens that session; by default the link of the Claude Code session
+    this runs in (``CLAUDE_CODE_BRIDGE_SESSION_ID``), ``none`` for no link. The document's page
+    shows each session that made it, linked, under its title; a share or a room never does
+    (:mod:`annals.sessions`). A directory skips
     hidden files and caches (``.*``, ``__pycache__``, ``*.pyc``) unless ``all_files``.
     ``to`` publishes to a named target of the config file (``[targets.NAME]``, see
     ``annals configure --to``) instead of the default one. ``replace`` (a document's link or
@@ -276,6 +286,10 @@ def publish(
     source.update(parse_meta(meta))
     if session:
         source["session"] = session
+    if session_url == "none":
+        source.pop("session_url", None)
+    elif session_url:
+        source["session_url"] = check_artifact_url(session_url)
     if settings.room:  # an outside audience reads it: where it came from stays here
         source, artifact = {}, None
     docs = []

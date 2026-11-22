@@ -33,12 +33,13 @@ def _table(first_cell, *, rows=12, cols=8, header=None):
     return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
 
 
-def _page(table, *, before_tables=""):
-    """A document page; ``before_tables`` runs ahead of tables.js, as the app's router does."""
+def _page(table, *, before_tables="", page_css=""):
+    """A document page; ``before_tables`` runs ahead of tables.js, as the app's router does,
+    and ``page_css`` is the page's own stylesheet (a published html page brings one)."""
     return (
         '<!doctype html><html><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f"<style>{STYLE_CSS}</style></head>"
+        f"<style>{STYLE_CSS}</style><style>{page_css}</style></head>"
         f'<body><main class="rendered">{table}</main><script>{before_tables}</script>'
         f"<script>{TABLES_JS}</script>"
         "<script>annalsTables.enhance(document.querySelector('.rendered'))</script></body></html>"
@@ -54,10 +55,11 @@ def test_nothing_sticks_unconditionally():
     assert ".at-stick-head .at-head{position:sticky" in TABLES_JS
 
 
-@pytest.fixture(scope="module")
-def browser(chromium):
-    """The shared Chromium (conftest): two Playwrights cannot run in one test run."""
-    return chromium
+@pytest.fixture(scope="module", params=["chromium", "webkit"])
+def browser(request):
+    """Chromium, and WebKit: every browser on an iPhone or iPad, where the jumbled table was
+    seen. The shared engines of conftest: two Playwrights cannot run in one test run."""
+    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture(params=["light", "dark"])
@@ -67,6 +69,16 @@ def phone(browser, request):
     )
     yield ctx.new_page()
     ctx.close()
+
+
+@pytest.fixture
+def history(phone):
+    """Back and Forward on a test page: Chromium only. WebKit keeps no history on the
+    ``about:blank`` page ``set_content`` writes (``pushState`` returns, the length stays 1),
+    and what these tests check is the script's own history logic, the same in every engine."""
+    if phone.context.browser.browser_type.name != "chromium":
+        pytest.skip("WebKit keeps no history on an about:blank test page")
+    return phone
 
 
 @pytest.fixture
@@ -224,7 +236,7 @@ def test_toolbar_buttons_are_thumb_sized_and_stay_on_the_page(show):
     assert all(w >= 44 and h >= 44 and right <= PHONE["width"] for w, h, right in sizes)
 
 
-def test_back_closes_expand_on_a_page_without_a_router(show):
+def test_back_closes_expand_on_a_page_without_a_router(show, history):
     page = show(_table("alpha"))
     page.click('[aria-label="Expand"]')
     assert page.locator(".at-table.at-full").count() == 1
@@ -239,7 +251,7 @@ _ROUTER = """
 """
 
 
-def test_back_from_expand_does_not_route_when_the_router_asks_first(phone):
+def test_back_from_expand_does_not_route_when_the_router_asks_first(phone, history):
     """A router's listener was added first, so it runs first: it must be able to stand down."""
     phone.set_content(_page(_table("alpha"), before_tables=_ROUTER))
     phone.click('[aria-label="Expand"]')
@@ -248,7 +260,7 @@ def test_back_from_expand_does_not_route_when_the_router_asks_first(phone):
     assert phone.evaluate("window.routed") == 0
 
 
-def test_back_routes_normally_when_nothing_is_expanded(phone):
+def test_back_routes_normally_when_nothing_is_expanded(phone, history):
     phone.set_content(_page(_table("alpha"), before_tables=_ROUTER))
     phone.evaluate("history.pushState({}, '')")
     phone.evaluate("history.back()")
@@ -260,7 +272,7 @@ def test_the_app_router_asks_tables_before_routing():
     assert "annalsTables.closeOnBack()" in app_js
 
 
-def test_close_button_leaves_no_extra_back_entry(show):
+def test_close_button_leaves_no_extra_back_entry(show, history):
     page = show(_table("alpha"))
     before = page.evaluate("history.length")
     page.click('[aria-label="Expand"]')
@@ -280,3 +292,115 @@ def test_fit_to_width_shows_the_whole_table_without_scrolling(show):
           return s.scrollWidth <= s.clientWidth + 1;
         }"""
     )
+
+
+def _cell_heights(page):
+    """The drawn heights of a first-column cell and the cell beside it, and the zoom shown."""
+    return page.evaluate(
+        """() => {
+          const s = document.querySelector('.at-scroll');
+          const row = s.querySelector('tbody tr');
+          const h = c => c.getBoundingClientRect().height;
+          return [h(row.cells[0]), h(row.cells[1]), document.querySelector('.at-pct').textContent];
+        }"""
+    )
+
+
+def test_zoom_scales_every_cell_alike(show):
+    """The jumbled table: zoomed out, WebKit drew the first column at full size over the rest.
+
+    Every cell of a row is drawn at the same scale, whatever the zoom: one-line cells keep
+    one height, and that height follows the zoom."""
+    page = show(_table("alpha", rows=6))
+    first, other, _ = _cell_heights(page)
+    assert abs(first - other) < 1
+    full = first
+    page.click('[aria-label="Fit to width"]')
+    first, other, pct = _cell_heights(page)
+    assert pct != "100%"
+    assert abs(first - other) < 1
+    assert abs(first - full * int(pct[:-1]) / 100) < 2
+    for _ in range(4):
+        page.click('[aria-label="Zoom in"]')
+    first, other, pct = _cell_heights(page)
+    assert abs(first - other) < 1
+    assert abs(first - full * int(pct[:-1]) / 100) < 2
+
+
+def test_nothing_sticks_while_zoomed(show):
+    """A sticky cell in a scaled table drifts by the unscaled scroll, so sticking waits for 100%."""
+    page = show(_table("alpha"))
+    assert _is_stuck(page, ".at-scroll tbody td")
+    page.click('[aria-label="Zoom out"]')
+    assert not _is_stuck(page, ".at-scroll tbody td")
+    assert not _is_stuck(page, ".at-scroll thead th")
+    page.click('[aria-label="Actual size"]')
+    assert _is_stuck(page, ".at-scroll tbody td")
+
+
+def test_zoomed_table_scrolls_to_its_last_column(show):
+    """The box scrolls over exactly the drawn table: its last column, no blank beyond it."""
+    page = show(_table(LONG))
+    for _ in range(2):
+        page.click('[aria-label="Zoom in"]')
+    assert _last_column_reachable(page)
+    gap = page.evaluate(
+        """() => {
+          const s = document.querySelector('.at-scroll');
+          s.scrollLeft = 1e6;
+          const t = s.querySelector('table').getBoundingClientRect();
+          return s.getBoundingClientRect().right - t.right;
+        }"""
+    )
+    assert abs(gap) < 3
+
+
+#: the stylesheet of the owner's book chapters, where the jumbled table was seen
+NOWRAP_FIRST = "table{border-collapse:collapse}td:first-child{white-space:nowrap}"
+
+
+def _overlaps(page):
+    """Rows whose text in one cell runs into the next cell: [(row, column), ...]."""
+    return page.evaluate(
+        """() => {
+          const bad = [];
+          document.querySelectorAll('.at-scroll tbody tr').forEach((tr, i) => {
+            [...tr.cells].slice(0, -1).forEach((c, j) => {
+              const r = document.createRange(); r.selectNodeContents(c);
+              if (r.getBoundingClientRect().right > tr.cells[j + 1].getBoundingClientRect().left + 1) bad.push([i, j]);
+            });
+          });
+          return bad;
+        }"""
+    )
+
+
+def test_a_page_that_keeps_its_first_column_on_one_line_never_overlaps(phone):
+    """A page's own ``td:first-child{white-space:nowrap}`` against the capped first column
+    (and the cells' readable max-width) drew long labels over the next column."""
+    phone.set_content(_page(_table(LONG, rows=6), page_css=NOWRAP_FIRST))
+    assert _overlaps(phone) == []
+    phone.click('[aria-label="Fit to width"]')
+    assert _overlaps(phone) == []
+    assert _last_column_reachable(phone)
+
+
+def test_steps_back_from_fit_land_on_100_and_stick_again(show):
+    page = show(_table("alpha"))
+    page.click('[aria-label="Fit to width"]')
+    page.click('[aria-label="Actual size"]')
+    for _ in range(5):
+        page.click('[aria-label="Zoom in"]')
+    for _ in range(5):
+        page.click('[aria-label="Zoom out"]')
+    assert page.locator(".at-pct").text_content() == "100%"
+    assert _is_stuck(page, ".at-scroll tbody td")
+
+
+def test_zooming_out_shrinks_a_table_in_a_box_that_grows_with_it(phone):
+    """In a box sized by its content (a page's inline-block or flex row), 80% is 80% wide."""
+    phone.set_content(_page(_table(LONG), page_css="main.rendered{display:inline-block}"))
+    width = lambda: phone.evaluate("document.querySelector('.at-sizer').getBoundingClientRect().width")
+    full = width()
+    phone.locator('[aria-label="Zoom out"]').dispatch_event("click")  # the bar is off screen here
+    assert abs(width() - full * 0.8) < 3
