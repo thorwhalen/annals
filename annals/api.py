@@ -99,6 +99,7 @@ from annals.references import (
     FORMS as REFERENCE_FORMS,
     collect as collect_references,
 )
+from annals.sessions import checked_sessions, sessions_of
 from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
     DocStore,
@@ -500,6 +501,7 @@ def _mk_api(
                 check_artifact_url(str(meta["artifact"]))
             except ValueError:
                 del meta["artifact"]
+        meta["sessions"] = checked_sessions(sessions_of(meta), check_artifact_url)
         meta["file_kinds"] = {f: kind_of(f) for f in meta.get("files", [])}
         meta["groups"] = store.groups_of(meta.get("version_of") or doc_id)
         if requests and overview.eligible(meta):
@@ -690,6 +692,7 @@ def _mk_api(
             except (KeyError, ValueError):
                 continue
             row = _owner_tags(list_meta(meta))
+            row["sessions"] = checked_sessions(sessions_of(meta), check_artifact_url)
             # what the page offers on a selection: text to combine, and each review's state
             row["has_markdown"] = any(kind_of(f) == "md" for f in meta.get("files", []))
             row["held_kinds"] = sorted({kind_of(f) for f in meta.get("files", [])})

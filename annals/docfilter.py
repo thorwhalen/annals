@@ -23,7 +23,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
 #: provenance annals fills in itself; ``--meta`` cannot overwrite it
-RESERVED_META = frozenset({"host", "cwd", "session"})
+RESERVED_META = frozenset({"host", "cwd", "session", "session_url"})
 
 
 def parse_meta(meta, *, reserved: frozenset[str] = RESERVED_META) -> dict[str, str]:

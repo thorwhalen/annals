@@ -46,6 +46,7 @@ from urllib.parse import urlsplit
 
 from annals.pagepdf import DFLT as DFLT_RENDERER
 from annals.pagepdf import PdfRenderer, attach_pdf
+from annals.sessions import merged_sessions, sessions_of
 from annals.target import LOCK_NOTE, LocalTarget, Target
 
 DOCS = "docs"
@@ -453,6 +454,9 @@ class DocStore:
             }
             if artifact:
                 meta["artifact"] = artifact
+            made_by = sessions_of(meta)
+            if made_by:  # who made it: provenance, never in the document's own content
+                meta["sessions"] = made_by
             if (
                 page_pdf
             ):  # the page's PDF: a file of the document, or the url it declared
@@ -754,6 +758,9 @@ class DocStore:
         }
         if not meta.get("artifact") and prev.get("artifact"):
             meta["artifact"] = prev["artifact"]  # kept when the replacement names none
+        made_by = merged_sessions(sessions_of(prev), sessions_of(new))
+        if made_by:  # every session that made a version, the first publisher first
+            meta["sessions"] = made_by
         if "trashed" in prev:
             meta["trashed"] = prev["trashed"]
         nxt, old = f"{lock}/next", f"{lock}/old"
@@ -1152,9 +1159,10 @@ class HidingStore(DocStore):
 
 
 #: what a document's meta says about where it came from: ``source`` (the publisher's host,
-#: cwd, session and ``--meta`` keys) and ``artifact`` (a claude.ai link only the owner can
-#: open). ``copy`` to a room drops them from what it writes.
-PROVENANCE_KEYS = ("source", "artifact")
+#: cwd, session and ``--meta`` keys), ``artifact`` (a claude.ai link only the owner can
+#: open) and ``sessions`` (the sessions that made it, with their claude.ai links:
+#: :mod:`annals.sessions`). ``copy`` to a room drops them from what it writes.
+PROVENANCE_KEYS = ("source", "artifact", "sessions")
 #: the fields of a document's meta an outside audience may see (a room): everything a
 #: reader's page needs, and nothing else, so a field added later stays out until named here
 ROOM_META_KEYS = frozenset(

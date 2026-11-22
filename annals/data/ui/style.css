@@ -252,6 +252,11 @@ nav.back a { display: inline-flex; align-items: center; min-height: 32px; font-s
 @media (pointer: coarse) { nav.back a { min-height: 44px; } }
 
 /* the groups a document is in, under its title: each a way to its group */
+.made-by { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 0; font-size: .9rem; }
+.session-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; overflow-wrap: anywhere; }
+a.session-chip { color: var(--accent); text-decoration: none; }
+@media (hover: hover) and (pointer: fine) { a.session-chip:hover { border-color: var(--accent); } }
+@media (pointer: coarse) { .session-chip { min-height: 44px; } }
 .in-groups { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 6px 0 0; font-size: .9rem; }
 .group-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px;
   background: var(--card); color: var(--accent); text-decoration: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

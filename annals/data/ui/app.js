@@ -1221,13 +1221,43 @@
   /* The publisher and the API validate the link (annals.store.check_artifact_url); a meta
      written elsewhere is checked again here: an https link to claude.ai, nothing else. */
   var ARTIFACT_HOSTS = ["claude.ai"];
-  function artifactLink(m) {
-    var url = typeof m.artifact === "string" ? m.artifact : "", u;
-    if (!/^https:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&()*+,;=%]+$/.test(url)) return null;
-    try { u = new URL(url); } catch (e) { return null; }
+  function isClaudeLink(url) {
+    var u;
+    if (typeof url !== "string" || !/^https:\/\/[A-Za-z0-9\-._~:\/?#\[\]@!$&()*+,;=%]+$/.test(url)) return false;
+    try { u = new URL(url); } catch (e) { return false; }
     var known = ARTIFACT_HOSTS.some(function (d) { return u.hostname === d || u.hostname.slice(-d.length - 1) === "." + d; });
-    if (u.protocol !== "https:" || !known || u.username || u.password || u.port) return null;
-    return h("a", { class: "btn primary", href: url, target: "_blank", rel: "noopener noreferrer" }, ["Open the interactive version"]);
+    return u.protocol === "https:" && known && !u.username && !u.password && !u.port;
+  }
+  function artifactLink(m) {
+    if (!isClaudeLink(m.artifact)) return null;
+    return h("a", { class: "btn primary", href: m.artifact, target: "_blank", rel: "noopener noreferrer" }, ["Open the interactive version"]);
+  }
+
+  /* -------- the sessions that made it (annals.sessions) ----------------------------- */
+  /* One place for every document and group: the row under its title, on the owner's page.
+     Never part of the document itself, so a share or a room has nothing to strip: their
+     meta is an allowlist that does not name sessions, and the row is not drawn for them. */
+  function sessionsOf(list) {
+    var out = [];
+    (list || []).forEach(function (s) {
+      if (!s || !(s.name || s.url)) return;
+      var same = out.filter(function (o) { return s.url ? o.url === s.url : (o.name === s.name && !o.url); })[0];
+      if (!same) out.push({ name: s.name || "", url: isClaudeLink(s.url) ? s.url : "" });
+    });
+    return out;
+  }
+  function madeBy(list, host) {
+    var sessions = sessionsOf(list);
+    if (SHARE || READER || !sessions.length) return null;
+    var parts = [h("span", { class: "muted" }, [sessions.length > 1 ? "Made in sessions" : "Made in session"])];
+    sessions.forEach(function (s, i) {
+      var label = s.name || (sessions.length > 1 ? "session " + (i + 1) : "this session");
+      parts.push(s.url
+        ? h("a", { class: "session-chip", href: s.url, target: "_blank", rel: "noopener noreferrer", title: "Open the session in Claude" }, [label + " ↗"])
+        : h("span", { class: "session-chip" }, [label]));
+    });
+    if (host) parts.push(h("span", { class: "muted" }, ["@ " + host]));
+    return h("nav", { class: "made-by", "aria-label": "Sessions that made this" }, parts);
   }
 
   /* -------- one document, or one file of it --------------------------------------- */
@@ -1267,12 +1297,13 @@
         ])
       });
       var isVersion = !!m.version_of;
+      var made = rel ? null : madeBy(m.sessions, m.source && m.source.host);
       var meta = h("div", { class: "meta" }, [
         kindBadge(m.kind), h("span", { title: when(m.created) }, [age(m.created)]),
         m.updated ? h("span", { class: "updated", title: when(m.updated) }, ["updated " + age(m.updated)]) : null,
         m.version > 1 || isVersion ? h("span", null, ["version " + m.version]) : null,
         m.size ? h("span", null, [size(m.size)]) : null,
-        sourceText(m.source) ? h("span", null, [sourceText(m.source)]) : null,
+        !made && sourceText(m.source) ? h("span", null, [sourceText(m.source)]) : null,
         m.source && /^[\w.-]+$/.test(m.source.of || "") ? h("span", null, ["Overview of ", link(BASE + "/d/" + m.source.of, "this document")]) : null,
         m.listen && m.listen.state === "done" && m.listen.overview ? h("span", null, [link(BASE + "/d/" + m.listen.overview, m.listen.stale ? "▶ review (older)" : "▶ review")]) : null,
         m.files && m.files.length > 1 ? h("span", null, [m.files.length + " files"]) : null
@@ -1289,7 +1320,7 @@
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
-        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, made, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
         fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
         rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
         body,
@@ -1587,7 +1618,8 @@
       }) : null;
       page(g.title, mainNav("published"), [
         backLink(BASE + "/", sourceTitle("published")),
-        h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])])]),
+        h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])]),
+          madeBy([].concat.apply([], items.map(function (m) { return m.sessions || []; })))]),
         items.length ? h("p", { class: "muted pick-help" }, ["Tick documents to act on some of them; with none ticked, the buttons below act on all of them."]) : null,
         h("div", { class: "list picklist" }, items.length ? rows : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])]),
         bar ? bar.el : null
