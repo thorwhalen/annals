@@ -63,6 +63,15 @@ header.bar nav a { margin-left: 12px; font-size: .95rem; }
 /* document view */
 .doc-head { margin: 6px 0 12px; }
 .doc-head h2 { margin: 0 0 4px; font-size: 1.35rem; line-height: 1.25; }
+.title-row { display: flex; align-items: flex-start; gap: 6px; }
+.title-row h2 { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.rename-btn { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; min-width: 36px; min-height: 36px; padding: 0; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--muted, inherit); cursor: pointer; }
+@media (hover: hover) and (pointer: fine) { .rename-btn:hover { border-color: var(--line); color: var(--fg); } }
+@media (pointer: coarse) { .rename-btn { min-width: 44px; min-height: 44px; } }
+.title-edit { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; margin: 0 0 6px; }
+.title-input { flex: 1 1 16em; min-width: 0; font: inherit; font-size: 1.1rem; font-weight: 600; padding: 8px 10px; border: 1px solid var(--accent); border-radius: 9px; background: var(--card); color: var(--fg); }
+.title-edit-buttons { display: flex; gap: 8px; }
+@media (pointer: coarse) { .title-edit .btn { min-height: 44px; } .title-input { font-size: 16px; } }
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
 .btn { padding: 7px 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--card); color: var(--fg);
   cursor: pointer; font-size: .92rem; }

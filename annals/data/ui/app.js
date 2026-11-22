@@ -862,7 +862,8 @@
     more: "M5 12h.01M12 12h.01M19 12h.01",
     check: "M5 12.5l4.5 4.5L19 7.5",
     code: "M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16",
-    notebook: "M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3v18M10 8h5M10 12h5M3 7h3M3 12h3M3 17h3"
+    notebook: "M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3v18M10 8h5M10 12h5M3 7h3M3 12h3M3 17h3",
+    rename: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"
   };
   function svgPath(name) {
     return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (ICONS[name] || ICONS.file) + '"/></svg>';
@@ -1217,6 +1218,38 @@
     return h("details", { class: "more-files versions" }, [h("summary", null, ["Versions (" + (list.length + 1) + ")"]), h("ul", { class: "filelist" }, rows)]);
   }
 
+  /* -------- the title, renamed in place (PATCH /docs/<id> or /groups/<id>) ------------ */
+  /* A pencil beside the title turns it into a field: Enter or Save keeps the new name,
+     Escape or Cancel puts the old one back. The press answers at once (the field opens,
+     Save is pending while it saves); a refusal says why and leaves the field open. */
+  function titleHead(title, path, onRenamed) {
+    var wrap = h("div", { class: "title-row" });
+    function show(t) {
+      wrap.textContent = "";
+      wrap.appendChild(h("h2", null, [t]));
+      if (path) wrap.appendChild(h("button", { class: "icon-btn rename-btn", type: "button", title: "Rename", "aria-label": "Rename", onclick: function () { edit(t); } }, [icon("rename")]));
+    }
+    function edit(t) {
+      var input = h("input", { class: "title-input", type: "text", value: t, "aria-label": "New title", maxlength: "300", enterkeyhint: "done" });
+      var save = h("button", { class: "btn primary", type: "submit" }, ["Save"]);
+      var form = h("form", { class: "title-edit", onsubmit: function (e) {
+        e.preventDefault();
+        var next = input.value.trim();
+        if (!next || next === t) { show(t); return; }
+        save.disabled = true; save.textContent = "Saving…";
+        api(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: next }) }).then(function (m) {
+          show(m.title); toast("Renamed"); lastList = null; if (onRenamed) onRenamed(m);
+        }).catch(function (err) { save.disabled = false; save.textContent = "Save"; toast("Not renamed: " + (err.message || err)); });
+      } }, [input, h("div", { class: "title-edit-buttons" }, [save, h("button", { class: "btn", type: "button", onclick: function () { show(t); } }, ["Cancel"])])]);
+      input.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.preventDefault(); show(t); } });
+      wrap.textContent = "";
+      wrap.appendChild(form);
+      input.focus(); input.select();
+    }
+    show(title);
+    return wrap;
+  }
+
   /* -------- the interactive version of a page (annals publish --artifact) ----------- */
   /* The publisher and the API validate the link (annals.store.check_artifact_url); a meta
      written elsewhere is checked again here: an https link to claude.ai, nothing else. */
@@ -1328,7 +1361,7 @@
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
-        h("div", { class: "doc-head" }, [h("h2", null, [m.title || m.id]), meta, made, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        h("div", { class: "doc-head" }, [titleHead(m.title || m.id, rel || isVersion || SHARE || READER || m.in_trash ? null : "/docs/" + m.id), meta, made, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
         fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
         rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
         body,
@@ -1626,7 +1659,7 @@
       }) : null;
       page(g.title, mainNav("published"), [
         backLink(BASE + "/", sourceTitle("published")),
-        h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])]),
+        h("div", { class: "doc-head" }, [titleHead(g.title || g.id, READER ? null : "/groups/" + g.id), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])]),
           madeBy(g.sessions)]),
         items.length ? h("p", { class: "muted pick-help" }, ["Tick documents to act on some of them; with none ticked, the buttons below act on all of them."]) : null,
         h("div", { class: "list picklist" }, items.length ? rows : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])]),

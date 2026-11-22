@@ -608,6 +608,32 @@ def purge(
     return {"purged": [purge_document(store, catalog, i)["id"] for i in ids]}
 
 
+def rename(
+    ref: str,
+    title: str,
+    *,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Rename a document or a group (its link or id), as the page's Rename does.
+
+    The document keeps the owner's title when a new version is published over it
+    (``publish --replace``). Returns ``{id, title}``.
+    """
+    store = _store(load_settings(target=target, to=to))
+    kind, name = _parse_ref(ref)
+    if kind == "group":
+        try:
+            store.group(name)
+        except (KeyError, ValueError):
+            raise ValueError(f"no such group: {name}") from None
+        g = store.rename_group(name, title)
+        return {"id": g["id"], "title": g["title"]}
+    _document_meta(store, ref)  # a missing id is a plain error, before anything is written
+    m = store.rename(name, title)
+    return {"id": m["id"], "title": m["title"]}
+
+
 def tag(
     doc_id: str,
     tags: str,
@@ -1418,6 +1444,7 @@ _dispatch_funcs[:] = [
     trash,
     restore,
     purge,
+    rename,
     tag,
     group,
     groups,
@@ -1451,6 +1478,7 @@ EFFECTS = {
     "trash": "write",
     "restore": "write",
     "purge": "destructive",
+    "rename": "write",
     "tag": "write",
     "group": "write",
     "groups": "read",
