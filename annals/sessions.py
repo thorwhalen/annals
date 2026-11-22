@@ -21,6 +21,11 @@ from collections.abc import Iterable, Mapping
 SESSION_URL_TEMPLATE = "https://claude.ai/code/{bridge_id}"
 #: the variable Claude Code sets in a session's shell: its Remote Control session id
 BRIDGE_ENV_VAR = "CLAUDE_CODE_BRIDGE_SESSION_ID"
+#: the most sessions a document keeps: the first, and the latest ones (a living page
+#: republished by a new session every day would otherwise grow without end)
+MAX_SESSIONS = 12
+#: the most entries read from a meta written elsewhere, before merging
+MAX_READ = 200
 
 
 def session_url_from_env(
@@ -53,7 +58,11 @@ def sessions_of(meta: Mapping) -> list[dict]:
     A meta written before ``sessions`` existed names its one session in ``source``."""
     listed = meta.get("sessions")
     if isinstance(listed, list):
-        found = (_entry(s.get("name"), s.get("url")) for s in listed if isinstance(s, Mapping))
+        found = (
+            _entry(s.get("name"), s.get("url"))
+            for s in listed[:MAX_READ]
+            if isinstance(s, Mapping)
+        )
         return merged_sessions(found)
     source = meta.get("source")
     if not isinstance(source, Mapping):
@@ -62,9 +71,14 @@ def sessions_of(meta: Mapping) -> list[dict]:
     return [one] if one else []
 
 
-def merged_sessions(*lists: Iterable[dict | None]) -> list[dict]:
+def merged_sessions(*lists: Iterable[dict | None], limit: int = MAX_SESSIONS) -> list[dict]:
     """The sessions of ``lists`` in order, one entry each: the same link, or the same name
-    when one of the two has no link, is the same session (the link is kept)."""
+    when one of the two has no link, is the same session (the link is kept). At most
+    ``limit``: the first session and the latest ones.
+
+    >>> [s["name"] for s in merged_sessions([{"name": str(i), "url": ""} for i in range(20)], limit=4)]
+    ['0', '17', '18', '19']
+    """
     out: list[dict] = []
     for items in lists:
         for s in items:
@@ -84,7 +98,12 @@ def merged_sessions(*lists: Iterable[dict | None]) -> list[dict]:
             else:
                 same["url"] = same["url"] or s["url"]
                 same["name"] = same["name"] or s["name"]
-    return out
+    return out if len(out) <= limit else out[:1] + out[len(out) - limit + 1 :]
+
+
+def session_names(meta: Mapping) -> set[str]:
+    """The names of the sessions that made ``meta``'s document (for ``ls --session``)."""
+    return {s["name"] for s in sessions_of(meta) if s["name"]}
 
 
 def checked_sessions(sessions: Iterable[dict], check_url) -> list[dict]:

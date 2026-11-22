@@ -1237,27 +1237,35 @@
   /* One place for every document and group: the row under its title, on the owner's page.
      Never part of the document itself, so a share or a room has nothing to strip: their
      meta is an allowlist that does not name sessions, and the row is not drawn for them. */
-  function sessionsOf(list) {
-    var out = [];
-    (list || []).forEach(function (s) {
-      if (!s || !(s.name || s.url)) return;
-      var same = out.filter(function (o) { return s.url ? o.url === s.url : (o.name === s.name && !o.url); })[0];
-      if (!same) out.push({ name: s.name || "", url: isClaudeLink(s.url) ? s.url : "" });
-    });
-    return out;
-  }
+  /* The server merged and checked the list (annals.sessions); the page draws it, checking
+     each link once more. The first session and the latest two show; the rest on a tap. */
+  var SESSIONS_SHOWN = 3;
   function madeBy(list, host) {
-    var sessions = sessionsOf(list);
+    var sessions = (list || []).filter(function (s) { return s && (s.name || s.url); });
     if (SHARE || READER || !sessions.length) return null;
-    var parts = [h("span", { class: "muted" }, [sessions.length > 1 ? "Made in sessions" : "Made in session"])];
-    sessions.forEach(function (s, i) {
+    var nav = h("nav", { class: "made-by", "aria-label": "Sessions that made this" });
+    function chip(s, i) {
       var label = s.name || (sessions.length > 1 ? "session " + (i + 1) : "this session");
-      parts.push(s.url
+      return isClaudeLink(s.url)
         ? h("a", { class: "session-chip", href: s.url, target: "_blank", rel: "noopener noreferrer", title: "Open the session in Claude" }, [label + " ↗"])
-        : h("span", { class: "session-chip" }, [label]));
-    });
-    if (host) parts.push(h("span", { class: "muted" }, ["@ " + host]));
-    return h("nav", { class: "made-by", "aria-label": "Sessions that made this" }, parts);
+        : h("span", { class: "session-chip" }, [label]);
+    }
+    function draw(all) {
+      var shown = all || sessions.length <= SESSIONS_SHOWN ? sessions.map(function (s, i) { return [s, i]; })
+        : [[sessions[0], 0]].concat(sessions.slice(-(SESSIONS_SHOWN - 1)).map(function (s, k) { return [s, sessions.length - SESSIONS_SHOWN + 1 + k]; }));
+      var hidden = sessions.length - shown.length;
+      var parts = [h("span", { class: "muted" }, [sessions.length > 1 ? "Made in sessions" : "Made in session"])];
+      shown.forEach(function (p, k) {
+        parts.push(chip(p[0], p[1]));
+        if (k === 0 && hidden) parts.push(h("button", { class: "session-chip more", type: "button", onclick: function () { draw(true); } }, ["+" + hidden + " more"]));
+      });
+      /* the host is the latest publisher's: said only when there is one session */
+      if (host && sessions.length === 1) parts.push(h("span", { class: "muted" }, ["@ " + host]));
+      nav.textContent = "";
+      parts.forEach(function (p) { nav.appendChild(p); });
+    }
+    draw(false);
+    return nav;
   }
 
   /* -------- one document, or one file of it --------------------------------------- */
@@ -1619,7 +1627,7 @@
       page(g.title, mainNav("published"), [
         backLink(BASE + "/", sourceTitle("published")),
         h("div", { class: "doc-head" }, [h("h2", null, [g.title || g.id]), h("div", { class: "meta" }, [h("span", { class: "kind group" }, ["group"]), h("span", null, [items.length + " documents"]), h("span", null, [when(g.created)])]),
-          madeBy([].concat.apply([], items.map(function (m) { return m.sessions || []; })))]),
+          madeBy(g.sessions)]),
         items.length ? h("p", { class: "muted pick-help" }, ["Tick documents to act on some of them; with none ticked, the buttons below act on all of them."]) : null,
         h("div", { class: "list picklist" }, items.length ? rows : [h("div", { class: "empty" }, ["This group has no documents (they may be in the bin)."])]),
         bar ? bar.el : null

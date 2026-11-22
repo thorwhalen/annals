@@ -174,8 +174,9 @@ def test_publish_to_a_room_writes_no_provenance(env, tmp_path):
     assert meta["source"] == {}
 
 
-def test_copy_to_a_room_strips_every_meta(env, tmp_path):
+def test_copy_to_a_room_strips_every_meta(env, tmp_path, monkeypatch):
     main, room = env
+    monkeypatch.setenv("CLAUDE_CODE_BRIDGE_SESSION_ID", "session_01ROOM")  # its link too
     f = tmp_path / "r.md"
     f.write_text("# R\n\nv1")
     link = _run(["publish", str(f), "--session", "sess-x"])
@@ -186,6 +187,8 @@ def test_copy_to_a_room_strips_every_meta(env, tmp_path):
     copied = _metas_on_disk(room)
     assert len(copied) >= 2  # the document and its earlier version
     assert all("source" not in m for m in copied)
+    assert any(m.get("sessions") for m in _metas_on_disk(main))
+    assert all("sessions" not in m and "session_01ROOM" not in json.dumps(m) for m in copied)
 
 
 def test_only_named_fields_reach_a_reader(store, client, docs):

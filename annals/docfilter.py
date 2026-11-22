@@ -22,6 +22,8 @@ from types import MappingProxyType
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
+from annals.sessions import session_names
+
 #: provenance annals fills in itself; ``--meta`` cannot overwrite it
 RESERVED_META = frozenset({"host", "cwd", "session", "session_url"})
 
@@ -141,9 +143,11 @@ class DocFilter:
                 return False
         if self.tag is not None and self.tag not in (doc.get("tags") or ()):
             return False
-        wanted = {**self.source, **({"session": self.session} if self.session else {})}
         have = doc.get("source") or {}
-        return all(have.get(k) == v for k, v in wanted.items())
+        if self.session is not None and self.session != have.get("session"):
+            if self.session not in session_names(doc):  # made a version of it, not the latest
+                return False
+        return all(have.get(k) == v for k, v in self.source.items())
 
     def apply(self, docs: Iterable[dict]) -> list[dict]:
         """The documents that pass, in their order."""

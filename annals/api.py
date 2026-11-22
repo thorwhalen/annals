@@ -99,7 +99,7 @@ from annals.references import (
     FORMS as REFERENCE_FORMS,
     collect as collect_references,
 )
-from annals.sessions import checked_sessions, sessions_of
+from annals.sessions import checked_sessions, merged_sessions, sessions_of
 from annals.share import DFLT_EXPIRES, Shares, share_url
 from annals.store import (
     DocStore,
@@ -482,6 +482,9 @@ def _mk_api(
             raise HTTPException(422, str(e))
         docs = store.search(q, trash=trash) if q else store.list(trash=trash)
         rows = [_owner_tags(list_meta(m)) for m in docs]
+        for row in rows:  # a meta written by another publisher is checked again
+            if "sessions" in row:
+                row["sessions"] = checked_sessions(sessions_of(row), check_artifact_url)
         return {"docs": wanted.apply(rows)}
 
     @api.get("/docs/{doc_id}")
@@ -700,6 +703,8 @@ def _mk_api(
                 row["listen"] = overview.state_of(store, requests, meta)
             docs.append(row)
         out = {**group, "items": docs}
+        # the sessions that made its documents, merged once here: the page only draws them
+        out["sessions"] = merged_sessions(*(d["sessions"] for d in docs if not d.get("in_trash")))
         if requests:
             out["listen"] = {"choices": overview.choices()}
         return out

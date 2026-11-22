@@ -45,7 +45,7 @@
     ".at-scroll th{white-space:normal;font-weight:600}",
     ".at-scroll td.at-num,.at-scroll td.at-nowrap{white-space:nowrap}",
     ".at-scroll td.at-num{text-align:right;font-variant-numeric:tabular-nums}",
-    ".at-scroll .at-wrap{white-space:normal;overflow-wrap:anywhere}",
+    ".at-scroll .at-wrap{white-space:normal;overflow-wrap:break-word}",
     ":where(.at-scroll) :where(th,td){background-color:var(--at-row,var(--at-bg))}",
     "@supports " + COLOR_MIX + "{",
     ":where(" + ZEBRA_ROW + "){--at-row:color-mix(in srgb,currentColor 7%,var(--at-bg))}",
@@ -55,7 +55,7 @@
     ":where(" + ZEBRA_ROW + ")>*{background-image:linear-gradient(rgba(128,128,128,.12),rgba(128,128,128,.12))}",
     ":where(" + HIT_ROW + ")>*{background-image:linear-gradient(rgba(128,128,128,.28),rgba(128,128,128,.28))}",
     "}",
-    ".at-capped .at-first{max-width:var(--at-cap);white-space:normal;overflow-wrap:anywhere}",
+    ".at-capped .at-first{max-width:var(--at-cap);white-space:normal;overflow-wrap:break-word}",
     ".at-stick-col .at-first{position:sticky;left:0;z-index:1}",
     ".at-stick-head .at-head{position:sticky;top:0;z-index:2}",
     ".at-stick-col.at-stick-head .at-first.at-head{z-index:3}",
@@ -132,6 +132,8 @@
     var sizer = el("div", { class: "at-sizer" });
     var box = el("div", { class: "at-table" }, [bar, scroll]);
     var zoom = 1, full = false, pushed = false, columnFits = false, settledWidth = -1, hitRow = null;
+    var natural = 0; // the table's width at 100%, measured by scale(1)
+    var own = { transform: table.style.transform, minWidth: table.style.minWidth }; // the page's own
 
     function widthOf(n) { return n.getBoundingClientRect().width; }
     function spills(cell) { return cell.scrollWidth > cell.clientWidth + 1; }
@@ -144,7 +146,7 @@
     }
     function heightOf(n) { return n.getBoundingClientRect().height; }
 
-    /* The ratios at the current zoom. Called on zoom, so zooming in cannot rebuild the trap.
+    /* Whether the first column and the header row stick, at the current width.
        Only at 100%: a sticky cell inside a scaled table is offset by the unscaled scroll, so
        it drifts (by scroll x (1 - scale)) in every engine. */
     function recheck() {
@@ -184,23 +186,32 @@
     function scale(z) {
       zoom = z;
       if (z === 1) {
-        table.style.transform = table.style.minWidth = sizer.style.width = sizer.style.height = "";
+        table.style.transform = own.transform;
+        table.style.minWidth = own.minWidth;
+        sizer.style.width = sizer.style.height = "";
+        natural = table.offsetWidth;
         return;
       }
-      table.style.minWidth = scroll.clientWidth / z + "px";
+      table.style.minWidth = natural + "px"; // laid out as at 100%, even in a box that grows with it
       table.style.transform = "scale(" + z + ")";
-      sizer.style.width = table.offsetWidth * z + "px";
-      sizer.style.height = table.offsetHeight * z + "px";
+      fitSizer();
     }
-    function apply(z) {
-      scale(Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z)));
+    /* the sizer takes the drawn size: again whenever the table's own size changes (an image, a font) */
+    function fitSizer() {
+      if (zoom === 1) return;
+      sizer.style.width = table.offsetWidth * zoom + "px";
+      sizer.style.height = table.offsetHeight * zoom + "px";
+    }
+    function apply(z, exact) {
+      z = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
+      scale(!exact && Math.abs(z - 1) < 0.02 ? 1 : z); // a step from Fit or a limit lands near 100%: that is 100%
       pct.textContent = Math.round(zoom * 100) + "%";
       recheck();
     }
     function fit() {
       scale(1);
-      var natural = table.offsetWidth, room = scroll.clientWidth;
-      apply(natural > room ? room / natural : 1);
+      var room = scroll.clientWidth;
+      apply(natural > room ? room / natural : 1, true);
     }
     function button(label, title, fn) {
       var b = el("button", { type: "button", title: title, "aria-label": title }, [label]);
@@ -274,6 +285,7 @@
     if (window.ResizeObserver) new ResizeObserver(function () {
       if (Math.abs(widthOf(scroll) - settledWidth) > 0.5) settle();
     }).observe(scroll);
+    if (window.ResizeObserver) new ResizeObserver(fitSizer).observe(table);
     return box;
   }
 

@@ -82,6 +82,29 @@ def test_session_url_flag_overrides_and_none_leaves_it_out(cli, tmp_path):
     assert run(["publish", str(src), "--session-url", "https://evil.example/x"], out=io.StringIO(), err=err) == 1
 
 
+def test_ls_finds_a_document_by_any_session_that_made_it(cli, doc, tmp_path):
+    src = tmp_path / "r2.md"
+    src.write_text("# Report\n\nversion two\n", encoding="utf-8")
+    cli("publish", str(src), "--replace", doc, "--session", "beta", bridge="session_01BBBB")
+    from annals.tools import ls
+
+    for name in ("alpha", "beta"):
+        assert [d["id"] for d in ls(session=name)["docs"]] == [doc], name
+    assert ls(session="gamma")["docs"] == []
+
+
+def test_a_living_page_keeps_its_first_session_and_the_latest(cli, doc, tmp_path):
+    from annals.sessions import MAX_SESSIONS
+
+    src = tmp_path / "r2.md"
+    for i in range(MAX_SESSIONS + 5):
+        src.write_text(f"# Report\n\nversion {i}\n", encoding="utf-8")
+        cli("publish", str(src), "--replace", doc, "--session", f"s{i}", bridge=f"session_01S{i}")
+    names = [s["name"] for s in cli.store.meta(doc)["sessions"]]
+    assert len(names) == MAX_SESSIONS
+    assert names[0] == "alpha" and names[-1] == f"s{MAX_SESSIONS + 4}"
+
+
 def test_a_document_from_before_names_its_session_from_source():
     assert sessions_of({"source": {"session": "old", "host": "h"}}) == [{"name": "old", "url": ""}]
     assert sessions_of({"source": {}}) == []
@@ -103,8 +126,9 @@ def test_a_group_lists_its_documents_sessions(cli, doc, tmp_path):
     other = cli("publish", str(src), "--session", "beta", bridge="session_01BBBB")
     g = cli.store.make_group("Pair", [doc, other])
     client = TestClient(mk_app(store=cli.store, authorizer=no_auth))
-    items = client.get(f"/annals/api/groups/{g['id']}").json()["items"]
-    assert [i["sessions"] for i in items] == [[{"name": "alpha", "url": A_URL}], [{"name": "beta", "url": B_URL}]]
+    got = client.get(f"/annals/api/groups/{g['id']}").json()
+    assert [i["sessions"] for i in got["items"]] == [[{"name": "alpha", "url": A_URL}], [{"name": "beta", "url": B_URL}]]
+    assert got["sessions"] == [{"name": "alpha", "url": A_URL}, {"name": "beta", "url": B_URL}]
 
 
 def test_a_share_carries_no_session_link(cli, doc):
@@ -112,9 +136,13 @@ def test_a_share_carries_no_session_link(cli, doc):
     rec = shares.create(doc)
     client = TestClient(mk_share_api(shares=shares, thumbnailer=None), follow_redirects=False)
     link = f"/{rec['token']}"
-    for path in ("/", "/?viewer", "/share", f"/docs/{doc}", "/share.md", f"/d/{doc}", f"/d/{doc}.md", "/sources"):
+    main = cli.store.meta(doc)["main"]
+    routes = ("/", "/?viewer", "/share", f"/docs/{doc}", "/share.md", f"/d/{doc}", f"/d/{doc}.md",
+              "/sources", f"/raw/{doc}/{main}", f"/source/{doc}/{main}", "/aggregate",
+              f"/export/{doc}?format=md", f"/export/{doc}?format=html", "/combine/formats")
+    for path in routes:
         r = client.get(link + path)
-        assert r.status_code == 200, path
+        assert r.status_code == 200, (path, r.status_code, r.text[:200])
         assert "claude.ai/code" not in r.text and "session_01" not in r.text, path
         assert "alpha" not in r.text, path
 
@@ -153,3 +181,18 @@ def test_the_page_links_each_session_under_the_title(cli, doc, tmp_path, serve, 
     links = phone.locator(".doc-head .made-by a")
     links.first.wait_for()
     assert links.evaluate_all("as => as.map(a => a.href)") == [A_URL, B_URL]
+
+
+def test_many_sessions_show_the_first_and_the_latest_then_all_on_a_tap(cli, doc, tmp_path, serve, phone):
+    src = tmp_path / "r2.md"
+    for i in range(4):
+        src.write_text(f"# Report\n\nversion {i}\n", encoding="utf-8")
+        cli("publish", str(src), "--replace", doc, "--session", f"s{i}", bridge=f"session_01S{i}")
+    phone.goto(f"{serve(cli.store)}/d/{doc}")
+    row = phone.locator(".doc-head .made-by")
+    row.wait_for()
+    chips = lambda: row.locator(".session-chip").evaluate_all("cs => cs.map(c => c.textContent)")
+    assert chips() == ["alpha ↗", "+2 more", "s2 ↗", "s3 ↗"]
+    assert "@ " not in row.inner_text()  # the host is the latest publisher's: not said for several
+    row.get_by_text("+2 more").click()
+    assert chips() == ["alpha ↗", "s0 ↗", "s1 ↗", "s2 ↗", "s3 ↗"]

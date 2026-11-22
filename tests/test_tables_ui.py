@@ -383,3 +383,24 @@ def test_a_page_that_keeps_its_first_column_on_one_line_never_overlaps(phone):
     phone.click('[aria-label="Fit to width"]')
     assert _overlaps(phone) == []
     assert _last_column_reachable(phone)
+
+
+def test_steps_back_from_fit_land_on_100_and_stick_again(show):
+    page = show(_table("alpha"))
+    page.click('[aria-label="Fit to width"]')
+    page.click('[aria-label="Actual size"]')
+    for _ in range(5):
+        page.click('[aria-label="Zoom in"]')
+    for _ in range(5):
+        page.click('[aria-label="Zoom out"]')
+    assert page.locator(".at-pct").text_content() == "100%"
+    assert _is_stuck(page, ".at-scroll tbody td")
+
+
+def test_zooming_out_shrinks_a_table_in_a_box_that_grows_with_it(phone):
+    """In a box sized by its content (a page's inline-block or flex row), 80% is 80% wide."""
+    phone.set_content(_page(_table(LONG), page_css="main.rendered{display:inline-block}"))
+    width = lambda: phone.evaluate("document.querySelector('.at-sizer').getBoundingClientRect().width")
+    full = width()
+    phone.locator('[aria-label="Zoom out"]').dispatch_event("click")  # the bar is off screen here
+    assert abs(width() - full * 0.8) < 3
