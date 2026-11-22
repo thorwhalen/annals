@@ -33,12 +33,13 @@ def _table(first_cell, *, rows=12, cols=8, header=None):
     return f"<table><thead><tr>{head}</tr></thead><tbody>{body}</tbody></table>"
 
 
-def _page(table, *, before_tables=""):
-    """A document page; ``before_tables`` runs ahead of tables.js, as the app's router does."""
+def _page(table, *, before_tables="", page_css=""):
+    """A document page; ``before_tables`` runs ahead of tables.js, as the app's router does,
+    and ``page_css`` is the page's own stylesheet (a published html page brings one)."""
     return (
         '<!doctype html><html><head><meta charset="utf-8">'
         '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        f"<style>{STYLE_CSS}</style></head>"
+        f"<style>{STYLE_CSS}</style><style>{page_css}</style></head>"
         f'<body><main class="rendered">{table}</main><script>{before_tables}</script>'
         f"<script>{TABLES_JS}</script>"
         "<script>annalsTables.enhance(document.querySelector('.rendered'))</script></body></html>"
@@ -352,3 +353,33 @@ def test_zoomed_table_scrolls_to_its_last_column(show):
         }"""
     )
     assert abs(gap) < 3
+
+
+#: the stylesheet of the owner's book chapters, where the jumbled table was seen
+NOWRAP_FIRST = "table{border-collapse:collapse}td:first-child{white-space:nowrap}"
+
+
+def _overlaps(page):
+    """Rows whose text in one cell runs into the next cell: [(row, column), ...]."""
+    return page.evaluate(
+        """() => {
+          const bad = [];
+          document.querySelectorAll('.at-scroll tbody tr').forEach((tr, i) => {
+            [...tr.cells].slice(0, -1).forEach((c, j) => {
+              const r = document.createRange(); r.selectNodeContents(c);
+              if (r.getBoundingClientRect().right > tr.cells[j + 1].getBoundingClientRect().left + 1) bad.push([i, j]);
+            });
+          });
+          return bad;
+        }"""
+    )
+
+
+def test_a_page_that_keeps_its_first_column_on_one_line_never_overlaps(phone):
+    """A page's own ``td:first-child{white-space:nowrap}`` against the capped first column
+    (and the cells' readable max-width) drew long labels over the next column."""
+    phone.set_content(_page(_table(LONG, rows=6), page_css=NOWRAP_FIRST))
+    assert _overlaps(phone) == []
+    phone.click('[aria-label="Fit to width"]')
+    assert _overlaps(phone) == []
+    assert _last_column_reachable(phone)

@@ -7,7 +7,8 @@
    inside a .at-sizer that takes the scaled size, so the box scrolls over exactly what shows.
    Never CSS zoom: WebKit (Safari on iPhone and iPad) leaves a sticky cell at full size, or
    the whole table, while the rest shrinks, and the cells overlap. Columns keep a readable minimum width, so
-   cells wrap at word boundaries and never mid-word; numbers stay on one line.
+   cells wrap at word boundaries and never mid-word; numbers stay on one line. A cell the page
+   keeps on one line (white-space:nowrap) wraps anyway when its text would spill over the next.
    Rows are told apart by alternating shades, and tapping a row highlights it.
    Sticking is earned, never assumed, because a stuck cell that fills the box leaves nothing
    reachable behind it: the first column sticks only if it fits COLUMN_SHARE of the box, the
@@ -44,6 +45,7 @@
     ".at-scroll th{white-space:normal;font-weight:600}",
     ".at-scroll td.at-num,.at-scroll td.at-nowrap{white-space:nowrap}",
     ".at-scroll td.at-num{text-align:right;font-variant-numeric:tabular-nums}",
+    ".at-scroll .at-wrap{white-space:normal;overflow-wrap:anywhere}",
     ":where(.at-scroll) :where(th,td){background-color:var(--at-row,var(--at-bg))}",
     "@supports " + COLOR_MIX + "{",
     ":where(" + ZEBRA_ROW + "){--at-row:color-mix(in srgb,currentColor 7%,var(--at-bg))}",
@@ -53,7 +55,7 @@
     ":where(" + ZEBRA_ROW + ")>*{background-image:linear-gradient(rgba(128,128,128,.12),rgba(128,128,128,.12))}",
     ":where(" + HIT_ROW + ")>*{background-image:linear-gradient(rgba(128,128,128,.28),rgba(128,128,128,.28))}",
     "}",
-    ".at-capped .at-first{max-width:var(--at-cap)}",
+    ".at-capped .at-first{max-width:var(--at-cap);white-space:normal;overflow-wrap:anywhere}",
     ".at-stick-col .at-first{position:sticky;left:0;z-index:1}",
     ".at-stick-head .at-head{position:sticky;top:0;z-index:2}",
     ".at-stick-col.at-stick-head .at-first.at-head{z-index:3}",
@@ -132,6 +134,14 @@
     var zoom = 1, full = false, pushed = false, columnFits = false, settledWidth = -1, hitRow = null;
 
     function widthOf(n) { return n.getBoundingClientRect().width; }
+    function spills(cell) { return cell.scrollWidth > cell.clientWidth + 1; }
+    /* A cell whose text runs past its box (a page's own white-space:nowrap against the
+       readable max-width) would draw over the next column: such a cell wraps instead. */
+    function unspill() {
+      Array.prototype.forEach.call(table.querySelectorAll("td,th"), function (c) {
+        if (c.closest("table") === table && spills(c)) c.classList.add("at-wrap");
+      });
+    }
     function heightOf(n) { return n.getBoundingClientRect().height; }
 
     /* The ratios at the current zoom. Called on zoom, so zooming in cannot rebuild the trap.
@@ -150,12 +160,16 @@
       scroll.classList.remove("at-capped", "at-stick-col");
       table.style.removeProperty("--at-cap");
       columnFits = false;
+      unspill();
       var room = scroll.clientWidth;
       if (shape.column && room > 0 && widthOf(table) > room) {
         var cap = Math.round(room * COLUMN_SHARE), before = heightOf(table);
         table.style.setProperty("--at-cap", cap + "px");
         scroll.classList.add("at-capped");
-        columnFits = widthOf(shape.firsts[0]) <= cap + 1 && heightOf(table) <= before * MAX_HEIGHT_GROWTH;
+        /* the text must fit the capped cells too, not only their boxes: a page's own
+           td:first-child{white-space:nowrap} or a long word would spill over the next column */
+        columnFits = widthOf(shape.firsts[0]) <= cap + 1 && heightOf(table) <= before * MAX_HEIGHT_GROWTH &&
+          !shape.firsts.some(spills);
         if (!columnFits) {
           scroll.classList.remove("at-capped");
           table.style.removeProperty("--at-cap");
@@ -255,6 +269,8 @@
     scroll.appendChild(sizer);
     box.style.setProperty("--at-bg", backdrop(box));
     settle();
+    /* a web font that arrives later changes every width measured so far */
+    if (document.fonts && document.fonts.status !== "loaded") document.fonts.ready.then(settle);
     if (window.ResizeObserver) new ResizeObserver(function () {
       if (Math.abs(widthOf(scroll) - settledWidth) > 0.5) settle();
     }).observe(scroll);
