@@ -634,7 +634,9 @@ def _mk_api(
 
     def _new_title(patch: dict) -> str:
         if set(patch) != {"title"} or not isinstance(patch["title"], str):
-            raise HTTPException(422, 'send {"title": "..."}; the title is the only field renamed here')
+            raise HTTPException(
+                422, 'send {"title": "..."}; the title is the only field renamed here'
+            )
         return patch["title"]
 
     @api.patch("/docs/{doc_id}", dependencies=[Depends(_require_same_origin)])

@@ -631,7 +631,9 @@ def rename(
             raise ValueError(f"no such group: {name}") from None
         g = store.rename_group(name, title)
         return {"id": g["id"], "title": g["title"]}
-    _document_meta(store, ref)  # a missing id is a plain error, before anything is written
+    _document_meta(
+        store, ref
+    )  # a missing id is a plain error, before anything is written
     m = store.rename(name, title)
     return {"id": m["id"], "title": m["title"]}
 

@@ -31,8 +31,12 @@ GENERIC_STEMS = frozenset(
 #: files a maker writes beside its output whose ``title`` names it, tried in order
 TITLE_FILES = ("manifest.json", "meta.json", "script.json", "info.json")
 #: a folder name's machine parts: a leading date or time stamp, a trailing short hash
-_STAMP_RE = re.compile(r"^(?:\d{8}(?:[-_T]?\d{4,6})?|\d{4}-\d{2}-\d{2}(?:[-_T]\d{2}-?\d{2}(?:-?\d{2})?)?)[-_ ]+")
-_HASH_RE = re.compile(r"[-_ ]+(?=[0-9a-f]*\d)[0-9a-f]{4,8}$")  # a digit in it: "cafe" is a word
+_STAMP_RE = re.compile(
+    r"^(?:\d{8}(?:[-_T]?\d{4,6})?|\d{4}-\d{2}-\d{2}(?:[-_T]\d{2}-?\d{2}(?:-?\d{2})?)?)[-_ ]+"
+)
+_HASH_RE = re.compile(
+    r"[-_ ]+(?=[0-9a-f]*\d)[0-9a-f]{4,8}$"
+)  # a digit in it: "cafe" is a word
 _MAX_FILE_BYTES = 1 << 20
 #: the longest title taken from a manifest (a rename allows as much)
 MAX_TITLE = 200
@@ -40,11 +44,24 @@ MAX_TITLE = 200
 
 #: folder names that say nothing either (a title from one would be noise)
 UNINFORMATIVE_FOLDERS = frozenset(
-    {"tmp", "temp", "downloads", "desktop", "documents", "home", "root", "work", "scratchpad", "overviews"}
+    {
+        "tmp",
+        "temp",
+        "downloads",
+        "desktop",
+        "documents",
+        "home",
+        "root",
+        "work",
+        "scratchpad",
+        "overviews",
+    }
 )
 
 
-def is_generic(stem: str, *, generic: frozenset = GENERIC_STEMS | UNINFORMATIVE_FOLDERS) -> bool:
+def is_generic(
+    stem: str, *, generic: frozenset = GENERIC_STEMS | UNINFORMATIVE_FOLDERS
+) -> bool:
     """Whether a file name (without extension) says nothing about what it holds: one of
     ``generic``, or two of them ("final output", "audio overview")."""
     words = [w for w in re.split(r"[-_\s.]+", stem.strip().lower()) if w]
@@ -89,7 +106,11 @@ def _clean(title) -> str | None:
     (bidi overrides) dropped, whitespace collapsed, cut at :data:`MAX_TITLE` characters."""
     if not isinstance(title, str):
         return None
-    kept = "".join(" " if c.isspace() else c for c in title if c.isspace() or unicodedata.category(c) not in ("Cc", "Cf"))
+    kept = "".join(
+        " " if c.isspace() else c
+        for c in title
+        if c.isspace() or unicodedata.category(c) not in ("Cc", "Cf")
+    )
     kept = " ".join(kept.split())
     return kept[:MAX_TITLE].rstrip() or None
 
@@ -106,7 +127,9 @@ def title_beside(path: Path | str) -> str | None:
     >>> title_beside(d / "overview.mp3")
     'The Theremin: Invention, Spies'
     """
-    folder = Path(path).expanduser().absolute().parent  # a symlink's own folder, not its target's
+    folder = (
+        Path(path).expanduser().absolute().parent
+    )  # a symlink's own folder, not its target's
     for title in (_manifest_title(folder), folder_title(folder.name)):
         if title and not is_generic(title):
             return title

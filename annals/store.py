@@ -434,7 +434,9 @@ class DocStore:
             if not title and text is None and kind != FOLDER and is_generic(main.stem):
                 # overview.mp3, output.html: what is beside the file names it, not its name
                 origin = next((p for p in paths if p.name == main.name), None)
-                if origin is None and paths[0].is_dir():  # a folder's page: the folder names it
+                if (
+                    origin is None and paths[0].is_dir()
+                ):  # a folder's page: the folder names it
                     origin = paths[0] / main.name
                 title = _title_from_content(main, kind) or (
                     title_beside(origin) if origin is not None else None
@@ -771,7 +773,10 @@ class DocStore:
         if made_by:  # every session that made a version, the first publisher first
             meta["sessions"] = made_by
         if prev.get("renamed"):  # the owner named it: a new version keeps that name
-            meta["title"], meta["renamed"] = prev.get("title", meta.get("title")), prev["renamed"]
+            meta["title"], meta["renamed"] = (
+                prev.get("title", meta.get("title")),
+                prev["renamed"],
+            )
         if "trashed" in prev:
             meta["trashed"] = prev["trashed"]
         nxt, old = f"{lock}/next", f"{lock}/old"
@@ -998,7 +1003,9 @@ class DocStore:
             group = DocStore.group(self, gid)  # the whole record, hidden members kept
             group["title"] = title
             self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
-        return self.group(gid)  # as this store shows it: a hiding store hides members here too
+        return self.group(
+            gid
+        )  # as this store shows it: a hiding store hides members here too
 
     def _whole(self, doc_id: str) -> dict:
         """The meta of a whole document; a version is not trashed, restored or renamed on its own."""
