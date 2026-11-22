@@ -644,6 +644,8 @@ def _mk_api(
         _meta_or_404(store, doc_id)
         try:
             return store.rename(doc_id, title)
+        except KeyError:  # gone between the check and the write
+            raise HTTPException(404, "no such document")
         except ValueError as e:
             raise HTTPException(422, str(e))
         except RuntimeError as e:
@@ -659,6 +661,8 @@ def _mk_api(
             raise HTTPException(404, "no such group")
         try:
             return store.rename_group(gid, title)
+        except KeyError:
+            raise HTTPException(404, "no such group")
         except ValueError as e:
             raise HTTPException(422, str(e))
         except RuntimeError as e:

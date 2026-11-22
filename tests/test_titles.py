@@ -155,3 +155,92 @@ def test_the_pencil_beside_the_title_renames_in_place(store, serve, phone):
     field.press("Enter")
     phone.locator(".doc-head h2", has_text="Jazz chords").wait_for()
     assert store.meta(doc)["title"] == "Jazz chords from the ground up"
+
+
+# -- what the review found ----------------------------------------------------------------
+
+
+def test_a_persons_folder_never_names_a_document(store, tmp_path):
+    """A title shows wherever the document is shared: a home, repo or client folder's
+    name must not become one. Only a tool's output folder (a stamp or a hash) does."""
+    for name in ("thorwhalen", "acme-client", "tmpixl86eir", "a0eb44b0-bc84-4c1d-8e2f-3acdc90665aa"):
+        assert store.publish(_overview(tmp_path / name))["title"] == "overview", name
+    assert store.publish(_overview(tmp_path / "2026-11-22-tables-and-session-links"))["title"] == "tables and session links"
+
+
+def test_a_manifest_title_is_cleaned_and_a_generic_one_is_skipped(store, tmp_path):
+    folder = tmp_path / "20261119-224931-jazz-chords-46e3"
+    _overview(folder, {"title": "Overview"})
+    assert store.publish(folder / "overview.mp3")["title"] == "jazz chords"
+    _overview(folder, {"title": "Line one\n‮evil\x07 " + "x" * 400})
+    title = store.publish(folder / "overview.mp3")["title"]
+    assert "\n" not in title and "‮" not in title and "\x07" not in title and len(title) <= 200
+
+
+def test_a_folder_page_named_index_takes_its_folders_name(store, tmp_path):
+    site = tmp_path / "20261101-launch-notes-ab12"
+    site.mkdir()
+    (site / "index.html").write_text("<p>no title here</p>")
+    (site / "a.css").write_text("p{}")
+    assert store.publish(site)["title"] in ("launch notes", "20261101-launch-notes-ab12")
+
+
+def test_a_pending_replacement_is_not_renamed(tmp_path):
+    server = DocStore(tmp_path / "server")
+    doc_id = server.publish(text="# Live\n\nv1", title="Live")["id"]
+    outbox = DocStore(tmp_path / "outbox", settle=False)
+    pending = outbox.publish(text="# Live\n\nv2", replace=doc_id)
+    with pytest.raises(ValueError, match="pending"):
+        outbox.rename(pending["pending_id"], "x")
+
+
+def test_a_rename_kept_through_a_replacement_from_an_outbox(tmp_path):
+    import shutil
+
+    server = DocStore(tmp_path / "server")
+    doc_id = server.publish(text="# Live\n\nv1", title="Live")["id"]
+    server.rename(doc_id, "Owner's name")
+    outbox = DocStore(tmp_path / "outbox", settle=False)
+    outbox.publish(text="# Publisher's\n\nv2", replace=doc_id)
+    for d in (tmp_path / "outbox" / "docs").iterdir():
+        shutil.move(str(d), str(tmp_path / "server" / "docs" / d.name))
+    meta = server.meta(doc_id)
+    assert meta["version"] == 2 and meta["title"] == "Owner's name" and "pending" not in meta
+
+
+def test_a_rename_racing_a_trash_writes_nothing_where_the_files_are_not(store, monkeypatch):
+    doc = store.publish(text="# A", title="A")["id"]
+    stale = store.meta(doc)  # read before the trash, as a racing request would
+    store.trash(doc)
+    monkeypatch.setattr(store, "_whole", lambda i: stale)
+    with pytest.raises(RuntimeError, match="moved"):
+        store.rename(doc, "B")
+    monkeypatch.undo()
+    assert not (store.target.root / "docs" / doc).exists()
+    assert store.meta(doc)["in_trash"] and store.meta(doc)["title"] == "A"
+
+
+def test_renaming_a_group_shows_no_hidden_member(store):
+    from annals.store import HidingStore
+
+    shown = store.publish(text="# Shown", title="Shown")["id"]
+    secret = store.publish(text="# Secret plan", title="Secret plan")["id"]
+    g = store.make_group("G", [shown, secret])
+    hiding = HidingStore(store, hide=lambda m: m["id"] == secret)
+    renamed = hiding.rename_group(g["id"], "New")
+    assert renamed["title"] == "New" and secret not in json.dumps(renamed)
+    assert store.group(g["id"])["docs"] == [shown, secret]  # the stored group keeps it
+
+
+def test_the_cli_renames_a_group_by_its_bare_id(tmp_path, monkeypatch):
+    data = tmp_path / "data"
+    monkeypatch.setenv("ANNALS_TARGET", str(data))
+    monkeypatch.setenv("ANNALS_BASE_URL", "https://example.test/annals")
+    monkeypatch.delenv("ANNALS_OUTBOX", raising=False)
+    monkeypatch.delenv("ANNALS_CONFIG", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "cfg"))
+    store = DocStore(data)
+    g = store.make_group("G", [store.publish(text="# A", title="A")["id"]])
+    err = io.StringIO()
+    assert run(["rename", g["id"], "Bare"], out=io.StringIO(), err=err) == 0, err.getvalue()
+    assert store.group(g["id"])["title"] == "Bare"

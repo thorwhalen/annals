@@ -1230,7 +1230,7 @@
       if (path) wrap.appendChild(h("button", { class: "icon-btn rename-btn", type: "button", title: "Rename", "aria-label": "Rename", onclick: function () { edit(t); } }, [icon("rename")]));
     }
     function edit(t) {
-      var input = h("input", { class: "title-input", type: "text", value: t, "aria-label": "New title", maxlength: "300", enterkeyhint: "done" });
+      var input = h("input", { class: "title-input", type: "text", value: t, "aria-label": "New title", maxlength: "200", enterkeyhint: "done" });
       var save = h("button", { class: "btn primary", type: "submit" }, ["Save"]);
       var form = h("form", { class: "title-edit", onsubmit: function (e) {
         e.preventDefault();
@@ -1238,7 +1238,7 @@
         if (!next || next === t) { show(t); return; }
         save.disabled = true; save.textContent = "Saving…";
         api(path, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: next }) }).then(function (m) {
-          show(m.title); toast("Renamed"); lastList = null; if (onRenamed) onRenamed(m);
+          show(m.title); toast("Renamed"); lastList = null; document.title = m.title + " · " + NAME; if (onRenamed) onRenamed(m);
         }).catch(function (err) { save.disabled = false; save.textContent = "Save"; toast("Not renamed: " + (err.message || err)); });
       } }, [input, h("div", { class: "title-edit-buttons" }, [save, h("button", { class: "btn", type: "button", onclick: function () { show(t); } }, ["Cancel"])])]);
       input.addEventListener("keydown", function (e) { if (e.key === "Escape") { e.preventDefault(); show(t); } });
@@ -1361,7 +1361,7 @@
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
-        h("div", { class: "doc-head" }, [titleHead(m.title || m.id, rel || isVersion || SHARE || READER || m.in_trash ? null : "/docs/" + m.id), meta, made, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        h("div", { class: "doc-head" }, [titleHead(m.title || m.id, rel || isVersion || SHARE || READER || m.in_trash || m.pending ? null : "/docs/" + m.id), meta, made, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
         fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
         rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
         body,

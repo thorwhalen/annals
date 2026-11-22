@@ -972,19 +972,24 @@ class DocStore:
     def rename(self, doc_id: str, title: str) -> dict:
         """Give a document a title of the owner's choosing; a later version keeps it.
 
-        The title is cleaned as a group's is (:func:`clean_title`); a version is renamed
-        with its document. Works in the bin too. Returns the document's meta."""
+        The title is cleaned as a group's is (:func:`clean_title`). A version or a pending
+        replacement is refused (rename the document). Works in the bin too. Only ``title``
+        and ``renamed`` change in the stored meta, which is read again under the document's
+        lock: a document that moved meanwhile (trashed, restored, purged) is a
+        ``RuntimeError``, never a meta written where its files are not. Returns its meta."""
         title = clean_title(title)
+        if PENDING_SEP in doc_id:
+            raise ValueError(f"{doc_id} is a pending replacement; rename the document")
         meta = self._whole(doc_id)
         root = TRASH if meta["in_trash"] else DOCS
-        with self._locked(root, doc_id):  # read and write the meta under the lock
-            meta = self.meta(doc_id, settle=False)
-            in_trash = meta.pop("in_trash", None)
-            meta["title"], meta["renamed"] = title, now_iso()
-            self.target.write_text(f"{root}/{doc_id}/{META}", json.dumps(meta, indent=1))
-        if in_trash is not None:
-            meta["in_trash"] = in_trash
-        return meta
+        path = f"{root}/{doc_id}/{META}"
+        with self._locked(root, doc_id):
+            if not self.target.exists(path):
+                raise RuntimeError(f"{doc_id} moved while being renamed; try again")
+            stored = json.loads(self.target.read_text(path))
+            stored["title"], stored["renamed"] = title, now_iso()
+            self.target.write_text(path, json.dumps(stored, indent=1))
+        return {**meta, "title": title, "renamed": stored["renamed"]}
 
     def rename_group(self, gid: str, title: str) -> dict:
         """Give a group a new title (cleaned as at creation); its documents stay as they are."""
@@ -993,12 +998,12 @@ class DocStore:
             group = DocStore.group(self, gid)  # the whole record, hidden members kept
             group["title"] = title
             self.target.write_text(f"{GROUPS}/{gid}.json", json.dumps(group, indent=1))
-        return group
+        return self.group(gid)  # as this store shows it: a hiding store hides members here too
 
     def _whole(self, doc_id: str) -> dict:
-        """The meta of a whole document; a version is not trashed or restored on its own."""
+        """The meta of a whole document; a version is not trashed, restored or renamed on its own."""
         if split_version(doc_id)[1] is not None:
-            raise ValueError(f"{doc_id} is a version; trash or restore the document")
+            raise ValueError(f"{doc_id} is a version; act on the document itself")
         return self.meta(doc_id)
 
     def purge(self, doc_id: str) -> None:

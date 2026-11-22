@@ -622,6 +622,8 @@ def rename(
     """
     store = _store(load_settings(target=target, to=to))
     kind, name = _parse_ref(ref)
+    if kind != "group" and not _is_document(store, name) and _is_group(store, name):
+        kind = "group"  # a bare group id
     if kind == "group":
         try:
             store.group(name)
@@ -632,6 +634,22 @@ def rename(
     _document_meta(store, ref)  # a missing id is a plain error, before anything is written
     m = store.rename(name, title)
     return {"id": m["id"], "title": m["title"]}
+
+
+def _is_document(store: DocStore, name: str) -> bool:
+    try:
+        store.meta(name)
+        return True
+    except (KeyError, ValueError):
+        return False
+
+
+def _is_group(store: DocStore, name: str) -> bool:
+    try:
+        store.group(name)
+        return True
+    except (KeyError, ValueError):
+        return False
 
 
 def tag(
