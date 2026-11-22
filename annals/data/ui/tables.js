@@ -166,8 +166,8 @@
         var cap = Math.round(room * COLUMN_SHARE), before = heightOf(table);
         table.style.setProperty("--at-cap", cap + "px");
         scroll.classList.add("at-capped");
-        /* the text must fit the capped cells too, not only their boxes: a page's own
-           td:first-child{white-space:nowrap} or a long word would spill over the next column */
+        /* the text must fit the capped cells too, not only their boxes: a page that keeps its
+           first column on one line (white-space:nowrap), or a long word, would spill over the next */
         columnFits = widthOf(shape.firsts[0]) <= cap + 1 && heightOf(table) <= before * MAX_HEIGHT_GROWTH &&
           !shape.firsts.some(spills);
         if (!columnFits) {
