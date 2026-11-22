@@ -28,6 +28,7 @@ annals publish clip.mp4                           # media plays inline (streamed
 some-command | annals publish - --title "Log"     # from stdin
 annals publish guide.html --replace <link-or-id>  # a new version of a document: same link
 annals publish page.html --artifact <claude.ai artifact link>  # plus a button to its interactive version
+annals publish r.md --session <name>             # the page links the Claude Code session that made it (never in a share)
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
 ```

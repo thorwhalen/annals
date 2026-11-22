@@ -62,7 +62,7 @@ From the CLI’s spelling: `since` text, `meta` as `key=value` strings.
 * **Return type:**
   [`DocFilter`](#annals.docfilter.DocFilter)
 
-### annals.docfilter.RESERVED_META *= frozenset({'cwd', 'host', 'session'})*
+### annals.docfilter.RESERVED_META *= frozenset({'cwd', 'host', 'session', 'session_url'})*
 
 provenance annals fills in itself; `--meta` cannot overwrite it
 
@@ -80,7 +80,7 @@ An ISO date or time as an aware datetime; one with no offset is local time.
 * **Return type:**
   [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
 
-### annals.docfilter.parse_meta(meta, , reserved=frozenset({'cwd', 'host', 'session'}))
+### annals.docfilter.parse_meta(meta, , reserved=frozenset({'cwd', 'host', 'session', 'session_url'}))
 
 `["corpus=x", "issue=12"]` (or one such string) as `{"corpus": "x", "issue": "12"}`.
 

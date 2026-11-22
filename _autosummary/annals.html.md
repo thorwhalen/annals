@@ -332,7 +332,7 @@ several allowed, against the document’s `source`: `corpus=annals`). A row is
 * **Return type:**
   [`Target`](annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, session_url=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -345,7 +345,11 @@ directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`
 names a group to create from the published documents; the reply then carries
 `group_url` too. `add_to` appends them to an existing group instead (its id, as
-printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
+printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page), and `session_url`
+the claude.ai link that opens that session; by default the link of the Claude Code session
+this runs in (`CLAUDE_CODE_BRIDGE_SESSION_ID`), `none` for no link. The document’s page
+shows each session that made it, linked, under its title; a share or a room never does
+([`annals.sessions`](annals.sessions.html.md#module-annals.sessions)). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `to` publishes to a named target of the config file (`[targets.NAME]`, see
 `annals configure --to`) instead of the default one. `replace` (a document’s link or
@@ -426,6 +430,7 @@ Move documents to the recycle bin (restorable).
 | [`references`](annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`render`](annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
 | [`requirements`](annals.requirements.html.md#module-annals.requirements) | Optional dependencies, checked where they are needed and explained when they are missing.                                                          |
+| [`sessions`](annals.sessions.html.md#module-annals.sessions)         | The sessions that made a document: each one's name and the link that opens it.                                                                     |
 | [`share`](annals.share.html.md#module-annals.share)               | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`share_page`](annals.share_page.html.md#module-annals.share_page)     | A share link's page with its text in it, and no script, so every reader can read it.                                                               |
 | [`sources`](annals.sources.html.md#module-annals.sources)           | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |

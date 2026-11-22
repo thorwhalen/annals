@@ -2,16 +2,18 @@
 
 # About this build
 
-This documentation was built on **2026-11-19 12:58 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/164e4412147d9330c53a5437b654c575bf600eb5"><code>164e441</code></a> on branch <code>main</code>, for **annals 0.0.65** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-22 14:09 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/a268747f6d5b7cbdf51a367f6059bbae25f0da68"><code>a268747</code></a> on branch <code>main</code>, for **annals 0.0.66** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.66) is behind the latest release on PyPI (0.0.67): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/164e4412147d9330c53a5437b654c575bf600eb5"><code>164e4412147d9330c53a5437b654c575bf600eb5</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/a268747f6d5b7cbdf51a367f6059bbae25f0da68"><code>a268747f6d5b7cbdf51a367f6059bbae25f0da68</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -22,15 +24,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/44528050404">44528050404</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45030871324">45030871324</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>164e4412147d9330c53a5437b654c575bf600eb5</code> (in the history of the built commit) |
+| Event commit | <code>a268747f6d5b7cbdf51a367f6059bbae25f0da68</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.22  |
+| epythet  | 0.2.23  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.16 |
@@ -49,14 +51,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.65/">0.0.65</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.67/">0.0.67</a>, newer than the documented version (0.0.66).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 164e4412147d9330c53a5437b654c575bf600eb5
-pip install "epythet==0.2.22"
+git checkout a268747f6d5b7cbdf51a367f6059bbae25f0da68
+pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

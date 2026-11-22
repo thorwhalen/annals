@@ -1,0 +1,25 @@
+annals.sessions
+===============
+
+.. automodule:: annals.sessions
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      SESSION_URL_TEMPLATE
+      BRIDGE_ENV_VAR
+      MAX_SESSIONS
+      MAX_READ
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      checked_sessions
+      merged_sessions
+      session_names
+      session_url_from_env
+      sessions_of
+   

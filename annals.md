@@ -1,4 +1,4 @@
-> built 2026-11-19 12:58 UTC from 164e441 (main) · annals 0.0.65. Details: build_info.json
+> built 2026-11-22 14:09 UTC from a268747 (main) · annals 0.0.66. Details: build_info.json
 
 # index.html.md
 
@@ -32,6 +32,7 @@ annals publish clip.mp4                           # media plays inline (streamed
 some-command | annals publish - --title "Log"     # from stdin
 annals publish guide.html --replace <link-or-id>  # a new version of a document: same link
 annals publish page.html --artifact <claude.ai artifact link>  # plus a button to its interactive version
+annals publish r.md --session <name>             # the page links the Claude Code session that made it (never in a share)
 annals ls "search words"                          # what is there, newest first
 annals trash <id>  /  annals restore <id>         # the recycle bin
 ```
@@ -1304,7 +1305,7 @@ From the CLI’s spelling: `since` text, `meta` as `key=value` strings.
 * **Return type:**
   [`DocFilter`](_autosummary/annals.docfilter.html.md#annals.docfilter.DocFilter)
 
-### annals.docfilter.RESERVED_META *= frozenset({'cwd', 'host', 'session'})*
+### annals.docfilter.RESERVED_META *= frozenset({'cwd', 'host', 'session', 'session_url'})*
 
 provenance annals fills in itself; `--meta` cannot overwrite it
 
@@ -1322,7 +1323,7 @@ An ISO date or time as an aware datetime; one with no offset is local time.
 * **Return type:**
   [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
 
-### annals.docfilter.parse_meta(meta, , reserved=frozenset({'cwd', 'host', 'session'}))
+### annals.docfilter.parse_meta(meta, , reserved=frozenset({'cwd', 'host', 'session', 'session_url'}))
 
 `["corpus=x", "issue=12"]` (or one such string) as `{"corpus": "x", "issue": "12"}`.
 
@@ -1698,7 +1699,7 @@ several allowed, against the document’s `source`: `corpus=annals`). A row is
 * **Return type:**
   [`Target`](_autosummary/annals.target.html.md#annals.target.Target)
 
-### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
+### annals.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, session_url=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -1711,7 +1712,11 @@ directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`
 names a group to create from the published documents; the reply then carries
 `group_url` too. `add_to` appends them to an existing group instead (its id, as
-printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
+printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page), and `session_url`
+the claude.ai link that opens that session; by default the link of the Claude Code session
+this runs in (`CLAUDE_CODE_BRIDGE_SESSION_ID`), `none` for no link. The document’s page
+shows each session that made it, linked, under its title; a share or a room never does
+([`annals.sessions`](_autosummary/annals.sessions.html.md#module-annals.sessions)). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `to` publishes to a named target of the config file (`[targets.NAME]`, see
 `annals configure --to`) instead of the default one. `replace` (a document’s link or
@@ -1792,6 +1797,7 @@ Move documents to the recycle bin (restorable).
 | [`references`](_autosummary/annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`render`](_autosummary/annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
 | [`requirements`](_autosummary/annals.requirements.html.md#module-annals.requirements) | Optional dependencies, checked where they are needed and explained when they are missing.                                                          |
+| [`sessions`](_autosummary/annals.sessions.html.md#module-annals.sessions)         | The sessions that made a document: each one's name and the link that opens it.                                                                     |
 | [`share`](_autosummary/annals.share.html.md#module-annals.share)               | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`share_page`](_autosummary/annals.share_page.html.md#module-annals.share_page)     | A share link's page with its text in it, and no script, so every reader can read it.                                                               |
 | [`sources`](_autosummary/annals.sources.html.md#module-annals.sources)           | Item sources: everything the page lists, wherever it lives, as rows of one shape.                                                                  |
@@ -3528,6 +3534,120 @@ The `modules` that cannot be imported, found without importing them.
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
 
+# _autosummary/annals.sessions.html.md
+
+# annals.sessions
+
+The sessions that made a document: each one’s name and the link that opens it.
+
+A document’s meta carries them as `sessions`, a list of `{"name": ..., "url": ...}`
+in the order they first worked on it: the session that published it, then each session
+that published a new version (`annals publish --replace`). A group shows the sessions of
+its documents. The link is a claude.ai link (`https://claude.ai/code/<bridge session id>`),
+which only the owner can open; it is provenance, like `source` and `artifact`, so it is
+never part of the document’s own content and leaves with the meta: a share or a room shows
+an allowlist of meta fields that does not name it.
+
+```pycon
+>>> sessions_of({"source": {"session": "b2", "session_url": "https://claude.ai/code/session_01X"}})
+[{'name': 'b2', 'url': 'https://claude.ai/code/session_01X'}]
+>>> merged_sessions([{"name": "a", "url": ""}], [{"name": "a", "url": "https://claude.ai/code/s"}, {"name": "b", "url": ""}])
+[{'name': 'a', 'url': 'https://claude.ai/code/s'}, {'name': 'b', 'url': ''}]
+```
+
+### Module Attributes
+
+| [`SESSION_URL_TEMPLATE`](_autosummary/annals.sessions.html.md#annals.sessions.SESSION_URL_TEMPLATE)   | the claude.ai link of a session, from its Remote Control (bridge) session id                                           |
+|-------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| [`BRIDGE_ENV_VAR`](_autosummary/annals.sessions.html.md#annals.sessions.BRIDGE_ENV_VAR)         | its Remote Control session id                                                                                          |
+| [`MAX_SESSIONS`](_autosummary/annals.sessions.html.md#annals.sessions.MAX_SESSIONS)           | the first, and the latest ones (a living page republished by a new session every day would otherwise grow without end) |
+| [`MAX_READ`](_autosummary/annals.sessions.html.md#annals.sessions.MAX_READ)               | the most entries read from a meta written elsewhere, before merging                                                    |
+
+### Functions
+
+| [`checked_sessions`](_autosummary/annals.sessions.html.md#annals.sessions.checked_sessions)(sessions, check_url)      | `sessions` with each link `check_url` refuses (it raises `ValueError`) emptied: a meta written by another publisher is checked again before a page shows its links.   |
+|---------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`merged_sessions`](_autosummary/annals.sessions.html.md#annals.sessions.merged_sessions)(\*lists[, limit])          | The sessions of `lists` in order, one entry each: the same link, or the same name when one of the two has no link, is the same session (the link is kept).            |
+| [`session_names`](_autosummary/annals.sessions.html.md#annals.sessions.session_names)(meta)                        | The names of the sessions that made `meta`'s document (for `ls --session`).                                                                                           |
+| [`session_url_from_env`](_autosummary/annals.sessions.html.md#annals.sessions.session_url_from_env)([env, var, template]) | The claude.ai link of the Claude Code session this process runs in, or `""`.                                                                                          |
+| [`sessions_of`](_autosummary/annals.sessions.html.md#annals.sessions.sessions_of)(meta)                          | The sessions that made the document `meta` describes (see the module doc).                                                                                            |
+
+### annals.sessions.BRIDGE_ENV_VAR *= 'CLAUDE_CODE_BRIDGE_SESSION_ID'*
+
+its Remote Control session id
+
+* **Type:**
+  the variable Claude Code sets in a session’s shell
+
+### annals.sessions.MAX_READ *= 200*
+
+the most entries read from a meta written elsewhere, before merging
+
+### annals.sessions.MAX_SESSIONS *= 12*
+
+the first, and the latest ones (a living page
+republished by a new session every day would otherwise grow without end)
+
+* **Type:**
+  the most sessions a document keeps
+
+### annals.sessions.SESSION_URL_TEMPLATE *= 'https://claude.ai/code/{bridge_id}'*
+
+the claude.ai link of a session, from its Remote Control (bridge) session id
+
+### annals.sessions.checked_sessions(sessions, check_url)
+
+`sessions` with each link `check_url` refuses (it raises `ValueError`) emptied:
+a meta written by another publisher is checked again before a page shows its links.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### annals.sessions.merged_sessions(\*lists, limit=12)
+
+The sessions of `lists` in order, one entry each: the same link, or the same name
+when one of the two has no link, is the same session (the link is kept). At most
+`limit`: the first session and the latest ones.
+
+```pycon
+>>> [s["name"] for s in merged_sessions([{"name": str(i), "url": ""} for i in range(20)], limit=4)]
+['0', '17', '18', '19']
+```
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### annals.sessions.session_names(meta)
+
+The names of the sessions that made `meta`’s document (for `ls --session`).
+
+* **Return type:**
+  [`set`](https://docs.python.org/3/builtins/stdtypes.html#set)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.sessions.session_url_from_env(env=None, , var='CLAUDE_CODE_BRIDGE_SESSION_ID', template='https://claude.ai/code/{bridge_id}')
+
+The claude.ai link of the Claude Code session this process runs in, or `""`.
+
+```pycon
+>>> session_url_from_env({"CLAUDE_CODE_BRIDGE_SESSION_ID": "session_01X"})
+'https://claude.ai/code/session_01X'
+>>> session_url_from_env({})
+''
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.sessions.sessions_of(meta)
+
+The sessions that made the document `meta` describes (see the module doc).
+
+A meta written before `sessions` existed names its one session in `source`.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+
 # _autosummary/annals.share.html.md
 
 # annals.share
@@ -4194,26 +4314,26 @@ replacement twice and nothing is ever deleted.
 
 ### Module Attributes
 
-| [`HEAD_CHARS`](_autosummary/annals.store.html.md#annals.store.HEAD_CHARS)         | how much of a file is read to find its title and excerpt                                                                                                                                                                                          |
-|---------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE)       | hidden files, caches, compiled python                                                                                                                                                                                                             |
-| [`VERSIONS`](_autosummary/annals.store.html.md#annals.store.VERSIONS)           | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                           |
-| [`VERSION_SEP`](_autosummary/annals.store.html.md#annals.store.VERSION_SEP)        | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                            |
-| [`PENDING_SEP`](_autosummary/annals.store.html.md#annals.store.PENDING_SEP)        | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                          |
-| [`LOCK_PREFIX`](_autosummary/annals.store.html.md#annals.store.LOCK_PREFIX)        | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know) |
-| [`LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.LOCK_STALE_S)       | its work is finished or undone                                                                                                                                                                                                                    |
-| [`GROUP_LOCK_WAIT_S`](_autosummary/annals.store.html.md#annals.store.GROUP_LOCK_WAIT_S)  | how long a group write waits for another writer of the same group, and how often it looks                                                                                                                                                         |
-| [`GROUP_LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.GROUP_LOCK_STALE_S) | a group lock is held for milliseconds, so one older than this is a dead holder's (the lock's note carries it, so recovery on another machine knows)                                                                                               |
-| [`MAX_GROUP_TITLE`](_autosummary/annals.store.html.md#annals.store.MAX_GROUP_TITLE)    | the longest title a group may have (a longer one is refused, not cut)                                                                                                                                                                             |
-| [`SWAP_WAIT_S`](_autosummary/annals.store.html.md#annals.store.SWAP_WAIT_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`SWAP_STEP_S`](_autosummary/annals.store.html.md#annals.store.SWAP_STEP_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX)    | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
-| [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)           | the store's bookkeeping lives there                                                                                                                                                                                                               |
-| [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
-| [`THUMB_CACHE`](_autosummary/annals.store.html.md#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                              |
-| [`SIDECAR_SUFFIXES`](_autosummary/annals.store.html.md#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
-| [`PROVENANCE_KEYS`](_autosummary/annals.store.html.md#annals.store.PROVENANCE_KEYS)    | `source` (the publisher's host, cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can open).                                                                                                                        |
-| [`ROOM_META_KEYS`](_autosummary/annals.store.html.md#annals.store.ROOM_META_KEYS)     | everything a reader's page needs, and nothing else, so a field added later stays out until named here                                                                                                                                             |
+| [`HEAD_CHARS`](_autosummary/annals.store.html.md#annals.store.HEAD_CHARS)         | how much of a file is read to find its title and excerpt                                                                                                                                                                                                                                |
+|---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_EXCLUDE`](_autosummary/annals.store.html.md#annals.store.DFLT_EXCLUDE)       | hidden files, caches, compiled python                                                                                                                                                                                                                                                   |
+| [`VERSIONS`](_autosummary/annals.store.html.md#annals.store.VERSIONS)           | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                                                                 |
+| [`VERSION_SEP`](_autosummary/annals.store.html.md#annals.store.VERSION_SEP)        | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                                                                  |
+| [`PENDING_SEP`](_autosummary/annals.store.html.md#annals.store.PENDING_SEP)        | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                                                                |
+| [`LOCK_PREFIX`](_autosummary/annals.store.html.md#annals.store.LOCK_PREFIX)        | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know)                                       |
+| [`LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.LOCK_STALE_S)       | its work is finished or undone                                                                                                                                                                                                                                                          |
+| [`GROUP_LOCK_WAIT_S`](_autosummary/annals.store.html.md#annals.store.GROUP_LOCK_WAIT_S)  | how long a group write waits for another writer of the same group, and how often it looks                                                                                                                                                                                               |
+| [`GROUP_LOCK_STALE_S`](_autosummary/annals.store.html.md#annals.store.GROUP_LOCK_STALE_S) | a group lock is held for milliseconds, so one older than this is a dead holder's (the lock's note carries it, so recovery on another machine knows)                                                                                                                                     |
+| [`MAX_GROUP_TITLE`](_autosummary/annals.store.html.md#annals.store.MAX_GROUP_TITLE)    | the longest title a group may have (a longer one is refused, not cut)                                                                                                                                                                                                                   |
+| [`SWAP_WAIT_S`](_autosummary/annals.store.html.md#annals.store.SWAP_WAIT_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                                                          |
+| [`SWAP_STEP_S`](_autosummary/annals.store.html.md#annals.store.SWAP_STEP_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                                                          |
+| [`INCOMING_PREFIX`](_autosummary/annals.store.html.md#annals.store.INCOMING_PREFIX)    | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                                                          |
+| [`RESERVED`](_autosummary/annals.store.html.md#annals.store.RESERVED)           | the store's bookkeeping lives there                                                                                                                                                                                                                                                     |
+| [`ARTIFACT_HOSTS`](_autosummary/annals.store.html.md#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                                                                  |
+| [`THUMB_CACHE`](_autosummary/annals.store.html.md#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                                                                    |
+| [`SIDECAR_SUFFIXES`](_autosummary/annals.store.html.md#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                                                            |
+| [`PROVENANCE_KEYS`](_autosummary/annals.store.html.md#annals.store.PROVENANCE_KEYS)    | `source` (the publisher's host, cwd, session and `--meta` keys), `artifact` (a claude.ai link only the owner can open) and `sessions` (the sessions that made it, with their claude.ai links: [`annals.sessions`](_autosummary/annals.sessions.html.md#module-annals.sessions)). |
+| [`ROOM_META_KEYS`](_autosummary/annals.store.html.md#annals.store.ROOM_META_KEYS)     | everything a reader's page needs, and nothing else, so a field added later stays out until named here                                                                                                                                                                                   |
 
 ### Functions
 
@@ -4535,11 +4655,12 @@ the longest title a group may have (a longer one is refused, not cut)
 
 `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`
 
-### annals.store.PROVENANCE_KEYS *= ('source', 'artifact')*
+### annals.store.PROVENANCE_KEYS *= ('source', 'artifact', 'sessions')*
 
 `source` (the publisher’s host,
-cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can
-open). `copy` to a room drops them from what it writes.
+cwd, session and `--meta` keys), `artifact` (a claude.ai link only the owner can
+open) and `sessions` (the sessions that made it, with their claude.ai links:
+[`annals.sessions`](_autosummary/annals.sessions.html.md#module-annals.sessions)). `copy` to a room drops them from what it writes.
 
 * **Type:**
   what a document’s meta says about where it came from
@@ -4740,7 +4861,7 @@ A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-### annals.store.without_provenance(meta, , keys=('source', 'artifact'))
+### annals.store.without_provenance(meta, , keys=('source', 'artifact', 'sessions'))
 
 `meta` without the keys that say where it came from.
 
@@ -5246,7 +5367,7 @@ with the package.
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
-### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
+### annals.tools.publish(paths, , title=None, tags='', group=None, add_to=None, session=None, session_url=None, all_files=False, target=None, base_url=None, to=None, replace=None, artifact=None, no_link_check=False, no_pdf=False, meta=None)
 
 Publish one document and print its link; several paths become several documents.
 
@@ -5259,7 +5380,11 @@ directory (one document: an `index.html` or single page with its assets, else a
 gallery of everything in it), or `-` for stdin (markdown). `tags` is comma separated. `group`
 names a group to create from the published documents; the reply then carries
 `group_url` too. `add_to` appends them to an existing group instead (its id, as
-printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page). A directory skips
+printed in a group link), so a second batch lands under the link the owner already has. `session` records who published (the source shown on the page), and `session_url`
+the claude.ai link that opens that session; by default the link of the Claude Code session
+this runs in (`CLAUDE_CODE_BRIDGE_SESSION_ID`), `none` for no link. The document’s page
+shows each session that made it, linked, under its title; a share or a room never does
+([`annals.sessions`](_autosummary/annals.sessions.html.md#module-annals.sessions)). A directory skips
 hidden files and caches (`.*`, `__pycache__`, `*.pyc`) unless `all_files`.
 `to` publishes to a named target of the config file (`[targets.NAME]`, see
 `annals configure --to`) instead of the default one. `replace` (a document’s link or
@@ -5432,16 +5557,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-19 12:58 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/164e4412147d9330c53a5437b654c575bf600eb5"><code>164e441</code></a> on branch <code>main</code>, for **annals 0.0.65** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-22 14:09 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/a268747f6d5b7cbdf51a367f6059bbae25f0da68"><code>a268747</code></a> on branch <code>main</code>, for **annals 0.0.66** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.66) is behind the latest release on PyPI (0.0.67): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/164e4412147d9330c53a5437b654c575bf600eb5"><code>164e4412147d9330c53a5437b654c575bf600eb5</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/a268747f6d5b7cbdf51a367f6059bbae25f0da68"><code>a268747f6d5b7cbdf51a367f6059bbae25f0da68</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -5452,15 +5579,15 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/44528050404">44528050404</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45030871324">45030871324</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>164e4412147d9330c53a5437b654c575bf600eb5</code> (in the history of the built commit) |
+| Event commit | <code>a268747f6d5b7cbdf51a367f6059bbae25f0da68</code> (in the history of the built commit) |
 
 ## Tools
 
 |          |         |
 |----------|---------|
-| epythet  | 0.2.22  |
+| epythet  | 0.2.23  |
 | Sphinx   | 9.1.1   |
 | docutils | 0.22.4  |
 | Python   | 3.12.16 |
@@ -5479,14 +5606,14 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.65/">0.0.65</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.67/">0.0.67</a>, newer than the documented version (0.0.66).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 164e4412147d9330c53a5437b654c575bf600eb5
-pip install "epythet==0.2.22"
+git checkout a268747f6d5b7cbdf51a367f6059bbae25f0da68
+pip install "epythet==0.2.23"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```
 

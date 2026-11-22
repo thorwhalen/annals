@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sessions.html">annals.sessions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
@@ -257,7 +258,7 @@ puts the owner’s tags in, <a class="reference internal" href="annals.catalog.h
 
 <dl class="py data">
 <dt class="sig sig-object py" id="annals.docfilter.RESERVED_META">
-<span class="sig-prename descclassname"><span class="pre">annals.docfilter.</span></span><span class="sig-name descname"><span class="pre">RESERVED_META</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'cwd',</span> <span class="pre">'host',</span> <span class="pre">'session'})</span></span><a class="headerlink" href="#annals.docfilter.RESERVED_META" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.docfilter.</span></span><span class="sig-name descname"><span class="pre">RESERVED_META</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'cwd',</span> <span class="pre">'host',</span> <span class="pre">'session',</span> <span class="pre">'session_url'})</span></span><a class="headerlink" href="#annals.docfilter.RESERVED_META" title="Link to this definition">#</a></dt>
 <dd><p>provenance annals fills in itself; <code class="docutils literal notranslate"><span class="pre">--meta</span></code> cannot overwrite it</p>
 </dd></dl>
 
@@ -285,7 +286,7 @@ puts the owner’s tags in, <a class="reference internal" href="annals.catalog.h
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.docfilter.parse_meta">
-<span class="sig-prename descclassname"><span class="pre">annals.docfilter.</span></span><span class="sig-name descname"><span class="pre">parse_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">reserved</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">frozenset({'cwd',</span> <span class="pre">'host',</span> <span class="pre">'session'})</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/docfilter.html#parse_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.docfilter.parse_meta" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.docfilter.</span></span><span class="sig-name descname"><span class="pre">parse_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">reserved</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">frozenset({'cwd',</span> <span class="pre">'host',</span> <span class="pre">'session',</span> <span class="pre">'session_url'})</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/docfilter.html#parse_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.docfilter.parse_meta" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">[&quot;corpus=x&quot;,</span> <span class="pre">&quot;issue=12&quot;]</span></code> (or one such string) as <code class="docutils literal notranslate"><span class="pre">{&quot;corpus&quot;:</span> <span class="pre">&quot;x&quot;,</span> <span class="pre">&quot;issue&quot;:</span> <span class="pre">&quot;12&quot;}</span></code>.</p>
 <p>A key in <code class="docutils literal notranslate"><span class="pre">reserved</span></code> (what annals records itself) is refused: writing it would forge
 provenance. A filter reads any key, so it passes <code class="docutils literal notranslate"><span class="pre">reserved=frozenset()</span></code>.</p>
@@ -369,7 +370,7 @@ provenance. A filter reads any key, so it passes <code class="docutils literal n
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=152b4b09"></script>
+      <script src="../_static/documentation_options.js?v=22d3c163"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

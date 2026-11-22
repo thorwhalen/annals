@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sessions.html">annals.sessions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
@@ -299,7 +300,7 @@ replacement twice and nothing is ever deleted.</p>
 <td><p>timed text published beside an audio file, named <code class="docutils literal notranslate"><span class="pre">&lt;stem&gt;&lt;suffix&gt;</span></code> in the same folder (the suffix in any case): a transcript (<code class="docutils literal notranslate"><span class="pre">.cues.json</span></code>, <code class="docutils literal notranslate"><span class="pre">.vtt</span></code> or <code class="docutils literal notranslate"><span class="pre">.srt</span></code>) and chapters (<code class="docutils literal notranslate"><span class="pre">.chapters.vtt</span></code>).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.store.PROVENANCE_KEYS" title="annals.store.PROVENANCE_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PROVENANCE_KEYS</span></code></a></p></td>
-<td><p><code class="docutils literal notranslate"><span class="pre">source</span></code> (the publisher's host, cwd, session and <code class="docutils literal notranslate"><span class="pre">--meta</span></code> keys) and <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai link only the owner can open).</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">source</span></code> (the publisher's host, cwd, session and <code class="docutils literal notranslate"><span class="pre">--meta</span></code> keys), <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai link only the owner can open) and <code class="docutils literal notranslate"><span class="pre">sessions</span></code> (the sessions that made it, with their claude.ai links: <a class="reference internal" href="annals.sessions.html#module-annals.sessions" title="annals.sessions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.sessions</span></code></a>).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#annals.store.ROOM_META_KEYS" title="annals.store.ROOM_META_KEYS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ROOM_META_KEYS</span></code></a></p></td>
 <td><p>everything a reader's page needs, and nothing else, so a field added later stays out until named here</p></td>
@@ -786,10 +787,11 @@ being archived) between renames, and <code class="docutils literal notranslate">
 
 <dl class="py data">
 <dt class="sig sig-object py" id="annals.store.PROVENANCE_KEYS">
-<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">PROVENANCE_KEYS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('source',</span> <span class="pre">'artifact')</span></span><a class="headerlink" href="#annals.store.PROVENANCE_KEYS" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">PROVENANCE_KEYS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('source',</span> <span class="pre">'artifact',</span> <span class="pre">'sessions')</span></span><a class="headerlink" href="#annals.store.PROVENANCE_KEYS" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">source</span></code> (the publisher’s host,
-cwd, session and <code class="docutils literal notranslate"><span class="pre">--meta</span></code> keys) and <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai link only the owner can
-open). <code class="docutils literal notranslate"><span class="pre">copy</span></code> to a room drops them from what it writes.</p>
+cwd, session and <code class="docutils literal notranslate"><span class="pre">--meta</span></code> keys), <code class="docutils literal notranslate"><span class="pre">artifact</span></code> (a claude.ai link only the owner can
+open) and <code class="docutils literal notranslate"><span class="pre">sessions</span></code> (the sessions that made it, with their claude.ai links:
+<a class="reference internal" href="annals.sessions.html#module-annals.sessions" title="annals.sessions"><code class="xref py py-mod docutils literal notranslate"><span class="pre">annals.sessions</span></code></a>). <code class="docutils literal notranslate"><span class="pre">copy</span></code> to a room drops them from what it writes.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
 <dd class="field-odd"><p>what a document’s meta says about where it came from</p>
@@ -1078,7 +1080,7 @@ whitespace collapsed. <code class="docutils literal notranslate"><span class="pr
 
 <dl class="py function">
 <dt class="sig sig-object py" id="annals.store.without_provenance">
-<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">without_provenance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('source',</span> <span class="pre">'artifact')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#without_provenance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.without_provenance" title="Link to this definition">#</a></dt>
+<span class="sig-prename descclassname"><span class="pre">annals.store.</span></span><span class="sig-name descname"><span class="pre">without_provenance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">('source',</span> <span class="pre">'artifact',</span> <span class="pre">'sessions')</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/store.html#without_provenance"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.store.without_provenance" title="Link to this definition">#</a></dt>
 <dd><p><code class="docutils literal notranslate"><span class="pre">meta</span></code> without the keys that say where it came from.</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">without_provenance</span><span class="p">({</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"a"</span><span class="p">,</span> <span class="s2">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"host"</span><span class="p">:</span> <span class="s2">"h"</span><span class="p">},</span> <span class="s2">"artifact"</span><span class="p">:</span> <span class="s2">"x"</span><span class="p">})</span>
 </span><span data-line="2"><span class="go">{'id': 'a'}</span>
@@ -1133,7 +1135,7 @@ whitespace collapsed. <code class="docutils literal notranslate"><span class="pr
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=152b4b09"></script>
+      <script src="../_static/documentation_options.js?v=22d3c163"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

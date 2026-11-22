@@ -32,26 +32,26 @@ replacement twice and nothing is ever deleted.
 
 ### Module Attributes
 
-| [`HEAD_CHARS`](#annals.store.HEAD_CHARS)         | how much of a file is read to find its title and excerpt                                                                                                                                                                                          |
-|---------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`DFLT_EXCLUDE`](#annals.store.DFLT_EXCLUDE)       | hidden files, caches, compiled python                                                                                                                                                                                                             |
-| [`VERSIONS`](#annals.store.VERSIONS)           | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                           |
-| [`VERSION_SEP`](#annals.store.VERSION_SEP)        | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                            |
-| [`PENDING_SEP`](#annals.store.PENDING_SEP)        | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                          |
-| [`LOCK_PREFIX`](#annals.store.LOCK_PREFIX)        | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know) |
-| [`LOCK_STALE_S`](#annals.store.LOCK_STALE_S)       | its work is finished or undone                                                                                                                                                                                                                    |
-| [`GROUP_LOCK_WAIT_S`](#annals.store.GROUP_LOCK_WAIT_S)  | how long a group write waits for another writer of the same group, and how often it looks                                                                                                                                                         |
-| [`GROUP_LOCK_STALE_S`](#annals.store.GROUP_LOCK_STALE_S) | a group lock is held for milliseconds, so one older than this is a dead holder's (the lock's note carries it, so recovery on another machine knows)                                                                                               |
-| [`MAX_GROUP_TITLE`](#annals.store.MAX_GROUP_TITLE)    | the longest title a group may have (a longer one is refused, not cut)                                                                                                                                                                             |
-| [`SWAP_WAIT_S`](#annals.store.SWAP_WAIT_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`SWAP_STEP_S`](#annals.store.SWAP_STEP_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                    |
-| [`INCOMING_PREFIX`](#annals.store.INCOMING_PREFIX)    | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                    |
-| [`RESERVED`](#annals.store.RESERVED)           | the store's bookkeeping lives there                                                                                                                                                                                                               |
-| [`ARTIFACT_HOSTS`](#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                            |
-| [`THUMB_CACHE`](#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                              |
-| [`SIDECAR_SUFFIXES`](#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                      |
-| [`PROVENANCE_KEYS`](#annals.store.PROVENANCE_KEYS)    | `source` (the publisher's host, cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can open).                                                                                                                        |
-| [`ROOM_META_KEYS`](#annals.store.ROOM_META_KEYS)     | everything a reader's page needs, and nothing else, so a field added later stays out until named here                                                                                                                                             |
+| [`HEAD_CHARS`](#annals.store.HEAD_CHARS)         | how much of a file is read to find its title and excerpt                                                                                                                                                                                                                                |
+|---------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`DFLT_EXCLUDE`](#annals.store.DFLT_EXCLUDE)       | hidden files, caches, compiled python                                                                                                                                                                                                                                                   |
+| [`VERSIONS`](#annals.store.VERSIONS)           | a published folder's own content skips hidden names, and a document that carries one anyway is refused)                                                                                                                                                                                 |
+| [`VERSION_SEP`](#annals.store.VERSION_SEP)        | `<id>@<n>` names version `n` of a document; `@` is not an id character                                                                                                                                                                                                                  |
+| [`PENDING_SEP`](#annals.store.PENDING_SEP)        | `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`                                                                                                                                                                                                                                |
+| [`LOCK_PREFIX`](#annals.store.LOCK_PREFIX)        | `<root>/.lock-<id>/` is held while a replacement of `<id>` is applied; it is also the working directory, holding `next` (the replacement) and `old` (the version being archived) between renames, and `lock.json` (what a recovery needs to know)                                       |
+| [`LOCK_STALE_S`](#annals.store.LOCK_STALE_S)       | its work is finished or undone                                                                                                                                                                                                                                                          |
+| [`GROUP_LOCK_WAIT_S`](#annals.store.GROUP_LOCK_WAIT_S)  | how long a group write waits for another writer of the same group, and how often it looks                                                                                                                                                                                               |
+| [`GROUP_LOCK_STALE_S`](#annals.store.GROUP_LOCK_STALE_S) | a group lock is held for milliseconds, so one older than this is a dead holder's (the lock's note carries it, so recovery on another machine knows)                                                                                                                                     |
+| [`MAX_GROUP_TITLE`](#annals.store.MAX_GROUP_TITLE)    | the longest title a group may have (a longer one is refused, not cut)                                                                                                                                                                                                                   |
+| [`SWAP_WAIT_S`](#annals.store.SWAP_WAIT_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                                                          |
+| [`SWAP_STEP_S`](#annals.store.SWAP_STEP_S)        | a reader that misses a document being swapped waits for it this long, in steps                                                                                                                                                                                                          |
+| [`INCOMING_PREFIX`](#annals.store.INCOMING_PREFIX)    | a replacement is written under this hidden name, then renamed into place whole                                                                                                                                                                                                          |
+| [`RESERVED`](#annals.store.RESERVED)           | the store's bookkeeping lives there                                                                                                                                                                                                                                                     |
+| [`ARTIFACT_HOSTS`](#annals.store.ARTIFACT_HOSTS)     | the interactive version of a page lives there, and the document's page links out to it                                                                                                                                                                                                  |
+| [`THUMB_CACHE`](#annals.store.THUMB_CACHE)        | where the page's thumbnails are cached, under the data root (beside the documents, never inside one)                                                                                                                                                                                    |
+| [`SIDECAR_SUFFIXES`](#annals.store.SIDECAR_SUFFIXES)   | timed text published beside an audio file, named `<stem><suffix>` in the same folder (the suffix in any case): a transcript (`.cues.json`, `.vtt` or `.srt`) and chapters (`.chapters.vtt`).                                                                                            |
+| [`PROVENANCE_KEYS`](#annals.store.PROVENANCE_KEYS)    | `source` (the publisher's host, cwd, session and `--meta` keys), `artifact` (a claude.ai link only the owner can open) and `sessions` (the sessions that made it, with their claude.ai links: [`annals.sessions`](annals.sessions.html.md#module-annals.sessions)). |
+| [`ROOM_META_KEYS`](#annals.store.ROOM_META_KEYS)     | everything a reader's page needs, and nothing else, so a field added later stays out until named here                                                                                                                                                                                   |
 
 ### Functions
 
@@ -373,11 +373,12 @@ the longest title a group may have (a longer one is refused, not cut)
 
 `<id>.r<stamp>-<hex>` is a pending replacement of `<id>`
 
-### annals.store.PROVENANCE_KEYS *= ('source', 'artifact')*
+### annals.store.PROVENANCE_KEYS *= ('source', 'artifact', 'sessions')*
 
 `source` (the publisher’s host,
-cwd, session and `--meta` keys) and `artifact` (a claude.ai link only the owner can
-open). `copy` to a room drops them from what it writes.
+cwd, session and `--meta` keys), `artifact` (a claude.ai link only the owner can
+open) and `sessions` (the sessions that made it, with their claude.ai links:
+[`annals.sessions`](annals.sessions.html.md#module-annals.sessions)). `copy` to a room drops them from what it writes.
 
 * **Type:**
   what a document’s meta says about where it came from
@@ -578,7 +579,7 @@ A title (markdown `# h1` or html `<title>`) and a plain-text excerpt of `head`.
 * **Return type:**
   [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str) | [`None`](https://docs.python.org/3/builtins/constants.html#None), [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
 
-### annals.store.without_provenance(meta, , keys=('source', 'artifact'))
+### annals.store.without_provenance(meta, , keys=('source', 'artifact', 'sessions'))
 
 `meta` without the keys that say where it came from.
 
