@@ -456,3 +456,100 @@ def test_a_share_record_without_its_scope_is_a_missing_link(shares, report):
     texts = shares.links.store.texts
     texts[f"{token}.json"] = json.dumps({"token": token, "created": "2026-01-01"})
     assert shares.links.status(token)[0] == "missing"
+
+
+# -- #98: the html filter reads attributes as a browser does ------------------------------
+
+_SECRET = "secret/private.html"
+
+
+def _html_filter(text):
+    return filter_refs(text, "html", files={"ok.png"}, shared=lambda i: None)
+
+
+@pytest.mark.parametrize(
+    "markup",
+    [
+        # a quoted value that looks like another attribute
+        f'<a title=\'x href="ok.png" y\' href="{_SECRET}">t</a>',
+        f'<a title="x" href="{_SECRET}" data-x=\'src="ok.png"\'>t</a>',
+        # references hidden behind entities
+        '<a href="&#x73;ecret/private.html">t</a>',
+        '<a href="secret/&#112;rivate.html">t</a>',
+        # repeated, glued, slash-separated and unquoted attributes
+        f'<a href="ok.png"href="{_SECRET}">t</a>',
+        f"<a/href={_SECRET}>t</a>",
+        f"<a href=ok.png href={_SECRET}>t</a>",
+        f"<a\thref\n=\n'{_SECRET}'>t</a>",
+        f'<A HREF="{_SECRET}">t</A>',
+        # a tag after a comment ended the way browsers end it
+        f'<!-- x --!><a href="{_SECRET}">t</a>',
+        f'<!-- <a href="{_SECRET}"> -->',
+        # a script that swallows what looks like a tag
+        f'<script>"</scr"+"ipt>"</script><a href="{_SECRET}">t</a>',
+        # srcset with one private candidate, and a redirect
+        f'<img srcset="ok.png 1x, {_SECRET} 2x">',
+        f'<meta http-equiv="refresh" content="0; url={_SECRET}">',
+    ],
+)
+def test_html_filter_removes_what_a_browser_would_follow(markup):
+    out = _html_filter(markup)
+    assert "private" not in out and "secret/" not in out, out
+
+
+def test_html_filter_keeps_the_owners_markup_and_does_not_misread_values():
+    kept = '<a title=\'see href="elsewhere.html"\' href="ok.png">t</a>'
+    assert _html_filter(kept) == kept  # the fake attribute in a title is just text
+    tag = '<img alt="a > b" src="ok.png" />'
+    assert _html_filter(tag) == tag
+    out = _html_filter(f'<a title="keep me" href="{_SECRET}" class="c">t</a>')
+    assert 'title="keep me"' in out and 'class="c"' in out and "data-annals-removed" in out
+
+
+@pytest.mark.parametrize(
+    "markup",
+    [
+        '<iframe srcdoc="<img src=https://private.host/x>"></iframe>',
+        '<iframe srcdoc="&lt;img src&#61;https://private.host/x&gt;"></iframe>',
+        "<!--> <link rel=preload as=image imagesrcset='https://private.host/x 1x'> -->",
+        "<![CDATA[><link imagesrcset='https://private.host/x 1x']]>",
+        '<meta http-equiv="refresh" content="0; https://private.host/x">',
+        '<meta http-equiv=refresh content="0.5;url=https://private.host/x">',
+        '<a ping="https://e.com/ https://private.host/x">t</a>',
+        '<a href="https://private.host:443/x">t</a>',
+        '<a href="https://private.host./x">t</a>',
+        '<a href="https:private.host/x">t</a>',
+        '<a href="https://private.host\\@e.com/x">t</a>',
+        '<a href="https://priv%61te.host/x">t</a>',
+    ],
+)
+def test_html_filter_review_bypasses(markup):
+    out = filter_refs(
+        markup, "html", files={"ok.png"}, shared=lambda i: None, private_hosts={"private.host"}
+    )
+    assert "private.host" not in out, out
+    assert "<img" not in out.replace("&lt;img", "") or "srcdoc" not in out
+
+
+def test_html_filter_rewrite_keeps_case_and_does_not_decode_twice():
+    out = _html_filter('<svg preserveAspectRatio="none"><a href="ok.png?a=1&amp;copy=2" ping="/x">t</a></svg>')
+    assert "preserveAspectRatio" in out and "a=1&amp;copy=2" in out
+    assert _html_filter('<meta name=viewport content="width=device-width">') == '<meta name=viewport content="width=device-width">'
+
+
+def test_html_filter_never_turns_inert_text_into_a_tag():
+    text = "src='#&lt;img src=https://private.host/x&gt;'"
+    assert _html_filter(text) == text  # kept as written, so still escaped text
+
+
+@pytest.mark.parametrize(
+    "css",
+    [
+        '<div style="background:url(https://private.host/x">',
+        "<style>@import \"https://private.host/x\";</style>",
+        "<div style=\"background:image-set('https://private.host/x' 1x)\">",
+    ],
+)
+def test_html_filter_css_forms(css):
+    out = filter_refs(css, "html", files=set(), shared=lambda i: None, private_hosts={"private.host"})
+    assert "private.host" not in out, out
