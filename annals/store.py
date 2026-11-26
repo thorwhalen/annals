@@ -276,15 +276,15 @@ def _excerpt(path: Path, kind: str) -> str:
 def _pick_main(files: list[Path]) -> tuple[Path, str]:
     """The file a viewer opens first, and the document's kind.
 
-    ``index.html`` wins; else the only page (markdown or html) among the files, with the
+    the shallowest ``index.html`` wins (a site's home page, not ``about/index.html``); else the only page (markdown or html) among the files, with the
     rest as its assets; else the file itself when there is one; else one audio or video
     file with only its timed text beside it (``SIDECAR_SUFFIXES``). Anything else (a folder of
     renders, several pages, mixed media) is a ``folder``: shown as a gallery and file list,
     with the first file as ``main``.
     """
-    for f in files:
-        if f.name.lower() in ("index.html", "index.htm"):
-            return f, "html"
+    indexes = [f for f in files if f.name.lower() in ("index.html", "index.htm")]
+    if indexes:  # the shallowest is the folder's own home page, not a nested section's
+        return min(indexes, key=lambda f: (len(f.parts), str(f))), "html"
     pages = [f for f in files if kind_of(f.name) in PAGE_KINDS]
     if len(pages) == 1:
         return pages[0], kind_of(pages[0].name)

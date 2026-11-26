@@ -53,6 +53,25 @@ def test_publish_html_directory_picks_index(store, tmp_path):
     assert meta["main"] == "index.html" and sorted(meta["files"]) == ["index.html", "index.pdf", "style.css"]
 
 
+def test_publish_site_folder_picks_top_level_index(store, tmp_path):
+    d = tmp_path / "site"
+    for sub in ("about", "fr", "assets"):
+        (d / sub).mkdir(parents=True)
+    (d / "index.html").write_text("<title>Home</title>")
+    (d / "about" / "index.html").write_text("<title>About</title>")
+    (d / "fr" / "index.html").write_text("<title>Fr</title>")
+    (d / "assets" / "site.css").write_text("body{}")
+    meta = store.publish(d)
+    assert meta["main"] == "index.html" and meta["kind"] == "html"
+    meta2 = store.publish(d, replace=meta["id"])
+    assert meta2["main"] == "index.html"
+    nested = tmp_path / "nested"
+    (nested / "about").mkdir(parents=True)
+    (nested / "about" / "index.html").write_text("<title>A</title>")
+    (nested / "x.css").write_text("body{}")
+    assert store.publish(nested)["main"] == "about/index.html"
+
+
 def test_publish_text_and_list_order(store):
     a = store.publish(text="# A\n\nfirst", title="A")
     b = store.publish(text="# B\n\nsecond", title="B")
