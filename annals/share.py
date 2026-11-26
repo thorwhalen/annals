@@ -222,7 +222,11 @@ def _regex_attr(m: re.Match, decide) -> str:
         r = _REFRESH_RE.match(_attr_url(m))
         if not r or not re.search(r"url\s*=", r.group("lead"), re.I):
             return m.group(0)
-        return m.group(0) if decide(r.group("url").strip("'\" ")) is not None else "data-annals-removed"
+        return (
+            m.group(0)
+            if decide(r.group("url").strip("'\" ")) is not None
+            else "data-annals-removed"
+        )
     urls = _srcset_urls(m)
     news = [decide(u) for u in urls]
     if any(n is None for n in news):
@@ -427,7 +431,9 @@ def filter_refs(
         lambda m: m.group(0) if decide(m.group("url")) is not None else "url()", text
     )
     text = _CSS_STR_RE.sub(
-        lambda m: m.group(0) if decide(m.group("url")) is not None else m.group("lead") + '""',
+        lambda m: (
+            m.group(0) if decide(m.group("url")) is not None else m.group("lead") + '""'
+        ),
         text,
     )
     text = _BARE_URL_RE.sub(lambda m: decide(m.group(0)) or REMOVED_LINK, text)
