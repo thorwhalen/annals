@@ -94,7 +94,7 @@ _BARE_URL_RE = re.compile(
 )
 _SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
 _CSS_URL_RE = re.compile(
-    r"url\(\s*(?P<q>['\"]?)(?P<url>[^'\")]*)(?P=q)\s*(?:\)|$)", re.I | re.M
+    r"url\(\s*(?P<q>['\"]?)(?P<url>[^'\")]*)(?P=q)\s*(?:\)|(?=[\"'>]|$))", re.I | re.M
 )
 #: a css string that is a url: ``@import "x"``, the first candidate of ``image-set("x" 1x)``
 _CSS_STR_RE = re.compile(
