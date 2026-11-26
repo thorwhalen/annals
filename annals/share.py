@@ -221,7 +221,9 @@ def _filter_css(
             i = k
         elif c in "\"'":
             e = string_end(i)
-            in_url = last == "@import" or (functions and stack and stack[-1] in _URL_FUNCS)
+            in_url = last == "@import" or (
+                functions and stack and stack[-1] in _URL_FUNCS
+            )
             if in_url and decide(css[i + 1 : max(i + 1, e - 1)]) is None:
                 out.append(c + c)
             else:
@@ -311,7 +313,9 @@ def _decide_attr(
         return value, True
     if name == "style":
         return _css_clean(value, decide), True
-    if name.startswith(("on", "data-")):  # script text: refused only when it names a url
+    if name.startswith(
+        ("on", "data-")
+    ):  # script text: refused only when it names a url
         return value, not _script_refused(value, decide)
     if name == "srcdoc":  # a whole document inside an attribute
         return _filter_html_attrs(value, decide), True
