@@ -553,3 +553,75 @@ def test_html_filter_never_turns_inert_text_into_a_tag():
 def test_html_filter_css_forms(css):
     out = filter_refs(css, "html", files=set(), shared=lambda i: None, private_hosts={"private.host"})
     assert "private.host" not in out, out
+
+
+@pytest.mark.parametrize(
+    "markup",
+    [
+        '<a onclick="location.href=\'https://private.host/x\'">t</a>',
+        '<img data-src="https://private.host/x" class=lazyload>',
+        '<img data-src="//private.host/x">',
+        "<div style=\"background:image-set('ok.png' 1x, 'https://private.host/x' 2x)\">",
+        '<div style="background:image-set(url(ok.png) 1x, \'https://private.host/x\' 2x)">',
+        '<div style="background:u\\72 l(https://private.host/x)">',
+        '<div style="background:\\75rl(https://private.host/x)">',
+        "<style>.a{background:u\\rl(https://private.host/x)}</style>",
+        "<style>@import \\69mport;</style><style>.a{background:\\75 rl(https://private.host/x)}</style>",
+    ],
+)
+def test_html_filter_handlers_data_and_css_escapes(markup):
+    out = filter_refs(
+        markup, "html", files={"ok.png"}, shared=lambda i: None, private_hosts={"private.host"}
+    )
+    assert "private.host" not in out, out
+
+
+def test_html_filter_leaves_harmless_handlers_and_data_alone():
+    kept = '<button onclick="go(1)" data-n="3" data-link="https://example.org/a" style="color:red">b</button>'
+    assert _html_filter(kept) == kept
+    css = "<style>.a{background:url(ok.png)} .b{color:red}</style>"
+    assert _html_filter(css) == css
+
+
+def _private(markup):
+    return filter_refs(
+        markup, "html", files={"ok.png"}, shared=lambda i: None, private_hosts={"private.host"}
+    )
+
+
+@pytest.mark.parametrize(
+    "markup",
+    [
+        '<style>a{content:"\\3c /style>\\3c img \\73 rc=https://private.host/x>"} b{background:u\\72l(//private.host/y)}</style>',
+        '<style>a{b:url("https://private.host/x" /*c*/)}</style>',
+        '<style>a{b:url("https://private.host/a\'b")}</style>',
+        '<style>a{b:url("https://private.host/a)b")}</style>',
+        '<style>@import"https://private.host/x.css"</style>',
+        '<style>@import/**/"https://private.host/x.css"</style>',
+        '<style>@import "https://private.host/a\'b.css"</style>',
+        '<style>a{b:image-set(/*)*/ "https://private.host/x" 1x)}</style>',
+        '<style>a{content:"</styles>"} b{background:u\\72l(https://private.host/x)}</style>',
+        "<svg><style>*{background:u&#114;l(https://private.host/x)}</style></svg>",
+        "<svg><style>*{background:url&#40;https://private.host/x)}</style></svg>",
+        '<div style="background:url(&quot;https://private.host/a\'b&quot;)">',
+        '<a data-cfg=\'{"u":"https:\\/\\/private.host\\/x"}\'>t</a>',
+    ],
+)
+def test_html_filter_css_review_round_two(markup):
+    out = _private(markup)
+    assert "private.host" not in out, out
+
+
+def test_html_filter_css_cleaning_is_linear():
+    import time
+
+    t = time.time()
+    _private("<style>" * 20000)
+    _private("image-set(" * 40000)
+    _private("<style>" + "url(" * 100000)
+    assert time.time() - t < 5
+
+
+def test_html_filter_css_keeps_owner_css():
+    css = '<style>a{content:"x\\"y"; background:url(ok.png)} /* c */ .b{color:red}</style>'
+    assert _private(css) == css

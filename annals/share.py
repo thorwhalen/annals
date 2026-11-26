@@ -93,13 +93,6 @@ _BARE_URL_RE = re.compile(
     rf"(?:https?://|/)[^\s<>()\"'\]]*?/(?:d|g|raw|thumb|docs|groups)/{ANNALS_ID}[^\s<>()\"'\]]*"
 )
 _SCHEME_RE = re.compile(r"^[a-z][a-z0-9+.-]*:", re.I)
-_CSS_URL_RE = re.compile(
-    r"url\(\s*(?P<q>['\"]?)(?P<url>[^'\")]*)(?P=q)\s*(?:\)|(?=[\"'>]|$))", re.I | re.M
-)
-#: a css string that is a url: ``@import "x"``, the first candidate of ``image-set("x" 1x)``
-_CSS_STR_RE = re.compile(
-    r"(?P<lead>@import\s+|image-set\(\s*)(?P<q>['\"])(?P<url>[^'\"]*)(?P=q)", re.I
-)
 #: ``<meta http-equiv=refresh content="0;url=...">``: the one ``content`` that is a url
 _REFRESH_RE = re.compile(r"^(?P<lead>\s*\d*\s*;?\s*url\s*=\s*)(?P<url>.*)$", re.I)
 
@@ -162,6 +155,153 @@ def _same_url(a: str, b: str) -> bool:
     return unescape(a).strip() == unescape(b).strip()
 
 
+_CSS_ESCAPE_RE = re.compile(r"\\(?:([0-9a-f]{1,6})[ \t\n\r\f]?|(.))", re.I | re.S)
+#: an absolute url written inside script text (an ``on*`` or ``data-*`` attribute)
+_SCRIPT_URL_RE = re.compile(r"(?:https?:)?//[^\s'\"<>)\\]+", re.I)
+
+
+def _css_unescape(css: str) -> str:
+    """``css`` with its escapes decoded (``u\\72 l(`` is ``url(``), as a browser reads it."""
+
+    def one(m: re.Match) -> str:
+        if m.group(1):
+            n = int(m.group(1), 16)
+            return chr(n) if 0 < n <= 0x10FFFF else "\ufffd"
+        return m.group(2)
+
+    return _CSS_ESCAPE_RE.sub(one, css)
+
+
+_URL_FUNCS = frozenset(
+    "image-set -webkit-image-set cross-fade -webkit-cross-fade src image".split()
+)
+_STYLE_CLOSE_RE = re.compile(r"</style(?=[\s/>])", re.I)
+_STYLE_OPEN_RE = re.compile(r"<style(?=[\s/>])[^>]*>", re.I)
+
+
+def _filter_css(
+    css: str, decide, *, comments: bool = True, functions: bool = True
+) -> str:
+    """``css`` without the urls ``decide`` refuses, in one linear pass.
+
+    Finds ``url(...)`` (quoted or not, comments inside), the string after ``@import`` and,
+    with ``functions``, the strings inside ``image-set()`` and its kin. ``comments=False``
+    (for text that is only partly css) does not skip ``/* */``: it may look at more, never
+    at less. Expects decoded css: see :func:`_css_clean`.
+    """
+    out: list[str] = []
+    i, n = 0, len(css)
+    stack: list[str] = []
+    last = ""  # the last significant token, for ``@import "x"``
+
+    def skip_ws(j: int) -> int:
+        while j < n:
+            if css[j].isspace():
+                j += 1
+            elif css.startswith("/*", j):
+                k = css.find("*/", j + 2)
+                j = n if k < 0 else k + 2
+            else:
+                break
+        return j
+
+    def string_end(j: int) -> int:  # css[j] is the quote
+        q = css[j]
+        j += 1
+        while j < n and css[j] != q and css[j] != "\n":
+            j += 2 if css[j] == "\\" else 1
+        return min(j + 1, n)
+
+    while i < n:
+        c = css[i]
+        if comments and css.startswith("/*", i):
+            k = css.find("*/", i + 2)
+            k = n if k < 0 else k + 2
+            out.append(css[i:k])
+            i = k
+        elif c in "\"'":
+            e = string_end(i)
+            in_url = last == "@import" or (functions and stack and stack[-1] in _URL_FUNCS)
+            if in_url and decide(css[i + 1 : max(i + 1, e - 1)]) is None:
+                out.append(c + c)
+            else:
+                out.append(css[i:e])
+            last, i = "str", e
+        elif css[i : i + 4].lower() == "url(" and (i == 0 or not css[i - 1].isalnum()):
+            j = skip_ws(i + 4)
+            if j < n and css[j] in "\"'":
+                e = string_end(j)
+                url, k = css[j + 1 : max(j + 1, e - 1)], skip_ws(e)
+            else:
+                k = j
+                while k < n and css[k] not in ")\"'" and not css[k].isspace():
+                    k += 1
+                url, k = css[j:k], skip_ws(k)
+            if k < n and css[k] == ")":
+                k += 1
+            if decide(url) is None:
+                out.append("url()")
+            else:
+                out.append(css[i:k])
+            last, i = "url", k
+        elif css[i : i + 7].lower() == "@import":
+            out.append(css[i : i + 7])
+            last, i = "@import", i + 7
+        elif c == "(":
+            m = re.search(r"[A-Za-z0-9_-]+$", css[max(0, i - 24) : i])
+            stack.append(m.group(0).lower() if m else "")
+            out.append(c)
+            last, i = "(", i + 1
+        elif c == ")":
+            if stack:
+                stack.pop()
+            out.append(c)
+            last, i = ")", i + 1
+        else:
+            out.append(c)
+            if not c.isspace():
+                last = c
+            i += 1
+    return "".join(out)
+
+
+def _css_clean(css: str, decide, **kw) -> str:
+    """The css with its refused urls removed.
+
+    The decision is made on the css as a browser decodes it (escapes, and entities for
+    svg). When the owner wrote it with no escapes the removal is in place; when escapes
+    hide a refused url the whole text goes: decoded text is never written back, since a
+    decoded ``\\3c`` is markup.
+    """
+    from html import unescape
+
+    decoded = _css_unescape(unescape(css)) if ("\\" in css or "&" in css) else css
+    if decoded == css:
+        return _filter_css(css, decide, **kw)
+    return "" if _filter_css(decoded, decide, **kw) != decoded else css
+
+
+def _style_elements(text: str, decide) -> str:
+    """``text`` with the css of every ``<style>`` element cleaned (one pass; an element
+    with no end runs to the end of the text, as in a browser)."""
+    out, pos = [], 0
+    while (o := _STYLE_OPEN_RE.search(text, pos)) is not None:
+        c = _STYLE_CLOSE_RE.search(text, o.end())
+        end = c.start() if c else len(text)
+        out.append(text[pos : o.end()])
+        out.append(_css_clean(text[o.end() : end], decide))
+        pos = end
+    out.append(text[pos:])
+    return "".join(out)
+
+
+def _script_refused(value: str, decide) -> bool:
+    """True when script text (an event handler, a data attribute) names an absolute url
+    the share may not reach."""
+    value = value.replace("\\/", "/")  # json writes a slash as \\/
+    return any(decide(u) is None for u in _SCRIPT_URL_RE.findall(value))
+
+
 def _decide_attr(
     name: str, value: str | None, decide, *, refresh: bool = False
 ) -> tuple[str | None, bool]:
@@ -169,6 +309,10 @@ def _decide_attr(
     name = name.lower()
     if value is None:
         return value, True
+    if name == "style":
+        return _css_clean(value, decide), True
+    if name.startswith(("on", "data-")):  # script text: refused only when it names a url
+        return value, not _script_refused(value, decide)
     if name == "srcdoc":  # a whole document inside an attribute
         return _filter_html_attrs(value, decide), True
     if name == "content":
@@ -423,13 +567,8 @@ def filter_refs(
         text = _MD_REFDEF_RE.sub(md_refdef, text)
         text = _MD_AUTOLINK_RE.sub(md_autolink, text)
     text = _filter_html_attrs(text, decide)
-    text = _CSS_URL_RE.sub(
-        lambda m: m.group(0) if decide(m.group("url")) is not None else "url()", text
-    )
-    text = _CSS_STR_RE.sub(
-        lambda m: m.group(0) if decide(m.group("url")) is not None else m.group("lead") + '""',
-        text,
-    )
+    text = _filter_css(text, decide, comments=False, functions=False)
+    text = _style_elements(text, decide)
     text = _BARE_URL_RE.sub(lambda m: decide(m.group(0)) or REMOVED_LINK, text)
     return remove_unshared_ids(text, shared)
 
