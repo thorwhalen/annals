@@ -303,6 +303,43 @@ def test_a_room_keeps_no_highlights(store):
         mk_api(store=store, room=True, highlights=H.for_reader(store.target.root))
 
 
+def test_the_routes_are_a_router_any_fastapi_host_can_include():
+    """The wire is this module's, not annals' API's: a second host mounts the same seven routes."""
+    from fastapi import FastAPI
+
+    from annals.highlights_api import mk_router
+
+    store: dict = {}
+
+    class Mem(dict):
+        def snapshot(self):
+            return {k: dict(v) if isinstance(v, dict) else v for k, v in self.items()}
+
+        def modify(self, key, change):
+            new = change(self.get(key))
+            if new is None:
+                self.pop(key, None)
+            else:
+                self[key] = new
+            return new
+
+    def for_reader(who):
+        return store.setdefault(who, H.ReaderHighlights(Mem(), Mem()))
+
+    host = FastAPI()
+    host.include_router(mk_router(for_reader, reader=lambda request: "me"), prefix="/api")
+    c = TestClient(host)
+    made = c.post("/api/highlights", json={"target": target()}).json()
+    assert made["name"] == "Bread notes-highlight-1"
+    assert c.get("/api/highlights").json()["total"] == 1
+    assert c.put("/api/highlights/settings", json={"color": "blue"}).json()["color"] == "blue"
+    assert c.delete(f"/api/highlights/{made['id']}").json()["id"] == made["id"]
+    # and with no store at all, every route says so
+    off = FastAPI()
+    off.include_router(mk_router(None, reader=lambda request: "me"))
+    assert TestClient(off).get("/highlights").status_code == 404
+
+
 def test_a_reader_is_capped_in_number_and_in_room(client, monkeypatch):
     monkeypatch.setattr(H, "MAX_HIGHLIGHTS", 2)
     for i in range(2):

@@ -35,9 +35,15 @@ def mk_router(
     *,
     reader: Callable[[Request], str],
     write_dependencies: Sequence[Any] = (),
-) -> APIRouter:
-    """The seven highlight routes over ``for_reader``, each answering for ``reader(request)``."""
-    router = APIRouter()
+    router: Any = None,
+) -> Any:
+    """The seven highlight routes over ``for_reader``, each answering for ``reader(request)``.
+
+    They are added to ``router`` (your app, or a router of yours) and it is returned; with
+    none, a new ``APIRouter`` to include. A host that walks its own route table (annals
+    gates a room route by route) passes its app, so the routes sit in that table one by one.
+    """
+    router = APIRouter() if router is None else router
     guarded = list(write_dependencies)
 
     def mine(request: Request) -> hl.ReaderHighlights:

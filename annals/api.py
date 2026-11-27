@@ -652,12 +652,12 @@ def _mk_api(
     # -- highlights: passages a reader kept, each reader's own -------------------------
     # The page reaches these through manicules' httpStore (vendored under ui/vendor/); the
     # routes are annals.highlights_api's, answering for this API's reader.
-    api.include_router(
-        mk_highlights_router(
-            highlights,
-            reader=reader,
-            write_dependencies=[Depends(_require_same_origin)],
-        )
+    # Added to this app's own table, one by one: the room gate reads it route by route.
+    mk_highlights_router(
+        highlights,
+        reader=reader,
+        write_dependencies=[Depends(_require_same_origin)],
+        router=api,
     )
 
     @api.post("/docs/{doc_id}/trash", dependencies=[Depends(_require_same_origin)])
