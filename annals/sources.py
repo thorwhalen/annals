@@ -217,6 +217,15 @@ class PublishedSource:
 # -- a folder read in place ------------------------------------------------------------
 
 
+def file_stamp(st: os.stat_result) -> tuple[int, int, int, int]:
+    """What says a file changed: its inode, mtime and ctime (nanoseconds) and size.
+
+    The mtime alone is not enough: a rewrite of the same size within one timestamp tick,
+    or a sync that keeps mtimes, would look unchanged.
+    """
+    return (st.st_ino, st.st_mtime_ns, st.st_ctime_ns, st.st_size)
+
+
 def top_level_name(rel: str) -> str:
     """Who wrote a file in a folder of per-session files: ``a.md`` -> ``a``, ``b/c.md`` -> ``b``."""
     parts = PurePosixPath(rel).parts
@@ -305,8 +314,8 @@ class FolderSource(Mapping):
         return self._row(rel, str(path), path.stat())
 
     def _row(self, rel: str, path: str, st: os.stat_result) -> dict:
-        """The row for a file, re-read only when its size or mtime changed."""
-        stamp = (st.st_mtime_ns, st.st_size)
+        """The row for a file, re-read only when it changed (:func:`file_stamp`)."""
+        stamp = file_stamp(st)
         cached = self._rows.get(rel)
         if cached and cached[0] == stamp:
             return cached[1]
@@ -327,6 +336,8 @@ class FolderSource(Mapping):
             "size": st.st_size,
             "tags": [],
             "excerpt": excerpt,
+            # what tells a search index the body changed: finer than ``time`` (a second)
+            "stamp": ":".join(map(str, stamp)),
         }
         with self._lock:
             self._rows[rel] = (stamp, row)
@@ -399,7 +410,7 @@ class FolderSource(Mapping):
             or st.st_size > MAX_INLINE_TEXT_BYTES
         ):
             return ""
-        stamp = (st.st_mtime_ns, st.st_size)
+        stamp = file_stamp(st)
         if cached and cached[0] == stamp:
             return cached[1]
         text = path.read_text(encoding="utf-8", errors="replace")
