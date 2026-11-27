@@ -289,7 +289,9 @@ class LocalTarget:
             prefix = self._inside(base, root=root)
             if prefix is not None:
                 for gone in [
-                    k for k in self._metas if k.startswith(prefix + os.sep) and k not in seen
+                    k
+                    for k in self._metas
+                    if k.startswith(prefix + os.sep) and k not in seen
                 ]:
                     del self._metas[gone]
         return metas

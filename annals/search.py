@@ -80,7 +80,9 @@ def query_words(q: str) -> list[str]:
     return [w for w in q.lower().split() if w]
 
 
-def snippet_around(text: str, words: Iterable[str], *, width: int = SNIPPET_CHARS) -> str:
+def snippet_around(
+    text: str, words: Iterable[str], *, width: int = SNIPPET_CHARS
+) -> str:
     """The text around the first occurrence of any of ``words``, on one line.
 
     >>> snippet_around("alpha beta gamma", ["beta"], width=6)
@@ -227,7 +229,9 @@ class IndexedSearch:
         db.execute("PRAGMA busy_timeout=30000")
         if self.path != ":memory:":
             db.execute("PRAGMA journal_mode=WAL")
-        with _write(db):  # check and (re)create under the write lock: two workers race here
+        with _write(
+            db
+        ):  # check and (re)create under the write lock: two workers race here
             version = None
             try:
                 version = db.execute("SELECT v FROM info WHERE k='schema'").fetchone()
@@ -300,7 +304,9 @@ class IndexedSearch:
         with self._lock:
             db = self._connect()
             with _write(db):
-                found = db.execute("SELECT id FROM stamps WHERE key=?", (key,)).fetchone()
+                found = db.execute(
+                    "SELECT id FROM stamps WHERE key=?", (key,)
+                ).fetchone()
                 if found:
                     db.execute("DELETE FROM fts WHERE rowid=?", found)
                     db.execute("DELETE FROM stamps WHERE id=?", found)
