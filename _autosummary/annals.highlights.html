@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en" data-accent-color="violet" data-content_root="../">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"><title>annals.highlights - annals</title><link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="annals.jsonstore" href="annals.jsonstore.html" /><link rel="prev" title="annals.docfilter" href="annals.docfilter.html" /><script>
+    function setColorMode(t){let e=document.documentElement;e.setAttribute("data-color-mode",t);let a=window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches,s=t;"auto"===t&&(s=a?"dark":"light"),"light"===s?(e.classList.remove("dark"),e.classList.add("light")):(e.classList.remove("light"),e.classList.add("dark"))}
+    setColorMode(localStorage._theme||"auto");
+  </script><link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=d88b86f9" />
+    <link rel="stylesheet" type="text/css" href="../_static/shibuya.css?v=2ceb65ce" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_autodoc_typehints.css?v=057ac668" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link media="print" rel="stylesheet" type="text/css" href="../_static/print.css?v=20ff2c19" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sy-f-text: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+  --sy-f-heading: "Inter", var(--sy-f-sys), var(--sy-f-cjk), sans-serif;
+}
+</style>
+    
+  <meta property="og:type" content="website"/><meta property="og:title" content="annals.highlights"/>
+    <meta name="twitter:card" content="summary"/>
+  
+<link rel="alternate" type="text/markdown" href="annals.highlights.html.md">
+<link rel="describedby" href="../llms.txt" type="text/markdown">
+</head>
+<body><div class="sy-head">
+  <div class="sy-head-blur"></div>
+  <div class="sy-head-inner sy-container mx-auto">
+    <a class="sy-head-brand" href="../index.html">
+      
+      
+      <strong>annals</strong>
+    </a>
+    <div class="sy-head-nav" id="head-nav">
+      <nav class="sy-head-links"></nav>
+      <div class="sy-head-extra flex items-center print:hidden"><form class="searchbox flex items-center" action="../search.html" method="get">
+  <input type="text" name="q" placeholder="Search" />
+  <kbd>/</kbd>
+</form><div class="sy-head-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div></div>
+    </div>
+    <div class="sy-head-actions flex items-center shrink-0 print:hidden"><button class="js-theme theme-switch flex items-center"
+data-aria-auto="Switch to light color mode"
+data-aria-light="Switch to dark color mode"
+data-aria-dark="Switch to auto color mode">
+<i class="i-lucide theme-icon"></i>
+</button><button class="md:hidden flex items-center js-menu" aria-label="Menu" type="button" aria-controls="head-nav" aria-expanded="false">
+        <div class="hamburger">
+          <span class="hamburger_1"></span>
+          <span class="hamburger_2"></span>
+          <span class="hamburger_3"></span>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+<div class="sy-page sy-container flex mx-auto">
+  <aside id="lside" class="sy-lside md:w-72 md:shrink-0 print:hidden">
+    <div class="sy-lside-inner md:sticky">
+      <div class="sy-scrollbar p-6">
+        <div class="globaltoc" data-expand-depth="0"><ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="annals.html">annals</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="annals.aggregate.html">annals.aggregate</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.auth.html">annals.auth</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.catalog.html">annals.catalog</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.combine.html">annals.combine</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.config.html">annals.config</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.docfilter.html">annals.docfilter</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">annals.highlights</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.jsonstore.html">annals.jsonstore</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.linkcheck.html">annals.linkcheck</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.listening.html">annals.listening</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.mcp.html">annals.mcp</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.media.html">annals.media</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.notebook.html">annals.notebook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.overview.html">annals.overview</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.pagepdf.html">annals.pagepdf</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.records.html">annals.records</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.search.html">annals.search</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sessions.html">annals.sessions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.sources.html">annals.sources</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.store.html">annals.store</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tables.html">annals.tables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tags.html">annals.tags</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.target.html">annals.target</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.titles.html">annals.titles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.tools.html">annals.tools</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../ai-agents.html">For AI agents</a></li>
+</ul>
+
+        </div>
+      </div>
+    </div>
+  </aside>
+  <div class="lside-overlay js-menu" role="button" aria-label="Close left sidebar" aria-controls="lside" aria-expanded="false"></div>
+  <aside id="rside" class="sy-rside pb-3 w-64 shrink-0 order-last">
+    <button class="rside-close js-menu xl:hidden" aria-label="Close Table of Contents" type="button" aria-controls="rside" aria-expanded="false">
+      <i class="i-lucide close"></i>
+    </button>
+    <div class="sy-scrollbar sy-rside-inner px-6 xl:top-16 xl:sticky xl:pl-0 pt-6 pb-4"><div class="localtoc"><h3>On this page</h3><ul>
+<li><a class="reference internal" href="#annals.highlights.DEFAULT_SETTINGS"><code class="docutils literal notranslate"><span class="pre">DEFAULT_SETTINGS</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.ENV_READER"><code class="docutils literal notranslate"><span class="pre">ENV_READER</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.HighlightStore"><code class="docutils literal notranslate"><span class="pre">HighlightStore</span></code></a><ul>
+<li><a class="reference internal" href="#annals.highlights.HighlightStore.has_room"><code class="docutils literal notranslate"><span class="pre">HighlightStore.has_room()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.HighlightStore.valid"><code class="docutils literal notranslate"><span class="pre">HighlightStore.valid()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.highlights.MAX_HIGHLIGHTS"><code class="docutils literal notranslate"><span class="pre">MAX_HIGHLIGHTS</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.MAX_STORE_BYTES"><code class="docutils literal notranslate"><span class="pre">MAX_STORE_BYTES</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.PALETTE"><code class="docutils literal notranslate"><span class="pre">PALETTE</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.PATCHABLE"><code class="docutils literal notranslate"><span class="pre">PATCHABLE</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.RESERVED_IDS"><code class="docutils literal notranslate"><span class="pre">RESERVED_IDS</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.ReaderHighlights"><code class="docutils literal notranslate"><span class="pre">ReaderHighlights</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.Records"><code class="docutils literal notranslate"><span class="pre">Records</span></code></a><ul>
+<li><a class="reference internal" href="#annals.highlights.Records.modify"><code class="docutils literal notranslate"><span class="pre">Records.modify()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.highlights.SettingsStore"><code class="docutils literal notranslate"><span class="pre">SettingsStore</span></code></a><ul>
+<li><a class="reference internal" href="#annals.highlights.SettingsStore.valid"><code class="docutils literal notranslate"><span class="pre">SettingsStore.valid()</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#annals.highlights.add"><code class="docutils literal notranslate"><span class="pre">add()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.apply_patch"><code class="docutils literal notranslate"><span class="pre">apply_patch()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.clean"><code class="docutils literal notranslate"><span class="pre">clean()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.clean_patch"><code class="docutils literal notranslate"><span class="pre">clean_patch()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.clean_settings"><code class="docutils literal notranslate"><span class="pre">clean_settings()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.clean_target"><code class="docutils literal notranslate"><span class="pre">clean_target()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.default_name"><code class="docutils literal notranslate"><span class="pre">default_name()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.edit"><code class="docutils literal notranslate"><span class="pre">edit()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.for_reader"><code class="docutils literal notranslate"><span class="pre">for_reader()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.href"><code class="docutils literal notranslate"><span class="pre">href()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.new_id"><code class="docutils literal notranslate"><span class="pre">new_id()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.read_records"><code class="docutils literal notranslate"><span class="pre">read_records()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.readers"><code class="docutils literal notranslate"><span class="pre">readers()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.remove"><code class="docutils literal notranslate"><span class="pre">remove()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.search"><code class="docutils literal notranslate"><span class="pre">search()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.search_text"><code class="docutils literal notranslate"><span class="pre">search_text()</span></code></a></li>
+<li><a class="reference internal" href="#annals.highlights.settings_of"><code class="docutils literal notranslate"><span class="pre">settings_of()</span></code></a></li>
+</ul>
+</div><div id="ethical-ad-placement" data-ea-publisher="readthedocs"></div></div>
+  </aside>
+  <div class="rside-overlay js-menu" role="button" aria-label="Close Table of Contents" aria-controls="rside" aria-expanded="false"></div>
+  <main class="sy-main w-full max-sm:max-w-full print:pt-6">
+<div class="sy-breadcrumbs" role="navigation">
+  <div class="sy-breadcrumbs-inner flex items-center">
+    <div class="md:hidden mr-3">
+      <button class="js-menu" aria-label="Menu" type="button" aria-controls="lside" aria-expanded="false">
+        <i class="i-lucide menu"></i>
+      </button>
+    </div>
+    <ol class="flex-1" itemscope itemtype="https://schema.org/BreadcrumbList"><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../index.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="1" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="../api.html"><span itemprop="name">API reference</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="2" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <a itemprop="item" href="annals.html"><span itemprop="name">annals</span></a>
+        <span>/</span>
+        <meta itemprop="position" content="3" />
+      </li><li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+        <strong itemprop="name">annals.highlights</strong>
+        <meta itemprop="position" content="4" />
+      </li></ol>
+    <div class="xl:hidden ml-1">
+      <button class="js-menu" aria-label="Show table of contents" type="button" aria-controls="rside"
+        aria-expanded="false">
+        <i class="i-lucide outdent"></i>
+      </button>
+    </div>
+  </div>
+</div><div class="flex flex-col break-words justify-between">
+      <div class="relative min-w-0 max-w-6xl px-6 pb-6 pt-8 xl:px-12">
+  <article class="yue dark-code" role="main">
+          <section id="module-annals.highlights">
+<span id="annals-highlights"></span><h1>annals.highlights<a class="headerlink" href="#module-annals.highlights" title="Link to this heading">#</a></h1>
+<p>Each reader’s highlights: passages of documents kept with a name, tags and a note.</p>
+<p>A reader selects text on a document’s page and keeps it. The page side is the
+<a class="reference external" href="https://github.com/thorwhalen/manicules">manicules</a> widget (vendored under
+<code class="docutils literal notranslate"><span class="pre">ui/vendor/manicules/</span></code>); this module is the server side it talks to: what a highlight is
+allowed to be, where each reader’s are kept, and how they are searched. A highlight of a
+document’s whole title keeps the document itself, which is how a reader marks a favourite.</p>
+<p>A highlight, as stored (the shape of manicules’ <code class="docutils literal notranslate"><span class="pre">highlight.schema.json</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"hmf3k2x9a1b2c3"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">:</span> <span class="s2">"Bread notes-highlight-1"</span><span class="p">,</span>
+</span><span data-line="2"> <span class="s2">"target"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"&lt;doc id&gt;"</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Bread notes"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"d/&lt;doc id&gt;"</span><span class="p">},</span>
+</span><span data-line="3">            <span class="s2">"part"</span><span class="p">:</span> <span class="s2">"body"</span><span class="p">,</span>
+</span><span data-line="4">            <span class="s2">"quote"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"exact"</span><span class="p">:</span> <span class="s2">"85 percent water"</span><span class="p">,</span> <span class="s2">"prefix"</span><span class="p">:</span> <span class="s2">"A rye loaf takes "</span><span class="p">,</span> <span class="s2">"suffix"</span><span class="p">:</span> <span class="s2">", and"</span><span class="p">},</span>
+</span><span data-line="5">            <span class="s2">"position"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"start"</span><span class="p">:</span> <span class="mi">310</span><span class="p">,</span> <span class="s2">"end"</span><span class="p">:</span> <span class="mi">327</span><span class="p">}},</span>
+</span><span data-line="6"> <span class="s2">"comment"</span><span class="p">:</span> <span class="s2">"the number I keep forgetting"</span><span class="p">,</span> <span class="s2">"tags"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"rye"</span><span class="p">],</span> <span class="s2">"color"</span><span class="p">:</span> <span class="s2">"green"</span><span class="p">,</span>
+</span><span data-line="7"> <span class="s2">"created"</span><span class="p">:</span> <span class="s2">"2026-11-27T10:00:00+00:00"</span><span class="p">}</span>
+</span></pre></div>
+</div>
+<p>The target is two W3C Web Annotation selectors (the quote with its context, and where it
+was): the page finds the passage again from them after the document changed. <code class="docutils literal notranslate"><span class="pre">whole</span></code> in a
+target means the entire part, whatever it says now. The server never interprets a target;
+it bounds its size and keeps it.</p>
+<p>Records live under the data root, one JSON file per reader
+(<code class="docutils literal notranslate"><span class="pre">highlights/&lt;reader&gt;.json</span></code>, <code class="docutils literal notranslate"><span class="pre">{id:</span> <span class="pre">highlight}</span></code>, the layout manicules’ own file store and
+CLI use), through <a class="reference internal" href="annals.jsonstore.html#annals.jsonstore.JsonFileStore" title="annals.jsonstore.JsonFileStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">annals.jsonstore.JsonFileStore</span></code></a>; each reader’s two settings (the
+default colour, and whether a page shows all its highlights when it opens) are beside them
+(<code class="docutils literal notranslate"><span class="pre">highlight-settings/&lt;reader&gt;.json</span></code>). <a class="reference internal" href="#annals.highlights.for_reader" title="annals.highlights.for_reader"><code class="xref py py-func docutils literal notranslate"><span class="pre">for_reader()</span></code></a> is the seam: any
+<code class="docutils literal notranslate"><span class="pre">(reader)</span> <span class="pre">-&gt;</span> <span class="pre">ReaderHighlights</span></code> callable can replace it (<code class="docutils literal notranslate"><span class="pre">mk_api(highlights=...)</span></code>), its
+records being anything with the three calls of <a class="reference internal" href="#annals.highlights.Records" title="annals.highlights.Records"><code class="xref py py-class docutils literal notranslate"><span class="pre">Records</span></code></a>. The routes the widget
+talks to are <code class="xref py py-func docutils literal notranslate"><span class="pre">annals.highlights_api.mk_router()</span></code>.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">rec</span> <span class="o">=</span> <span class="n">clean</span><span class="p">({</span><span class="s2">"target"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"d1"</span><span class="p">,</span> <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Notes"</span><span class="p">},</span> <span class="s2">"quote"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"exact"</span><span class="p">:</span> <span class="s2">"three sites"</span><span class="p">}}},</span>
+</span><span data-line="2"><span class="gp">... </span>            <span class="n">names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Notes-highlight-1"</span><span class="p">],</span> <span class="n">now</span><span class="o">=</span><span class="s2">"2026-11-27T10:00:00+00:00"</span><span class="p">,</span> <span class="n">new_id</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="s2">"h1"</span><span class="p">)</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">rec</span><span class="p">[</span><span class="s2">"name"</span><span class="p">],</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"target"</span><span class="p">][</span><span class="s2">"part"</span><span class="p">],</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"tags"</span><span class="p">],</span> <span class="n">rec</span><span class="p">[</span><span class="s2">"comment"</span><span class="p">]</span>
+</span><span data-line="4"><span class="go">('Notes-highlight-2', 'body', [], '')</span>
+</span><span data-line="5"><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span><span class="n">h</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">search</span><span class="p">({</span><span class="s2">"h1"</span><span class="p">:</span> <span class="n">rec</span><span class="p">},</span> <span class="s2">"SITES notes"</span><span class="p">)]</span>
+</span><span data-line="6"><span class="go">['h1']</span>
+</span><span data-line="7"><span class="gp">&gt;&gt;&gt; </span><span class="n">search</span><span class="p">({</span><span class="s2">"h1"</span><span class="p">:</span> <span class="n">rec</span><span class="p">},</span> <span class="s2">"sites absent"</span><span class="p">)</span>
+</span><span data-line="8"><span class="go">[]</span>
+</span><span data-line="9"><span class="gp">&gt;&gt;&gt; </span><span class="n">clean_patch</span><span class="p">({</span><span class="s2">"comment"</span><span class="p">:</span> <span class="s2">"why"</span><span class="p">,</span> <span class="s2">"color"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"tags"</span><span class="p">:</span> <span class="p">[</span><span class="s2">"b"</span><span class="p">,</span> <span class="s2">"A"</span><span class="p">,</span> <span class="s2">"a"</span><span class="p">]})</span>
+</span><span data-line="10"><span class="go">{'comment': 'why', 'color': None, 'tags': ['A', 'b']}</span>
+</span></pre></div>
+</div>
+<p class="rubric">Module Attributes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.ENV_READER" title="annals.highlights.ENV_READER"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ENV_READER</span></code></a></p></td>
+<td><p>the reader an agent surface (the CLI, the MCP server) answers for when none is named</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.PALETTE" title="annals.highlights.PALETTE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PALETTE</span></code></a></p></td>
+<td><p>the colours a highlight may have (manicules' palette; each is legible in light and dark)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.DEFAULT_SETTINGS" title="annals.highlights.DEFAULT_SETTINGS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DEFAULT_SETTINGS</span></code></a></p></td>
+<td><p>what a reader gets before choosing anything</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.MAX_HIGHLIGHTS" title="annals.highlights.MAX_HIGHLIGHTS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_HIGHLIGHTS</span></code></a></p></td>
+<td><p>the file is read whole on every page</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.MAX_STORE_BYTES" title="annals.highlights.MAX_STORE_BYTES"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MAX_STORE_BYTES</span></code></a></p></td>
+<td><p>every list, search and page view reads it whole</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.RESERVED_IDS" title="annals.highlights.RESERVED_IDS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RESERVED_IDS</span></code></a></p></td>
+<td><p>ids the API's own routes use (<code class="docutils literal notranslate"><span class="pre">/highlights/settings</span></code>)</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.PATCHABLE" title="annals.highlights.PATCHABLE"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PATCHABLE</span></code></a></p></td>
+<td><p>the fields a reader may change afterwards; the target never changes</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Functions</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.add" title="annals.highlights.add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">add</span></code></a>(records, data)</p></td>
+<td><p>Keep a new highlight.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.apply_patch" title="annals.highlights.apply_patch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_patch</span></code></a>(record, patch, *[, now])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">record</span></code> with a cleaned patch applied; a <code class="docutils literal notranslate"><span class="pre">None</span></code> colour goes back to the default.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.clean" title="annals.highlights.clean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clean</span></code></a>(data, *[, names, now, new_id])</p></td>
+<td><p>A complete highlight from what a caller sent, validated and bounded.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.clean_patch" title="annals.highlights.clean_patch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clean_patch</span></code></a>(patch)</p></td>
+<td><p>What a reader may change (<a class="reference internal" href="#annals.highlights.PATCHABLE" title="annals.highlights.PATCHABLE"><code class="xref py py-data docutils literal notranslate"><span class="pre">PATCHABLE</span></code></a>), validated; anything else is refused.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.clean_settings" title="annals.highlights.clean_settings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clean_settings</span></code></a>(patch)</p></td>
+<td><p>The settings a reader may set, validated: <code class="docutils literal notranslate"><span class="pre">color</span></code> and <code class="docutils literal notranslate"><span class="pre">showOthers</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.clean_target" title="annals.highlights.clean_target"><code class="xref py py-obj docutils literal notranslate"><span class="pre">clean_target</span></code></a>(target)</p></td>
+<td><p>A target as stored: its source, its part, and the selectors, each bounded.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.default_name" title="annals.highlights.default_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">default_name</span></code></a>(title[, names])</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">&lt;title&gt;-highlight-&lt;n&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">n</span></code> the first number no highlight of that page uses.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.edit" title="annals.highlights.edit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">edit</span></code></a>(records, hid, patch)</p></td>
+<td><p>Change a highlight's name, note, tags or colour.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.for_reader" title="annals.highlights.for_reader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">for_reader</span></code></a>(root)</p></td>
+<td><p>The default seam: <code class="docutils literal notranslate"><span class="pre">&lt;root&gt;/highlights/&lt;reader&gt;.json</span></code> and <code class="docutils literal notranslate"><span class="pre">highlight-settings/</span></code>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.href" title="annals.highlights.href"><code class="xref py py-obj docutils literal notranslate"><span class="pre">href</span></code></a>(record)</p></td>
+<td><p>A highlight's page, opened on it, relative to the page's base (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> when it names none).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.new_id" title="annals.highlights.new_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">new_id</span></code></a>()</p></td>
+<td><p>A new id: sortable by creation time, unique enough for one reader's collection.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.read_records" title="annals.highlights.read_records"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_records</span></code></a>(target, reader)</p></td>
+<td><p>One reader's highlights by id, read through a <code class="docutils literal notranslate"><span class="pre">Target</span></code> (a local folder, or over ssh): for a caller that only reads.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.readers" title="annals.highlights.readers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">readers</span></code></a>(target)</p></td>
+<td><p>Who has highlights under a data root, read through its <code class="docutils literal notranslate"><span class="pre">Target</span></code> (so over ssh too).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.remove" title="annals.highlights.remove"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove</span></code></a>(records, hid)</p></td>
+<td><p>Delete a highlight and return it.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.search" title="annals.highlights.search"><code class="xref py py-obj docutils literal notranslate"><span class="pre">search</span></code></a>(records[, q, source, tag])</p></td>
+<td><p>The highlights matching every word of <code class="docutils literal notranslate"><span class="pre">q</span></code> (case ignored), newest first.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.search_text" title="annals.highlights.search_text"><code class="xref py py-obj docutils literal notranslate"><span class="pre">search_text</span></code></a>(record)</p></td>
+<td><p>What a highlight is found by: its name, passage, note, tags and its page's title.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.settings_of" title="annals.highlights.settings_of"><code class="xref py py-obj docutils literal notranslate"><span class="pre">settings_of</span></code></a>(store)</p></td>
+<td><p>A reader's settings over the defaults (a stored value of the wrong kind is ignored).</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Classes</p>
+<div class="table-wrapper autosummary longtable docutils container">
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.HighlightStore" title="annals.highlights.HighlightStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighlightStore</span></code></a>(path)</p></td>
+<td><p>One reader's highlights: <code class="docutils literal notranslate"><span class="pre">{id:</span> <span class="pre">highlight}</span></code> in one JSON file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.ReaderHighlights" title="annals.highlights.ReaderHighlights"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReaderHighlights</span></code></a>(records, settings)</p></td>
+<td><p>What the API keeps for one reader: the highlights (<a class="reference internal" href="#annals.highlights.Records" title="annals.highlights.Records"><code class="xref py py-class docutils literal notranslate"><span class="pre">Records</span></code></a>), and the settings beside them (a mapping of setting name to value, with <code class="docutils literal notranslate"><span class="pre">snapshot()</span></code>).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.highlights.Records" title="annals.highlights.Records"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Records</span></code></a>(*args, **kwargs)</p></td>
+<td><p>One reader's highlights, as this module and the API use them: any store with these three calls can stand behind the seam (a table in a database as well as a file).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.highlights.SettingsStore" title="annals.highlights.SettingsStore"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SettingsStore</span></code></a>(path)</p></td>
+<td><p>One reader's settings: <code class="docutils literal notranslate"><span class="pre">{setting:</span> <span class="pre">value}</span></code> in one JSON file.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.highlights.DEFAULT_SETTINGS">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">DEFAULT_SETTINGS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">{'color':</span> <span class="pre">'yellow',</span> <span class="pre">'showOthers':</span> <span class="pre">True}</span></span><a class="headerlink" href="#annals.highlights.DEFAULT_SETTINGS" title="Link to this definition">#</a></dt>
+<dd><p>what a reader gets before choosing anything</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.highlights.ENV_READER">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">ENV_READER</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">'ANNALS_HIGHLIGHTS_READER'</span></span><a class="headerlink" href="#annals.highlights.ENV_READER" title="Link to this definition">#</a></dt>
+<dd><p>the reader an agent surface (the CLI, the MCP server) answers for when none is named</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.highlights.HighlightStore">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">HighlightStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#HighlightStore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.HighlightStore" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="annals.jsonstore.html#annals.jsonstore.JsonFileStore" title="annals.jsonstore.JsonFileStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">JsonFileStore</span></code></a></p>
+<p>One reader’s highlights: <code class="docutils literal notranslate"><span class="pre">{id:</span> <span class="pre">highlight}</span></code> in one JSON file.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.highlights.HighlightStore.has_room">
+<span class="sig-name descname"><span class="pre">has_room</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#HighlightStore.has_room"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.HighlightStore.has_room" title="Link to this definition">#</a></dt>
+<dd><p>Whether another highlight may be added: the file is read whole on every page,
+so it is bounded in bytes (<a class="reference internal" href="#annals.highlights.MAX_STORE_BYTES" title="annals.highlights.MAX_STORE_BYTES"><code class="xref py py-data docutils literal notranslate"><span class="pre">MAX_STORE_BYTES</span></code></a>) as well as in number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.highlights.HighlightStore.valid">
+<span class="sig-name descname"><span class="pre">valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#HighlightStore.valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.HighlightStore.valid" title="Link to this definition">#</a></dt>
+<dd><p>Whether a value read from the file is kept (an invalid one is logged and skipped).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.highlights.MAX_HIGHLIGHTS">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">MAX_HIGHLIGHTS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">5000</span></span><a class="headerlink" href="#annals.highlights.MAX_HIGHLIGHTS" title="Link to this definition">#</a></dt>
+<dd><p>the file is read whole on every page</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>at most this many highlights per reader</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.highlights.MAX_STORE_BYTES">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">MAX_STORE_BYTES</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">20000000</span></span><a class="headerlink" href="#annals.highlights.MAX_STORE_BYTES" title="Link to this definition">#</a></dt>
+<dd><p>every list, search and page view reads it whole</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>and their file at most this big</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.highlights.PALETTE">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">PALETTE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('yellow',</span> <span class="pre">'green',</span> <span class="pre">'blue',</span> <span class="pre">'pink',</span> <span class="pre">'orange',</span> <span class="pre">'purple')</span></span><a class="headerlink" href="#annals.highlights.PALETTE" title="Link to this definition">#</a></dt>
+<dd><p>the colours a highlight may have (manicules’ palette; each is legible in light and dark)</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.highlights.PATCHABLE">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">PATCHABLE</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">('name',</span> <span class="pre">'comment',</span> <span class="pre">'tags',</span> <span class="pre">'color')</span></span><a class="headerlink" href="#annals.highlights.PATCHABLE" title="Link to this definition">#</a></dt>
+<dd><p>the fields a reader may change afterwards; the target never changes</p>
+</dd></dl>
+
+<dl class="py data">
+<dt class="sig sig-object py" id="annals.highlights.RESERVED_IDS">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">RESERVED_IDS</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">frozenset({'settings'})</span></span><a class="headerlink" href="#annals.highlights.RESERVED_IDS" title="Link to this definition">#</a></dt>
+<dd><p>ids the API’s own routes use (<code class="docutils literal notranslate"><span class="pre">/highlights/settings</span></code>)</p>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.highlights.ReaderHighlights">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">ReaderHighlights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">settings</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#ReaderHighlights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.ReaderHighlights" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>What the API keeps for one reader: the highlights (<a class="reference internal" href="#annals.highlights.Records" title="annals.highlights.Records"><code class="xref py py-class docutils literal notranslate"><span class="pre">Records</span></code></a>), and the
+settings beside them (a mapping of setting name to value, with <code class="docutils literal notranslate"><span class="pre">snapshot()</span></code>).</p>
+<dl class="field-list simple">
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.highlights.Records">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">Records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#Records"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.Records" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Protocol" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Protocol</span></code></a></p>
+<p>One reader’s highlights, as this module and the API use them: any store with these
+three calls can stand behind the seam (a table in a database as well as a file).</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.highlights.Records.modify">
+<span class="sig-name descname"><span class="pre">modify</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">change</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#Records.modify"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.Records.modify" title="Link to this definition">#</a></dt>
+<dd><p>Set <code class="docutils literal notranslate"><span class="pre">key</span></code> to <code class="docutils literal notranslate"><span class="pre">change(current</span> <span class="pre">or</span> <span class="pre">None)</span></code> atomically (<code class="docutils literal notranslate"><span class="pre">None</span></code> deletes it).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.15)"><code class="xref py py-data docutils literal notranslate"><span class="pre">Any</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="annals.highlights.SettingsStore">
+<span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">SettingsStore</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#SettingsStore"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.SettingsStore" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference internal" href="annals.jsonstore.html#annals.jsonstore.JsonFileStore" title="annals.jsonstore.JsonFileStore"><code class="xref py py-class docutils literal notranslate"><span class="pre">JsonFileStore</span></code></a></p>
+<p>One reader’s settings: <code class="docutils literal notranslate"><span class="pre">{setting:</span> <span class="pre">value}</span></code> in one JSON file.</p>
+<dl class="field-list simple">
+</dl>
+<dl class="py method">
+<dt class="sig sig-object py" id="annals.highlights.SettingsStore.valid">
+<span class="sig-name descname"><span class="pre">valid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#SettingsStore.valid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.SettingsStore.valid" title="Link to this definition">#</a></dt>
+<dd><p>Whether a value read from the file is kept (an invalid one is logged and skipped).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/functions.html#bool" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">bool</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.add">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">add</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#add"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.add" title="Link to this definition">#</a></dt>
+<dd><p>Keep a new highlight. Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> when it is invalid, when its id is taken,
+or when the reader already has <a class="reference internal" href="#annals.highlights.MAX_HIGHLIGHTS" title="annals.highlights.MAX_HIGHLIGHTS"><code class="xref py py-data docutils literal notranslate"><span class="pre">MAX_HIGHLIGHTS</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.apply_patch">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">apply_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#apply_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.apply_patch" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">record</span></code> with a cleaned patch applied; a <code class="docutils literal notranslate"><span class="pre">None</span></code> colour goes back to the default.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.clean">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">clean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">now</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">new_id</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">&lt;function</span> <span class="pre">new_id&gt;</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#clean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.clean" title="Link to this definition">#</a></dt>
+<dd><p>A complete highlight from what a caller sent, validated and bounded.</p>
+<p><code class="docutils literal notranslate"><span class="pre">names</span></code> are the names of the page’s other highlights, for the default name. An <code class="docutils literal notranslate"><span class="pre">id</span></code>
+or <code class="docutils literal notranslate"><span class="pre">created</span></code> the caller sent is kept when well formed (the page makes the id, so an
+undo puts back the very same highlight); unknown fields are dropped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.clean_patch">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">clean_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#clean_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.clean_patch" title="Link to this definition">#</a></dt>
+<dd><p>What a reader may change (<a class="reference internal" href="#annals.highlights.PATCHABLE" title="annals.highlights.PATCHABLE"><code class="xref py py-data docutils literal notranslate"><span class="pre">PATCHABLE</span></code></a>), validated; anything else is refused.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.clean_settings">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">clean_settings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#clean_settings"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.clean_settings" title="Link to this definition">#</a></dt>
+<dd><p>The settings a reader may set, validated: <code class="docutils literal notranslate"><span class="pre">color</span></code> and <code class="docutils literal notranslate"><span class="pre">showOthers</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.clean_target">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">clean_target</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#clean_target"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.clean_target" title="Link to this definition">#</a></dt>
+<dd><p>A target as stored: its source, its part, and the selectors, each bounded.</p>
+<p>Raises <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> for a target with no source id, with neither a quote nor
+<code class="docutils literal notranslate"><span class="pre">whole</span></code>, or with a field of the wrong kind or size.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.default_name">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">default_name</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">()</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#default_name"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.default_name" title="Link to this definition">#</a></dt>
+<dd><p><code class="docutils literal notranslate"><span class="pre">&lt;title&gt;-highlight-&lt;n&gt;</span></code>, <code class="docutils literal notranslate"><span class="pre">n</span></code> the first number no highlight of that page uses.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">default_name</span><span class="p">(</span><span class="s2">"Notes"</span><span class="p">,</span> <span class="p">[</span><span class="s2">"a"</span><span class="p">,</span> <span class="s2">"Notes-highlight-3"</span><span class="p">])</span>
+</span><span data-line="2"><span class="go">'Notes-highlight-4'</span>
+</span><span data-line="3"><span class="gp">&gt;&gt;&gt; </span><span class="n">default_name</span><span class="p">(</span><span class="s2">"  "</span><span class="p">)</span>
+</span><span data-line="4"><span class="go">'page-highlight-1'</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.edit">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">edit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hid</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#edit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.edit" title="Link to this definition">#</a></dt>
+<dd><p>Change a highlight’s name, note, tags or colour. <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> when there is none.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.for_reader">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">for_reader</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#for_reader"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.for_reader" title="Link to this definition">#</a></dt>
+<dd><p>The default seam: <code class="docutils literal notranslate"><span class="pre">&lt;root&gt;/highlights/&lt;reader&gt;.json</span></code> and <code class="docutils literal notranslate"><span class="pre">highlight-settings/</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">Callable</span></code></a>[[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>], <a class="reference internal" href="#annals.highlights.ReaderHighlights" title="annals.highlights.ReaderHighlights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ReaderHighlights</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.href">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">href</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#href"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.href" title="Link to this definition">#</a></dt>
+<dd><p>A highlight’s page, opened on it, relative to the page’s base (<code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code> when it names none).</p>
+<p>The one place that address is built: the API’s <code class="docutils literal notranslate"><span class="pre">href</span></code>, the CLI’s <code class="docutils literal notranslate"><span class="pre">url</span></code> and the page
+all come from here.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span data-line="1"><span class="gp">&gt;&gt;&gt; </span><span class="n">href</span><span class="p">({</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"h1"</span><span class="p">,</span> <span class="s2">"target"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"source"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="s2">"d1"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="s2">"d/d1?f=a.md"</span><span class="p">}}})</span>
+</span><span data-line="2"><span class="go">'d/d1?f=a.md&amp;h=h1'</span>
+</span></pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.new_id">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">new_id</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#new_id"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.new_id" title="Link to this definition">#</a></dt>
+<dd><p>A new id: sortable by creation time, unique enough for one reader’s collection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.read_records">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">read_records</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reader</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#read_records"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.read_records" title="Link to this definition">#</a></dt>
+<dd><p>One reader’s highlights by id, read through a <code class="docutils literal notranslate"><span class="pre">Target</span></code> (a local folder, or over
+ssh): for a caller that only reads. The one other place that knows the file layout is
+<a class="reference internal" href="#annals.highlights.for_reader" title="annals.highlights.for_reader"><code class="xref py py-func docutils literal notranslate"><span class="pre">for_reader()</span></code></a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.readers">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">readers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#readers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.readers" title="Link to this definition">#</a></dt>
+<dd><p>Who has highlights under a data root, read through its <code class="docutils literal notranslate"><span class="pre">Target</span></code> (so over ssh too).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.remove">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">remove</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hid</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#remove"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.remove" title="Link to this definition">#</a></dt>
+<dd><p>Delete a highlight and return it. <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> when there is none.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.search">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">search</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">records</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="keyword-only-separator o"><abbr title="Keyword-only parameters separator (PEP 3102)"><span class="pre">*</span></abbr></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tag</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#search"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.search" title="Link to this definition">#</a></dt>
+<dd><p>The highlights matching every word of <code class="docutils literal notranslate"><span class="pre">q</span></code> (case ignored), newest first.</p>
+<p><code class="docutils literal notranslate"><span class="pre">source</span></code> keeps one page’s (its source id), <code class="docutils literal notranslate"><span class="pre">tag</span></code> the ones carrying a tag. This is
+the function a wider search calls to list a reader’s highlights beside documents.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#list" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">list</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.search_text">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">search_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">record</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#search_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.search_text" title="Link to this definition">#</a></dt>
+<dd><p>What a highlight is found by: its name, passage, note, tags and its page’s title.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#str" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">str</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="annals.highlights.settings_of">
+<span class="sig-prename descclassname"><span class="pre">annals.highlights.</span></span><span class="sig-name descname"><span class="pre">settings_of</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/highlights.html#settings_of"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.highlights.settings_of" title="Link to this definition">#</a></dt>
+<dd><p>A reader’s settings over the defaults (a stored value of the wrong kind is ignored).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#dict" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">dict</span></code></a></span></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+        </article><button class="back-to-top" type="button">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+    <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+  </svg>
+  <span>Back to top</span>
+</button><div class="navigation flex print:hidden"><div class="navigation-prev">
+    <a href="annals.docfilter.html">
+      <i class="i-lucide chevron-left"></i>
+      <div class="page-info">
+        <span>Previous</span><div class="title">annals.docfilter</div></div>
+    </a>
+  </div><div class="navigation-next">
+    <a href="annals.jsonstore.html">
+      <div class="page-info">
+        <span>Next</span>
+        <div class="title">annals.jsonstore</div>
+      </div>
+      <i class="i-lucide chevron-right"></i>
+    </a>
+  </div></div></div>
+    </div>
+  </main>
+</div>
+<footer class="sy-foot">
+  <div class="sy-foot-inner sy-container mx-auto">
+    <div class="sy-foot-reserved md:flex justify-between items-center">
+      <div class="sy-foot-copyright">
+  <p>
+    Made with
+    
+    <a href="https://shibuya.lepture.com">Shibuya theme</a>.
+  </p>
+</div>
+      <div class="sy-foot-socials">
+  <a href="https://github.com/thorwhalen/annals" aria-label="GitHub">
+    <iconify-icon icon="simple-icons:github"></iconify-icon>
+  </a></div>
+    </div>
+  </div>
+</footer>
+      <script src="../_static/documentation_options.js?v=1e158f99"></script>
+      <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+      <script src="../_static/copybutton.js?v=fd10adb8"></script>
+      <script src="../_static/shibuya.js?v=50760d75"></script></body>
+</html>

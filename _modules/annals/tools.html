@@ -69,6 +69,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.docfilter.html">annals.docfilter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.highlights.html">annals.highlights</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.jsonstore.html">annals.jsonstore</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.linkcheck.html">annals.linkcheck</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.listening.html">annals.listening</a></li>
@@ -1676,80 +1677,338 @@ data-aria-dark="Switch to auto color mode">
 
 </span><span data-line="1458">
 </span><span data-line="1459">
-</span><span data-line="1460"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
-</span><span data-line="1461">    <span class="n">publish</span><span class="p">,</span>
-</span><span data-line="1462">    <span class="n">ls</span><span class="p">,</span>
-</span><span data-line="1463">    <span class="n">show</span><span class="p">,</span>
-</span><span data-line="1464">    <span class="n">trash</span><span class="p">,</span>
-</span><span data-line="1465">    <span class="n">restore</span><span class="p">,</span>
-</span><span data-line="1466">    <span class="n">purge</span><span class="p">,</span>
-</span><span data-line="1467">    <span class="n">rename</span><span class="p">,</span>
-</span><span data-line="1468">    <span class="n">tag</span><span class="p">,</span>
-</span><span data-line="1469">    <span class="n">group</span><span class="p">,</span>
-</span><span data-line="1470">    <span class="n">groups</span><span class="p">,</span>
-</span><span data-line="1471">    <span class="n">aggregate</span><span class="p">,</span>
-</span><span data-line="1472">    <span class="n">export</span><span class="p">,</span>
-</span><span data-line="1473">    <span class="n">references</span><span class="p">,</span>
-</span><span data-line="1474">    <span class="n">shareable</span><span class="p">,</span>
-</span><span data-line="1475">    <span class="n">copy</span><span class="p">,</span>
-</span><span data-line="1476">    <span class="n">share</span><span class="p">,</span>
-</span><span data-line="1477">    <span class="n">shares</span><span class="p">,</span>
-</span><span data-line="1478">    <span class="n">unshare</span><span class="p">,</span>
-</span><span data-line="1479">    <span class="n">configure</span><span class="p">,</span>
-</span><span data-line="1480">    <span class="n">serve</span><span class="p">,</span>
-</span><span data-line="1481">    <span class="n">page_shell</span><span class="p">,</span>
-</span><span data-line="1482">    <span class="n">listen</span><span class="p">,</span>
-</span><span data-line="1483">    <span class="n">overview_state</span><span class="p">,</span>
-</span><span data-line="1484">    <span class="n">listen_work</span><span class="p">,</span>
-</span><span data-line="1485">    <span class="n">listen_down</span><span class="p">,</span>
-</span><span data-line="1486"><span class="p">]</span>
-</span><span data-line="1487">
-</span><span data-line="1488">
-</span><span data-line="1489"><span class="c1">#: what a function does to the world, least to most: a surface serves the levels its caller</span>
-</span><span data-line="1490"><span class="c1">#: allows. ``read`` changes nothing; ``write`` changes the store or a setting and can be undone</span>
-</span><span data-line="1491"><span class="c1">#: or repeated; ``file`` writes a path on the machine that runs it; ``destructive`` cannot be</span>
-</span><span data-line="1492"><span class="c1">#: undone; ``spend`` costs money or queues work that does; ``server`` is run by a server or a</span>
-</span><span data-line="1493"><span class="c1">#: timer, never by a caller.</span>
-</span><span data-line="1494"><span class="n">EFFECTS</span> <span class="o">=</span> <span class="p">{</span>
-</span><span data-line="1495">    <span class="s2">"publish"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1496">    <span class="s2">"ls"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1497">    <span class="s2">"show"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1498">    <span class="s2">"trash"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1499">    <span class="s2">"restore"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1500">    <span class="s2">"purge"</span><span class="p">:</span> <span class="s2">"destructive"</span><span class="p">,</span>
-</span><span data-line="1501">    <span class="s2">"rename"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1502">    <span class="s2">"tag"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1503">    <span class="s2">"group"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1504">    <span class="s2">"groups"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1505">    <span class="s2">"aggregate"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
-</span><span data-line="1506">    <span class="s2">"references"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1507">    <span class="s2">"export"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
-</span><span data-line="1508">    <span class="s2">"shareable"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1509">    <span class="s2">"copy"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1510">    <span class="s2">"share"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1511">    <span class="s2">"shares"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1512">    <span class="s2">"unshare"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1513">    <span class="s2">"configure"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
-</span><span data-line="1514">    <span class="s2">"serve"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
-</span><span data-line="1515">    <span class="s2">"page_shell"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
-</span><span data-line="1516">    <span class="s2">"listen"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
-</span><span data-line="1517">    <span class="s2">"overview_state"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
-</span><span data-line="1518">    <span class="s2">"listen_work"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
-</span><span data-line="1519">    <span class="s2">"listen_down"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
-</span><span data-line="1520"><span class="p">}</span>
-</span><span data-line="1521"><span class="c1">#: what an agent or a tool is offered unless its host asks for more (MCP reads this)</span>
-</span><span data-line="1522"><span class="n">DFLT_EFFECTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"read"</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">})</span>
-</span><span data-line="1523">
-</span><span data-line="1524">
+</span><span data-line="1460"><span class="c1"># -- highlights: the passages a reader kept (annals.highlights) ---------------------------</span>
+</span><span data-line="1461">
+</span><span data-line="1462">
+</span><span data-line="1463"><span class="k">def</span><span class="w"> </span><span class="nf">_highlight_reader</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="1464"><span class="w">    </span><span class="sd">"""Whose highlights a verb is about: the one named, else the only reader who has any.</span>
+</span><span data-line="1465">
+</span><span data-line="1466"><span class="sd">    ``ANNALS_HIGHLIGHTS_READER`` names the reader an agent surface answers for. ``None``</span>
+</span><span data-line="1467"><span class="sd">    when nobody has any yet. With several readers and none named, a ``ValueError`` says so</span>
+</span><span data-line="1468"><span class="sd">    (without naming them): one reader's notes are never mixed with another's, nor shown unasked.</span>
+</span><span data-line="1469"><span class="sd">    """</span>
+</span><span data-line="1470">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">highlights</span> <span class="k">as</span> <span class="n">hl</span>
+</span><span data-line="1471">
+</span><span data-line="1472">    <span class="n">reader</span> <span class="o">=</span> <span class="n">reader</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">hl</span><span class="o">.</span><span class="n">ENV_READER</span><span class="p">)</span>
+</span><span data-line="1473">    <span class="k">if</span> <span class="n">reader</span><span class="p">:</span>
+</span><span data-line="1474">        <span class="k">return</span> <span class="n">reader</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</span><span data-line="1475">    <span class="n">known</span> <span class="o">=</span> <span class="n">hl</span><span class="o">.</span><span class="n">readers</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
+</span><span data-line="1476">    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">known</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+</span><span data-line="1477">        <span class="c1"># how many, not who: a sign-in address is not for whoever happens to ask</span>
+</span><span data-line="1478">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="1479">            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">known</span><span class="p">)</span><span class="si">}</span><span class="s2"> readers have highlights: say whose with --reader (the address "</span>
+</span><span data-line="1480">            <span class="sa">f</span><span class="s2">"they sign in with), or set </span><span class="si">{</span><span class="n">hl</span><span class="o">.</span><span class="n">ENV_READER</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="1481">        <span class="p">)</span>
+</span><span data-line="1482">    <span class="k">return</span> <span class="n">known</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">known</span> <span class="k">else</span> <span class="kc">None</span>
+</span><span data-line="1483">
+</span><span data-line="1484">
+</span><span data-line="1485"><span class="k">def</span><span class="w"> </span><span class="nf">_highlight_records</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
+</span><span data-line="1486"><span class="w">    </span><span class="sd">"""``(reader, their highlight store)``, for a change. Changes are made where the</span>
+</span><span data-line="1487"><span class="sd">    documents are (the server locks its files; a write from another machine would not), so</span>
+</span><span data-line="1488"><span class="sd">    this refuses a remote target or an outbox, and asks for ``reader`` when it cannot tell."""</span>
+</span><span data-line="1489">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">highlights</span> <span class="k">as</span> <span class="n">hl</span>
+</span><span data-line="1490">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals.target</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalTarget</span>
+</span><span data-line="1491">
+</span><span data-line="1492">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</span><span data-line="1493">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">LocalTarget</span><span class="p">):</span>
+</span><span data-line="1494">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="1495">            <span class="s2">"highlights are changed where the documents are kept: this target is not local "</span>
+</span><span data-line="1496">            <span class="s2">"(or is an outbox). Run this on that machine (ssh &lt;host&gt; annals ...), or use the page"</span>
+</span><span data-line="1497">        <span class="p">)</span>
+</span><span data-line="1498">    <span class="n">who</span> <span class="o">=</span> <span class="n">_highlight_reader</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">reader</span><span class="p">)</span>
+</span><span data-line="1499">    <span class="k">if</span> <span class="n">who</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="1500">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="1501">            <span class="s2">"say whose highlights with --reader (the address they sign in with): "</span>
+</span><span data-line="1502">            <span class="s2">"nobody has any yet"</span>
+</span><span data-line="1503">        <span class="p">)</span>
+</span><span data-line="1504">    <span class="k">return</span> <span class="n">who</span><span class="p">,</span> <span class="n">hl</span><span class="o">.</span><span class="n">for_reader</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="o">.</span><span class="n">root</span><span class="p">)(</span><span class="n">who</span><span class="p">)</span><span class="o">.</span><span class="n">records</span>
+</span><span data-line="1505">
+</span><span data-line="1506">
+</span><span data-line="1507"><span class="k">def</span><span class="w"> </span><span class="nf">_highlight_row</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">Settings</span><span class="p">,</span> <span class="n">record</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">reader</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1508"><span class="w">    </span><span class="sd">"""A highlight as a verb prints it: the record, whose it is, and ``url``, its page opened on it."""</span>
+</span><span data-line="1509">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">highlights</span> <span class="k">as</span> <span class="n">hl</span>
+</span><span data-line="1510">
+</span><span data-line="1511">    <span class="n">link</span> <span class="o">=</span> <span class="n">hl</span><span class="o">.</span><span class="n">href</span><span class="p">(</span><span class="n">record</span><span class="p">)</span>
+</span><span data-line="1512">    <span class="n">row</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">record</span><span class="p">,</span> <span class="s2">"reader"</span><span class="p">:</span> <span class="n">reader</span><span class="p">}</span>
+</span><span data-line="1513">    <span class="k">if</span> <span class="n">link</span><span class="p">:</span>
+</span><span data-line="1514">        <span class="n">row</span><span class="p">[</span><span class="s2">"url"</span><span class="p">]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">link</span><span class="si">}</span><span class="s2">"</span>
+</span><span data-line="1515">    <span class="k">return</span> <span class="n">row</span>
+</span><span data-line="1516">
+</span><span data-line="1517">
+</span><span data-line="1518"><span class="k">def</span><span class="w"> </span><span class="nf">_highlight_source</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">doc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1519"><span class="w">    </span><span class="sd">"""The page a highlight is on, as the document's page names it: the document, or one file of it."""</span>
+</span><span data-line="1520">    <span class="kn">from</span><span class="w"> </span><span class="nn">urllib.parse</span><span class="w"> </span><span class="kn">import</span> <span class="n">quote</span>
+</span><span data-line="1521">
+</span><span data-line="1522">    <span class="n">meta</span> <span class="o">=</span> <span class="n">_document_meta</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">doc</span><span class="p">)</span>
+</span><span data-line="1523">    <span class="n">title</span> <span class="o">=</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"title"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]</span>
+</span><span data-line="1524">    <span class="k">if</span> <span class="ow">not</span> <span class="n">file</span><span class="p">:</span>
+</span><span data-line="1525">        <span class="k">return</span> <span class="p">{</span><span class="s2">"id"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span> <span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"d/</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">}</span>
+</span><span data-line="1526">    <span class="k">if</span> <span class="n">file</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"files"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]):</span>
+</span><span data-line="1527">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2"> has no file </span><span class="si">{</span><span class="n">file</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
+</span><span data-line="1528">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="1529">        <span class="s2">"id"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">?f=</span><span class="si">{</span><span class="n">file</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+</span><span data-line="1530">        <span class="s2">"title"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">file</span><span class="o">.</span><span class="n">rsplit</span><span class="p">(</span><span class="s1">'/'</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> · </span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+</span><span data-line="1531">        <span class="s2">"url"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"d/</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">?f=</span><span class="si">{</span><span class="n">quote</span><span class="p">(</span><span class="n">file</span><span class="p">,</span><span class="w"> </span><span class="n">safe</span><span class="o">=</span><span class="s1">''</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+</span><span data-line="1532">    <span class="p">}</span>
+</span><span data-line="1533">
+</span><span data-line="1534">
+<div class="viewcode-block" id="highlights">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.highlights">[docs]</a>
+</span><span data-line="1535"><span class="k">def</span><span class="w"> </span><span class="nf">highlights</span><span class="p">(</span>
+</span><span data-line="1536">    <span class="n">q</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="1537">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1538">    <span class="n">doc</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1539">    <span class="n">tag</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1540">    <span class="n">reader</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1541">    <span class="n">limit</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
+</span><span data-line="1542">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1543">    <span class="n">base_url</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1544">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1545"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1546"><span class="w">    </span><span class="sd">"""List or search the highlights a reader kept on documents' pages, newest first.</span>
+</span><span data-line="1547">
+</span><span data-line="1548"><span class="sd">    A highlight is a passage of a document kept with a name, a note (``comment``) and tags;</span>
+</span><span data-line="1549"><span class="sd">    one whose ``target.whole`` is true and ``target.part`` is ``title`` keeps the whole</span>
+</span><span data-line="1550"><span class="sd">    document (a favourite). ``q``: words that must all appear in the name, the passage, the</span>
+</span><span data-line="1551"><span class="sd">    note, the tags or the document's title. ``doc`` (an id or a link) keeps one document's</span>
+</span><span data-line="1552"><span class="sd">    (its files' included), ``tag`` one tag's. ``reader`` is whose (the address they sign in</span>
+</span><span data-line="1553"><span class="sd">    with); it may be left out when one reader has highlights. Each row has ``reader`` and</span>
+</span><span data-line="1554"><span class="sd">    ``url``, the page opened on the passage. Returns ``{highlights, total, reader}``;</span>
+</span><span data-line="1555"><span class="sd">    ``total`` counts matches before ``limit``.</span>
+</span><span data-line="1556"><span class="sd">    """</span>
+</span><span data-line="1557">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">highlights</span> <span class="k">as</span> <span class="n">hl</span>
+</span><span data-line="1558">
+</span><span data-line="1559">    <span class="n">settings</span> <span class="o">=</span> <span class="n">_readable</span><span class="p">(</span><span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">base_url</span><span class="o">=</span><span class="n">base_url</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">))</span>
+</span><span data-line="1560">    <span class="n">store</span> <span class="o">=</span> <span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">)</span>
+</span><span data-line="1561">    <span class="n">who</span> <span class="o">=</span> <span class="n">_highlight_reader</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">reader</span><span class="p">)</span>
+</span><span data-line="1562">    <span class="n">found</span> <span class="o">=</span> <span class="n">hl</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">hl</span><span class="o">.</span><span class="n">read_records</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">who</span><span class="p">),</span> <span class="n">q</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="n">tag</span><span class="p">)</span> <span class="k">if</span> <span class="n">who</span> <span class="k">else</span> <span class="p">[]</span>
+</span><span data-line="1563">    <span class="k">if</span> <span class="n">doc</span><span class="p">:</span>
+</span><span data-line="1564">        <span class="n">doc_id</span> <span class="o">=</span> <span class="n">_parse_ref</span><span class="p">(</span><span class="n">doc</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span>
+</span><span data-line="1565">        <span class="n">found</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="1566">            <span class="n">r</span>
+</span><span data-line="1567">            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">found</span>
+</span><span data-line="1568">            <span class="k">if</span> <span class="nb">str</span><span class="p">((</span><span class="n">r</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"target"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"id"</span><span class="p">,</span> <span class="s2">""</span><span class="p">))</span><span class="o">.</span><span class="n">split</span><span class="p">(</span>
+</span><span data-line="1569">                <span class="s2">"?f="</span>
+</span><span data-line="1570">            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</span><span data-line="1571">            <span class="o">==</span> <span class="n">doc_id</span>
+</span><span data-line="1572">        <span class="p">]</span>
+</span><span data-line="1573">    <span class="k">return</span> <span class="p">{</span>
+</span><span data-line="1574">        <span class="s2">"highlights"</span><span class="p">:</span> <span class="p">[</span>
+</span><span data-line="1575">            <span class="n">_highlight_row</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">r</span><span class="p">,</span> <span class="n">who</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">found</span><span class="p">[:</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">limit</span><span class="p">)]</span>
+</span><span data-line="1576">        <span class="p">],</span>
+</span><span data-line="1577">        <span class="s2">"total"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">found</span><span class="p">),</span>
+</span><span data-line="1578">        <span class="s2">"reader"</span><span class="p">:</span> <span class="n">who</span><span class="p">,</span>
+</span><span data-line="1579">    <span class="p">}</span></div>
+
+</span><span data-line="1580">
+</span><span data-line="1581">
+<div class="viewcode-block" id="highlight_add">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.highlight_add">[docs]</a>
+</span><span data-line="1582"><span class="k">def</span><span class="w"> </span><span class="nf">highlight_add</span><span class="p">(</span>
+</span><span data-line="1583">    <span class="n">doc</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="1584">    <span class="n">exact</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="1585">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1586">    <span class="n">file</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1587">    <span class="n">prefix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="1588">    <span class="n">suffix</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="1589">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1590">    <span class="n">comment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="1591">    <span class="n">tags</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">""</span><span class="p">,</span>
+</span><span data-line="1592">    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1593">    <span class="n">whole</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="1594">    <span class="n">reader</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1595">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1596">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1597"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1598"><span class="w">    </span><span class="sd">"""Keep a passage of a document as a highlight, as selecting it on the page does.</span>
+</span><span data-line="1599">
+</span><span data-line="1600"><span class="sd">    ``doc`` is the document's id or link; ``file`` names one file of it (as its page's</span>
+</span><span data-line="1601"><span class="sd">    ``?f=`` does) when the passage is not in its main text. ``exact`` is the passage word for</span>
+</span><span data-line="1602"><span class="sd">    word as the page shows it (rendered text, not markdown marks); ``prefix`` and ``suffix``</span>
+</span><span data-line="1603"><span class="sd">    (the text just before and after) tell two identical passages apart. ``whole`` keeps the</span>
+</span><span data-line="1604"><span class="sd">    document itself by its title (``exact`` is then the title, or anything). ``name``</span>
+</span><span data-line="1605"><span class="sd">    defaults to ``&lt;title&gt;-highlight-&lt;n&gt;``; ``tags`` is comma separated; ``color`` is one of</span>
+</span><span data-line="1606"><span class="sd">    yellow, green, blue, pink, orange, purple. Run where the documents are kept; ``reader``</span>
+</span><span data-line="1607"><span class="sd">    is whose (needed until one reader, and only one, has highlights). Returns</span>
+</span><span data-line="1608"><span class="sd">    ``{highlight}``, with its ``url``.</span>
+</span><span data-line="1609"><span class="sd">    """</span>
+</span><span data-line="1610">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">highlights</span> <span class="k">as</span> <span class="n">hl</span>
+</span><span data-line="1611">
+</span><span data-line="1612">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1613">    <span class="n">who</span><span class="p">,</span> <span class="n">records</span> <span class="o">=</span> <span class="n">_highlight_records</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">reader</span><span class="p">)</span>
+</span><span data-line="1614">    <span class="k">if</span> <span class="n">whole</span> <span class="ow">and</span> <span class="n">file</span><span class="p">:</span>
+</span><span data-line="1615">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="1616">            <span class="s2">"a file of a document has no title of its own to keep: drop --file or --whole"</span>
+</span><span data-line="1617">        <span class="p">)</span>
+</span><span data-line="1618">    <span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="1619">        <span class="s2">"target"</span><span class="p">:</span> <span class="p">{</span>
+</span><span data-line="1620">            <span class="s2">"source"</span><span class="p">:</span> <span class="n">_highlight_source</span><span class="p">(</span><span class="n">_store</span><span class="p">(</span><span class="n">settings</span><span class="p">),</span> <span class="n">doc</span><span class="p">,</span> <span class="n">file</span><span class="p">),</span>
+</span><span data-line="1621">            <span class="s2">"part"</span><span class="p">:</span> <span class="s2">"title"</span> <span class="k">if</span> <span class="n">whole</span> <span class="k">else</span> <span class="n">hl</span><span class="o">.</span><span class="n">DEFAULT_PART</span><span class="p">,</span>
+</span><span data-line="1622">            <span class="s2">"quote"</span><span class="p">:</span> <span class="p">{</span>
+</span><span data-line="1623">                <span class="s2">"exact"</span><span class="p">:</span> <span class="n">exact</span><span class="p">,</span>
+</span><span data-line="1624">                <span class="s2">"prefix"</span><span class="p">:</span> <span class="n">prefix</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1625">                <span class="s2">"suffix"</span><span class="p">:</span> <span class="n">suffix</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1626">            <span class="p">},</span>
+</span><span data-line="1627">            <span class="s2">"whole"</span><span class="p">:</span> <span class="n">whole</span><span class="p">,</span>
+</span><span data-line="1628">        <span class="p">},</span>
+</span><span data-line="1629">        <span class="s2">"name"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span>
+</span><span data-line="1630">        <span class="s2">"comment"</span><span class="p">:</span> <span class="n">comment</span><span class="p">,</span>
+</span><span data-line="1631">        <span class="s2">"tags"</span><span class="p">:</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tags</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()],</span>
+</span><span data-line="1632">        <span class="s2">"color"</span><span class="p">:</span> <span class="n">color</span><span class="p">,</span>
+</span><span data-line="1633">    <span class="p">}</span>
+</span><span data-line="1634">    <span class="k">return</span> <span class="p">{</span><span class="s2">"highlight"</span><span class="p">:</span> <span class="n">_highlight_row</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">hl</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">records</span><span class="p">,</span> <span class="n">data</span><span class="p">),</span> <span class="n">who</span><span class="p">)}</span></div>
+
+</span><span data-line="1635">
+</span><span data-line="1636">
+<div class="viewcode-block" id="highlight_edit">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.highlight_edit">[docs]</a>
+</span><span data-line="1637"><span class="k">def</span><span class="w"> </span><span class="nf">highlight_edit</span><span class="p">(</span>
+</span><span data-line="1638">    <span class="n">highlight_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="1639">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1640">    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1641">    <span class="n">comment</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1642">    <span class="n">tags</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1643">    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1644">    <span class="n">reader</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1645">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1646">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1647"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1648"><span class="w">    </span><span class="sd">"""Change a highlight's name, note, tags or colour; its passage never changes.</span>
+</span><span data-line="1649">
+</span><span data-line="1650"><span class="sd">    Only what is given changes: ``comment ""`` clears the note, ``tags ""`` the tags,</span>
+</span><span data-line="1651"><span class="sd">    ``color default`` goes back to the reader's default colour. Run where the documents are</span>
+</span><span data-line="1652"><span class="sd">    kept. Returns ``{highlight}``.</span>
+</span><span data-line="1653"><span class="sd">    """</span>
+</span><span data-line="1654">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">highlights</span> <span class="k">as</span> <span class="n">hl</span>
+</span><span data-line="1655">
+</span><span data-line="1656">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1657">    <span class="n">patch</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="p">{}</span>
+</span><span data-line="1658">    <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="1659">        <span class="n">patch</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+</span><span data-line="1660">    <span class="k">if</span> <span class="n">comment</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="1661">        <span class="n">patch</span><span class="p">[</span><span class="s2">"comment"</span><span class="p">]</span> <span class="o">=</span> <span class="n">comment</span>
+</span><span data-line="1662">    <span class="k">if</span> <span class="n">tags</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="1663">        <span class="n">patch</span><span class="p">[</span><span class="s2">"tags"</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tags</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">","</span><span class="p">)</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+</span><span data-line="1664">    <span class="k">if</span> <span class="n">color</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+</span><span data-line="1665">        <span class="n">patch</span><span class="p">[</span><span class="s2">"color"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">color</span> <span class="o">==</span> <span class="s2">"default"</span> <span class="k">else</span> <span class="n">color</span>
+</span><span data-line="1666">    <span class="k">if</span> <span class="ow">not</span> <span class="n">patch</span><span class="p">:</span>
+</span><span data-line="1667">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"nothing to change: give --name, --comment, --tags or --color"</span><span class="p">)</span>
+</span><span data-line="1668">    <span class="n">who</span><span class="p">,</span> <span class="n">records</span> <span class="o">=</span> <span class="n">_highlight_records</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">reader</span><span class="p">)</span>
+</span><span data-line="1669">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="1670">        <span class="n">record</span> <span class="o">=</span> <span class="n">hl</span><span class="o">.</span><span class="n">edit</span><span class="p">(</span><span class="n">records</span><span class="p">,</span> <span class="n">highlight_id</span><span class="p">,</span> <span class="n">patch</span><span class="p">)</span>
+</span><span data-line="1671">    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+</span><span data-line="1672">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no highlight with id </span><span class="si">{</span><span class="n">highlight_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+</span><span data-line="1673">    <span class="k">return</span> <span class="p">{</span><span class="s2">"highlight"</span><span class="p">:</span> <span class="n">_highlight_row</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">record</span><span class="p">,</span> <span class="n">who</span><span class="p">)}</span></div>
+
+</span><span data-line="1674">
+</span><span data-line="1675">
+<div class="viewcode-block" id="highlight_remove">
+<a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.highlight_remove">[docs]</a>
+</span><span data-line="1676"><span class="k">def</span><span class="w"> </span><span class="nf">highlight_remove</span><span class="p">(</span>
+</span><span data-line="1677">    <span class="n">highlight_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+</span><span data-line="1678">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="1679">    <span class="n">reader</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1680">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1681">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="1682"><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+</span><span data-line="1683"><span class="w">    </span><span class="sd">"""Delete a highlight. Returns ``{removed}``, the highlight as it was.</span>
+</span><span data-line="1684">
+</span><span data-line="1685"><span class="sd">    Run where the documents are kept. Nothing brings it back but adding it again.</span>
+</span><span data-line="1686"><span class="sd">    """</span>
+</span><span data-line="1687">    <span class="kn">from</span><span class="w"> </span><span class="nn">annals</span><span class="w"> </span><span class="kn">import</span> <span class="n">highlights</span> <span class="k">as</span> <span class="n">hl</span>
+</span><span data-line="1688">
+</span><span data-line="1689">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="1690">    <span class="n">who</span><span class="p">,</span> <span class="n">records</span> <span class="o">=</span> <span class="n">_highlight_records</span><span class="p">(</span><span class="n">settings</span><span class="p">,</span> <span class="n">reader</span><span class="p">)</span>
+</span><span data-line="1691">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="1692">        <span class="n">gone</span> <span class="o">=</span> <span class="n">hl</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">records</span><span class="p">,</span> <span class="n">highlight_id</span><span class="p">)</span>
+</span><span data-line="1693">    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+</span><span data-line="1694">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"no highlight with id </span><span class="si">{</span><span class="n">highlight_id</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span> <span class="kn">from</span><span class="w"> </span><span class="kc">None</span>
+</span><span data-line="1695">    <span class="k">return</span> <span class="p">{</span><span class="s2">"removed"</span><span class="p">:</span> <span class="p">{</span><span class="o">**</span><span class="n">gone</span><span class="p">,</span> <span class="s2">"reader"</span><span class="p">:</span> <span class="n">who</span><span class="p">}}</span></div>
+
+</span><span data-line="1696">
+</span><span data-line="1697">
+</span><span data-line="1698"><span class="n">_dispatch_funcs</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span>
+</span><span data-line="1699">    <span class="n">publish</span><span class="p">,</span>
+</span><span data-line="1700">    <span class="n">ls</span><span class="p">,</span>
+</span><span data-line="1701">    <span class="n">show</span><span class="p">,</span>
+</span><span data-line="1702">    <span class="n">trash</span><span class="p">,</span>
+</span><span data-line="1703">    <span class="n">restore</span><span class="p">,</span>
+</span><span data-line="1704">    <span class="n">purge</span><span class="p">,</span>
+</span><span data-line="1705">    <span class="n">rename</span><span class="p">,</span>
+</span><span data-line="1706">    <span class="n">tag</span><span class="p">,</span>
+</span><span data-line="1707">    <span class="n">group</span><span class="p">,</span>
+</span><span data-line="1708">    <span class="n">groups</span><span class="p">,</span>
+</span><span data-line="1709">    <span class="n">aggregate</span><span class="p">,</span>
+</span><span data-line="1710">    <span class="n">export</span><span class="p">,</span>
+</span><span data-line="1711">    <span class="n">references</span><span class="p">,</span>
+</span><span data-line="1712">    <span class="n">shareable</span><span class="p">,</span>
+</span><span data-line="1713">    <span class="n">copy</span><span class="p">,</span>
+</span><span data-line="1714">    <span class="n">share</span><span class="p">,</span>
+</span><span data-line="1715">    <span class="n">shares</span><span class="p">,</span>
+</span><span data-line="1716">    <span class="n">unshare</span><span class="p">,</span>
+</span><span data-line="1717">    <span class="n">configure</span><span class="p">,</span>
+</span><span data-line="1718">    <span class="n">serve</span><span class="p">,</span>
+</span><span data-line="1719">    <span class="n">page_shell</span><span class="p">,</span>
+</span><span data-line="1720">    <span class="n">listen</span><span class="p">,</span>
+</span><span data-line="1721">    <span class="n">overview_state</span><span class="p">,</span>
+</span><span data-line="1722">    <span class="n">listen_work</span><span class="p">,</span>
+</span><span data-line="1723">    <span class="n">listen_down</span><span class="p">,</span>
+</span><span data-line="1724">    <span class="n">highlights</span><span class="p">,</span>
+</span><span data-line="1725">    <span class="n">highlight_add</span><span class="p">,</span>
+</span><span data-line="1726">    <span class="n">highlight_edit</span><span class="p">,</span>
+</span><span data-line="1727">    <span class="n">highlight_remove</span><span class="p">,</span>
+</span><span data-line="1728"><span class="p">]</span>
+</span><span data-line="1729">
+</span><span data-line="1730">
+</span><span data-line="1731"><span class="c1">#: what a function does to the world, least to most: a surface serves the levels its caller</span>
+</span><span data-line="1732"><span class="c1">#: allows. ``read`` changes nothing; ``write`` changes the store or a setting and can be undone</span>
+</span><span data-line="1733"><span class="c1">#: or repeated; ``file`` writes a path on the machine that runs it; ``destructive`` cannot be</span>
+</span><span data-line="1734"><span class="c1">#: undone; ``spend`` costs money or queues work that does; ``server`` is run by a server or a</span>
+</span><span data-line="1735"><span class="c1">#: timer, never by a caller.</span>
+</span><span data-line="1736"><span class="n">EFFECTS</span> <span class="o">=</span> <span class="p">{</span>
+</span><span data-line="1737">    <span class="s2">"publish"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1738">    <span class="s2">"ls"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1739">    <span class="s2">"show"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1740">    <span class="s2">"trash"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1741">    <span class="s2">"restore"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1742">    <span class="s2">"purge"</span><span class="p">:</span> <span class="s2">"destructive"</span><span class="p">,</span>
+</span><span data-line="1743">    <span class="s2">"rename"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1744">    <span class="s2">"tag"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1745">    <span class="s2">"group"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1746">    <span class="s2">"groups"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1747">    <span class="s2">"aggregate"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
+</span><span data-line="1748">    <span class="s2">"references"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1749">    <span class="s2">"export"</span><span class="p">:</span> <span class="s2">"file"</span><span class="p">,</span>
+</span><span data-line="1750">    <span class="s2">"shareable"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1751">    <span class="s2">"copy"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1752">    <span class="s2">"share"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1753">    <span class="s2">"shares"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1754">    <span class="s2">"unshare"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1755">    <span class="s2">"configure"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1756">    <span class="s2">"serve"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
+</span><span data-line="1757">    <span class="s2">"page_shell"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
+</span><span data-line="1758">    <span class="s2">"listen"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
+</span><span data-line="1759">    <span class="s2">"overview_state"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1760">    <span class="s2">"listen_work"</span><span class="p">:</span> <span class="s2">"server"</span><span class="p">,</span>
+</span><span data-line="1761">    <span class="s2">"listen_down"</span><span class="p">:</span> <span class="s2">"spend"</span><span class="p">,</span>
+</span><span data-line="1762">    <span class="s2">"highlights"</span><span class="p">:</span> <span class="s2">"read"</span><span class="p">,</span>
+</span><span data-line="1763">    <span class="s2">"highlight_add"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1764">    <span class="s2">"highlight_edit"</span><span class="p">:</span> <span class="s2">"write"</span><span class="p">,</span>
+</span><span data-line="1765">    <span class="s2">"highlight_remove"</span><span class="p">:</span> <span class="s2">"destructive"</span><span class="p">,</span>
+</span><span data-line="1766"><span class="p">}</span>
+</span><span data-line="1767"><span class="c1">#: what an agent or a tool is offered unless its host asks for more (MCP reads this)</span>
+</span><span data-line="1768"><span class="n">DFLT_EFFECTS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"read"</span><span class="p">,</span> <span class="s2">"write"</span><span class="p">})</span>
+</span><span data-line="1769">
+</span><span data-line="1770">
 <div class="viewcode-block" id="tools_with">
 <a class="viewcode-back" href="../../_autosummary/annals.tools.html#annals.tools_with">[docs]</a>
-</span><span data-line="1525"><span class="k">def</span><span class="w"> </span><span class="nf">tools_with</span><span class="p">(</span><span class="n">effects</span><span class="o">=</span><span class="n">DFLT_EFFECTS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
-</span><span data-line="1526"><span class="w">    </span><span class="sd">"""The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.</span>
-</span><span data-line="1527">
-</span><span data-line="1528"><span class="sd">    &gt;&gt;&gt; [f.__name__ for f in tools_with({"read"})]</span>
-</span><span data-line="1529"><span class="sd">    ['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']</span>
-</span><span data-line="1530"><span class="sd">    """</span>
-</span><span data-line="1531">    <span class="k">return</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_dispatch_funcs</span> <span class="k">if</span> <span class="n">EFFECTS</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="ow">in</span> <span class="n">effects</span><span class="p">]</span></div>
+</span><span data-line="1771"><span class="k">def</span><span class="w"> </span><span class="nf">tools_with</span><span class="p">(</span><span class="n">effects</span><span class="o">=</span><span class="n">DFLT_EFFECTS</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+</span><span data-line="1772"><span class="w">    </span><span class="sd">"""The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.</span>
+</span><span data-line="1773">
+</span><span data-line="1774"><span class="sd">    &gt;&gt;&gt; [f.__name__ for f in tools_with({"read"})]</span>
+</span><span data-line="1775"><span class="sd">    ['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state', 'highlights']</span>
+</span><span data-line="1776"><span class="sd">    """</span>
+</span><span data-line="1777">    <span class="k">return</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">_dispatch_funcs</span> <span class="k">if</span> <span class="n">EFFECTS</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="p">]</span> <span class="ow">in</span> <span class="n">effects</span><span class="p">]</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -1778,7 +2037,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=ba6d0b80"></script>
+      <script src="../../_static/documentation_options.js?v=1e158f99"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

@@ -72,6 +72,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.combine.html">annals.combine</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.config.html">annals.config</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.docfilter.html">annals.docfilter</a></li>
+<li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.highlights.html">annals.highlights</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.jsonstore.html">annals.jsonstore</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.linkcheck.html">annals.linkcheck</a></li>
 <li class="toctree-l3"><a class="reference internal" href="_autosummary/annals.listening.html">annals.listening</a></li>
@@ -128,6 +129,7 @@ data-aria-dark="Switch to auto color mode">
 <li><a class="reference internal" href="#acting-on-documents-pick-then-choose-what-you-want-back">Acting on documents: pick, then choose what you want back</a></li>
 <li><a class="reference internal" href="#spoken-overviews">Spoken overviews</a></li>
 <li><a class="reference internal" href="#audio-what-you-still-have-to-listen-to">Audio: what you still have to listen to</a></li>
+<li><a class="reference internal" href="#highlights-keep-a-passage-find-it-again">Highlights: keep a passage, find it again</a></li>
 <li><a class="reference internal" href="#sharing-one-page">Sharing one page</a></li>
 <li><a class="reference internal" href="#downloads">Downloads</a></li>
 <li><a class="reference internal" href="#one-file-from-many-markdown-pdf-or-a-web-page">One file from many: Markdown, PDF or a web page</a></li>
@@ -364,6 +366,25 @@ data-aria-dark="Switch to auto color mode">
 </ul>
 <p>An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (<code class="docutils literal notranslate"><span class="pre">annals.media</span></code>) that posts what the player itself says it played to the page around it, so a locked screen, seeking or 2× speed are counted right (opt out with <code class="docutils literal notranslate"><span class="pre">data-annals-media=&quot;off&quot;</span></code> on <code class="docutils literal notranslate"><span class="pre">&lt;html&gt;</span></code> or <code class="docutils literal notranslate"><span class="pre">&lt;body&gt;</span></code>; share links never carry it). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (<code class="docutils literal notranslate"><span class="pre">listening/&lt;reader&gt;.json</span></code>); <code class="docutils literal notranslate"><span class="pre">mk_api(listening=...)</span></code> takes any other store, and <code class="docutils literal notranslate"><span class="pre">listening=None</span></code> keeps none. Progress is recorded on the annals page itself; a page opened on its own (“Open full page”) does not report.</p>
 </section>
+<section id="highlights-keep-a-passage-find-it-again">
+<h2>Highlights: keep a passage, find it again<a class="headerlink" href="#highlights-keep-a-passage-find-it-again" title="Link to this heading">#</a></h2>
+<p>On a document’s page, select some text and tap <strong>Highlight</strong>: the passage is kept, under the name <code class="docutils literal notranslate"><span class="pre">&lt;title&gt;-highlight-&lt;n&gt;</span></code>. A short note offers “Add a note or tags”; the name, the note (a comment), the tags and a colour are all optional and can be changed later. The page draws its highlights (a dotted line under the ones with a note), a tap on one shows its card, and removing one offers Undo.</p>
+<p><strong>Highlights</strong> in the navigation lists every passage you kept and filters as you type, over names, passages, notes, tags and document titles. A row opens its document on the passage: scrolled to it, in the middle of the screen, with its card open. The address is <code class="docutils literal notranslate"><span class="pre">…/d/&lt;id&gt;?h=&lt;highlight&gt;</span></code>, and Copy link on a card gives it.</p>
+<p>To keep a whole document, highlight its title (select it, or “Highlight this page” under More → Highlights). It then sits in the same list, so the list is also your favourites, and it survives a rename.</p>
+<p>More → Highlights is the page’s panel: its highlights, a switch to hide them, and two settings: the default colour (six of them, each legible in light and dark) and whether a page shows all of its highlights when it opens, or only the one you came for.</p>
+<p>Highlights are each reader’s own, kept on the server (<code class="docutils literal notranslate"><span class="pre">highlights/&lt;reader&gt;.json</span></code> under the data root), so they follow you to every device behind the same login. There are none on a share link or in a room, where nobody is signed in. A markdown or text document is highlighted in its rendered view; an html page lives in a closed frame, so only its title can be kept.</p>
+<p>For agents, the same collection:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span><span data-line="1">annals<span class="w"> </span>highlights<span class="w"> </span><span class="s2">"rye water table"</span><span class="w">                  </span><span class="c1"># search: every word, in name, passage, note, tags or title</span>
+</span><span data-line="2">annals<span class="w"> </span>highlights<span class="w"> </span>--doc<span class="w"> </span>&lt;link<span class="w"> </span>or<span class="w"> </span>id&gt;<span class="w"> </span>--tag<span class="w"> </span>later<span class="w">     </span><span class="c1"># one document's, one tag's</span>
+</span><span data-line="3">annals<span class="w"> </span>highlight-add<span class="w"> </span>&lt;link<span class="w"> </span>or<span class="w"> </span>id&gt;<span class="w"> </span><span class="s2">"the passage, word for word"</span><span class="w"> </span>--comment<span class="w"> </span><span class="s2">"why"</span><span class="w"> </span>--tags<span class="w"> </span><span class="s2">"a, b"</span>
+</span><span data-line="4">annals<span class="w"> </span>highlight-add<span class="w"> </span>&lt;link<span class="w"> </span>or<span class="w"> </span>id&gt;<span class="w"> </span><span class="s2">"a passage"</span><span class="w"> </span>--file<span class="w"> </span>notes.md<span class="w">   </span><span class="c1"># in one file of a folder document</span>
+</span><span data-line="5">annals<span class="w"> </span>highlight-add<span class="w"> </span>&lt;link<span class="w"> </span>or<span class="w"> </span>id&gt;<span class="w"> </span><span class="s2">"its title"</span><span class="w"> </span>--whole<span class="w">   </span><span class="c1"># keep the document itself</span>
+</span><span data-line="6">annals<span class="w"> </span>highlight-edit<span class="w"> </span>&lt;highlight<span class="w"> </span>id&gt;<span class="w"> </span>--comment<span class="w"> </span><span class="s2">"..."</span><span class="w"> </span>--color<span class="w"> </span>green
+</span><span data-line="7">annals<span class="w"> </span>highlight-remove<span class="w"> </span>&lt;highlight<span class="w"> </span>id&gt;
+</span></pre></div>
+</div>
+<p>Reading works wherever the documents can be read. Changes are made on the machine that holds them (<code class="docutils literal notranslate"><span class="pre">ssh</span> <span class="pre">&lt;host&gt;</span> <span class="pre">annals</span> <span class="pre">highlight-add</span> <span class="pre">…</span></code>), because the server locks its files and a write from elsewhere would not; <code class="docutils literal notranslate"><span class="pre">--reader</span></code> (the address they sign in with) says whose: it can be left out once one reader, and only one, has highlights, and one reader’s are never listed with another’s. The page side is the <a class="reference external" href="https://github.com/thorwhalen/manicules">manicules</a> widget, vendored under <code class="docutils literal notranslate"><span class="pre">annals/data/ui/vendor/manicules/</span></code> (<code class="docutils literal notranslate"><span class="pre">scripts/vendor-manicules.sh</span></code>); <code class="docutils literal notranslate"><span class="pre">annals.highlights</span></code> is the server side, and <code class="docutils literal notranslate"><span class="pre">mk_api(highlights=...)</span></code> the seam (any <code class="docutils literal notranslate"><span class="pre">(reader)</span> <span class="pre">-&gt;</span> <span class="pre">ReaderHighlights</span></code> callable, or <code class="docutils literal notranslate"><span class="pre">None</span></code> to keep none).</p>
+</section>
 <section id="sharing-one-page">
 <h2>Sharing one page<a class="headerlink" href="#sharing-one-page" title="Link to this heading">#</a></h2>
 <p>The annals is private; a <strong>share link</strong> lets someone without an account read ONE document (or one group) and nothing else. From the page, <strong>Links › One link</strong> on a document lists its files and the annals pages it links to under “What’s included”, so you choose what goes; from a shell:</p>
@@ -521,7 +542,7 @@ data-aria-dark="Switch to auto color mode">
 </section>
 </section>
 
-<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-27 12:06 UTC from <a href="https://github.com/thorwhalen/annals/commit/83bdf1ec2e7493526c02d92dc100c87743d4fe2b">83bdf1e</a> (main) · annals 0.0.72 · <a href="about-this-build.html">about this build</a></p>
+<p class="epythet-provenance" style="font-size:.8em;opacity:.65;margin-top:2.5em;text-align:right">built 2026-11-27 12:30 UTC from <a href="https://github.com/thorwhalen/annals/commit/75afcbec841cf6a57d460c1db82dd0dc2a10ea1d">75afcbe</a> (main) · annals 0.0.73 · <a href="about-this-build.html">about this build</a></p>
         </article><button class="back-to-top" type="button">
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
     <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
@@ -556,7 +577,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="_static/documentation_options.js?v=ba6d0b80"></script>
+      <script src="_static/documentation_options.js?v=1e158f99"></script>
       <script src="_static/doctools.js?v=fd6eb6e6"></script>
       <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="_static/clipboard.min.js?v=a7894cd8"></script>

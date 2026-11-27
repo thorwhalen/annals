@@ -1,4 +1,4 @@
-> built 2026-11-27 12:06 UTC from 83bdf1e (main) · annals 0.0.72. Details: build_info.json
+> built 2026-11-27 12:30 UTC from 75afcbe (main) · annals 0.0.73. Details: build_info.json
 
 # index.html.md
 
@@ -194,6 +194,32 @@ Progress is kept on the server, per reader (the login’s email; `owner` with no
 - **your mark**: Mark done (or not done) wins over both; Reset forgets the document.
 
 An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (`annals.media`) that posts what the player itself says it played to the page around it, so a locked screen, seeking or 2× speed are counted right (opt out with `data-annals-media="off"` on `<html>` or `<body>`; share links never carry it). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (`listening/<reader>.json`); `mk_api(listening=...)` takes any other store, and `listening=None` keeps none. Progress is recorded on the annals page itself; a page opened on its own (“Open full page”) does not report.
+
+## Highlights: keep a passage, find it again
+
+On a document’s page, select some text and tap **Highlight**: the passage is kept, under the name `<title>-highlight-<n>`. A short note offers “Add a note or tags”; the name, the note (a comment), the tags and a colour are all optional and can be changed later. The page draws its highlights (a dotted line under the ones with a note), a tap on one shows its card, and removing one offers Undo.
+
+**Highlights** in the navigation lists every passage you kept and filters as you type, over names, passages, notes, tags and document titles. A row opens its document on the passage: scrolled to it, in the middle of the screen, with its card open. The address is `…/d/<id>?h=<highlight>`, and Copy link on a card gives it.
+
+To keep a whole document, highlight its title (select it, or “Highlight this page” under More → Highlights). It then sits in the same list, so the list is also your favourites, and it survives a rename.
+
+More → Highlights is the page’s panel: its highlights, a switch to hide them, and two settings: the default colour (six of them, each legible in light and dark) and whether a page shows all of its highlights when it opens, or only the one you came for.
+
+Highlights are each reader’s own, kept on the server (`highlights/<reader>.json` under the data root), so they follow you to every device behind the same login. There are none on a share link or in a room, where nobody is signed in. A markdown or text document is highlighted in its rendered view; an html page lives in a closed frame, so only its title can be kept.
+
+For agents, the same collection:
+
+```bash
+annals highlights "rye water table"                  # search: every word, in name, passage, note, tags or title
+annals highlights --doc <link or id> --tag later     # one document's, one tag's
+annals highlight-add <link or id> "the passage, word for word" --comment "why" --tags "a, b"
+annals highlight-add <link or id> "a passage" --file notes.md   # in one file of a folder document
+annals highlight-add <link or id> "its title" --whole   # keep the document itself
+annals highlight-edit <highlight id> --comment "..." --color green
+annals highlight-remove <highlight id>
+```
+
+Reading works wherever the documents can be read. Changes are made on the machine that holds them (`ssh <host> annals highlight-add …`), because the server locks its files and a write from elsewhere would not; `--reader` (the address they sign in with) says whose: it can be left out once one reader, and only one, has highlights, and one reader’s are never listed with another’s. The page side is the [manicules](https://github.com/thorwhalen/manicules) widget, vendored under `annals/data/ui/vendor/manicules/` (`scripts/vendor-manicules.sh`); `annals.highlights` is the server side, and `mk_api(highlights=...)` the seam (any `(reader) -> ReaderHighlights` callable, or `None` to keep none).
 
 ## Sharing one page
 
@@ -1368,6 +1394,334 @@ A moment, as an aware datetime: an ISO date or time (local time when it has no o
   [`datetime`](https://docs.python.org/3/library/datetime.html#datetime.datetime)
 
 
+# _autosummary/annals.highlights.html.md
+
+# annals.highlights
+
+Each reader’s highlights: passages of documents kept with a name, tags and a note.
+
+A reader selects text on a document’s page and keeps it. The page side is the
+[manicules](https://github.com/thorwhalen/manicules) widget (vendored under
+`ui/vendor/manicules/`); this module is the server side it talks to: what a highlight is
+allowed to be, where each reader’s are kept, and how they are searched. A highlight of a
+document’s whole title keeps the document itself, which is how a reader marks a favourite.
+
+A highlight, as stored (the shape of manicules’ `highlight.schema.json`):
+
+```default
+{"id": "hmf3k2x9a1b2c3", "name": "Bread notes-highlight-1",
+ "target": {"source": {"id": "<doc id>", "title": "Bread notes", "url": "d/<doc id>"},
+            "part": "body",
+            "quote": {"exact": "85 percent water", "prefix": "A rye loaf takes ", "suffix": ", and"},
+            "position": {"start": 310, "end": 327}},
+ "comment": "the number I keep forgetting", "tags": ["rye"], "color": "green",
+ "created": "2026-11-27T10:00:00+00:00"}
+```
+
+The target is two W3C Web Annotation selectors (the quote with its context, and where it
+was): the page finds the passage again from them after the document changed. `whole` in a
+target means the entire part, whatever it says now. The server never interprets a target;
+it bounds its size and keeps it.
+
+Records live under the data root, one JSON file per reader
+(`highlights/<reader>.json`, `{id: highlight}`, the layout manicules’ own file store and
+CLI use), through [`annals.jsonstore.JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore); each reader’s two settings (the
+default colour, and whether a page shows all its highlights when it opens) are beside them
+(`highlight-settings/<reader>.json`). [`for_reader()`](_autosummary/annals.highlights.html.md#annals.highlights.for_reader) is the seam: any
+`(reader) -> ReaderHighlights` callable can replace it (`mk_api(highlights=...)`), its
+records being anything with the three calls of [`Records`](_autosummary/annals.highlights.html.md#annals.highlights.Records). The routes the widget
+talks to are `annals.highlights_api.mk_router()`.
+
+```pycon
+>>> rec = clean({"target": {"source": {"id": "d1", "title": "Notes"}, "quote": {"exact": "three sites"}}},
+...             names=["Notes-highlight-1"], now="2026-11-27T10:00:00+00:00", new_id=lambda: "h1")
+>>> rec["name"], rec["target"]["part"], rec["tags"], rec["comment"]
+('Notes-highlight-2', 'body', [], '')
+>>> [h["id"] for h in search({"h1": rec}, "SITES notes")]
+['h1']
+>>> search({"h1": rec}, "sites absent")
+[]
+>>> clean_patch({"comment": "why", "color": None, "tags": ["b", "A", "a"]})
+{'comment': 'why', 'color': None, 'tags': ['A', 'b']}
+```
+
+### Module Attributes
+
+| [`ENV_READER`](_autosummary/annals.highlights.html.md#annals.highlights.ENV_READER)       | the reader an agent surface (the CLI, the MCP server) answers for when none is named     |
+|-------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| [`PALETTE`](_autosummary/annals.highlights.html.md#annals.highlights.PALETTE)          | the colours a highlight may have (manicules' palette; each is legible in light and dark) |
+| [`DEFAULT_SETTINGS`](_autosummary/annals.highlights.html.md#annals.highlights.DEFAULT_SETTINGS) | what a reader gets before choosing anything                                              |
+| [`MAX_HIGHLIGHTS`](_autosummary/annals.highlights.html.md#annals.highlights.MAX_HIGHLIGHTS)   | the file is read whole on every page                                                     |
+| [`MAX_STORE_BYTES`](_autosummary/annals.highlights.html.md#annals.highlights.MAX_STORE_BYTES)  | every list, search and page view reads it whole                                          |
+| [`RESERVED_IDS`](_autosummary/annals.highlights.html.md#annals.highlights.RESERVED_IDS)     | ids the API's own routes use (`/highlights/settings`)                                    |
+| [`PATCHABLE`](_autosummary/annals.highlights.html.md#annals.highlights.PATCHABLE)        | the fields a reader may change afterwards; the target never changes                      |
+
+### Functions
+
+| [`add`](_autosummary/annals.highlights.html.md#annals.highlights.add)(records, data)                    | Keep a new highlight.                                                                                                       |
+|----------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------|
+| [`apply_patch`](_autosummary/annals.highlights.html.md#annals.highlights.apply_patch)(record, patch, \*[, now]) | `record` with a cleaned patch applied; a `None` colour goes back to the default.                                            |
+| [`clean`](_autosummary/annals.highlights.html.md#annals.highlights.clean)(data, \*[, names, now, new_id]) | A complete highlight from what a caller sent, validated and bounded.                                                        |
+| [`clean_patch`](_autosummary/annals.highlights.html.md#annals.highlights.clean_patch)(patch)                    | What a reader may change ([`PATCHABLE`](_autosummary/annals.highlights.html.md#annals.highlights.PATCHABLE)), validated; anything else is refused. |
+| [`clean_settings`](_autosummary/annals.highlights.html.md#annals.highlights.clean_settings)(patch)                 | The settings a reader may set, validated: `color` and `showOthers`.                                                         |
+| [`clean_target`](_autosummary/annals.highlights.html.md#annals.highlights.clean_target)(target)                  | A target as stored: its source, its part, and the selectors, each bounded.                                                  |
+| [`default_name`](_autosummary/annals.highlights.html.md#annals.highlights.default_name)(title[, names])          | `<title>-highlight-<n>`, `n` the first number no highlight of that page uses.                                               |
+| [`edit`](_autosummary/annals.highlights.html.md#annals.highlights.edit)(records, hid, patch)             | Change a highlight's name, note, tags or colour.                                                                            |
+| [`for_reader`](_autosummary/annals.highlights.html.md#annals.highlights.for_reader)(root)                      | The default seam: `<root>/highlights/<reader>.json` and `highlight-settings/`.                                              |
+| [`href`](_autosummary/annals.highlights.html.md#annals.highlights.href)(record)                          | A highlight's page, opened on it, relative to the page's base (`""` when it names none).                                    |
+| [`new_id`](_autosummary/annals.highlights.html.md#annals.highlights.new_id)()                              | A new id: sortable by creation time, unique enough for one reader's collection.                                             |
+| [`read_records`](_autosummary/annals.highlights.html.md#annals.highlights.read_records)(target, reader)          | One reader's highlights by id, read through a `Target` (a local folder, or over ssh): for a caller that only reads.         |
+| [`readers`](_autosummary/annals.highlights.html.md#annals.highlights.readers)(target)                       | Who has highlights under a data root, read through its `Target` (so over ssh too).                                          |
+| [`remove`](_autosummary/annals.highlights.html.md#annals.highlights.remove)(records, hid)                  | Delete a highlight and return it.                                                                                           |
+| [`search`](_autosummary/annals.highlights.html.md#annals.highlights.search)(records[, q, source, tag])     | The highlights matching every word of `q` (case ignored), newest first.                                                     |
+| [`search_text`](_autosummary/annals.highlights.html.md#annals.highlights.search_text)(record)                   | What a highlight is found by: its name, passage, note, tags and its page's title.                                           |
+| [`settings_of`](_autosummary/annals.highlights.html.md#annals.highlights.settings_of)(store)                    | A reader's settings over the defaults (a stored value of the wrong kind is ignored).                                        |
+
+### Classes
+
+| [`HighlightStore`](_autosummary/annals.highlights.html.md#annals.highlights.HighlightStore)(path)                | One reader's highlights: `{id: highlight}` in one JSON file.                                                                                                                                        |
+|--------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`ReaderHighlights`](_autosummary/annals.highlights.html.md#annals.highlights.ReaderHighlights)(records, settings) | What the API keeps for one reader: the highlights ([`Records`](_autosummary/annals.highlights.html.md#annals.highlights.Records)), and the settings beside them (a mapping of setting name to value, with `snapshot()`). |
+| [`Records`](_autosummary/annals.highlights.html.md#annals.highlights.Records)(\*args, \*\*kwargs)         | One reader's highlights, as this module and the API use them: any store with these three calls can stand behind the seam (a table in a database as well as a file).                                 |
+| [`SettingsStore`](_autosummary/annals.highlights.html.md#annals.highlights.SettingsStore)(path)                 | One reader's settings: `{setting: value}` in one JSON file.                                                                                                                                         |
+
+### annals.highlights.DEFAULT_SETTINGS *= {'color': 'yellow', 'showOthers': True}*
+
+what a reader gets before choosing anything
+
+### annals.highlights.ENV_READER *= 'ANNALS_HIGHLIGHTS_READER'*
+
+the reader an agent surface (the CLI, the MCP server) answers for when none is named
+
+### *class* annals.highlights.HighlightStore(path)
+
+Bases: [`JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)
+
+One reader’s highlights: `{id: highlight}` in one JSON file.
+
+#### has_room()
+
+Whether another highlight may be added: the file is read whole on every page,
+so it is bounded in bytes ([`MAX_STORE_BYTES`](_autosummary/annals.highlights.html.md#annals.highlights.MAX_STORE_BYTES)) as well as in number.
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+#### valid(value)
+
+Whether a value read from the file is kept (an invalid one is logged and skipped).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.highlights.MAX_HIGHLIGHTS *= 5000*
+
+the file is read whole on every page
+
+* **Type:**
+  at most this many highlights per reader
+
+### annals.highlights.MAX_STORE_BYTES *= 20000000*
+
+every list, search and page view reads it whole
+
+* **Type:**
+  and their file at most this big
+
+### annals.highlights.PALETTE *= ('yellow', 'green', 'blue', 'pink', 'orange', 'purple')*
+
+the colours a highlight may have (manicules’ palette; each is legible in light and dark)
+
+### annals.highlights.PATCHABLE *= ('name', 'comment', 'tags', 'color')*
+
+the fields a reader may change afterwards; the target never changes
+
+### annals.highlights.RESERVED_IDS *= frozenset({'settings'})*
+
+ids the API’s own routes use (`/highlights/settings`)
+
+### *class* annals.highlights.ReaderHighlights(records, settings)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+What the API keeps for one reader: the highlights ([`Records`](_autosummary/annals.highlights.html.md#annals.highlights.Records)), and the
+settings beside them (a mapping of setting name to value, with `snapshot()`).
+
+### *class* annals.highlights.Records(\*args, \*\*kwargs)
+
+Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
+
+One reader’s highlights, as this module and the API use them: any store with these
+three calls can stand behind the seam (a table in a database as well as a file).
+
+#### modify(key, change)
+
+Set `key` to `change(current or None)` atomically (`None` deletes it).
+
+* **Return type:**
+  [`Any`](https://docs.python.org/3/library/typing.html#typing.Any)
+
+### *class* annals.highlights.SettingsStore(path)
+
+Bases: [`JsonFileStore`](_autosummary/annals.jsonstore.html.md#annals.jsonstore.JsonFileStore)
+
+One reader’s settings: `{setting: value}` in one JSON file.
+
+#### valid(value)
+
+Whether a value read from the file is kept (an invalid one is logged and skipped).
+
+* **Return type:**
+  [`bool`](https://docs.python.org/3/builtins/functions.html#bool)
+
+### annals.highlights.add(records, data)
+
+Keep a new highlight. Raises `ValueError` when it is invalid, when its id is taken,
+or when the reader already has [`MAX_HIGHLIGHTS`](_autosummary/annals.highlights.html.md#annals.highlights.MAX_HIGHLIGHTS).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.apply_patch(record, patch, , now=None)
+
+`record` with a cleaned patch applied; a `None` colour goes back to the default.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.clean(data, \*, names=(), now=None, new_id=<function new_id>)
+
+A complete highlight from what a caller sent, validated and bounded.
+
+`names` are the names of the page’s other highlights, for the default name. An `id`
+or `created` the caller sent is kept when well formed (the page makes the id, so an
+undo puts back the very same highlight); unknown fields are dropped.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.clean_patch(patch)
+
+What a reader may change ([`PATCHABLE`](_autosummary/annals.highlights.html.md#annals.highlights.PATCHABLE)), validated; anything else is refused.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.clean_settings(patch)
+
+The settings a reader may set, validated: `color` and `showOthers`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.clean_target(target)
+
+A target as stored: its source, its part, and the selectors, each bounded.
+
+Raises `ValueError` for a target with no source id, with neither a quote nor
+`whole`, or with a field of the wrong kind or size.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.default_name(title, names=())
+
+`<title>-highlight-<n>`, `n` the first number no highlight of that page uses.
+
+```pycon
+>>> default_name("Notes", ["a", "Notes-highlight-3"])
+'Notes-highlight-4'
+>>> default_name("  ")
+'page-highlight-1'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.highlights.edit(records, hid, patch)
+
+Change a highlight’s name, note, tags or colour. `KeyError` when there is none.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.for_reader(root)
+
+The default seam: `<root>/highlights/<reader>.json` and `highlight-settings/`.
+
+* **Return type:**
+  [`Callable`](https://docs.python.org/3/library/collections.abc.html#collections.abc.Callable)[[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)], [`ReaderHighlights`](_autosummary/annals.highlights.html.md#annals.highlights.ReaderHighlights)]
+
+### annals.highlights.href(record)
+
+A highlight’s page, opened on it, relative to the page’s base (`""` when it names none).
+
+The one place that address is built: the API’s `href`, the CLI’s `url` and the page
+all come from here.
+
+```pycon
+>>> href({"id": "h1", "target": {"source": {"id": "d1", "url": "d/d1?f=a.md"}}})
+'d/d1?f=a.md&h=h1'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.highlights.new_id()
+
+A new id: sortable by creation time, unique enough for one reader’s collection.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.highlights.read_records(target, reader)
+
+One reader’s highlights by id, read through a `Target` (a local folder, or over
+ssh): for a caller that only reads. The one other place that knows the file layout is
+[`for_reader()`](_autosummary/annals.highlights.html.md#annals.highlights.for_reader).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### annals.highlights.readers(target)
+
+Who has highlights under a data root, read through its `Target` (so over ssh too).
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.highlights.remove(records, hid)
+
+Delete a highlight and return it. `KeyError` when there is none.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.highlights.search(records, q='', , source=None, tag=None)
+
+The highlights matching every word of `q` (case ignored), newest first.
+
+`source` keeps one page’s (its source id), `tag` the ones carrying a tag. This is
+the function a wider search calls to list a reader’s highlights beside documents.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### annals.highlights.search_text(record)
+
+What a highlight is found by: its name, passage, note, tags and its page’s title.
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.highlights.settings_of(store)
+
+A reader’s settings over the defaults (a stored value of the wrong kind is ignored).
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+
 # _autosummary/annals.html.md
 
 # annals
@@ -1815,6 +2169,7 @@ Move documents to the recycle bin (restorable).
 | [`combine`](_autosummary/annals.combine.html.md#module-annals.combine)           | Many files of many kinds as ONE document: a Markdown, html or PDF file.                                                                            |
 | [`config`](_autosummary/annals.config.html.md#module-annals.config)             | Settings: where documents are published and what link to print.                                                                                    |
 | [`docfilter`](_autosummary/annals.docfilter.html.md#module-annals.docfilter)       | Exact filters over a document's meta, for a caller that polls: since, session, tag, source.                                                        |
+| [`highlights`](_autosummary/annals.highlights.html.md#module-annals.highlights)     | Each reader's highlights: passages of documents kept with a name, tags and a note.                                                                 |
 | [`jsonstore`](_autosummary/annals.jsonstore.html.md#module-annals.jsonstore)       | A `MutableMapping` kept in one JSON file, safe with several server processes.                                                                      |
 | [`linkcheck`](_autosummary/annals.linkcheck.html.md#module-annals.linkcheck)       | Find what a document mentions without linking to it: the owner reads on a phone and clicks through.                                                |
 | [`listening`](_autosummary/annals.listening.html.md#module-annals.listening)       | What each reader has heard of each audio document: percent heard, listens, where they stopped.                                                     |
@@ -5527,6 +5882,10 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`export`](_autosummary/annals.tools.html.md#annals.tools.export)(doc_id, \*[, format, file, output, ...])    | One markdown file of a document as a `.md` or a titled `.pdf`, as the page's Export gives it.             |
 | [`group`](_autosummary/annals.tools.html.md#annals.tools.group)(title, doc_ids, \*[, add_to, target, ...])   | Make a group (one URL for a set of documents) from existing document ids.                                 |
 | [`groups`](_autosummary/annals.tools.html.md#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                                |
+| [`highlight_add`](_autosummary/annals.tools.html.md#annals.tools.highlight_add)(doc, exact, \*[, file, prefix, ...]) | Keep a passage of a document as a highlight, as selecting it on the page does.                            |
+| [`highlight_edit`](_autosummary/annals.tools.html.md#annals.tools.highlight_edit)(highlight_id, \*[, name, ...])      | Change a highlight's name, note, tags or colour; its passage never changes.                               |
+| [`highlight_remove`](_autosummary/annals.tools.html.md#annals.tools.highlight_remove)(highlight_id, \*[, reader, ...])  | Delete a highlight.                                                                                       |
+| [`highlights`](_autosummary/annals.tools.html.md#annals.tools.highlights)([q, doc, tag, reader, limit, ...])      | List or search the highlights a reader kept on documents' pages, newest first.                            |
 | [`listen`](_autosummary/annals.tools.html.md#annals.tools.listen)(doc_id, \*[, minutes, force, also, ...])    | Ask for a spoken overview of a document, as its page's Listen button does.                                |
 | [`listen_down`](_autosummary/annals.tools.html.md#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.                      |
 | [`listen_work`](_autosummary/annals.tools.html.md#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).                     |
@@ -5552,7 +5911,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 what an agent or a tool is offered unless its host asks for more (MCP reads this)
 
-### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'rename': 'write', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
+### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'highlight_add': 'write', 'highlight_edit': 'write', 'highlight_remove': 'destructive', 'highlights': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'rename': 'write', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
 
 a surface serves the levels its caller
 allows. `read` changes nothing; `write` changes the store or a setting and can be undone
@@ -5659,6 +6018,59 @@ is ignored. The documents must exist and not be in the bin; the title is cleaned
 ### annals.tools.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlight_add(doc, exact, , file=None, prefix='', suffix='', name=None, comment='', tags='', color=None, whole=False, reader=None, target=None, to=None)
+
+Keep a passage of a document as a highlight, as selecting it on the page does.
+
+`doc` is the document’s id or link; `file` names one file of it (as its page’s
+`?f=` does) when the passage is not in its main text. `exact` is the passage word for
+word as the page shows it (rendered text, not markdown marks); `prefix` and `suffix`
+(the text just before and after) tell two identical passages apart. `whole` keeps the
+document itself by its title (`exact` is then the title, or anything). `name`
+defaults to `<title>-highlight-<n>`; `tags` is comma separated; `color` is one of
+yellow, green, blue, pink, orange, purple. Run where the documents are kept; `reader`
+is whose (needed until one reader, and only one, has highlights). Returns
+`{highlight}`, with its `url`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlight_edit(highlight_id, , name=None, comment=None, tags=None, color=None, reader=None, target=None, to=None)
+
+Change a highlight’s name, note, tags or colour; its passage never changes.
+
+Only what is given changes: `comment ""` clears the note, `tags ""` the tags,
+`color default` goes back to the reader’s default colour. Run where the documents are
+kept. Returns `{highlight}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlight_remove(highlight_id, , reader=None, target=None, to=None)
+
+Delete a highlight. Returns `{removed}`, the highlight as it was.
+
+Run where the documents are kept. Nothing brings it back but adding it again.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlights(q='', , doc=None, tag=None, reader=None, limit=50, target=None, base_url=None, to=None)
+
+List or search the highlights a reader kept on documents’ pages, newest first.
+
+A highlight is a passage of a document kept with a name, a note (`comment`) and tags;
+one whose `target.whole` is true and `target.part` is `title` keeps the whole
+document (a favourite). `q`: words that must all appear in the name, the passage, the
+note, the tags or the document’s title. `doc` (an id or a link) keeps one document’s
+(its files’ included), `tag` one tag’s. `reader` is whose (the address they sign in
+with); it may be left out when one reader has highlights. Each row has `reader` and
+`url`, the page opened on the passage. Returns `{highlights, total, reader}`;
+`total` counts matches before `limit`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -5907,7 +6319,7 @@ The operations whose effect is in `effects`, in the CLI’s order: the list a ca
 
 ```pycon
 >>> [f.__name__ for f in tools_with({"read"})]
-['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']
+['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state', 'highlights']
 ```
 
 * **Return type:**
@@ -5934,18 +6346,16 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-27 12:06 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/83bdf1ec2e7493526c02d92dc100c87743d4fe2b"><code>83bdf1e</code></a> on branch <code>main</code>, for **annals 0.0.72** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-27 12:30 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/75afcbec841cf6a57d460c1db82dd0dc2a10ea1d"><code>75afcbe</code></a> on branch <code>main</code>, for **annals 0.0.73** (from <code>pyproject.toml</code>).
 
-#### WARNING
-The documentation and the package may be misaligned:
-
-- The documented version (0.0.72) is behind the latest release on PyPI (0.0.73): `pip install annals` gives newer code than these docs describe.
+#### NOTE
+Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/83bdf1ec2e7493526c02d92dc100c87743d4fe2b"><code>83bdf1ec2e7493526c02d92dc100c87743d4fe2b</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/75afcbec841cf6a57d460c1db82dd0dc2a10ea1d"><code>75afcbec841cf6a57d460c1db82dd0dc2a10ea1d</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -5956,9 +6366,9 @@ The documentation and the package may be misaligned:
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45995114926">45995114926</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45998246838">45998246838</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>83bdf1ec2e7493526c02d92dc100c87743d4fe2b</code> (in the history of the built commit) |
+| Event commit | <code>75afcbec841cf6a57d460c1db82dd0dc2a10ea1d</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5983,13 +6393,13 @@ The documentation and the package may be misaligned:
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.73/">0.0.73</a>, newer than the documented version (0.0.72).
+Latest release: <a href="https://pypi.org/project/annals/0.0.73/">0.0.73</a>, the same as the documented version.
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout 83bdf1ec2e7493526c02d92dc100c87743d4fe2b
+git checkout 75afcbec841cf6a57d460c1db82dd0dc2a10ea1d
 pip install "epythet==0.2.25"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

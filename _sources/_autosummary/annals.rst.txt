@@ -42,6 +42,8 @@
    config
    docfilter
    export
+   highlights
+   highlights_api
    jsonstore
    linkcheck
    listening

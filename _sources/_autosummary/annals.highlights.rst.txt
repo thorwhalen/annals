@@ -1,0 +1,49 @@
+annals.highlights
+=================
+
+.. automodule:: annals.highlights
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      ENV_READER
+      PALETTE
+      DEFAULT_SETTINGS
+      MAX_HIGHLIGHTS
+      MAX_STORE_BYTES
+      RESERVED_IDS
+      PATCHABLE
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      add
+      apply_patch
+      clean
+      clean_patch
+      clean_settings
+      clean_target
+      default_name
+      edit
+      for_reader
+      href
+      new_id
+      read_records
+      readers
+      remove
+      search
+      search_text
+      settings_of
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      HighlightStore
+      ReaderHighlights
+      Records
+      SettingsStore
+   

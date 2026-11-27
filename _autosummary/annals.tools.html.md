@@ -26,6 +26,10 @@ in parity. Nothing here prints or exits; the surfaces do that.
 | [`export`](#annals.tools.export)(doc_id, \*[, format, file, output, ...])    | One markdown file of a document as a `.md` or a titled `.pdf`, as the page's Export gives it.             |
 | [`group`](#annals.tools.group)(title, doc_ids, \*[, add_to, target, ...])   | Make a group (one URL for a set of documents) from existing document ids.                                 |
 | [`groups`](#annals.tools.groups)(\*[, target, base_url, to])                 | List groups, newest first.                                                                                |
+| [`highlight_add`](#annals.tools.highlight_add)(doc, exact, \*[, file, prefix, ...]) | Keep a passage of a document as a highlight, as selecting it on the page does.                            |
+| [`highlight_edit`](#annals.tools.highlight_edit)(highlight_id, \*[, name, ...])      | Change a highlight's name, note, tags or colour; its passage never changes.                               |
+| [`highlight_remove`](#annals.tools.highlight_remove)(highlight_id, \*[, reader, ...])  | Delete a highlight.                                                                                       |
+| [`highlights`](#annals.tools.highlights)([q, doc, tag, reader, limit, ...])      | List or search the highlights a reader kept on documents' pages, newest first.                            |
 | [`listen`](#annals.tools.listen)(doc_id, \*[, minutes, force, also, ...])    | Ask for a spoken overview of a document, as its page's Listen button does.                                |
 | [`listen_down`](#annals.tools.listen_down)([reason, link, clear, target, to])     | Say why spoken overviews cannot be made, and where that is being fixed; or clear it.                      |
 | [`listen_work`](#annals.tools.listen_work)(\*[, command, target, to])             | Fulfil the queued overview requests, one at a time (a timer runs this on the server).                     |
@@ -51,7 +55,7 @@ in parity. Nothing here prints or exits; the surfaces do that.
 
 what an agent or a tool is offered unless its host asks for more (MCP reads this)
 
-### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'rename': 'write', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
+### annals.tools.EFFECTS *= {'aggregate': 'file', 'configure': 'write', 'copy': 'write', 'export': 'file', 'group': 'write', 'groups': 'read', 'highlight_add': 'write', 'highlight_edit': 'write', 'highlight_remove': 'destructive', 'highlights': 'read', 'listen': 'spend', 'listen_down': 'spend', 'listen_work': 'server', 'ls': 'read', 'overview_state': 'read', 'page_shell': 'server', 'publish': 'write', 'purge': 'destructive', 'references': 'read', 'rename': 'write', 'restore': 'write', 'serve': 'server', 'share': 'write', 'shareable': 'read', 'shares': 'read', 'show': 'read', 'tag': 'write', 'trash': 'write', 'unshare': 'write'}*
 
 a surface serves the levels its caller
 allows. `read` changes nothing; `write` changes the store or a setting and can be undone
@@ -158,6 +162,59 @@ is ignored. The documents must exist and not be in the bin; the title is cleaned
 ### annals.tools.groups(, target=None, base_url=None, to=None)
 
 List groups, newest first.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlight_add(doc, exact, , file=None, prefix='', suffix='', name=None, comment='', tags='', color=None, whole=False, reader=None, target=None, to=None)
+
+Keep a passage of a document as a highlight, as selecting it on the page does.
+
+`doc` is the document’s id or link; `file` names one file of it (as its page’s
+`?f=` does) when the passage is not in its main text. `exact` is the passage word for
+word as the page shows it (rendered text, not markdown marks); `prefix` and `suffix`
+(the text just before and after) tell two identical passages apart. `whole` keeps the
+document itself by its title (`exact` is then the title, or anything). `name`
+defaults to `<title>-highlight-<n>`; `tags` is comma separated; `color` is one of
+yellow, green, blue, pink, orange, purple. Run where the documents are kept; `reader`
+is whose (needed until one reader, and only one, has highlights). Returns
+`{highlight}`, with its `url`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlight_edit(highlight_id, , name=None, comment=None, tags=None, color=None, reader=None, target=None, to=None)
+
+Change a highlight’s name, note, tags or colour; its passage never changes.
+
+Only what is given changes: `comment ""` clears the note, `tags ""` the tags,
+`color default` goes back to the reader’s default colour. Run where the documents are
+kept. Returns `{highlight}`.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlight_remove(highlight_id, , reader=None, target=None, to=None)
+
+Delete a highlight. Returns `{removed}`, the highlight as it was.
+
+Run where the documents are kept. Nothing brings it back but adding it again.
+
+* **Return type:**
+  [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
+
+### annals.tools.highlights(q='', , doc=None, tag=None, reader=None, limit=50, target=None, base_url=None, to=None)
+
+List or search the highlights a reader kept on documents’ pages, newest first.
+
+A highlight is a passage of a document kept with a name, a note (`comment`) and tags;
+one whose `target.whole` is true and `target.part` is `title` keeps the whole
+document (a favourite). `q`: words that must all appear in the name, the passage, the
+note, the tags or the document’s title. `doc` (an id or a link) keeps one document’s
+(its files’ included), `tag` one tag’s. `reader` is whose (the address they sign in
+with); it may be left out when one reader has highlights. Each row has `reader` and
+`url`, the page opened on the passage. Returns `{highlights, total, reader}`;
+`total` counts matches before `limit`.
 
 * **Return type:**
   [`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)
@@ -406,7 +463,7 @@ The operations whose effect is in `effects`, in the CLI’s order: the list a ca
 
 ```pycon
 >>> [f.__name__ for f in tools_with({"read"})]
-['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']
+['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state', 'highlights']
 ```
 
 * **Return type:**

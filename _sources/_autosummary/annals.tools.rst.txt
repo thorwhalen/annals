@@ -25,6 +25,10 @@ annals.tools
       export
       group
       groups
+      highlight_add
+      highlight_edit
+      highlight_remove
+      highlights
       listen
       listen_down
       listen_work
