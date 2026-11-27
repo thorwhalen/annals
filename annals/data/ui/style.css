@@ -418,3 +418,12 @@ html.sheet-open { overflow: hidden; }
 .share-static img { max-width: 100%; height: auto; }
 .share-static article + article { border-top: 1px solid var(--line); margin-top: 2em; padding-top: 1em; }
 .share-static pre { white-space: pre-wrap; }
+
+/* highlights (the manicules widget, vendored under ui/vendor/manicules/): its surfaces take
+   annals' colours. `body` is here so these win over the widget's own defaults, which load later. */
+body .mn-layer, body .mn-list, body .mn-control {
+  --mn-bg: var(--card); --mn-fg: var(--fg); --mn-muted: var(--muted); --mn-line: var(--line);
+  --mn-soft: var(--chip); --mn-danger: var(--danger); --mn-radius: var(--radius); --mn-z: 40;
+  --mn-accent: var(--accent); --mn-strong: var(--accent); --mn-strong-fg: var(--accent-fg);
+}
+.hl-all { margin-top: 8px; }

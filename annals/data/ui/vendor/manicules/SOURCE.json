@@ -1,0 +1,14 @@
+{
+ "package": "manicules",
+ "version": "0.1.0",
+ "commit": "818e22981e8e99cacd620bc1bb75901b8404e2a4",
+ "repository": "https://github.com/thorwhalen/manicules",
+ "sha256": {
+  "LICENSE": "7a4135df2084f5f5961097cfd4d3e750969b67f5b0adce9ca0a255d99671dbbc",
+  "THIRD_PARTY_NOTICES.md": "35b2aa19223321e969cb39a5da0dd5444c4791a4b0285d7320068e957f419c69",
+  "conformance.json": "4c98556d78a93559c9fa7dd4419f70bf4e49c21cad927d5cac82b7e13dd569a8",
+  "highlight.schema.json": "2b8056b55f7579159b9278107a4d215b03966d360f95f506bb045a46a9f0987f",
+  "manicules.global.js": "6000feff3a3ddb5e2ffca828a26226acabf0b6f4b7dc9c7262bc147c8626951c",
+  "styles.css": "bb75e56b77144783104924770de414cd6f5f8dbba573102f16e88683767e94da"
+ }
+}
