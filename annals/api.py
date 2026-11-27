@@ -338,12 +338,15 @@ def mk_api(
             "listening": callable(listening),
             "reader": reader is not None,
         }
+        # ``search`` is the one thing a room may be given: it answers the room's search box
         if any(asked.values()):
             raise ValueError(
                 "a room serves documents only; it takes none of: "
                 + ", ".join(k for k, v in asked.items() if v)
             )
-        return _mk_room(store, thumbnailer=thumbnailer, tags=tags, title=title)
+        return _mk_room(
+            store, thumbnailer=thumbnailer, tags=tags, search=search, title=title
+        )
     offered = overview.readers_offered(overviews)
     local = isinstance(store.target, LocalTarget)
     if offered and not local:
@@ -417,16 +420,23 @@ def _mk_room(
     *,
     thumbnailer: Thumbnailer | None | bool,
     tags: MutableMapping[str, list[str]] | None,
+    search: SearchStrategy | None,
     title: str,
 ) -> FastAPI:
-    """:func:`mk_api` with ``room=True``: the API over a :class:`RoomStore`, gated by route."""
+    """:func:`mk_api` with ``room=True``: the API over a :class:`RoomStore`, gated by route.
+
+    Its search index is its own (``room.sqlite``): a room shows fewer fields than the owner's
+    page, so sharing one index file would have each re-index what the other just did."""
     room_store = RoomStore(store)
+    if search is None:
+        search = default_search(store.target.local_path("."), name="room")
     api = _mk_api(
         room_store,
         requests=None,
         thumbnailer=default_thumbnailer() if thumbnailer is True else thumbnailer,
         sources={},
         tags=default_tags(store) if tags is None else tags,
+        search=search,
         share_base=None,
         listening=None,
         reader=reader_of,

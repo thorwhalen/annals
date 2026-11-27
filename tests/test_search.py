@@ -9,7 +9,10 @@ on the live data, one typed query answered after 35 s, before any network. The g
 text once per change, never once per query.
 """
 
+import os
+import sqlite3
 import threading
+import time
 
 import pytest
 from fastapi.testclient import TestClient
@@ -17,7 +20,7 @@ from fastapi.testclient import TestClient
 from annals.api import mk_api
 from annals.catalog import Catalog, mk_catalog
 from annals.search import IndexedSearch, fts_query, scan_search
-from annals.sources import PublishedSource
+from annals.sources import FolderSource, PublishedSource
 from annals.store import DocStore
 
 
@@ -83,8 +86,9 @@ def test_typed_query_syntax_is_searched_as_words_never_run():
     assert fts_query('data NOT "x" AND -y col:z') == (
         '"data"* "not"* """x"""* "and"* "-y"* "col:z"*'
     )
-    for q in ['"', "AND", "a OR", "*", "(", "NEAR(a b)", "col:x"]:
+    for q in ['"', "AND", "a OR", "*", "(", "NEAR(a b)", "col:x", "\x00", "ab\x00c", "-", "..."]:
         IndexedSearch()(q, ROWS, _text_of)  # no sqlite3.OperationalError
+    assert IndexedSearch()("... -", ROWS, _text_of) == ROWS  # only punctuation: no query
 
 
 def test_the_index_answers_only_with_the_rows_it_is_given():
@@ -138,11 +142,58 @@ def test_queries_during_a_first_build_wait_for_it_instead_of_redoing_it(tmp_path
     assert answers == [300] * 5
 
 
-def test_snippets_only_for_the_best_rows_and_results_capped():
+def test_the_best_rows_get_a_snippet_the_rest_a_window_and_results_are_capped():
     rows = [_row(f"p:{i}", f"doc {i}", f"some data here {i}") for i in range(30)]
     hits = IndexedSearch(snippet_rows=5, max_results=20)("data", rows, _text_of)
     assert len(hits) == 20
-    assert sum("snippet" in r for r in hits) == 5
+    assert all("data" in r["snippet"] for r in hits)  # past the 5th: the cheap window
+
+
+def test_an_unreadable_item_fails_no_search_and_is_tried_again():
+    tries = []
+
+    def flaky(row):
+        if row["key"] == "p:b" and len(tries) < 1:
+            tries.append(row["key"])
+            raise PermissionError("not now")
+        return _text_of(row)
+
+    search = IndexedSearch()
+    assert [r["key"] for r in search("budget", ROWS, flaky)] == ["p:a"]  # no 500
+    assert [r["key"] for r in search("minute", ROWS, flaky)] == ["p:b"]  # read again, found
+
+
+def test_another_worker_indexing_the_same_item_meanwhile_is_no_error(tmp_path):
+    path = tmp_path / "index.sqlite"
+    mine, other = IndexedSearch(path), IndexedSearch(path)
+    mine._connect()  # the schema exists
+    db = sqlite3.connect(path, isolation_level=None, timeout=30)
+    db.execute("BEGIN IMMEDIATE")  # the other worker, mid-write, has p:b already
+    db.execute("INSERT INTO stamps (key, stamp) VALUES ('p:b', 'old')")
+    threading.Timer(0.3, lambda: db.execute("COMMIT")).start()
+    assert [r["key"] for r in mine("minute", ROWS, _text_of)] == ["p:b"]
+    assert [r["key"] for r in other("minute", ROWS, _text_of)] == ["p:b"]
+
+
+def test_a_ledger_rewritten_within_the_same_second_and_size_is_reindexed(tmp_path):
+    root = tmp_path / "ledgers"
+    root.mkdir()
+    f = root / "s.md"
+    f.write_text("# S\n\nstatus: busy\n")
+    t = f.stat().st_mtime
+    cat = Catalog({"ledgers": FolderSource(root, name="ledgers")}, tags={}, search=IndexedSearch())
+    assert [r["id"] for r in cat.rows("busy")] == ["s.md"]
+    f.write_text("# S\n\nstatus: idle\n")  # same size
+    os.utime(f, (t, t))  # and the same mtime, as a sync that keeps mtimes leaves it
+    assert [r["id"] for r in cat.rows("idle")] == ["s.md"] and cat.rows("busy") == []
+
+
+def test_two_views_of_one_item_keep_their_own_fields():
+    search = IndexedSearch()
+    full = [_row("p:a", "Plan", "text", session="secret-session")]
+    bare = [_row("p:a", "Plan", "text")]  # a room shows no session
+    assert search("secret", full, _text_of)
+    assert search("secret", bare, _text_of) == []
 
 
 def test_weights_are_one_per_column():
@@ -168,7 +219,7 @@ def store(tmp_path):
 def test_mk_catalog_keeps_its_index_under_the_data_root(store):
     cat = mk_catalog(store, sources={}, tags={})
     assert isinstance(cat.search, IndexedSearch)
-    assert cat.search.path.startswith(str(store.target.local_path(".")))
+    assert cat.search.path == str(store.target.local_path(".") / "cache/search/index.sqlite")
     assert [r["title"] for r in cat.rows("data rates per minute")] == ["Feature vectors"]
 
 

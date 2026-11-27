@@ -565,7 +565,8 @@
     }
 
     function anySelected() { return fams.some(function (f) { return sel[f.key].length; }); }
-    function activeSort() { var k = state.q ? state.qsort : state.sort; return SORTS[k] ? k : "newest"; }
+    /* "best" only ranks a search; without a query it is not offered */
+    function activeSort() { var k = state.q ? state.qsort : state.sort; return SORTS[k] && (state.q || k !== "best") ? k : "newest"; }
     function urlFor() {
       var u = new URLSearchParams();
       if (state.q) u.set("q", state.q);
@@ -742,7 +743,7 @@
         return h("div", { class: "empty" }, ["This source is empty."]);
       }
       var ways = active.map(function (f) { return h("button", { class: "btn", onclick: function () { clearFamily(f); } }, ["Remove " + f.label.toLowerCase() + " filter"]); });
-      if (state.q) ways.push(h("button", { class: "btn", onclick: function () { search.value = ""; state.q = ""; sortSel.value = activeSort(); history.replaceState(history.state, "", urlFor()); load(); } }, ["Clear the search"]));
+      if (state.q) ways.push(h("button", { class: "btn", onclick: function () { search.value = ""; state.q = ""; fillSort(); history.replaceState(history.state, "", urlFor()); load(); } }, ["Clear the search"]));
       return h("div", { class: "empty" }, [h("p", null, ["Nothing matches" + (state.q ? " “" + state.q + "”" : "") + (active.length ? " with these filters" : "") + "."]), h("div", { class: "toolbar center" }, ways)]);
     }
     function trashActions(r) {
@@ -774,14 +775,23 @@
     var search = h("input", { type: "search", placeholder: trash ? "Search the bin" : "Search all text", value: state.q, autocomplete: "off", "aria-label": "Search",
       oninput: function (e) {
         state.q = e.target.value.trim(); history.replaceState(history.state, "", urlFor());
-        sortSel.value = activeSort();
+        fillSort();
         clearTimeout(timer); timer = setTimeout(load, SEARCH_DEBOUNCE_MS);
       } });
     var sortSel = h("select", { "aria-label": "Sort", onchange: function (e) {
         if (state.q) { state.qsort = e.target.value; writePref("qsort", state.qsort); }
         else { state.sort = e.target.value; writePref("sort", state.sort); }
-        render(); } },
-      Object.keys(SORTS).map(function (k) { var o = h("option", { value: k }, [SORTS[k].label]); if (k === activeSort()) o.selected = true; return o; }));
+        render(); } });
+    /* rebuilt, not hidden, when a query comes or goes: iOS Safari ignores a hidden option */
+    function fillSort() {
+      var want = activeSort();
+      sortSel.innerHTML = "";
+      Object.keys(SORTS).forEach(function (k) {
+        if (k === "best" && !state.q) return;
+        var o = h("option", { value: k }, [SORTS[k].label]); if (k === want) o.selected = true; sortSel.appendChild(o);
+      });
+    }
+    fillSort();
     var selectBtn = canSelect && !trash ? h("button", { class: "btn select-btn", type: "button", "aria-pressed": String(selecting), onclick: function () { setSelecting(!selecting); } }, ["Select"]) : null;
     function syncSelectBtn() { if (selectBtn) selectBtn.setAttribute("aria-pressed", String(selecting)); }
     var title = trash ? "Recycle bin" : scope === "all" ? "Everything" : scope === "published" ? "" : sourceTitle(scope);

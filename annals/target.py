@@ -149,31 +149,23 @@ def check_rel(rel: str) -> str:
 class LocalTarget:
     """A directory on this machine.
 
-    :meth:`read_metas` keeps each meta it parsed, keyed by its file's mtime and size, so
-    listing a thousand documents costs a ``stat`` per document, not a parse; it hands
-    back copies, so a caller may change what it gets.
+    :meth:`read_metas` keeps each meta it parsed, keyed by its file's inode, mtime, ctime
+    and size (every write replaces the file, so a new inode), and resolves the root once
+    per listing, not twice per file: listing a thousand documents costs a ``stat`` per
+    document, not a parse. It hands back copies, so a caller may change what it gets.
     """
 
     def __init__(self, root: Path | str):
         self.root = Path(root).expanduser()
-        self._real_root: str | None = None
-        self._metas: dict[str, tuple[tuple[int, int], dict]] = {}
+        self._metas: dict[str, tuple[tuple[int, ...], dict]] = {}
         self._metas_lock = threading.Lock()
 
-    def _root_real(self) -> str:
-        """The root, symlinks resolved, once it exists (resolving it per read was most
-        of a listing's cost)."""
-        if self._real_root is None:
-            real = os.path.realpath(self.root)
-            if not os.path.isdir(real):
-                return real  # not created yet: do not remember a path that may change
-            self._real_root = real
-        return self._real_root
-
-    def _inside(self, path: Path | str) -> str | None:
-        """``path`` resolved, if it is under the root; else ``None``."""
-        real, root = os.path.realpath(path), self._root_real()
-        return real if real == root or real.startswith(root + os.sep) else None
+    def _inside(self, path: Path | str, *, root: str | None = None) -> str | None:
+        """``path`` resolved, if it is under the root (resolved now, unless given)."""
+        real = os.path.realpath(path)
+        root = root if root is not None else os.path.realpath(self.root)
+        prefix = root if root.endswith(os.sep) else root + os.sep  # the root may be "/"
+        return real if real == root or real.startswith(prefix) else None
 
     def describe(self) -> str:
         return str(self.root)
@@ -272,17 +264,18 @@ class LocalTarget:
         if not base.is_dir():
             return []
         metas, seen = [], set()
+        root = os.path.realpath(self.root)
         for path in base.glob(pattern):
             sub = path.relative_to(base).as_posix()
             if any(part.startswith(".") for part in sub.split("/")):
                 continue  # work in progress (a replacement being applied), like ssh's glob
-            real = self._inside(path)
+            real = self._inside(path, root=root)
             if real is None:
                 continue  # a symlink out of the root: not the reader's problem
             seen.add(real)
             try:
                 st = os.stat(real)
-                stamp = (st.st_mtime_ns, st.st_size)
+                stamp = (st.st_ino, st.st_mtime_ns, st.st_ctime_ns, st.st_size)
                 cached = self._metas.get(real)
                 if cached is None or cached[0] != stamp:
                     with open(real, encoding="utf-8") as f:
@@ -293,7 +286,7 @@ class LocalTarget:
             except (OSError, ValueError):
                 continue  # half-written or gone: not the reader's problem
         with self._metas_lock:  # forget what this folder no longer holds
-            prefix = self._inside(base)
+            prefix = self._inside(base, root=root)
             if prefix is not None:
                 for gone in [
                     k for k in self._metas if k.startswith(prefix + os.sep) and k not in seen
