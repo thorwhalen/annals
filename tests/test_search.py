@@ -38,7 +38,7 @@ def _text_of(row):
 
 ROWS = [
     _row("p:a", "Quarterly plan", "Budget and headcount for the quarter.", time="2026-01-03"),
-    _row("p:b", "Feature vectors", "How much data a player makes: data rates per minute.", time="2026-01-02"),
+    _row("p:b", "Train timetable", "Fares and rates: trains leave every ten minutes from platform two.", time="2026-01-02"),
     _row("p:c", "Notes", "A separate generated thing, nothing about money.", time="2026-01-01"),
 ]
 
@@ -52,8 +52,8 @@ def strategy(request):
 
 
 def test_every_word_is_required_and_found_in_the_full_text(strategy):
-    assert [r["key"] for r in strategy("data minute", ROWS, _text_of)] == ["p:b"]
-    assert strategy("data nowhere-at-all", ROWS, _text_of) == []
+    assert [r["key"] for r in strategy("trains minute", ROWS, _text_of)] == ["p:b"]
+    assert strategy("trains nowhere-at-all", ROWS, _text_of) == []
     hit = strategy("headcount", ROWS, _text_of)[0]
     assert hit["key"] == "p:a" and "headcount" in hit["snippet"].lower()
 
@@ -67,10 +67,10 @@ def test_an_empty_query_is_every_row_as_given(strategy):
 
 def test_the_index_ranks_a_title_match_above_a_passing_mention():
     rows = [
-        _row("p:mention", "Weekly notes", "In passing: the data rates looked fine.", time="2026-02-01"),
-        _row("p:title", "Data rates per minute", "A table.", time="2026-01-01"),
+        _row("p:mention", "Weekly notes", "In passing: the train times looked fine.", time="2026-02-01"),
+        _row("p:title", "Train times per platform", "A table.", time="2026-01-01"),
     ] + [_row(f"p:other{i}", f"Other {i}", "Unrelated words.") for i in range(8)]  # so BM25's IDF is not ~0
-    hits = IndexedSearch()("data rates", rows, _text_of)
+    hits = IndexedSearch()("train times", rows, _text_of)
     assert [r["key"] for r in hits] == ["p:title", "p:mention"]
     assert hits[0]["score"] > hits[1]["score"]
 
@@ -93,10 +93,10 @@ def test_typed_query_syntax_is_searched_as_words_never_run():
 
 def test_the_index_answers_only_with_the_rows_it_is_given():
     search = IndexedSearch()
-    search("data", ROWS, _text_of)  # indexes all three
+    search("trains", ROWS, _text_of)  # indexes all three
     shown = [r for r in ROWS if r["key"] != "p:b"]  # p:b in the bin, or hidden
-    assert search("data", shown, _text_of) == []
-    assert [r["key"] for r in search("data", ROWS, _text_of)] == ["p:b"]  # still indexed
+    assert search("trains", shown, _text_of) == []
+    assert [r["key"] for r in search("trains", ROWS, _text_of)] == ["p:b"]  # still indexed
 
 
 def test_a_changed_item_is_reindexed_and_a_forgotten_one_is_gone():
@@ -113,9 +113,9 @@ def test_a_changed_item_is_reindexed_and_a_forgotten_one_is_gone():
 
 def test_the_index_persists_so_a_restart_reads_no_text(tmp_path):
     path = tmp_path / "idx" / "index.sqlite"
-    IndexedSearch(path)("data", ROWS, _text_of)
+    IndexedSearch(path)("trains", ROWS, _text_of)
     reads = []
-    hits = IndexedSearch(path)("data", ROWS, lambda r: reads.append(r) or _text_of(r))
+    hits = IndexedSearch(path)("trains", ROWS, lambda r: reads.append(r) or _text_of(r))
     assert [r["key"] for r in hits] == ["p:b"] and reads == []
 
 
@@ -210,8 +210,8 @@ def store(tmp_path):
     for i in range(6):
         s.publish(text=f"# Note {i}\n\nRoutine words, number {i}.", filename=f"n{i}.md")
     s.publish(
-        text="# Feature vectors\n\nMeasured: the data rates per minute of a player.",
-        filename="rates.md",
+        text="# Bread recipe\n\nKnead the dough, then let it rise for an hour before baking.",
+        filename="bread.md",
     )
     return s
 
@@ -220,7 +220,7 @@ def test_mk_catalog_keeps_its_index_under_the_data_root(store):
     cat = mk_catalog(store, sources={}, tags={})
     assert isinstance(cat.search, IndexedSearch)
     assert cat.search.path == str(store.target.local_path(".") / "cache/search/index.sqlite")
-    assert [r["title"] for r in cat.rows("data rates per minute")] == ["Feature vectors"]
+    assert [r["title"] for r in cat.rows("dough rise hour")] == ["Bread recipe"]
 
 
 def test_a_corpus_larger_than_the_text_cache_is_read_once(store, monkeypatch):
@@ -233,20 +233,20 @@ def test_a_corpus_larger_than_the_text_cache_is_read_once(store, monkeypatch):
         tags={},
         search=IndexedSearch(),
     )
-    cat.rows("minute")
+    cat.rows("rise")
     first = len(reads)
-    for q in ("d", "da", "data", "data rates", "data rates per minute"):
+    for q in ("d", "do", "dough", "dough rise", "dough rise hour"):
         cat.rows(q)
     assert first == 7 and len(reads) == first  # every text once, then never again
 
 
 def test_a_purged_document_leaves_the_index(store):
     cat = mk_catalog(store, sources={}, tags={})
-    doc = next(m for m in store.list() if m["title"] == "Feature vectors")
-    assert cat.rows("rates")
+    doc = next(m for m in store.list() if m["title"] == "Bread recipe")
+    assert cat.rows("dough")
     store.trash(doc["id"])
-    assert cat.rows("rates") == []  # the bin is not listed
-    assert [r["id"] for r in cat.rows("rates", trash=True)] == [doc["id"]]
+    assert cat.rows("dough") == []  # the bin is not listed
+    assert [r["id"] for r in cat.rows("dough", trash=True)] == [doc["id"]]
     from annals.catalog import purge_document
 
     purge_document(store, cat, doc["id"])
@@ -256,9 +256,9 @@ def test_a_purged_document_leaves_the_index(store):
 
 def test_the_api_answers_best_first_with_a_score(store):
     client = TestClient(mk_api(store=store, sources={}, tags={}, listening=False))
-    body = client.get("/items", params={"q": "data rates"}).json()
-    assert body["total"] == 1 and body["data"][0]["title"] == "Feature vectors"
-    assert body["data"][0]["score"] > 0 and "rates" in body["data"][0]["snippet"]
+    body = client.get("/items", params={"q": "dough rise"}).json()
+    assert body["total"] == 1 and body["data"][0]["title"] == "Bread recipe"
+    assert body["data"][0]["score"] > 0 and "rise" in body["data"][0]["snippet"]
 
 
 def test_the_strategy_is_a_keyword(store):
@@ -282,11 +282,11 @@ def site(tmp_path_factory, serve):
 
     store = DocStore(tmp_path_factory.mktemp("best") / "data")
     with patch("annals.store.now_iso", return_value="2026-01-01T10:00:00+00:00"):
-        store.publish(text="# Data rates per minute\n\nThe table.", title="Data rates per minute", filename="t.md")
+        store.publish(text="# Bus times for the harbour\n\nThe table.", title="Bus times for the harbour", filename="t.md")
     for i in range(8):  # unrelated, so a word in a few documents ranks (BM25's IDF)
         store.publish(text=f"# Other {i}\n\nUnrelated words.", title=f"Other {i}", filename=f"o{i}.md")
     for i in range(3):  # newer, and only mention it in passing
-        store.publish(text=f"# Log {i}\n\nIn passing, data rates were fine.", title=f"Log {i}", filename=f"l{i}.md")
+        store.publish(text=f"# Log {i}\n\nIn passing, the bus times were fine.", title=f"Log {i}", filename=f"l{i}.md")
     return {"base": serve(store)}
 
 
@@ -299,13 +299,13 @@ def phone(chromium):
 
 def test_a_search_lists_the_best_match_first_and_clearing_it_restores_newest(phone, site):
     phone.goto(site["base"] + "/")
-    phone.locator("input[type=search]").fill("data rates")
-    phone.wait_for_function("document.querySelector('.list .card .title')?.textContent === 'Data rates per minute'")
+    phone.locator("input[type=search]").fill("bus times")
+    phone.wait_for_function("document.querySelector('.list .card .title')?.textContent === 'Bus times for the harbour'")
     assert phone.locator("select[aria-label=Sort]").input_value() == "best"
     phone.locator("input[type=search]").fill("")
     # newest first again: the old document that matched best goes to the bottom
     phone.wait_for_function(
-        "[...document.querySelectorAll('.list .card .title')].slice(-1)[0]?.textContent === 'Data rates per minute'"
+        "[...document.querySelectorAll('.list .card .title')].slice(-1)[0]?.textContent === 'Bus times for the harbour'"
         " && document.querySelectorAll('.list .card').length === 12"
     )
     assert phone.locator("select[aria-label=Sort]").input_value() == "newest"
