@@ -1,4 +1,4 @@
-> built 2026-11-26 15:48 UTC from cc52a2d (main) · annals 0.0.70. Details: build_info.json
+> built 2026-11-27 11:12 UTC from 2d3b846 (main) · annals 0.0.71. Details: build_info.json
 
 # index.html.md
 
@@ -613,10 +613,10 @@ The catalog: every source’s items as one list, with search and the owner’s t
 [`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog) is the facade the HTTP API stands on. It combines named sources (see
 [`annals.sources`](_autosummary/annals.sources.html.md#module-annals.sources)) and a tag store (see [`annals.tags`](_autosummary/annals.tags.html.md#module-annals.tags)):
 
-* [`Catalog.rows()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.rows) lists items newest first, across sources or within one, filtered by
-  a full-text query (every word must appear in the title, tags, session, excerpt or full
-  text; case-insensitive), each row with the owner’s tags overlaid and, when there is a
-  query, a `snippet` of the text around the first match.
+* [`Catalog.rows()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.rows) lists items newest first, across sources or within one, each row
+  with the owner’s tags overlaid. With a query, the catalog’s search strategy (its
+  `search` keyword; see [`annals.search`](_autosummary/annals.search.html.md#module-annals.search)) picks the matching rows, best first, each
+  with a `snippet` of the text around the match and, when it ranks, a `score`.
 * [`Catalog.item()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.item) is one item, [`Catalog.set_tags()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.set_tags) replaces its tags (in the tag
   store, never in the item), [`Catalog.tag_counts()`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog.tag_counts) lists every tag in use.
 
@@ -626,19 +626,19 @@ query would give.
 
 ### Functions
 
-| [`default_tags`](_autosummary/annals.catalog.html.md#annals.catalog.default_tags)(store)                    | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
-|-----------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [`mk_catalog`](_autosummary/annals.catalog.html.md#annals.catalog.mk_catalog)(store, \*[, sources, tags]) | The published documents first, then the extra sources; the owner's tags beside them.                                                                 |
-| [`owner_tags`](_autosummary/annals.catalog.html.md#annals.catalog.owner_tags)(store)                      | The owner's tags (set by `annals tag` or the page), keyed by item key, as one snapshot.                                                              |
-| [`purge_document`](_autosummary/annals.catalog.html.md#annals.catalog.purge_document)(store, catalog, doc_id) | Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.                                                           |
-| [`with_owner_tags`](_autosummary/annals.catalog.html.md#annals.catalog.with_owner_tags)(metas, tags)           | `metas` (documents' meta) with each one's tags replaced by the owner's, where the owner set them.                                                    |
+| [`default_tags`](_autosummary/annals.catalog.html.md#annals.catalog.default_tags)(store)                            | Where the owner's tags live by default: one JSON file under the data root (`tags/tags.json`), or a dict when the data root is not on this machine.   |
+|-------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
+| [`mk_catalog`](_autosummary/annals.catalog.html.md#annals.catalog.mk_catalog)(store, \*[, sources, tags, search]) | The published documents first, then the extra sources; the owner's tags beside them.                                                                 |
+| [`owner_tags`](_autosummary/annals.catalog.html.md#annals.catalog.owner_tags)(store)                              | The owner's tags (set by `annals tag` or the page), keyed by item key, as one snapshot.                                                              |
+| [`purge_document`](_autosummary/annals.catalog.html.md#annals.catalog.purge_document)(store, catalog, doc_id)         | Delete a document that is in the bin for good: its files, its tags, its cached thumbnails.                                                           |
+| [`with_owner_tags`](_autosummary/annals.catalog.html.md#annals.catalog.with_owner_tags)(metas, tags)                   | `metas` (documents' meta) with each one's tags replaced by the owner's, where the owner set them.                                                    |
 
 ### Classes
 
-| [`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog)(sources, \*, tags)   | Named sources plus the owner's tags, listed, searched and tagged as one collection.   |
-|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
+| [`Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog)(sources, \*, tags[, search])   | Named sources plus the owner's tags, listed, searched and tagged as one collection.   |
+|-----------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------|
 
-### *class* annals.catalog.Catalog(sources, , tags)
+### *class* annals.catalog.Catalog(sources, \*, tags, search=<function scan_search>)
 
 Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
@@ -646,7 +646,8 @@ Named sources plus the owner’s tags, listed, searched and tagged as one collec
 
 #### forget(key)
 
-Drop an item’s tags and any cached text (when the item itself is gone for good).
+Drop an item’s tags, its search entry and any cached text (when the item itself
+is gone for good).
 
 * **Return type:**
   [`None`](https://docs.python.org/3/builtins/constants.html#None)
@@ -660,7 +661,8 @@ One item, with what the page shows; `KeyError` if there is none.
 
 #### rows(q='', , source=None, trash=False)
 
-Items newest first, from one source or all, matching every word of `q`.
+Items from one source or all: newest first, or, with a query `q`, the ones
+the search strategy matched, best first.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
@@ -694,13 +696,15 @@ Where the owner’s tags live by default: one JSON file under the data root
 * **Return type:**
   [`MutableMapping`](https://docs.python.org/3/library/collections.abc.html#collections.abc.MutableMapping)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str), [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]]
 
-### annals.catalog.mk_catalog(store, , sources=None, tags=None)
+### annals.catalog.mk_catalog(store, , sources=None, tags=None, search=None)
 
 The published documents first, then the extra sources; the owner’s tags beside them.
 
 `sources` maps a name to a folder path (read in place) or a `Source`; by
 default the folders named in `ANNALS_SOURCES`. `tags` defaults to one JSON file
 under the data root (`tags/tags.json`), or a dict when the data root is remote.
+`search` answers queries (see [`annals.search`](_autosummary/annals.search.html.md#module-annals.search)); by default a full-text index
+kept under the data root, or a plain scan when the data root is remote.
 The API, and any CLI or agent tool that tags items, build their catalog here.
 
 * **Return type:**
@@ -1601,6 +1605,11 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A directory on this machine.
 
+`read_metas()` keeps each meta it parsed, keyed by its file’s inode, mtime, ctime
+and size (every write replaces the file, so a new inode), and resolves the root once
+per listing, not twice per file: listing a thousand documents costs a `stat` per
+document, not a parse. It hands back copies, so a caller may change what it gets.
+
 #### local_path(rel)
 
 `rel` under the root, resolved; `None` if it escapes the root (a symlink).
@@ -1818,6 +1827,7 @@ Move documents to the recycle bin (restorable).
 | [`references`](_autosummary/annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`render`](_autosummary/annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
 | [`requirements`](_autosummary/annals.requirements.html.md#module-annals.requirements) | Optional dependencies, checked where they are needed and explained when they are missing.                                                          |
+| [`search`](_autosummary/annals.search.html.md#module-annals.search)             | How the catalog answers a query: the search strategies.                                                                                            |
 | [`sessions`](_autosummary/annals.sessions.html.md#module-annals.sessions)         | The sessions that made a document: each one's name and the link that opens it.                                                                     |
 | [`share`](_autosummary/annals.share.html.md#module-annals.share)               | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`share_page`](_autosummary/annals.share_page.html.md#module-annals.share_page)     | A share link's page with its text in it, and no script, so every reader can read it.                                                               |
@@ -3135,13 +3145,16 @@ True
 
 The published documents as records for a retrieval index, so an agent can find one by meaning.
 
-annals keeps its own substring search for the page’s filter box. Searching by meaning (“the
-report comparing local TTS engines”) is `ir`’s job, and `ir` takes any package’s records
-through a named callable: register this one once and `ir` rebuilds from it on its own:
+annals keeps its own full-text index for the page’s search box ([`annals.search`](_autosummary/annals.search.html.md#module-annals.search)).
+Searching by meaning (“the report comparing local TTS engines”) is `ir`’s job, and `ir`
+takes any package’s records through a named callable: register this one once (from Python;
+`ir register` on the command line has no records option) and `ir` rebuilds from it:
 
 ```default
-ir register annals --records annals.records:records      # the exact command is ir's
-ir discover annals "the report comparing local TTS engines"
+import ir, annals.records
+ir.register("annals", "records", fetcher="annals.records:records",
+            metadata_keys=list(annals.records.METADATA_KEYS))
+ir.build_corpus("annals")       # then: ir discover annals "the report comparing local TTS engines"
 ```
 
 One record per current document (the bin and earlier versions are not indexed). A markdown,
@@ -3554,6 +3567,207 @@ The `modules` that cannot be imported, found without importing them.
 
 * **Return type:**
   [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+
+# _autosummary/annals.search.html.md
+
+# annals.search
+
+How the catalog answers a query: the search strategies.
+
+A strategy is a callable `(query, rows, text_of) -> rows`: given every listed row (the
+catalog has already listed them and overlaid the owner’s tags) and a way to get an item’s
+full text, it returns the rows that match, best first, each with a `snippet` of the
+text around the match and, when it ranks, a `score` (higher is better). The catalog
+takes one as its `search` keyword ([`annals.catalog.Catalog`](_autosummary/annals.catalog.html.md#annals.catalog.Catalog)), so a smarter one
+(semantic, hybrid, an agent that rewrites the query) plugs in at the same place.
+
+Two ship here:
+
+* [`IndexedSearch`](_autosummary/annals.search.html.md#annals.search.IndexedSearch), the default when the data root is on this machine: a SQLite
+  FTS5 index kept on disk (`cache/search/index.sqlite` under the data root). Each query
+  brings it up to date first, re-reading only items whose stamp changed (their listed
+  fields, and the `stamp` a source gives, else their time and size),
+  so the first query after a restart costs one pass over the texts and every later one a
+  few milliseconds. Matching is by word prefix with English stemming (`rate` finds
+  “rates” and “rated”, not “separate”), every word required, ranked by BM25 with the
+  title weighted most.
+* [`scan_search()`](_autosummary/annals.search.html.md#annals.search.scan_search), the index-free fallback (a remote data root, tests): every word
+  must appear as a substring of the title, tags, session, excerpt, id or full text;
+  newest first, as listed.
+
+### Module Attributes
+
+| [`SNIPPET_CHARS`](_autosummary/annals.search.html.md#annals.search.SNIPPET_CHARS)   | characters of context on each side of the first match, in a snippet                  |
+|------------------------------------------------------------------|--------------------------------------------------------------------------------------|
+| [`SNIPPET_TOKENS`](_autosummary/annals.search.html.md#annals.search.SNIPPET_TOKENS)  | tokens in an index snippet (FTS5's own window)                                       |
+| [`SNIPPET_ROWS`](_autosummary/annals.search.html.md#annals.search.SNIPPET_ROWS)    | the best rows that get a snippet (each costs ~5 ms); the rest show their excerpt.    |
+| [`MAX_RESULTS`](_autosummary/annals.search.html.md#annals.search.MAX_RESULTS)     | the most rows a ranked query returns; the page shows a few dozen at a time           |
+| [`DFLT_WEIGHTS`](_autosummary/annals.search.html.md#annals.search.DFLT_WEIGHTS)    | column weights for BM25, in the order of `_COLUMNS` (the title matters most)         |
+| [`INDEX_DIR`](_autosummary/annals.search.html.md#annals.search.INDEX_DIR)       | where index files live, under the data root (`<name>.sqlite`)                        |
+| [`SCHEMA_VERSION`](_autosummary/annals.search.html.md#annals.search.SCHEMA_VERSION)  | an old index is rebuilt                                                              |
+| [`WINDOW_CHARS`](_autosummary/annals.search.html.md#annals.search.WINDOW_CHARS)    | characters of the body kept around the match for rows past `snippet_rows`            |
+| [`SYNC_BATCH`](_autosummary/annals.search.html.md#annals.search.SYNC_BATCH)      | rows indexed per write transaction, so a first build never holds the lock for long   |
+| [`SQL_VARS`](_autosummary/annals.search.html.md#annals.search.SQL_VARS)        | bound variables per statement (SQLite's default limit is far above; this stays safe) |
+
+### Functions
+
+| [`default_search`](_autosummary/annals.search.html.md#annals.search.default_search)(data_root, \*[, name])    | The index `<data root>/cache/search/<name>.sqlite` when the data root is on this machine, else the scan.   |
+|-------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------|
+| [`fts_query`](_autosummary/annals.search.html.md#annals.search.fts_query)(q)                             | A user's words as an FTS5 query: every word required, each a prefix.                                       |
+| [`query_words`](_autosummary/annals.search.html.md#annals.search.query_words)(q)                           | The words of a query, lowercased: `"Data  Rates"` -> `["data", "rates"]`.                                  |
+| [`scan_search`](_autosummary/annals.search.html.md#annals.search.scan_search)(query, rows, text_of)        | Every word a substring of the row's fields or full text; rows kept in their order.                         |
+| [`snippet_around`](_autosummary/annals.search.html.md#annals.search.snippet_around)(text, words, \*[, width]) | The text around the first occurrence of any of `words`, on one line.                                       |
+
+### Classes
+
+| [`IndexedSearch`](_autosummary/annals.search.html.md#annals.search.IndexedSearch)([path, weights, max_results, ...])   | A SQLite FTS5 index of every row's fields and text, synced per query by stamp.   |
+|-----------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------|
+| [`SearchStrategy`](_autosummary/annals.search.html.md#annals.search.SearchStrategy)(\*args, \*\*kwargs)                 | `(query, rows, text_of) -> matching rows, best first`.                           |
+
+### annals.search.DFLT_WEIGHTS *= (10.0, 5.0, 2.0, 1.0, 1.0)*
+
+column weights for BM25, in the order of `_COLUMNS` (the title matters most)
+
+### annals.search.INDEX_DIR *= 'cache/search'*
+
+where index files live, under the data root (`<name>.sqlite`)
+
+### *class* annals.search.IndexedSearch(path=':memory:', , weights=(10.0, 5.0, 2.0, 1.0, 1.0), max_results=500, snippet_tokens=24, snippet_rows=60)
+
+Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
+
+A SQLite FTS5 index of every row’s fields and text, synced per query by stamp.
+
+`path` is the index file (made on first use; `":memory:"` keeps it in memory).
+`weights` are BM25’s per-column weights (title, tags, session/id/source, excerpt,
+text). `max_results` caps a ranked answer; the best `snippet_rows` carry FTS5’s
+snippet, the rest a cheaper window of text around the query’s longest word. Safe
+across threads (one sync at a time: queries that arrive during a sync wait for it
+rather than redo it) and across processes sharing the file (two web workers): every
+write is one short `BEGIN IMMEDIATE` transaction. If the index fails (a locked or
+damaged file), a query falls back to [`scan_search()`](_autosummary/annals.search.html.md#annals.search.scan_search) rather than fail.
+
+#### forget(key)
+
+Drop an item from the index (it is gone for good).
+
+* **Return type:**
+  [`None`](https://docs.python.org/3/builtins/constants.html#None)
+
+#### sync(rows, text_of)
+
+(Re)index the rows whose stamp changed; returns how many.
+
+Nothing is dropped here: a query only ever answers with the rows it was given, so
+an item listed elsewhere (in the bin, behind a hiding store, or gone) simply does
+not come back. [`forget()`](_autosummary/annals.search.html.md#annals.search.IndexedSearch.forget) drops an item for good.
+
+* **Return type:**
+  [`int`](https://docs.python.org/3/builtins/functions.html#int)
+
+### annals.search.MAX_RESULTS *= 500*
+
+the most rows a ranked query returns; the page shows a few dozen at a time
+
+### annals.search.SCHEMA_VERSION *= '3'*
+
+an old index is rebuilt
+
+* **Type:**
+  bumped when the schema or what is indexed changes
+
+### annals.search.SNIPPET_CHARS *= 90*
+
+characters of context on each side of the first match, in a snippet
+
+### annals.search.SNIPPET_ROWS *= 60*
+
+the best rows that get a snippet (each costs ~5 ms); the rest show their excerpt.
+One page of the list (the page’s `LIST_PAGE`).
+
+### annals.search.SNIPPET_TOKENS *= 24*
+
+tokens in an index snippet (FTS5’s own window)
+
+### annals.search.SQL_VARS *= 500*
+
+bound variables per statement (SQLite’s default limit is far above; this stays safe)
+
+### annals.search.SYNC_BATCH *= 200*
+
+rows indexed per write transaction, so a first build never holds the lock for long
+
+### *class* annals.search.SearchStrategy(\*args, \*\*kwargs)
+
+Bases: [`Protocol`](https://docs.python.org/3/library/typing.html#typing.Protocol)
+
+`(query, rows, text_of) -> matching rows, best first`.
+
+`rows` are what the reader may see (a strategy never answers with anything else);
+`text_of(row)` reads an item’s full text. A strategy that keeps state about items
+may also have `forget(key)`, which the catalog calls when an item is gone for good.
+
+### annals.search.WINDOW_CHARS *= 90*
+
+characters of the body kept around the match for rows past `snippet_rows`
+
+### annals.search.default_search(data_root, , name='index')
+
+The index `<data root>/cache/search/<name>.sqlite` when the data root is on this
+machine, else the scan.
+
+* **Return type:**
+  [`SearchStrategy`](_autosummary/annals.search.html.md#annals.search.SearchStrategy)
+
+### annals.search.fts_query(q)
+
+A user’s words as an FTS5 query: every word required, each a prefix.
+
+Each word is quoted, so FTS5 syntax typed by the user (`AND`, `-`, `:`, quotes)
+is searched for as text, never run as an operator. Control characters are dropped,
+and so is a word with no letter or digit (the tokenizer would drop it anyway, and an
+empty phrase matches nothing), so a query of only punctuation is no query.
+
+```pycon
+>>> fts_query('data rates')
+'"data"* "rates"*'
+>>> fts_query('a"b NOT')
+'"a""b"* "not"*'
+>>> fts_query('  ... - *')
+''
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.search.query_words(q)
+
+The words of a query, lowercased: `"Data  Rates"` -> `["data", "rates"]`.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`str`](https://docs.python.org/3/builtins/stdtypes.html#str)]
+
+### annals.search.scan_search(query, rows, text_of)
+
+Every word a substring of the row’s fields or full text; rows kept in their order.
+
+The full text is read only for rows whose fields lack a word.
+
+* **Return type:**
+  [`list`](https://docs.python.org/3/builtins/stdtypes.html#list)[[`dict`](https://docs.python.org/3/builtins/stdtypes.html#dict)]
+
+### annals.search.snippet_around(text, words, , width=90)
+
+The text around the first occurrence of any of `words`, on one line.
+
+```pycon
+>>> snippet_around("alpha beta gamma", ["beta"], width=6)
+'alpha beta g…'
+```
+
+* **Return type:**
+  [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
 
 
 # _autosummary/annals.sessions.html.md
@@ -4150,6 +4364,7 @@ of folder is a new class or a new keyword argument, never a change to the API.
 | [`as_source`](_autosummary/annals.sources.html.md#annals.sources.as_source)(name, spec)    | A source from a source, or from a folder path (read in place as a [`FolderSource`](_autosummary/annals.sources.html.md#annals.sources.FolderSource)).   |
 |---------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | [`check_source_name`](_autosummary/annals.sources.html.md#annals.sources.check_source_name)(name)  | `name` if it can name an extra source; `ValueError` saying why not otherwise.                                                       |
+| [`file_stamp`](_autosummary/annals.sources.html.md#annals.sources.file_stamp)(st)           | What says a file changed: its inode, mtime and ctime (nanoseconds) and size.                                                        |
 | `iso_utc`(ts)                                                             |                                                                                                                                     |
 | [`list_meta`](_autosummary/annals.sources.html.md#annals.sources.list_meta)(meta)          | A listing row: the meta without its per-file tables (a folder can hold thousands).                                                  |
 | `mk_key`(source, item_id)                                                 |                                                                                                                                     |
@@ -4260,6 +4475,16 @@ A source from a source, or from a folder path (read in place as a [`FolderSource
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.sources.file_stamp(st)
+
+What says a file changed: its inode, mtime and ctime (nanoseconds) and size.
+
+The mtime alone is not enough: a rewrite of the same size within one timestamp tick,
+or a sync that keeps mtimes, would look unchanged.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
 
 ### annals.sources.list_meta(meta)
 
@@ -5067,6 +5292,11 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A directory on this machine.
 
+`read_metas()` keeps each meta it parsed, keyed by its file’s inode, mtime, ctime
+and size (every write replaces the file, so a new inode), and resolves the root once
+per listing, not twice per file: listing a thousand documents costs a `stat` per
+document, not a parse. It hands back copies, so a caller may change what it gets.
+
 #### local_path(rel)
 
 `rel` under the root, resolved; `None` if it escapes the root (a symlink).
@@ -5704,16 +5934,18 @@ Revoke share links (their token or full link): they stop working at once.
 
 # About this build
 
-This documentation was built on **2026-11-26 15:48 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/cc52a2d1925b198b354f654ba9a690f20b958fa5"><code>cc52a2d</code></a> on branch <code>main</code>, for **annals 0.0.70** (from <code>pyproject.toml</code>).
+This documentation was built on **2026-11-27 11:12 UTC** from commit <a href="https://github.com/thorwhalen/annals/commit/2d3b8464d915a8e38d0114a108d82469c310362e"><code>2d3b846</code></a> on branch <code>main</code>, for **annals 0.0.71** (from <code>pyproject.toml</code>).
 
-#### NOTE
-Nothing suggests a mismatch: the tree was clean at the commit above, and the documented version is the one on PyPI.
+#### WARNING
+The documentation and the package may be misaligned:
+
+- The documented version (0.0.71) is behind the latest release on PyPI (0.0.72): `pip install annals` gives newer code than these docs describe.
 
 ## Source
 
 |                     |                                                                                                                                                          |
 |---------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Commit              | <a href="https://github.com/thorwhalen/annals/commit/cc52a2d1925b198b354f654ba9a690f20b958fa5"><code>cc52a2d1925b198b354f654ba9a690f20b958fa5</code></a> |
+| Commit              | <a href="https://github.com/thorwhalen/annals/commit/2d3b8464d915a8e38d0114a108d82469c310362e"><code>2d3b8464d915a8e38d0114a108d82469c310362e</code></a> |
 | Branch              | <code>main</code>                                                                                                                                        |
 | Tags at this commit | none                                                                                                                                                     |
 | Working tree        | clean                                                                                                                                                    |
@@ -5724,9 +5956,9 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 |              |                                                                                            |
 |--------------|--------------------------------------------------------------------------------------------|
 | Repository   | <code>thorwhalen/annals</code>                                                             |
-| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45851288797">45851288797</a>    |
+| Run          | <a href="https://github.com/thorwhalen/annals/actions/runs/45987765323">45987765323</a>    |
 | Ref          | <code>refs/heads/main</code>                                                               |
-| Event commit | <code>cc52a2d1925b198b354f654ba9a690f20b958fa5</code> (in the history of the built commit) |
+| Event commit | <code>2d3b8464d915a8e38d0114a108d82469c310362e</code> (in the history of the built commit) |
 
 ## Tools
 
@@ -5751,13 +5983,13 @@ Nothing suggests a mismatch: the tree was clean at the commit above, and the doc
 
 ## Package on PyPI
 
-Latest release: <a href="https://pypi.org/project/annals/0.0.70/">0.0.70</a>, the same as the documented version.
+Latest release: <a href="https://pypi.org/project/annals/0.0.72/">0.0.72</a>, newer than the documented version (0.0.71).
 
 ## Reproduce
 
 ```bash
 git clone https://github.com/thorwhalen/annals && cd annals
-git checkout cc52a2d1925b198b354f654ba9a690f20b958fa5
+git checkout 2d3b8464d915a8e38d0114a108d82469c310362e
 pip install "epythet==0.2.25"
 epythet quickstart . --ignore tests/ scrap/ examples/
 ```

@@ -233,6 +233,11 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A directory on this machine.
 
+`read_metas()` keeps each meta it parsed, keyed by its file’s inode, mtime, ctime
+and size (every write replaces the file, so a new inode), and resolves the root once
+per listing, not twice per file: listing a thousand documents costs a `stat` per
+document, not a parse. It hands back copies, so a caller may change what it gets.
+
 #### local_path(rel)
 
 `rel` under the root, resolved; `None` if it escapes the root (a symlink).
@@ -450,6 +455,7 @@ Move documents to the recycle bin (restorable).
 | [`references`](annals.references.html.md#module-annals.references)     | The references of documents, extracted and combined, in three forms.                                                                               |
 | [`render`](annals.render.html.md#module-annals.render)             | Render markdown (and other page-like files) to html and PDF, with their images inside.                                                             |
 | [`requirements`](annals.requirements.html.md#module-annals.requirements) | Optional dependencies, checked where they are needed and explained when they are missing.                                                          |
+| [`search`](annals.search.html.md#module-annals.search)             | How the catalog answers a query: the search strategies.                                                                                            |
 | [`sessions`](annals.sessions.html.md#module-annals.sessions)         | The sessions that made a document: each one's name and the link that opens it.                                                                     |
 | [`share`](annals.share.html.md#module-annals.share)               | Share links: one document (or a group) behind a public, unguessable, revocable link.                                                               |
 | [`share_page`](annals.share_page.html.md#module-annals.share_page)     | A share link's page with its text in it, and no script, so every reader can read it.                                                               |

@@ -47,6 +47,11 @@ Bases: [`object`](https://docs.python.org/3/builtins/functions.html#object)
 
 A directory on this machine.
 
+`read_metas()` keeps each meta it parsed, keyed by its file’s inode, mtime, ctime
+and size (every write replaces the file, so a new inode), and resolves the root once
+per listing, not twice per file: listing a thousand documents costs a `stat` per
+document, not a parse. It hands back copies, so a caller may change what it gets.
+
 #### local_path(rel)
 
 `rel` under the root, resolved; `None` if it escapes the root (a symlink).

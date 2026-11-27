@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.search.html">annals.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sessions.html">annals.sessions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
@@ -249,6 +250,10 @@ endpoint) is the declared replacement for the ssh one and is not built yet.</p>
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">annals.target.</span></span><span class="sig-name descname"><span class="pre">LocalTarget</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/target.html#LocalTarget"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.target.LocalTarget" title="Link to this definition">#</a></dt>
 <dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#object" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
 <p>A directory on this machine.</p>
+<p><code class="xref py py-meth docutils literal notranslate"><span class="pre">read_metas()</span></code> keeps each meta it parsed, keyed by its file’s inode, mtime, ctime
+and size (every write replaces the file, so a new inode), and resolves the root once
+per listing, not twice per file: listing a thousand documents costs a <code class="docutils literal notranslate"><span class="pre">stat</span></code> per
+document, not a parse. It hands back copies, so a caller may change what it gets.</p>
 <dl class="field-list simple">
 </dl>
 <dl class="py method">
@@ -453,7 +458,7 @@ directory every call opens its own connection, as plain <code class="docutils li
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=29ed05f3"></script>
+      <script src="../_static/documentation_options.js?v=8d9581ea"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

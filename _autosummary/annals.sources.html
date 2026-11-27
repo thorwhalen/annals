@@ -84,6 +84,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="annals.references.html">annals.references</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="annals.search.html">annals.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.sessions.html">annals.sessions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="annals.share_page.html">annals.share_page</a></li>
@@ -130,6 +131,7 @@ data-aria-dark="Switch to auto color mode">
 </li>
 <li><a class="reference internal" href="#annals.sources.as_source"><code class="docutils literal notranslate"><span class="pre">as_source()</span></code></a></li>
 <li><a class="reference internal" href="#annals.sources.check_source_name"><code class="docutils literal notranslate"><span class="pre">check_source_name()</span></code></a></li>
+<li><a class="reference internal" href="#annals.sources.file_stamp"><code class="docutils literal notranslate"><span class="pre">file_stamp()</span></code></a></li>
 <li><a class="reference internal" href="#annals.sources.list_meta"><code class="docutils literal notranslate"><span class="pre">list_meta()</span></code></a></li>
 <li><a class="reference internal" href="#annals.sources.parse_sources_spec"><code class="docutils literal notranslate"><span class="pre">parse_sources_spec()</span></code></a></li>
 <li><a class="reference internal" href="#annals.sources.split_key"><code class="docutils literal notranslate"><span class="pre">split_key()</span></code></a></li>
@@ -214,25 +216,28 @@ of folder is a new class or a new keyword argument, never a change to the API.</
 <tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.check_source_name" title="annals.sources.check_source_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_source_name</span></code></a>(name)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">name</span></code> if it can name an extra source; <code class="docutils literal notranslate"><span class="pre">ValueError</span></code> saying why not otherwise.</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iso_utc</span></code>(ts)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.file_stamp" title="annals.sources.file_stamp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">file_stamp</span></code></a>(st)</p></td>
+<td><p>What says a file changed: its inode, mtime and ctime (nanoseconds) and size.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">iso_utc</span></code>(ts)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.list_meta" title="annals.sources.list_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_meta</span></code></a>(meta)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.list_meta" title="annals.sources.list_meta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_meta</span></code></a>(meta)</p></td>
 <td><p>A listing row: the meta without its per-file tables (a folder can hold thousands).</p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_key</span></code>(source, item_id)</p></td>
+<tr class="row-even"><td><p><code class="xref py py-obj docutils literal notranslate"><span class="pre">mk_key</span></code>(source, item_id)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.parse_sources_spec" title="annals.sources.parse_sources_spec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_sources_spec</span></code></a>(spec)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.parse_sources_spec" title="annals.sources.parse_sources_spec"><code class="xref py py-obj docutils literal notranslate"><span class="pre">parse_sources_spec</span></code></a>(spec)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&quot;ledgers=~/x,</span> <span class="pre">notes=/y&quot;</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">{&quot;ledgers&quot;:</span> <span class="pre">&quot;~/x&quot;,</span> <span class="pre">&quot;notes&quot;:</span> <span class="pre">&quot;/y&quot;}</span></code> (the env form).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.split_key" title="annals.sources.split_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_key</span></code></a>(key)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.split_key" title="annals.sources.split_key"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_key</span></code></a>(key)</p></td>
 <td><p><code class="docutils literal notranslate"><span class="pre">&quot;ledgers:a/b.md&quot;</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">(&quot;ledgers&quot;,</span> <span class="pre">&quot;a/b.md&quot;)</span></code>; <code class="docutils literal notranslate"><span class="pre">KeyError</span></code> when malformed.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.top_level_name" title="annals.sources.top_level_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">top_level_name</span></code></a>(rel)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.top_level_name" title="annals.sources.top_level_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">top_level_name</span></code></a>(rel)</p></td>
 <td><p>Who wrote a file in a folder of per-session files: <code class="docutils literal notranslate"><span class="pre">a.md</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">a</span></code>, <code class="docutils literal notranslate"><span class="pre">b/c.md</span></code> -&gt; <code class="docutils literal notranslate"><span class="pre">b</span></code>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#annals.sources.with_thumb" title="annals.sources.with_thumb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_thumb</span></code></a>(meta)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#annals.sources.with_thumb" title="annals.sources.with_thumb"><code class="xref py py-obj docutils literal notranslate"><span class="pre">with_thumb</span></code></a>(meta)</p></td>
 <td><p>Add <code class="docutils literal notranslate"><span class="pre">thumb</span></code> (the first image, main file first) and fix pre-media kinds.</p></td>
 </tr>
 </tbody>
@@ -390,6 +395,19 @@ files and sub-folders (<a class="reference internal" href="#annals.sources.top_l
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="annals.sources.file_stamp">
+<span class="sig-prename descclassname"><span class="pre">annals.sources.</span></span><span class="sig-name descname"><span class="pre">file_stamp</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">st</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/sources.html#file_stamp"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.sources.file_stamp" title="Link to this definition">#</a></dt>
+<dd><p>What says a file changed: its inode, mtime and ctime (nanoseconds) and size.</p>
+<p>The mtime alone is not enough: a rewrite of the same size within one timestamp tick,
+or a sync that keeps mtimes, would look unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><span class="sphinx_autodoc_typehints-type"><a class="reference external" href="https://docs.python.org/3/builtins/stdtypes.html#tuple" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></a>[<a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>, <a class="reference external" href="https://docs.python.org/3/builtins/functions.html#int" title="(in Python v3.15)"><code class="xref py py-class docutils literal notranslate"><span class="pre">int</span></code></a>]</span></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="annals.sources.list_meta">
 <span class="sig-prename descclassname"><span class="pre">annals.sources.</span></span><span class="sig-name descname"><span class="pre">list_meta</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">meta</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/annals/sources.html#list_meta"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#annals.sources.list_meta" title="Link to this definition">#</a></dt>
 <dd><p>A listing row: the meta without its per-file tables (a folder can hold thousands).</p>
@@ -488,7 +506,7 @@ their kind is recomputed from the main file so they show inline too.</p>
     </div>
   </div>
 </footer>
-      <script src="../_static/documentation_options.js?v=29ed05f3"></script>
+      <script src="../_static/documentation_options.js?v=8d9581ea"></script>
       <script src="../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../_static/clipboard.min.js?v=a7894cd8"></script>

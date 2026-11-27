@@ -54,6 +54,7 @@
    references
    render
    requirements
+   search
    sessions
    share
    share_api

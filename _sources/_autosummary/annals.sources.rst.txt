@@ -17,6 +17,7 @@ annals.sources
    
       as_source
       check_source_name
+      file_stamp
       iso_utc
       list_meta
       mk_key

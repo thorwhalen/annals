@@ -26,6 +26,7 @@
 - [annals.references](_autosummary/annals.references.html.md): The references of documents, extracted and combined, in three forms.
 - [annals.render](_autosummary/annals.render.html.md): Render markdown (and other page-like files) to html and PDF, with their images inside.
 - [annals.requirements](_autosummary/annals.requirements.html.md): Optional dependencies, checked where they are needed and explained when they are missing.
+- [annals.search](_autosummary/annals.search.html.md): How the catalog answers a query: the search strategies.
 - [annals.sessions](_autosummary/annals.sessions.html.md): The sessions that made a document: each one’s name and the link that opens it.
 - [annals.share](_autosummary/annals.share.html.md): Share links: one document (or a group) behind a public, unguessable, revocable link.
 - [annals.share_page](_autosummary/annals.share_page.html.md): A share link’s page with its text in it, and no script, so every reader can read it.
@@ -37,7 +38,7 @@
 - [annals.titles](_autosummary/annals.titles.html.md): A title for a file whose name says nothing: &#96;overview.mp3&#96;, &#96;output.html&#96;, &#96;index.md&#96;.
 - [annals.tools](_autosummary/annals.tools.html.md): The operations, as plain functions: JSON-able arguments in, JSON-able dicts out.
 - [For AI agents](ai-agents.html.md): &#96;annals&#96; ships artifacts for coding agents alongside its code. This page lists
-- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-26 15:48 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
+- [About this build](about-this-build.html.md): This documentation was built on &#42;&#42;2026-11-27 11:12 UTC&#42;&#42; from commit &lt;a href="https://github.com/tho...
 
 ## Optional
 

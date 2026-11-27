@@ -81,6 +81,7 @@ data-aria-dark="Switch to auto color mode">
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.references.html">annals.references</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.render.html">annals.render</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.requirements.html">annals.requirements</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.search.html">annals.search</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.sessions.html">annals.sessions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share.html">annals.share</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../_autosummary/annals.share_page.html">annals.share_page</a></li>
@@ -143,123 +144,126 @@ data-aria-dark="Switch to auto color mode">
           <h1>Source code for annals.records</h1><div class="highlight"><pre>
 <span></span><span data-line="1"><span class="sd">"""The published documents as records for a retrieval index, so an agent can find one by meaning.</span>
 </span><span data-line="2">
-</span><span data-line="3"><span class="sd">annals keeps its own substring search for the page's filter box. Searching by meaning ("the</span>
-</span><span data-line="4"><span class="sd">report comparing local TTS engines") is ``ir``'s job, and ``ir`` takes any package's records</span>
-</span><span data-line="5"><span class="sd">through a named callable: register this one once and ``ir`` rebuilds from it on its own::</span>
-</span><span data-line="6">
-</span><span data-line="7"><span class="sd">    ir register annals --records annals.records:records      # the exact command is ir's</span>
-</span><span data-line="8"><span class="sd">    ir discover annals "the report comparing local TTS engines"</span>
-</span><span data-line="9">
-</span><span data-line="10"><span class="sd">One record per current document (the bin and earlier versions are not indexed). A markdown,</span>
-</span><span data-line="11"><span class="sd">text or html document brings its text (html without its markup); a folder or a document of</span>
-</span><span data-line="12"><span class="sd">several markdown files brings them as one text, as ``annals aggregate`` makes it; any other</span>
-</span><span data-line="13"><span class="sd">kind (an image, a PDF) brings its title and excerpt, so it can still be found. Overviews and</span>
-</span><span data-line="14"><span class="sd">combined documents duplicate their sources, so they are left out unless asked for. A document</span>
-</span><span data-line="15"><span class="sd">the owner or the publisher tagged ``noindex`` or ``private`` (any case) is never yielded.</span>
-</span><span data-line="16">
-</span><span data-line="17"><span class="sd">Run it where the documents are: it refuses an outbox and a remote target, because the</span>
-</span><span data-line="18"><span class="sd">owner's tags (the privacy gate) live beside the documents, and an index built from a partial</span>
-</span><span data-line="19"><span class="sd">view would drop the rest. Two things belong to the index, not to this function: ``ir`` decides</span>
-</span><span data-line="20"><span class="sd">a record changed by hashing its ``text``, so a retag or retitle reaches the index's filters</span>
-</span><span data-line="21"><span class="sd">only on a rebuild that is ``full`` (which also prunes a document trashed, purged or newly</span>
-</span><span data-line="22"><span class="sd">tagged ``noindex``; register with full builds). ``url`` uses this machine's ``base_url``.</span>
-</span><span data-line="23">
-</span><span data-line="24"><span class="sd">&gt;&gt;&gt; import tempfile, pathlib</span>
-</span><span data-line="25"><span class="sd">&gt;&gt;&gt; from annals.store import DocStore</span>
-</span><span data-line="26"><span class="sd">&gt;&gt;&gt; root = pathlib.Path(tempfile.mkdtemp())</span>
-</span><span data-line="27"><span class="sd">&gt;&gt;&gt; store = DocStore(root)</span>
-</span><span data-line="28"><span class="sd">&gt;&gt;&gt; _ = store.publish(text="# Local TTS engines\\n\\nPiper and Kokoro compared.", title="TTS", tags=["research"])</span>
-</span><span data-line="29"><span class="sd">&gt;&gt;&gt; _ = store.publish(text="# Secret\\n\\nnot for an index", title="S", tags=["noindex"])</span>
-</span><span data-line="30"><span class="sd">&gt;&gt;&gt; [(r["title"], r["tags"], "Kokoro" in r["text"]) for r in records(target=str(root))]</span>
-</span><span data-line="31"><span class="sd">[('TTS', 'research', True)]</span>
-</span><span data-line="32"><span class="sd">"""</span>
-</span><span data-line="33">
-</span><span data-line="34"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
-</span><span data-line="35">
-</span><span data-line="36"><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span>
-</span><span data-line="37">
-</span><span data-line="38"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.aggregate</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_markdown</span><span class="p">,</span> <span class="n">doc_markdown_files</span>
-</span><span data-line="39"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_tags</span>
-</span><span data-line="40"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_INLINE_TEXT_BYTES</span><span class="p">,</span> <span class="n">load_settings</span>
-</span><span data-line="41"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.overview</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMBINED_TAG</span><span class="p">,</span> <span class="n">TAG</span> <span class="k">as</span> <span class="n">OVERVIEW_TAG</span><span class="p">,</span> <span class="n">html_to_text</span>
-</span><span data-line="42"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">PUBLISHED</span><span class="p">,</span> <span class="n">mk_key</span>
-</span><span data-line="43"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEXT_KINDS</span><span class="p">,</span> <span class="n">DocStore</span>
-</span><span data-line="44"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.target</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalTarget</span><span class="p">,</span> <span class="n">parse_target</span>
-</span><span data-line="45">
-</span><span data-line="46"><span class="c1">#: a document with one of these tags (any case) is never indexed</span>
-</span><span data-line="47"><span class="n">DFLT_SKIP_TAGS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"noindex"</span><span class="p">,</span> <span class="s2">"private"</span><span class="p">})</span>
-</span><span data-line="48"><span class="c1">#: the tags of documents made from other documents: overviews and combined files</span>
-</span><span data-line="49"><span class="n">DERIVED_TAGS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">OVERVIEW_TAG</span><span class="p">,</span> <span class="n">COMBINED_TAG</span><span class="p">})</span>
-</span><span data-line="50"><span class="c1">#: the record fields that are filters in the index (``ir``'s ``metadata_keys``)</span>
-</span><span data-line="51"><span class="n">METADATA_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"title"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">,</span> <span class="s2">"session"</span><span class="p">,</span> <span class="s2">"tags"</span><span class="p">,</span> <span class="s2">"created"</span><span class="p">,</span> <span class="s2">"updated"</span><span class="p">)</span>
-</span><span data-line="52"><span class="c1">#: a text is cut to this many characters, so one huge document cannot swamp an index</span>
-</span><span data-line="53"><span class="n">MAX_TEXT_CHARS</span> <span class="o">=</span> <span class="n">MAX_INLINE_TEXT_BYTES</span>
-</span><span data-line="54">
-</span><span data-line="55">
-</span><span data-line="56"><span class="k">def</span><span class="w"> </span><span class="nf">_text_of</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-</span><span data-line="57"><span class="w">    </span><span class="sd">"""What a document says: its text, a folder's markdown files joined, else its title and excerpt."""</span>
-</span><span data-line="58">    <span class="k">try</span><span class="p">:</span>
-</span><span data-line="59">        <span class="k">if</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">]</span> <span class="ow">in</span> <span class="n">TEXT_KINDS</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"html"</span><span class="p">}:</span>
-</span><span data-line="60">            <span class="n">text</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
-</span><span data-line="61">            <span class="n">text</span> <span class="o">=</span> <span class="n">html_to_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"html"</span> <span class="k">else</span> <span class="n">text</span>
-</span><span data-line="62">        <span class="k">else</span><span class="p">:</span>
-</span><span data-line="63">            <span class="n">pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
-</span><span data-line="64">                <span class="n">doc_markdown_files</span><span class="p">(</span>
-</span><span data-line="65">                    <span class="p">[(</span><span class="n">meta</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"files"</span><span class="p">,</span> <span class="p">[]))],</span> <span class="n">read</span><span class="o">=</span><span class="n">store</span><span class="o">.</span><span class="n">read_text</span>
-</span><span data-line="66">                <span class="p">)</span>
-</span><span data-line="67">            <span class="p">)</span>
-</span><span data-line="68">            <span class="n">text</span> <span class="o">=</span> <span class="p">(</span>
-</span><span data-line="69">                <span class="n">aggregate_markdown</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">pairs</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="n">meta</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span> <span class="n">toc</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-</span><span data-line="70">                <span class="k">if</span> <span class="n">pairs</span>
-</span><span data-line="71">                <span class="k">else</span> <span class="s2">""</span>
-</span><span data-line="72">            <span class="p">)</span>
-</span><span data-line="73">    <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">):</span>
-</span><span data-line="74">        <span class="n">text</span> <span class="o">=</span> <span class="s2">""</span>
-</span><span data-line="75">    <span class="k">return</span> <span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'title'</span><span class="p">]</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'excerpt'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)[:</span><span class="n">MAX_TEXT_CHARS</span><span class="p">]</span>
-</span><span data-line="76">
-</span><span data-line="77">
+</span><span data-line="3"><span class="sd">annals keeps its own full-text index for the page's search box (:mod:`annals.search`).</span>
+</span><span data-line="4"><span class="sd">Searching by meaning ("the report comparing local TTS engines") is ``ir``'s job, and ``ir``</span>
+</span><span data-line="5"><span class="sd">takes any package's records through a named callable: register this one once (from Python;</span>
+</span><span data-line="6"><span class="sd">``ir register`` on the command line has no records option) and ``ir`` rebuilds from it::</span>
+</span><span data-line="7">
+</span><span data-line="8"><span class="sd">    import ir, annals.records</span>
+</span><span data-line="9"><span class="sd">    ir.register("annals", "records", fetcher="annals.records:records",</span>
+</span><span data-line="10"><span class="sd">                metadata_keys=list(annals.records.METADATA_KEYS))</span>
+</span><span data-line="11"><span class="sd">    ir.build_corpus("annals")       # then: ir discover annals "the report comparing local TTS engines"</span>
+</span><span data-line="12">
+</span><span data-line="13"><span class="sd">One record per current document (the bin and earlier versions are not indexed). A markdown,</span>
+</span><span data-line="14"><span class="sd">text or html document brings its text (html without its markup); a folder or a document of</span>
+</span><span data-line="15"><span class="sd">several markdown files brings them as one text, as ``annals aggregate`` makes it; any other</span>
+</span><span data-line="16"><span class="sd">kind (an image, a PDF) brings its title and excerpt, so it can still be found. Overviews and</span>
+</span><span data-line="17"><span class="sd">combined documents duplicate their sources, so they are left out unless asked for. A document</span>
+</span><span data-line="18"><span class="sd">the owner or the publisher tagged ``noindex`` or ``private`` (any case) is never yielded.</span>
+</span><span data-line="19">
+</span><span data-line="20"><span class="sd">Run it where the documents are: it refuses an outbox and a remote target, because the</span>
+</span><span data-line="21"><span class="sd">owner's tags (the privacy gate) live beside the documents, and an index built from a partial</span>
+</span><span data-line="22"><span class="sd">view would drop the rest. Two things belong to the index, not to this function: ``ir`` decides</span>
+</span><span data-line="23"><span class="sd">a record changed by hashing its ``text``, so a retag or retitle reaches the index's filters</span>
+</span><span data-line="24"><span class="sd">only on a rebuild that is ``full`` (which also prunes a document trashed, purged or newly</span>
+</span><span data-line="25"><span class="sd">tagged ``noindex``; register with full builds). ``url`` uses this machine's ``base_url``.</span>
+</span><span data-line="26">
+</span><span data-line="27"><span class="sd">&gt;&gt;&gt; import tempfile, pathlib</span>
+</span><span data-line="28"><span class="sd">&gt;&gt;&gt; from annals.store import DocStore</span>
+</span><span data-line="29"><span class="sd">&gt;&gt;&gt; root = pathlib.Path(tempfile.mkdtemp())</span>
+</span><span data-line="30"><span class="sd">&gt;&gt;&gt; store = DocStore(root)</span>
+</span><span data-line="31"><span class="sd">&gt;&gt;&gt; _ = store.publish(text="# Local TTS engines\\n\\nPiper and Kokoro compared.", title="TTS", tags=["research"])</span>
+</span><span data-line="32"><span class="sd">&gt;&gt;&gt; _ = store.publish(text="# Secret\\n\\nnot for an index", title="S", tags=["noindex"])</span>
+</span><span data-line="33"><span class="sd">&gt;&gt;&gt; [(r["title"], r["tags"], "Kokoro" in r["text"]) for r in records(target=str(root))]</span>
+</span><span data-line="34"><span class="sd">[('TTS', 'research', True)]</span>
+</span><span data-line="35"><span class="sd">"""</span>
+</span><span data-line="36">
+</span><span data-line="37"><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+</span><span data-line="38">
+</span><span data-line="39"><span class="kn">from</span><span class="w"> </span><span class="nn">collections.abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">Iterable</span><span class="p">,</span> <span class="n">Iterator</span>
+</span><span data-line="40">
+</span><span data-line="41"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.aggregate</span><span class="w"> </span><span class="kn">import</span> <span class="n">aggregate_markdown</span><span class="p">,</span> <span class="n">doc_markdown_files</span>
+</span><span data-line="42"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.catalog</span><span class="w"> </span><span class="kn">import</span> <span class="n">default_tags</span>
+</span><span data-line="43"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">MAX_INLINE_TEXT_BYTES</span><span class="p">,</span> <span class="n">load_settings</span>
+</span><span data-line="44"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.overview</span><span class="w"> </span><span class="kn">import</span> <span class="n">COMBINED_TAG</span><span class="p">,</span> <span class="n">TAG</span> <span class="k">as</span> <span class="n">OVERVIEW_TAG</span><span class="p">,</span> <span class="n">html_to_text</span>
+</span><span data-line="45"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.sources</span><span class="w"> </span><span class="kn">import</span> <span class="n">PUBLISHED</span><span class="p">,</span> <span class="n">mk_key</span>
+</span><span data-line="46"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.store</span><span class="w"> </span><span class="kn">import</span> <span class="n">TEXT_KINDS</span><span class="p">,</span> <span class="n">DocStore</span>
+</span><span data-line="47"><span class="kn">from</span><span class="w"> </span><span class="nn">annals.target</span><span class="w"> </span><span class="kn">import</span> <span class="n">LocalTarget</span><span class="p">,</span> <span class="n">parse_target</span>
+</span><span data-line="48">
+</span><span data-line="49"><span class="c1">#: a document with one of these tags (any case) is never indexed</span>
+</span><span data-line="50"><span class="n">DFLT_SKIP_TAGS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="s2">"noindex"</span><span class="p">,</span> <span class="s2">"private"</span><span class="p">})</span>
+</span><span data-line="51"><span class="c1">#: the tags of documents made from other documents: overviews and combined files</span>
+</span><span data-line="52"><span class="n">DERIVED_TAGS</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">OVERVIEW_TAG</span><span class="p">,</span> <span class="n">COMBINED_TAG</span><span class="p">})</span>
+</span><span data-line="53"><span class="c1">#: the record fields that are filters in the index (``ir``'s ``metadata_keys``)</span>
+</span><span data-line="54"><span class="n">METADATA_KEYS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"title"</span><span class="p">,</span> <span class="s2">"url"</span><span class="p">,</span> <span class="s2">"kind"</span><span class="p">,</span> <span class="s2">"session"</span><span class="p">,</span> <span class="s2">"tags"</span><span class="p">,</span> <span class="s2">"created"</span><span class="p">,</span> <span class="s2">"updated"</span><span class="p">)</span>
+</span><span data-line="55"><span class="c1">#: a text is cut to this many characters, so one huge document cannot swamp an index</span>
+</span><span data-line="56"><span class="n">MAX_TEXT_CHARS</span> <span class="o">=</span> <span class="n">MAX_INLINE_TEXT_BYTES</span>
+</span><span data-line="57">
+</span><span data-line="58">
+</span><span data-line="59"><span class="k">def</span><span class="w"> </span><span class="nf">_text_of</span><span class="p">(</span><span class="n">store</span><span class="p">:</span> <span class="n">DocStore</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span data-line="60"><span class="w">    </span><span class="sd">"""What a document says: its text, a folder's markdown files joined, else its title and excerpt."""</span>
+</span><span data-line="61">    <span class="k">try</span><span class="p">:</span>
+</span><span data-line="62">        <span class="k">if</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">]</span> <span class="ow">in</span> <span class="n">TEXT_KINDS</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"html"</span><span class="p">}:</span>
+</span><span data-line="63">            <span class="n">text</span> <span class="o">=</span> <span class="n">store</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">])</span>
+</span><span data-line="64">            <span class="n">text</span> <span class="o">=</span> <span class="n">html_to_text</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"html"</span> <span class="k">else</span> <span class="n">text</span>
+</span><span data-line="65">        <span class="k">else</span><span class="p">:</span>
+</span><span data-line="66">            <span class="n">pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+</span><span data-line="67">                <span class="n">doc_markdown_files</span><span class="p">(</span>
+</span><span data-line="68">                    <span class="p">[(</span><span class="n">meta</span><span class="p">,</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"files"</span><span class="p">,</span> <span class="p">[]))],</span> <span class="n">read</span><span class="o">=</span><span class="n">store</span><span class="o">.</span><span class="n">read_text</span>
+</span><span data-line="69">                <span class="p">)</span>
+</span><span data-line="70">            <span class="p">)</span>
+</span><span data-line="71">            <span class="n">text</span> <span class="o">=</span> <span class="p">(</span>
+</span><span data-line="72">                <span class="n">aggregate_markdown</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">pairs</span><span class="p">),</span> <span class="n">title</span><span class="o">=</span><span class="n">meta</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span> <span class="n">toc</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</span><span data-line="73">                <span class="k">if</span> <span class="n">pairs</span>
+</span><span data-line="74">                <span class="k">else</span> <span class="s2">""</span>
+</span><span data-line="75">            <span class="p">)</span>
+</span><span data-line="76">    <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">,</span> <span class="ne">OSError</span><span class="p">):</span>
+</span><span data-line="77">        <span class="n">text</span> <span class="o">=</span> <span class="s2">""</span>
+</span><span data-line="78">    <span class="k">return</span> <span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'title'</span><span class="p">]</span><span class="si">}</span><span class="se">\n\n</span><span class="si">{</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'excerpt'</span><span class="p">,</span><span class="w"> </span><span class="s1">''</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)[:</span><span class="n">MAX_TEXT_CHARS</span><span class="p">]</span>
+</span><span data-line="79">
+</span><span data-line="80">
 <div class="viewcode-block" id="records">
 <a class="viewcode-back" href="../../_autosummary/annals.records.html#annals.records.records">[docs]</a>
-</span><span data-line="78"><span class="k">def</span><span class="w"> </span><span class="nf">records</span><span class="p">(</span>
-</span><span data-line="79">    <span class="o">*</span><span class="p">,</span>
-</span><span data-line="80">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="81">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span data-line="82">    <span class="n">skip_tags</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_SKIP_TAGS</span><span class="p">,</span>
-</span><span data-line="83">    <span class="n">include_derived</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-</span><span data-line="84"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
-</span><span data-line="85"><span class="w">    </span><span class="sd">"""One dict per indexable document: ``id``, ``text`` and the :data:`METADATA_KEYS`.</span>
-</span><span data-line="86">
-</span><span data-line="87"><span class="sd">    ``target`` / ``to`` choose the store as ``annals ls`` does (default: the configured one).</span>
-</span><span data-line="88"><span class="sd">    ``tags`` is one comma-separated string, since an index filters on scalars.</span>
-</span><span data-line="89"><span class="sd">    """</span>
-</span><span data-line="90">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
-</span><span data-line="91">    <span class="n">store</span> <span class="o">=</span> <span class="n">DocStore</span><span class="p">(</span><span class="n">parse_target</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="p">),</span> <span class="n">settle</span><span class="o">=</span><span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span>
-</span><span data-line="92">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">LocalTarget</span><span class="p">):</span>
-</span><span data-line="93">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span data-line="94">            <span class="s2">"index the documents where they are: this target is remote or an outbox, "</span>
-</span><span data-line="95">            <span class="s2">"so the owner's tags (what keeps a document out) and some documents are not here"</span>
-</span><span data-line="96">        <span class="p">)</span>
-</span><span data-line="97">    <span class="n">owner</span> <span class="o">=</span> <span class="n">default_tags</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
-</span><span data-line="98">    <span class="n">skip</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">skip_tags</span><span class="p">}</span> <span class="o">|</span> <span class="p">(</span>
-</span><span data-line="99">        <span class="nb">set</span><span class="p">()</span> <span class="k">if</span> <span class="n">include_derived</span> <span class="k">else</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">DERIVED_TAGS</span><span class="p">}</span>
-</span><span data-line="100">    <span class="p">)</span>
-</span><span data-line="101">    <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
-</span><span data-line="102">        <span class="n">own</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mk_key</span><span class="p">(</span><span class="n">PUBLISHED</span><span class="p">,</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]))</span>
-</span><span data-line="103">        <span class="n">tags</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">own</span><span class="p">)</span> <span class="k">if</span> <span class="n">own</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
-</span><span data-line="104">        <span class="n">every</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">[</span><span class="o">*</span><span class="n">tags</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])]}</span>
-</span><span data-line="105">        <span class="k">if</span> <span class="n">skip</span> <span class="o">&amp;</span> <span class="n">every</span><span class="p">:</span>  <span class="c1"># the publisher's tag still counts after an owner's retag</span>
-</span><span data-line="106">            <span class="k">continue</span>
-</span><span data-line="107">        <span class="k">yield</span> <span class="p">{</span>
-</span><span data-line="108">            <span class="s2">"id"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
-</span><span data-line="109">            <span class="s2">"text"</span><span class="p">:</span> <span class="n">_text_of</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">meta</span><span class="p">),</span>
-</span><span data-line="110">            <span class="s2">"title"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
-</span><span data-line="111">            <span class="s2">"url"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/d/</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
-</span><span data-line="112">            <span class="s2">"kind"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">],</span>
-</span><span data-line="113">            <span class="s2">"session"</span><span class="p">:</span> <span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"session"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
-</span><span data-line="114">            <span class="s2">"tags"</span><span class="p">:</span> <span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">),</span>
-</span><span data-line="115">            <span class="s2">"created"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
-</span><span data-line="116">            <span class="s2">"updated"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"updated"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
-</span><span data-line="117">        <span class="p">}</span></div>
+</span><span data-line="81"><span class="k">def</span><span class="w"> </span><span class="nf">records</span><span class="p">(</span>
+</span><span data-line="82">    <span class="o">*</span><span class="p">,</span>
+</span><span data-line="83">    <span class="n">target</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="84">    <span class="n">to</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span data-line="85">    <span class="n">skip_tags</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DFLT_SKIP_TAGS</span><span class="p">,</span>
+</span><span data-line="86">    <span class="n">include_derived</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
+</span><span data-line="87"><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="nb">dict</span><span class="p">]:</span>
+</span><span data-line="88"><span class="w">    </span><span class="sd">"""One dict per indexable document: ``id``, ``text`` and the :data:`METADATA_KEYS`.</span>
+</span><span data-line="89">
+</span><span data-line="90"><span class="sd">    ``target`` / ``to`` choose the store as ``annals ls`` does (default: the configured one).</span>
+</span><span data-line="91"><span class="sd">    ``tags`` is one comma-separated string, since an index filters on scalars.</span>
+</span><span data-line="92"><span class="sd">    """</span>
+</span><span data-line="93">    <span class="n">settings</span> <span class="o">=</span> <span class="n">load_settings</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="n">to</span><span class="p">)</span>
+</span><span data-line="94">    <span class="n">store</span> <span class="o">=</span> <span class="n">DocStore</span><span class="p">(</span><span class="n">parse_target</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">target</span><span class="p">),</span> <span class="n">settle</span><span class="o">=</span><span class="ow">not</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span><span class="p">)</span>
+</span><span data-line="95">    <span class="k">if</span> <span class="n">settings</span><span class="o">.</span><span class="n">outbox</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">store</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="n">LocalTarget</span><span class="p">):</span>
+</span><span data-line="96">        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span data-line="97">            <span class="s2">"index the documents where they are: this target is remote or an outbox, "</span>
+</span><span data-line="98">            <span class="s2">"so the owner's tags (what keeps a document out) and some documents are not here"</span>
+</span><span data-line="99">        <span class="p">)</span>
+</span><span data-line="100">    <span class="n">owner</span> <span class="o">=</span> <span class="n">default_tags</span><span class="p">(</span><span class="n">store</span><span class="p">)</span>
+</span><span data-line="101">    <span class="n">skip</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">skip_tags</span><span class="p">}</span> <span class="o">|</span> <span class="p">(</span>
+</span><span data-line="102">        <span class="nb">set</span><span class="p">()</span> <span class="k">if</span> <span class="n">include_derived</span> <span class="k">else</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">DERIVED_TAGS</span><span class="p">}</span>
+</span><span data-line="103">    <span class="p">)</span>
+</span><span data-line="104">    <span class="k">for</span> <span class="n">meta</span> <span class="ow">in</span> <span class="n">store</span><span class="o">.</span><span class="n">list</span><span class="p">():</span>
+</span><span data-line="105">        <span class="n">own</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">mk_key</span><span class="p">(</span><span class="n">PUBLISHED</span><span class="p">,</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">]))</span>
+</span><span data-line="106">        <span class="n">tags</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">own</span><span class="p">)</span> <span class="k">if</span> <span class="n">own</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+</span><span data-line="107">        <span class="n">every</span> <span class="o">=</span> <span class="p">{</span><span class="n">t</span><span class="o">.</span><span class="n">casefold</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">[</span><span class="o">*</span><span class="n">tags</span><span class="p">,</span> <span class="o">*</span><span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"tags"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])]}</span>
+</span><span data-line="108">        <span class="k">if</span> <span class="n">skip</span> <span class="o">&amp;</span> <span class="n">every</span><span class="p">:</span>  <span class="c1"># the publisher's tag still counts after an owner's retag</span>
+</span><span data-line="109">            <span class="k">continue</span>
+</span><span data-line="110">        <span class="k">yield</span> <span class="p">{</span>
+</span><span data-line="111">            <span class="s2">"id"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"id"</span><span class="p">],</span>
+</span><span data-line="112">            <span class="s2">"text"</span><span class="p">:</span> <span class="n">_text_of</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">meta</span><span class="p">),</span>
+</span><span data-line="113">            <span class="s2">"title"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"title"</span><span class="p">],</span>
+</span><span data-line="114">            <span class="s2">"url"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">settings</span><span class="o">.</span><span class="n">base_url</span><span class="si">}</span><span class="s2">/d/</span><span class="si">{</span><span class="n">meta</span><span class="p">[</span><span class="s1">'id'</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+</span><span data-line="115">            <span class="s2">"kind"</span><span class="p">:</span> <span class="n">meta</span><span class="p">[</span><span class="s2">"kind"</span><span class="p">],</span>
+</span><span data-line="116">            <span class="s2">"session"</span><span class="p">:</span> <span class="p">(</span><span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"source"</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"session"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+</span><span data-line="117">            <span class="s2">"tags"</span><span class="p">:</span> <span class="s2">","</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tags</span><span class="p">),</span>
+</span><span data-line="118">            <span class="s2">"created"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+</span><span data-line="119">            <span class="s2">"updated"</span><span class="p">:</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"updated"</span><span class="p">)</span> <span class="ow">or</span> <span class="n">meta</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"created"</span><span class="p">,</span> <span class="s2">""</span><span class="p">),</span>
+</span><span data-line="120">        <span class="p">}</span></div>
 
 </span></pre></div>
         </article><button class="back-to-top" type="button">
@@ -288,7 +292,7 @@ data-aria-dark="Switch to auto color mode">
     </div>
   </div>
 </footer>
-      <script src="../../_static/documentation_options.js?v=29ed05f3"></script>
+      <script src="../../_static/documentation_options.js?v=8d9581ea"></script>
       <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
       <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
       <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>

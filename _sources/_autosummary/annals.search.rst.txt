@@ -1,0 +1,38 @@
+annals.search
+=============
+
+.. automodule:: annals.search
+
+   
+   .. rubric:: Module Attributes
+
+   .. autosummary::
+   
+      SNIPPET_CHARS
+      SNIPPET_TOKENS
+      SNIPPET_ROWS
+      MAX_RESULTS
+      DFLT_WEIGHTS
+      INDEX_DIR
+      SCHEMA_VERSION
+      WINDOW_CHARS
+      SYNC_BATCH
+      SQL_VARS
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      default_search
+      fts_query
+      query_words
+      scan_search
+      snippet_around
+   
+   .. rubric:: Classes
+
+   .. autosummary::
+   
+      IndexedSearch
+      SearchStrategy
+   

@@ -2,13 +2,16 @@
 
 The published documents as records for a retrieval index, so an agent can find one by meaning.
 
-annals keeps its own substring search for the page’s filter box. Searching by meaning (“the
-report comparing local TTS engines”) is `ir`’s job, and `ir` takes any package’s records
-through a named callable: register this one once and `ir` rebuilds from it on its own:
+annals keeps its own full-text index for the page’s search box ([`annals.search`](annals.search.html.md#module-annals.search)).
+Searching by meaning (“the report comparing local TTS engines”) is `ir`’s job, and `ir`
+takes any package’s records through a named callable: register this one once (from Python;
+`ir register` on the command line has no records option) and `ir` rebuilds from it:
 
 ```default
-ir register annals --records annals.records:records      # the exact command is ir's
-ir discover annals "the report comparing local TTS engines"
+import ir, annals.records
+ir.register("annals", "records", fetcher="annals.records:records",
+            metadata_keys=list(annals.records.METADATA_KEYS))
+ir.build_corpus("annals")       # then: ir discover annals "the report comparing local TTS engines"
 ```
 
 One record per current document (the bin and earlier versions are not indexed). A markdown,

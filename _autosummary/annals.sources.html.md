@@ -31,6 +31,7 @@ of folder is a new class or a new keyword argument, never a change to the API.
 | [`as_source`](#annals.sources.as_source)(name, spec)    | A source from a source, or from a folder path (read in place as a [`FolderSource`](#annals.sources.FolderSource)).   |
 |---------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------|
 | [`check_source_name`](#annals.sources.check_source_name)(name)  | `name` if it can name an extra source; `ValueError` saying why not otherwise.                                                       |
+| [`file_stamp`](#annals.sources.file_stamp)(st)           | What says a file changed: its inode, mtime and ctime (nanoseconds) and size.                                                        |
 | `iso_utc`(ts)                                                             |                                                                                                                                     |
 | [`list_meta`](#annals.sources.list_meta)(meta)          | A listing row: the meta without its per-file tables (a folder can hold thousands).                                                  |
 | `mk_key`(source, item_id)                                                 |                                                                                                                                     |
@@ -141,6 +142,16 @@ A source from a source, or from a folder path (read in place as a [`FolderSource
 
 * **Return type:**
   [`str`](https://docs.python.org/3/builtins/stdtypes.html#str)
+
+### annals.sources.file_stamp(st)
+
+What says a file changed: its inode, mtime and ctime (nanoseconds) and size.
+
+The mtime alone is not enough: a rewrite of the same size within one timestamp tick,
+or a sync that keeps mtimes, would look unchanged.
+
+* **Return type:**
+  [`tuple`](https://docs.python.org/3/builtins/stdtypes.html#tuple)[[`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int), [`int`](https://docs.python.org/3/builtins/functions.html#int)]
 
 ### annals.sources.list_meta(meta)
 
