@@ -52,7 +52,8 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from annals import listening as listen_log, overview
+from annals import highlights as hl_log, listening as listen_log, overview
+from annals.highlights_api import mk_router as mk_highlights_router
 from annals.auth import Authorizer, TrustedHeader, authorizer_from_env, no_auth
 from annals.media import add_media_relay, media_version
 from annals.overview import Requests
@@ -289,6 +290,7 @@ def mk_api(
     share_base_url: str | None = None,
     overviews: bool | Iterable[str] | Callable[[str], bool] | str = False,
     listening: listen_log.ForReader | bool | None = True,
+    highlights: hl_log.ForReader | bool | None = True,
     reader: Callable[[Request], str] | None = None,
     title: str = APP_NAME,
     room: bool = False,
@@ -320,13 +322,15 @@ def mk_api(
     group, Audio tab or link.
     ``listening`` is where each reader's listening progress lives (:mod:`annals.listening`):
     ``True`` for one JSON file per reader under a local data root, any ``(reader) -> store``
-    callable, or ``None`` to keep none. ``reader`` names the caller of a request; by default
+    callable, or ``None`` to keep none. ``highlights`` is where each reader's highlights live
+    (:mod:`annals.highlights`: passages of documents kept with a name, tags and a note), with
+    the same three choices. ``reader`` names the caller of a request; by default
     :func:`reader_of` (the login's email, else ``"owner"``).
     ``room`` serves the documents to an outside audience (a client, a team) rather than to
     the owner: read only (the routes in :data:`ROOM_ROUTES`, ``GET`` alone), nothing in the
     bin, and only the meta fields a reader needs, so no provenance (see
     :class:`annals.store.RoomStore`); who may read is the host's login. No sources beside the
-    documents, no overviews, no listening, no shares. Asking for any of those with it is an
+    documents, no overviews, no listening, no highlights, no shares. Asking for any of those with it is an
     error. The documents still arrive as files (``annals publish/copy --to <room target>``).
     """
     store = store or DocStore(Path(data_dir) if data_dir else default_data_dir())
@@ -336,6 +340,7 @@ def mk_api(
             "overviews": bool(overviews),
             "share_base_url": bool(share_base_url),
             "listening": callable(listening),
+            "highlights": callable(highlights),
             "reader": reader is not None,
         }
         # ``search`` is the one thing a room may be given: it answers the room's search box
@@ -355,6 +360,8 @@ def mk_api(
         thumbnailer = default_thumbnailer()
     if listening is True:
         listening = listen_log.for_reader(store.target.root) if local else None
+    if highlights is True:
+        highlights = hl_log.for_reader(store.target.root) if local else None
     if tags is None:  # one tag store, whichever API below answers
         tags = default_tags(store)
     if sources is None:
@@ -373,6 +380,7 @@ def mk_api(
             else os.environ.get(ENV_SHARE_BASE_URL)
         ),
         listening=listening or None,
+        highlights=highlights or None,
         reader=reader or reader_of,
         title=title,
     )
@@ -439,6 +447,7 @@ def _mk_room(
         search=search,
         share_base=None,
         listening=None,
+        highlights=None,
         reader=reader_of,
         title=title,
         room=True,
@@ -457,6 +466,7 @@ def _mk_api(
     search: SearchStrategy,
     share_base: str | None,
     listening: listen_log.ForReader | None,
+    highlights: hl_log.ForReader | None,
     reader: Callable[[Request], str],
     title: str,
     room: bool = False,
@@ -638,6 +648,17 @@ def _mk_api(
         """Forget what this reader heard of a document: it reads as not started again."""
         _records(request).modify(doc_id, lambda r: None)
         return listen_log.summary(None)
+
+    # -- highlights: passages a reader kept, each reader's own -------------------------
+    # The page reaches these through manicules' httpStore (vendored under ui/vendor/); the
+    # routes are annals.highlights_api's, answering for this API's reader.
+    api.include_router(
+        mk_highlights_router(
+            highlights,
+            reader=reader,
+            write_dependencies=[Depends(_require_same_origin)],
+        )
+    )
 
     @api.post("/docs/{doc_id}/trash", dependencies=[Depends(_require_same_origin)])
     def trash_doc(doc_id: str) -> dict:
@@ -1045,8 +1066,13 @@ def _mk_api(
     @api.get("/sources")
     def list_sources() -> dict:
         """The sources listed, in order (``published`` first); ``room`` tells the page to
-        show a reader's view (no owner controls)."""
-        return {"sources": catalog.sources_info(), "room": room}
+        show a reader's view (no owner controls), ``highlights`` that readers' highlights
+        are kept here (the page then offers them)."""
+        return {
+            "sources": catalog.sources_info(),
+            "room": room,
+            "highlights": highlights is not None,
+        }
 
     @api.get("/items")
     def list_items(q: str = "", source: str = "", trash: bool = False) -> dict:
@@ -1604,13 +1630,14 @@ def mk_app(
     search: SearchStrategy | None = None,
     overviews: bool | Iterable[str] | Callable[[str], bool] | str | None = None,
     listening: listen_log.ForReader | bool | None = True,
+    highlights: hl_log.ForReader | bool | None = True,
     title: str = APP_NAME,
 ) -> FastAPI:
     """The standalone server: page + API under ``base_path``, behind ``authorizer``.
 
     Every argument has a working default (the local data dir; auth from the environment,
     which is none on a bare machine, so bind to localhost). ``sources``, ``tags`` and
-    ``search`` are :func:`mk_api`'s, and so are ``overviews`` and ``listening``; ``overviews`` defaults to
+    ``search`` are :func:`mk_api`'s, and so are ``overviews``, ``listening`` and ``highlights``; ``overviews`` defaults to
     ``ANNALS_OVERVIEWS`` (unset: off; ``*``: every reader; else the readers offered them,
     separated by commas), so a server started from a factory can turn them on. Share links are served, ungated, at ``{base_path}/shared/<token>/``
     (:func:`annals.share_api.mk_share_api`).
@@ -1631,6 +1658,7 @@ def mk_app(
     @app.get(base + "/trash", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/shares", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/audio", response_class=HTMLResponse, include_in_schema=False)
+    @app.get(base + "/highlights", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/all", response_class=HTMLResponse, include_in_schema=False)
     @app.get(base + "/s/{source}", response_class=HTMLResponse, include_in_schema=False)
     @app.get(
@@ -1656,6 +1684,7 @@ def mk_app(
         title=title,
         overviews=overviews,
         listening=listening,
+        highlights=highlights,
     )
     app.mount(base + "/api", owner_api)
     app.mount(shared, mk_share_api(shares=owner_api.state.shares, title=title))

@@ -1457,6 +1457,244 @@ def listen_down(
     return {"down": overview.maker_down(requests)}
 
 
+# -- highlights: the passages a reader kept (annals.highlights) ---------------------------
+
+
+def _highlight_reader(store: DocStore, reader: str | None) -> str | None:
+    """Whose highlights a verb is about: the one named, else the only reader who has any.
+
+    ``ANNALS_HIGHLIGHTS_READER`` names the reader an agent surface answers for. ``None``
+    when nobody has any yet. With several readers and none named, a ``ValueError`` says so
+    (without naming them): one reader's notes are never mixed with another's, nor shown unasked.
+    """
+    from annals import highlights as hl
+
+    reader = reader or os.environ.get(hl.ENV_READER)
+    if reader:
+        return reader.strip().lower()
+    known = hl.readers(store.target)
+    if len(known) > 1:
+        # how many, not who: a sign-in address is not for whoever happens to ask
+        raise ValueError(
+            f"{len(known)} readers have highlights: say whose with --reader (the address "
+            f"they sign in with), or set {hl.ENV_READER}"
+        )
+    return known[0] if known else None
+
+
+def _highlight_records(settings: Settings, reader: str | None):
+    """``(reader, their highlight store)``, for a change. Changes are made where the
+    documents are (the server locks its files; a write from another machine would not), so
+    this refuses a remote target or an outbox, and asks for ``reader`` when it cannot tell."""
+    from annals import highlights as hl
+    from annals.target import LocalTarget
+
+    store = _store(settings)
+    if settings.outbox or not isinstance(store.target, LocalTarget):
+        raise ValueError(
+            "highlights are changed where the documents are kept: this target is not local "
+            "(or is an outbox). Run this on that machine (ssh <host> annals ...), or use the page"
+        )
+    who = _highlight_reader(store, reader)
+    if who is None:
+        raise ValueError(
+            "say whose highlights with --reader (the address they sign in with): "
+            "nobody has any yet"
+        )
+    return who, hl.for_reader(store.target.root)(who).records
+
+
+def _highlight_row(settings: Settings, record: dict, reader: str) -> dict:
+    """A highlight as a verb prints it: the record, whose it is, and ``url``, its page opened on it."""
+    from annals import highlights as hl
+
+    link = hl.href(record)
+    row = {**record, "reader": reader}
+    if link:
+        row["url"] = f"{settings.base_url}/{link}"
+    return row
+
+
+def _highlight_source(store: DocStore, doc: str, file: str | None) -> dict:
+    """The page a highlight is on, as the document's page names it: the document, or one file of it."""
+    from urllib.parse import quote
+
+    meta = _document_meta(store, doc)
+    title = meta.get("title") or meta["id"]
+    if not file:
+        return {"id": meta["id"], "title": title, "url": f"d/{meta['id']}"}
+    if file not in (meta.get("files") or []):
+        raise ValueError(f"{meta['id']} has no file {file!r}")
+    return {
+        "id": f"{meta['id']}?f={file}",
+        "title": f"{file.rsplit('/', 1)[-1]} · {title}",
+        "url": f"d/{meta['id']}?f={quote(file, safe='')}",
+    }
+
+
+def highlights(
+    q: str = "",
+    *,
+    doc: str | None = None,
+    tag: str | None = None,
+    reader: str | None = None,
+    limit: int = 50,
+    target: str | None = None,
+    base_url: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """List or search the highlights a reader kept on documents' pages, newest first.
+
+    A highlight is a passage of a document kept with a name, a note (``comment``) and tags;
+    one whose ``target.whole`` is true and ``target.part`` is ``title`` keeps the whole
+    document (a favourite). ``q``: words that must all appear in the name, the passage, the
+    note, the tags or the document's title. ``doc`` (an id or a link) keeps one document's
+    (its files' included), ``tag`` one tag's. ``reader`` is whose (the address they sign in
+    with); it may be left out when one reader has highlights. Each row has ``reader`` and
+    ``url``, the page opened on the passage. Returns ``{highlights, total, reader}``;
+    ``total`` counts matches before ``limit``.
+    """
+    from annals import highlights as hl
+
+    settings = _readable(load_settings(target=target, base_url=base_url, to=to))
+    store = _store(settings)
+    who = _highlight_reader(store, reader)
+    found = hl.search(hl.read_records(store.target, who), q, tag=tag) if who else []
+    if doc:
+        doc_id = _parse_ref(doc)[1]
+        found = [
+            r
+            for r in found
+            if str((r.get("target") or {}).get("source", {}).get("id", "")).split(
+                "?f="
+            )[0]
+            == doc_id
+        ]
+    return {
+        "highlights": [
+            _highlight_row(settings, r, who) for r in found[: max(0, limit)]
+        ],
+        "total": len(found),
+        "reader": who,
+    }
+
+
+def highlight_add(
+    doc: str,
+    exact: str,
+    *,
+    file: str | None = None,
+    prefix: str = "",
+    suffix: str = "",
+    name: str | None = None,
+    comment: str = "",
+    tags: str = "",
+    color: str | None = None,
+    whole: bool = False,
+    reader: str | None = None,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Keep a passage of a document as a highlight, as selecting it on the page does.
+
+    ``doc`` is the document's id or link; ``file`` names one file of it (as its page's
+    ``?f=`` does) when the passage is not in its main text. ``exact`` is the passage word for
+    word as the page shows it (rendered text, not markdown marks); ``prefix`` and ``suffix``
+    (the text just before and after) tell two identical passages apart. ``whole`` keeps the
+    document itself by its title (``exact`` is then the title, or anything). ``name``
+    defaults to ``<title>-highlight-<n>``; ``tags`` is comma separated; ``color`` is one of
+    yellow, green, blue, pink, orange, purple. Run where the documents are kept; ``reader``
+    is whose (needed until one reader, and only one, has highlights). Returns
+    ``{highlight}``, with its ``url``.
+    """
+    from annals import highlights as hl
+
+    settings = load_settings(target=target, to=to)
+    who, records = _highlight_records(settings, reader)
+    if whole and file:
+        raise ValueError(
+            "a file of a document has no title of its own to keep: drop --file or --whole"
+        )
+    data = {
+        "target": {
+            "source": _highlight_source(_store(settings), doc, file),
+            "part": "title" if whole else hl.DEFAULT_PART,
+            "quote": {
+                "exact": exact,
+                "prefix": prefix or None,
+                "suffix": suffix or None,
+            },
+            "whole": whole,
+        },
+        "name": name,
+        "comment": comment,
+        "tags": [t for t in tags.split(",") if t.strip()],
+        "color": color,
+    }
+    return {"highlight": _highlight_row(settings, hl.add(records, data), who)}
+
+
+def highlight_edit(
+    highlight_id: str,
+    *,
+    name: str | None = None,
+    comment: str | None = None,
+    tags: str | None = None,
+    color: str | None = None,
+    reader: str | None = None,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Change a highlight's name, note, tags or colour; its passage never changes.
+
+    Only what is given changes: ``comment ""`` clears the note, ``tags ""`` the tags,
+    ``color default`` goes back to the reader's default colour. Run where the documents are
+    kept. Returns ``{highlight}``.
+    """
+    from annals import highlights as hl
+
+    settings = load_settings(target=target, to=to)
+    patch: dict = {}
+    if name is not None:
+        patch["name"] = name
+    if comment is not None:
+        patch["comment"] = comment
+    if tags is not None:
+        patch["tags"] = [t for t in tags.split(",") if t.strip()]
+    if color is not None:
+        patch["color"] = None if color == "default" else color
+    if not patch:
+        raise ValueError("nothing to change: give --name, --comment, --tags or --color")
+    who, records = _highlight_records(settings, reader)
+    try:
+        record = hl.edit(records, highlight_id, patch)
+    except KeyError:
+        raise ValueError(f"no highlight with id {highlight_id}") from None
+    return {"highlight": _highlight_row(settings, record, who)}
+
+
+def highlight_remove(
+    highlight_id: str,
+    *,
+    reader: str | None = None,
+    target: str | None = None,
+    to: str | None = None,
+) -> dict:
+    """Delete a highlight. Returns ``{removed}``, the highlight as it was.
+
+    Run where the documents are kept. Nothing brings it back but adding it again.
+    """
+    from annals import highlights as hl
+
+    settings = load_settings(target=target, to=to)
+    who, records = _highlight_records(settings, reader)
+    try:
+        gone = hl.remove(records, highlight_id)
+    except KeyError:
+        raise ValueError(f"no highlight with id {highlight_id}") from None
+    return {"removed": {**gone, "reader": who}}
+
+
 _dispatch_funcs[:] = [
     publish,
     ls,
@@ -1483,6 +1721,10 @@ _dispatch_funcs[:] = [
     overview_state,
     listen_work,
     listen_down,
+    highlights,
+    highlight_add,
+    highlight_edit,
+    highlight_remove,
 ]
 
 
@@ -1517,6 +1759,10 @@ EFFECTS = {
     "overview_state": "read",
     "listen_work": "server",
     "listen_down": "spend",
+    "highlights": "read",
+    "highlight_add": "write",
+    "highlight_edit": "write",
+    "highlight_remove": "destructive",
 }
 #: what an agent or a tool is offered unless its host asks for more (MCP reads this)
 DFLT_EFFECTS = frozenset({"read", "write"})
@@ -1526,6 +1772,6 @@ def tools_with(effects=DFLT_EFFECTS) -> list:
     """The operations whose effect is in ``effects``, in the CLI's order: the list a caller-facing surface serves.
 
     >>> [f.__name__ for f in tools_with({"read"})]
-    ['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state']
+    ['ls', 'show', 'groups', 'references', 'shareable', 'shares', 'overview_state', 'highlights']
     """
     return [f for f in _dispatch_funcs if EFFECTS[f.__name__] in effects]

@@ -9,6 +9,8 @@
    BASE/g/<gid>        a group: one URL for a set of documents
    BASE/trash          the recycle bin: restore, or delete forever
    BASE/shares         the links the owner made ("Links"): copy, or revoke
+   BASE/highlights     every passage you kept (annals.highlights), searchable; a row opens
+                       its page on the passage. BASE/d/<id>?h=<highlight> is that address
    BASE/audio          every spoken overview, searchable, by what you have heard of it
                        (not started, in progress, done); progress is kept per reader on the
                        server (annals.listening), so it follows you to every device
@@ -37,6 +39,7 @@
   var NAME = CFG.title || "annals";
   var SHARE = CFG.share || null;   /* set when this page is a share link's, for a recipient */
   var READER = false;  /* a room (mk_api(room=True), told by /sources): reading only, no owner controls */
+  var HIGHLIGHTS = false;  /* readers' highlights are kept here (told by /sources) */
   var UI = (CFG.ui || API + "/ui").replace(/\/$/, "");
   var app = document.getElementById("app");
   var toastEl;
@@ -340,7 +343,7 @@
   /* The sources, for the navigation: published first, then folders read in place. */
   var sourcesReady;
   function sources() {
-    sourcesReady = sourcesReady || api("/sources").then(function (b) { READER = !!b.room; return b.sources || []; }).catch(function () { sourcesReady = null; return [{ name: "published", title: "Published" }]; });
+    sourcesReady = sourcesReady || api("/sources").then(function (b) { READER = !!b.room; HIGHLIGHTS = !!b.highlights; return b.sources || []; }).catch(function () { sourcesReady = null; return [{ name: "published", title: "Published" }]; });
     return sourcesReady;
   }
   var knownSources = [{ name: "published", title: "Published" }];
@@ -388,6 +391,7 @@
     dropSheet();
     stopListening();
     dropPlayer();
+    dropHighlights();
     app.innerHTML = ""; listShown = 0;
     document.title = title ? title + " · " + NAME : NAME;
     viewLabel = title || NAME;
@@ -405,6 +409,7 @@
     if (SHARE || READER) return [];
     var items = knownSources.map(function (s) { return [scopeHref(s.name), s.title, s.name]; });
     if (knownSources.length > 1) items.push([BASE + "/all", "All", "all"]);
+    if (HIGHLIGHTS) items.push([BASE + "/highlights", "Highlights", "highlights"]);
     items.push([BASE + "/audio", "Audio", "audio"]);
     items.push([BASE + "/shares", "Links", "shares"]);
     items.push([BASE + "/trash", "Bin", "trash"]);
@@ -884,7 +889,9 @@
     check: "M5 12.5l4.5 4.5L19 7.5",
     code: "M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16",
     notebook: "M6 3h11a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6zM6 3v18M10 8h5M10 12h5M3 7h3M3 12h3M3 17h3",
-    rename: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"
+    rename: "M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4",
+    /* the highlighter: path data from Lucide (ISC licence, https://lucide.dev), as in the vendored widget */
+    highlight: "M9 11l-6 6v3h9l3-3M22 12l-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"
   };
   function svgPath(name) {
     return '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + (ICONS[name] || ICONS.file) + '"/></svg>';
@@ -1085,6 +1092,8 @@
     return box;
   }
 
+  /* the text of a file is on screen (again): what was kept on it is found and drawn again */
+  function drawn(ctx) { if (ctx.onDrawn) ctx.onDrawn(); }
   function renderFile(ctx, rel, kind, container) {
     var view = [], actions = [];
     if (kind === "md") {
@@ -1096,11 +1105,12 @@
       function draw() {
         seg.setAttribute("aria-pressed", String(mode === "source"));
         container.innerHTML = "";
-        if (mode === "source") { container.appendChild(h("pre", { class: "source" }, [text])); withCodeCopy(container); return; }
+        if (mode === "source") { container.appendChild(h("pre", { class: "source" }, [text])); withCodeCopy(container); drawn(ctx); return; }
         withMarked().then(function (mk) {
           var art = h("article", { class: "rendered", html: safeHtml(mk.parse(text, { gfm: true, breaks: false })) });
           rebase(art, ctx, rel); withCodeCopy(art); container.innerHTML = ""; container.appendChild(art);
           if (window.annalsTables) window.annalsTables.enhance(art);
+          drawn(ctx);
         }).catch(function (e) { container.appendChild(h("p", { class: "err" }, [String(e.message || e)])); });
       }
       container.appendChild(h("p", { class: "muted" }, ["Loading…"]));
@@ -1111,7 +1121,7 @@
       var pre = h("pre", { class: "source", "data-loading": "" }, ["Loading…"]), t2 = "";
       container.appendChild(pre);
       withCodeCopy(container);
-      textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; pre.removeAttribute("data-loading"); }).catch(function (e) { pre.textContent = String(e.message || e); });
+      textOf(ctx, rel).then(function (t) { t2 = t; pre.textContent = t; pre.removeAttribute("data-loading"); drawn(ctx); }).catch(function (e) { pre.textContent = String(e.message || e); });
       actions.push({ section: "copy", label: "Copy text", hint: "Copy the file's text", icon: "copy", run: function () { return copyText(t2); } });
     } else if (kind === "html") {
       container.appendChild(h("iframe", { class: "frame", src: ctx.raw(rel), sandbox: FRAME_SANDBOX, title: ctx.title }));
@@ -1322,6 +1332,99 @@
     return nav;
   }
 
+  /* -------- highlights: passages the reader kept ----------------------------------------- */
+  /* Select text on a page of text and keep it (a name, a note and tags are optional);
+     highlighting a title keeps the page. The widget is manicules' (vendored under
+     ui/vendor/manicules/, see scripts/vendor-manicules.sh): it finds each passage again from
+     its quote and position, draws it without touching the page's elements, and holds the
+     card, the page's panel and the two settings. annals.highlights keeps each reader's on
+     the server, so they follow the reader to every device. BASE/highlights lists them all;
+     BASE/d/<id>?h=<highlight> opens a page on one. Not on a share link or in a room (no
+     reader there), and not inside a framed html page (the frame is closed to this script):
+     such a page can still be kept by its title. */
+  var HL_UI = "vendor/manicules/";
+  var hlReady, mountedHl = null, mountedHlList = null, hlWanted = 0, hlFailed = false;
+  function canHighlight() { return HIGHLIGHTS && !SHARE && !READER; }
+  function dropHighlights() {
+    hlWanted++;
+    if (mountedHl) { mountedHl.destroy(); mountedHl = null; }
+    if (mountedHlList) { mountedHlList.destroy(); mountedHlList = null; }
+  }
+  function refreshHighlights() { if (mountedHl) mountedHl.refresh(); }
+  function withHighlights() {
+    if (window.Manicules) return Promise.resolve(window.Manicules);
+    hlReady = hlReady || Promise.all([loadScript(HL_UI + "manicules.global.js"), loadStyle(HL_UI + "styles.css")]).then(function () { return window.Manicules; });
+    hlReady.then(function () { hlFailed = false; }, function () { hlReady = null; hlFailed = true; });
+    return hlReady;
+  }
+  function hlStore(M) { return M.httpStore({ baseUrl: API + "/highlights" }); }
+  /* a highlight's page, opened on it: the server builds the address (annals.highlights.href),
+     relative to BASE; one just kept here has none yet, and its page is this one */
+  function hlHref(x) {
+    if (x.href) return BASE + "/" + x.href;
+    var q = new URLSearchParams(location.search); q.set("h", x.id);
+    return location.pathname + "?" + q;
+  }
+  function hlError(e) { if (e && e.status === 401) { toLogin(); return true; } return false; }
+  /* body: the element the file is rendered into; kind: the file's; titleSel: where the page's
+     title is. A markdown file is highlighted as rendered, never in its source view: a passage
+     kept there would carry markdown marks and not be found again in the rendered page. */
+  function keepHighlights(source, body, kind, titleSel) {
+    var mine = ++hlWanted;
+    var bodySel = kind === "md" ? "article.rendered" : kind === "text" ? "pre.source:not([data-loading])" : null;
+    var parts = {};
+    if (bodySel) parts.body = function () { return body.querySelector(bodySel); };
+    if (titleSel) parts.title = function () { return app.querySelector(titleSel); };
+    withHighlights().then(function (M) {
+      if (mine !== hlWanted) return;   /* the view changed while the widget loaded */
+      mountedHl = M.mount({
+        source: source, parts: parts, store: hlStore(M),
+        focus: new URLSearchParams(location.search).get("h"),
+        linkTo: function (x) { return location.origin + hlHref(x); },
+        listHref: BASE + "/highlights", onNavigate: go, onError: hlError,
+        storageKey: NAME + ":manicules",   /* every app of this origin shares its storage: say whose */
+        /* the address names the highlight being looked at, and stops naming it once its card is
+           closed: a reload (a phone waking a sleeping tab) then returns to where the reader was */
+        onFocusChange: function (id) {
+          var q = new URLSearchParams(location.search);
+          if (id) q.set("h", id); else q.delete("h");
+          var qs = q.toString();
+          history.replaceState(history.state, "", location.pathname + (qs ? "?" + qs : ""));
+        }
+      });
+    }).catch(function () { /* the page reads without highlights */ });
+  }
+  var HIGHLIGHTS_ACTION = { section: "view", label: "Highlights", hint: "List, show or hide this page's highlights; highlight the page itself", icon: "highlight",
+    run: function () {
+      if (mountedHl) mountedHl.showPanel();
+      else toast(hlFailed ? "Highlights could not be loaded. Reload the page to try again." : "Highlights are still loading", hlFailed ? ERROR_TOAST_MS : 0);
+    } };
+  function highlightsView() {
+    var box = h("div", { class: "hl-all" });
+    page("Highlights", mainNav("highlights"), [box]);   /* the navigation names the page: no second heading above the list */
+    if (!canHighlight()) { box.appendChild(h("div", { class: "empty" }, ["Highlights are not kept here."])); return; }
+    var mine = hlWanted, q = new URLSearchParams(location.search);
+    var backTo = (history.state || {}).scrollY || 0;   /* where the list was when a highlight was opened from it */
+    box.appendChild(h("p", { class: "muted", "aria-busy": "true" }, ["Loading…"]));
+    withHighlights().then(function (M) {
+      if (mine !== hlWanted) return;
+      box.innerHTML = "";
+      mountedHlList = M.mountList(box, {
+        store: hlStore(M), search: q.get("q") || "", tag: q.get("tag") || "", hrefOf: hlHref, onError: hlError,
+        onOpen: function (x, href) { go(href); },
+        /* the search lives in the address, replaced as it is typed: a reload or Back finds it */
+        onQuery: function (s) {
+          var u = new URLSearchParams();
+          if (s.search) u.set("q", s.search);
+          if (s.tag) u.set("tag", s.tag);
+          history.replaceState(history.state, "", BASE + "/highlights" + (u.toString() ? "?" + u : ""));
+        }
+      });
+      /* Back from a highlight returns to the row it was opened from, once the rows exist */
+      mountedHlList.ready.then(function () { if (mine === hlWanted && backTo) window.scrollTo(0, backTo); });
+    }).catch(function (e) { box.innerHTML = ""; box.appendChild(h("div", { class: "empty" }, ["Highlights could not be loaded: " + String(e.message || e)])); });
+  }
+
   /* -------- one document, or one file of it --------------------------------------- */
   function docView(id, rel) {
     page("Document", mainNav("published"), [h("p", { class: "muted" }, ["Loading…"])]);
@@ -1331,7 +1434,13 @@
       var showRel = rel || (m.kind === "folder" ? null : m.main);
       var body = h("div", { class: "doc-body" });
       var tools = { view: [], actions: [] };
-      if (showRel) tools = renderFile(docCtx(m), showRel, rel ? kinds[rel] : m.kind, body);
+      var ctx = docCtx(m);
+      ctx.onDrawn = refreshHighlights;
+      if (showRel) tools = renderFile(ctx, showRel, rel ? kinds[rel] : m.kind, body);
+      /* highlights need something to sit in: rendered text, or the document's own title */
+      var hlKind = showRel ? (rel ? kinds[rel] : m.kind) : null;
+      var keeps = canHighlight() && !m.in_trash && (!rel || hlKind === "md" || hlKind === "text");
+      if (keeps) tools.actions.push(HIGHLIGHTS_ACTION);
 
       var fileNav = null;
       if (rel) {  /* prev / next inside an open viewer replace the entry; Back returns to the document */
@@ -1382,13 +1491,17 @@
         m.in_trash ? h("div", { class: "notice" }, ["This document is in the recycle bin."]) : null,
         isVersion ? h("div", { class: "notice" }, ["An earlier version (" + m.version + ") of this document. ", link(BASE + "/d/" + m.version_of, "Open the current version")]) : null,
         SHARE && !rel ? shareNotice() : null,
-        h("div", { class: "doc-head" }, [titleHead(m.title || m.id, rel || isVersion || SHARE || READER || m.in_trash || m.pending ? null : "/docs/" + m.id), meta, made, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
+        h("div", { class: "doc-head" }, [titleHead(m.title || m.id, rel || isVersion || SHARE || READER || m.in_trash || m.pending ? null : "/docs/" + m.id, refreshHighlights), meta, made, inGroups, rel || isVersion || SHARE || READER ? null : tagEditor("published:" + m.id, m.tags, BASE + "/")]),
         fileNav, isVersion ? actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }) : docTools,
         rel || SHARE || isVersion || !m.listenable ? null : listeningPanel(m, body),
         body,
         rel || SHARE ? null : versionsPanel(m),
         showFiles ? (m.kind === "folder" ? filesPanel(m) : h("details", { class: "more-files", open: (m.files || []).some(function (f) { return f !== m.main && ["image", "video", "audio"].indexOf(kinds[f]) >= 0; }) ? "" : null }, [h("summary", null, ["All " + m.files.length + " files"]), filesPanel(m, { skip: m.main })])) : null
       ]);
+      /* a file of the document is its own page of text: its highlights are its own */
+      /* the title as it reads now: a highlight kept after a rename is named after the new one */
+      function titleNow() { var t = rel ? null : app.querySelector(".doc-head .title-row h2"); return (t && t.textContent) || m.title || m.id; }
+      if (keeps) keepHighlights(function () { return { id: m.id + (rel ? "?f=" + rel : ""), title: rel ? basename(rel) + " · " + titleNow() : titleNow(), url: "d/" + m.id + (rel ? "?f=" + encodeURIComponent(rel) : "") }; }, body, hlKind, rel ? null : ".doc-head .title-row h2");
     }).catch(function (e) { page("Not found", mainNav(""), [h("div", { class: "empty" }, [String(e.message || e)])]); });
   }
 
@@ -2548,7 +2661,10 @@
     page(basename(id), mainNav(source), [h("p", { class: "muted", "aria-busy": "true" }, ["Loading…"])]);
     itemsProvider().then(function (p) { return viaStore(p.getOne(key)); }).then(function (it) {
       var body = h("div", { class: "doc-body" });
-      var tools = renderFile(itemCtx(it), it.id, it.kind, body);
+      var ictx = itemCtx(it);
+      ictx.onDrawn = refreshHighlights;
+      var tools = renderFile(ictx, it.id, it.kind, body);
+      if (canHighlight()) tools.actions.push(HIGHLIGHTS_ACTION);
       var meta = h("div", { class: "meta" }, [
         h("span", { class: "src" }, [sourceTitle(it.source)]), kindBadge(it.kind),
         h("span", { title: when(it.time) }, ["updated " + age(it.time)]),
@@ -2562,6 +2678,7 @@
         actionBar({ view: tools.view, actions: [COPY_ADDRESS()].concat(tools.actions) }),
         body
       ]);
+      if (canHighlight()) keepHighlights(function () { return { id: key, title: it.title || basename(id), url: "i/" + encodeURIComponent(source) + "/" + encPath(id) }; }, body, it.kind, ".doc-head h2");
     }).catch(function (e) { page("Not found", mainNav(source), [h("div", { class: "empty" }, [String(e.message || e), h("p", null, [link(back, "Back to " + sourceTitle(source))])])]); });
   }
 
@@ -2585,6 +2702,7 @@
       if (kind === "trash") return listView("trash");
       if (kind === "shares") return sharesView();
       if (kind === "audio") return audioView();
+      if (kind === "highlights") return highlightsView();
       return listView("published");
     });
   }

@@ -170,6 +170,17 @@ annals unshare <link>                                  # turn one off
 
 All three die with the link (expiry, `annals unshare`). Give the owner the link and, if you set one, the password, and say when it expires. Default to an expiry (`7d`) unless told otherwise. On a machine whose target is an outbox (another machine pulls it), `annals share` refuses: point the owner at the Share button on the document's page instead.
 
+## The owner's highlights
+
+The owner keeps passages of documents on the page (select, then Highlight), with an optional name, note and tags; a highlight of a whole title keeps the document itself, so this is also their list of favourites. When they ask for "the passage I saved about X", "my highlights", or "what did I mark in that report", look there before searching the documents:
+
+```bash
+annals highlights "words to find"          # every word, in the name, the passage, the note, the tags or the title
+annals highlights --doc <link or id>        # one document's
+```
+
+Each row has `url`, the document opened on the passage: give the owner that link. `annals highlight-add <link or id> "the passage, word for word as the page shows it" --comment "..."` keeps one for them (`--whole` keeps the document itself, `--file <name>` is for one file of a folder document), `annals highlight-edit <id>` and `annals highlight-remove <id>` change and delete. Changes run on the machine that holds the documents (`ssh <host> annals highlight-add ...`); reading works from anywhere the documents can be read. They are the owner's own notes: add or change one only when asked, and say what you changed.
+
 ## Where it goes
 
 `annals configure` shows the target (a local directory, or `host:/path` over ssh) and the base URL. If the target is remote, publishing needs a working `ssh <host>` with keys (no prompt). If `annals publish` fails with an ssh error, say so and give the user the file path instead; do not retry in a loop.

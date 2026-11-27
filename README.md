@@ -189,6 +189,32 @@ Progress is kept on the server, per reader (the login's email; `owner` with no l
 
 An overview plays inside a sandboxed frame, so the page cannot see its audio directly: every served html page that may play media gets a small relay script (`annals.media`) that posts what the player itself says it played to the page around it, so a locked screen, seeking or 2× speed are counted right (opt out with `data-annals-media="off"` on `<html>` or `<body>`; share links never carry it). Plain audio files are tracked from their own player. Records are one JSON file per reader under the data root (`listening/<reader>.json`); `mk_api(listening=...)` takes any other store, and `listening=None` keeps none. Progress is recorded on the annals page itself; a page opened on its own ("Open full page") does not report.
 
+## Highlights: keep a passage, find it again
+
+On a document's page, select some text and tap **Highlight**: the passage is kept, under the name `<title>-highlight-<n>`. A short note offers "Add a note or tags"; the name, the note (a comment), the tags and a colour are all optional and can be changed later. The page draws its highlights (a dotted line under the ones with a note), a tap on one shows its card, and removing one offers Undo.
+
+**Highlights** in the navigation lists every passage you kept and filters as you type, over names, passages, notes, tags and document titles. A row opens its document on the passage: scrolled to it, in the middle of the screen, with its card open. The address is `…/d/<id>?h=<highlight>`, and Copy link on a card gives it.
+
+To keep a whole document, highlight its title (select it, or "Highlight this page" under More → Highlights). It then sits in the same list, so the list is also your favourites, and it survives a rename.
+
+More → Highlights is the page's panel: its highlights, a switch to hide them, and two settings: the default colour (six of them, each legible in light and dark) and whether a page shows all of its highlights when it opens, or only the one you came for.
+
+Highlights are each reader's own, kept on the server (`highlights/<reader>.json` under the data root), so they follow you to every device behind the same login. There are none on a share link or in a room, where nobody is signed in. A markdown or text document is highlighted in its rendered view; an html page lives in a closed frame, so only its title can be kept.
+
+For agents, the same collection:
+
+```bash
+annals highlights "rye water table"                  # search: every word, in name, passage, note, tags or title
+annals highlights --doc <link or id> --tag later     # one document's, one tag's
+annals highlight-add <link or id> "the passage, word for word" --comment "why" --tags "a, b"
+annals highlight-add <link or id> "a passage" --file notes.md   # in one file of a folder document
+annals highlight-add <link or id> "its title" --whole   # keep the document itself
+annals highlight-edit <highlight id> --comment "..." --color green
+annals highlight-remove <highlight id>
+```
+
+Reading works wherever the documents can be read. Changes are made on the machine that holds them (`ssh <host> annals highlight-add …`), because the server locks its files and a write from elsewhere would not; `--reader` (the address they sign in with) says whose: it can be left out once one reader, and only one, has highlights, and one reader's are never listed with another's. The page side is the [manicules](https://github.com/thorwhalen/manicules) widget, vendored under `annals/data/ui/vendor/manicules/` (`scripts/vendor-manicules.sh`); `annals.highlights` is the server side, and `mk_api(highlights=...)` the seam (any `(reader) -> ReaderHighlights` callable, or `None` to keep none).
+
 ## Sharing one page
 
 The annals is private; a **share link** lets someone without an account read ONE document (or one group) and nothing else. From the page, **Links › One link** on a document lists its files and the annals pages it links to under "What's included", so you choose what goes; from a shell:
