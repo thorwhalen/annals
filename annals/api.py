@@ -85,6 +85,7 @@ from annals.export import (
     trusted_base,
 )
 from annals.combine import supported
+from annals.search import SearchStrategy, default_search
 from annals.sources import (
     PublishedSource,
     Source,
@@ -284,6 +285,7 @@ def mk_api(
     thumbnailer: Thumbnailer | None | bool = True,
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
+    search: SearchStrategy | None = None,
     share_base_url: str | None = None,
     overviews: bool | Iterable[str] | Callable[[str], bool] | str = False,
     listening: listen_log.ForReader | bool | None = True,
@@ -302,6 +304,9 @@ def mk_api(
     folders named in ``ANNALS_SOURCES``. ``tags`` is where the owner's tags live, any
     ``MutableMapping`` from item key to tag list; by default one JSON file under the data
     root (``tags/tags.json``), or a dict when the data root is not on this machine.
+    ``search`` answers ``GET /items?q=`` (a strategy from :mod:`annals.search`); by default
+    a full-text index kept under the data root, ranked, or a plain scan when the data root
+    is remote.
     ``share_base_url`` is where the public share server (:mod:`annals.share_api`) answers,
     so a new share comes back with its link (by default ``ANNALS_SHARE_BASE_URL``; with
     neither, shares are made but carry no link, since nothing public serves them here).
@@ -351,11 +356,14 @@ def mk_api(
         tags = default_tags(store)
     if sources is None:
         sources = parse_sources_spec(os.environ.get(ENV_SOURCES, ""))
+    if search is None:  # one index, whichever API below answers
+        search = default_search(store.target.local_path("."))
     build = functools.partial(
         _mk_api,
         thumbnailer=thumbnailer,
         sources=sources,
         tags=tags,
+        search=search,
         share_base=(
             share_base_url
             if share_base_url is not None
@@ -436,6 +444,7 @@ def _mk_api(
     thumbnailer: Thumbnailer | None,
     sources: Mapping[str, Source | Path | str],
     tags: MutableMapping[str, list[str]],
+    search: SearchStrategy,
     share_base: str | None,
     listening: listen_log.ForReader | None,
     reader: Callable[[Request], str],
@@ -444,7 +453,7 @@ def _mk_api(
 ) -> FastAPI:
     """The API of :func:`mk_api` over ``store``, every default already resolved."""
     shares = Shares(store)
-    catalog = mk_catalog(store, sources=sources, tags=tags)
+    catalog = mk_catalog(store, sources=sources, tags=tags, search=search)
     api = FastAPI(title=f"{title} api", docs_url=None, redoc_url=None, openapi_url=None)
     # No swagger: its /docs route would shadow ours.
 
@@ -1582,6 +1591,7 @@ def mk_app(
     base_path: str = DFLT_BASE_PATH,
     sources: Mapping[str, Source | Path | str] | None = None,
     tags: MutableMapping[str, list[str]] | None = None,
+    search: SearchStrategy | None = None,
     overviews: bool | Iterable[str] | Callable[[str], bool] | str | None = None,
     listening: listen_log.ForReader | bool | None = True,
     title: str = APP_NAME,
@@ -1589,8 +1599,8 @@ def mk_app(
     """The standalone server: page + API under ``base_path``, behind ``authorizer``.
 
     Every argument has a working default (the local data dir; auth from the environment,
-    which is none on a bare machine, so bind to localhost). ``sources`` and ``tags`` are
-    :func:`mk_api`'s, and so are ``overviews`` and ``listening``; ``overviews`` defaults to
+    which is none on a bare machine, so bind to localhost). ``sources``, ``tags`` and
+    ``search`` are :func:`mk_api`'s, and so are ``overviews`` and ``listening``; ``overviews`` defaults to
     ``ANNALS_OVERVIEWS`` (unset: off; ``*``: every reader; else the readers offered them,
     separated by commas), so a server started from a factory can turn them on. Share links are served, ungated, at ``{base_path}/shared/<token>/``
     (:func:`annals.share_api.mk_share_api`).
@@ -1631,6 +1641,7 @@ def mk_app(
         store=store,
         sources=sources,
         tags=tags,
+        search=search,
         share_base_url=shared,
         title=title,
         overviews=overviews,

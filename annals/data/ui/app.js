@@ -514,7 +514,9 @@
   }
 
   /* -------- the list: one view over any source, the bin included ------------------- */
+  /* "best" is the server's ranking (each row's score), for a search; without one it is newest first */
   var SORTS = {
+    best: { label: "Best match", fn: function (a, b) { return (b.score || 0) - (a.score || 0) || (b.time || "").localeCompare(a.time || ""); } },
     newest: { label: "Newest first", fn: function (a, b) { return (b.time || "").localeCompare(a.time || ""); } },
     oldest: { label: "Oldest first", fn: function (a, b) { return (a.time || "").localeCompare(b.time || ""); } },
     title: { label: "Title A–Z", fn: function (a, b) { return (a.title || "").localeCompare(b.title || ""); } },
@@ -535,7 +537,8 @@
     var fams = FAMILIES.filter(function (f) { return !f.allOnly || scope === "all"; });
     var params = new URLSearchParams(location.search);
     var back = history.state || {};
-    var state = { q: params.get("q") || "", sort: readPref("sort", "newest"), open: null, shown: Math.max(LIST_PAGE, back.shown || 0), showAll: {} };
+    /* two sorts remembered: one for browsing, one for searching (best match unless changed) */
+    var state = { q: params.get("q") || "", sort: readPref("sort", "newest"), qsort: readPref("qsort", "best"), open: null, shown: Math.max(LIST_PAGE, back.shown || 0), showAll: {} };
     var restoreY = back.scrollY || 0;
     var sel = {};
     fams.forEach(function (f) { sel[f.key] = params.getAll(f.key); });
@@ -562,6 +565,7 @@
     }
 
     function anySelected() { return fams.some(function (f) { return sel[f.key].length; }); }
+    function activeSort() { var k = state.q ? state.qsort : state.sort; return SORTS[k] ? k : "newest"; }
     function urlFor() {
       var u = new URLSearchParams();
       if (state.q) u.set("q", state.q);
@@ -707,12 +711,15 @@
       listEl.setAttribute("aria-busy", String(loading));
       if (loading) { countEl.textContent = ""; listEl.appendChild(h("p", { class: "muted" }, [state.q ? "Searching…" : "Loading…"])); return; }
       if (failed) { listEl.appendChild(h("p", { class: "err" }, [failed])); return; }
-      var shown = rows.filter(function (r) { return fams.every(function (f) { return inFamily(r, f, sel[f.key]); }); }).sort(SORTS[state.sort].fn);
+      var shown = rows.filter(function (r) { return fams.every(function (f) { return inFamily(r, f, sel[f.key]); }); }).sort(SORTS[activeSort()].fn);
       var gs = scope === "published" && !anySelected() && !selecting ? groups.filter(function (g) { return !state.q || (g.title || "").toLowerCase().indexOf(state.q.toLowerCase()) >= 0; }) : [];
       countEl.textContent = shown.length + (shown.length === 1 ? " item" : " items") + (gs.length ? ", " + gs.length + (gs.length === 1 ? " group" : " groups") : "");
       if (!shown.length && !gs.length) { listEl.appendChild(emptyState()); return; }
-      var byTime = state.sort === "newest" || state.sort === "oldest";
-      var entries = byTime ? byDate(shown, gs, rows, state.sort === "newest") : shown.map(function (r) { return { doc: r }; });
+      var sortKey = activeSort(), byTime = sortKey === "newest" || sortKey === "oldest";
+      /* a search's best matches come first; the groups whose title matched lead them */
+      var entries = byTime ? byDate(shown, gs, rows, sortKey === "newest")
+        : sortKey === "best" ? gs.map(function (g) { return { group: g, time: g.updated || g.created || "" }; }).concat(shown.map(function (r) { return { doc: r }; }))
+        : shown.map(function (r) { return { doc: r }; });
       entries.slice(0, state.shown).forEach(function (e) {
         if (e.group) { if (!selecting) listEl.appendChild(groupCard(e.group, e.time)); return; }
         var r = e.doc;
@@ -735,7 +742,7 @@
         return h("div", { class: "empty" }, ["This source is empty."]);
       }
       var ways = active.map(function (f) { return h("button", { class: "btn", onclick: function () { clearFamily(f); } }, ["Remove " + f.label.toLowerCase() + " filter"]); });
-      if (state.q) ways.push(h("button", { class: "btn", onclick: function () { search.value = ""; state.q = ""; history.replaceState(history.state, "", urlFor()); load(); } }, ["Clear the search"]));
+      if (state.q) ways.push(h("button", { class: "btn", onclick: function () { search.value = ""; state.q = ""; sortSel.value = activeSort(); history.replaceState(history.state, "", urlFor()); load(); } }, ["Clear the search"]));
       return h("div", { class: "empty" }, [h("p", null, ["Nothing matches" + (state.q ? " “" + state.q + "”" : "") + (active.length ? " with these filters" : "") + "."]), h("div", { class: "toolbar center" }, ways)]);
     }
     function trashActions(r) {
@@ -767,10 +774,14 @@
     var search = h("input", { type: "search", placeholder: trash ? "Search the bin" : "Search all text", value: state.q, autocomplete: "off", "aria-label": "Search",
       oninput: function (e) {
         state.q = e.target.value.trim(); history.replaceState(history.state, "", urlFor());
+        sortSel.value = activeSort();
         clearTimeout(timer); timer = setTimeout(load, SEARCH_DEBOUNCE_MS);
       } });
-    var sortSel = h("select", { "aria-label": "Sort", onchange: function (e) { state.sort = e.target.value; writePref("sort", state.sort); render(); } },
-      Object.keys(SORTS).map(function (k) { var o = h("option", { value: k }, [SORTS[k].label]); if (k === state.sort) o.selected = true; return o; }));
+    var sortSel = h("select", { "aria-label": "Sort", onchange: function (e) {
+        if (state.q) { state.qsort = e.target.value; writePref("qsort", state.qsort); }
+        else { state.sort = e.target.value; writePref("sort", state.sort); }
+        render(); } },
+      Object.keys(SORTS).map(function (k) { var o = h("option", { value: k }, [SORTS[k].label]); if (k === activeSort()) o.selected = true; return o; }));
     var selectBtn = canSelect && !trash ? h("button", { class: "btn select-btn", type: "button", "aria-pressed": String(selecting), onclick: function () { setSelecting(!selecting); } }, ["Select"]) : null;
     function syncSelectBtn() { if (selectBtn) selectBtn.setAttribute("aria-pressed", String(selecting)); }
     var title = trash ? "Recycle bin" : scope === "all" ? "Everything" : scope === "published" ? "" : sourceTitle(scope);

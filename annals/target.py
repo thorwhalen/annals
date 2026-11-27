@@ -15,6 +15,7 @@ endpoint) is the declared replacement for the ssh one and is not built yet.
 
 from __future__ import annotations
 
+import copy
 import json
 import os
 import re
@@ -22,6 +23,7 @@ import shlex
 import shutil
 import subprocess
 import tempfile
+import threading
 from pathlib import Path, PurePosixPath
 from typing import Protocol
 
@@ -145,10 +147,33 @@ def check_rel(rel: str) -> str:
 
 
 class LocalTarget:
-    """A directory on this machine."""
+    """A directory on this machine.
+
+    :meth:`read_metas` keeps each meta it parsed, keyed by its file's mtime and size, so
+    listing a thousand documents costs a ``stat`` per document, not a parse; it hands
+    back copies, so a caller may change what it gets.
+    """
 
     def __init__(self, root: Path | str):
         self.root = Path(root).expanduser()
+        self._real_root: str | None = None
+        self._metas: dict[str, tuple[tuple[int, int], dict]] = {}
+        self._metas_lock = threading.Lock()
+
+    def _root_real(self) -> str:
+        """The root, symlinks resolved, once it exists (resolving it per read was most
+        of a listing's cost)."""
+        if self._real_root is None:
+            real = os.path.realpath(self.root)
+            if not os.path.isdir(real):
+                return real  # not created yet: do not remember a path that may change
+            self._real_root = real
+        return self._real_root
+
+    def _inside(self, path: Path | str) -> str | None:
+        """``path`` resolved, if it is under the root; else ``None``."""
+        real, root = os.path.realpath(path), self._root_real()
+        return real if real == root or real.startswith(root + os.sep) else None
 
     def describe(self) -> str:
         return str(self.root)
@@ -239,22 +264,41 @@ class LocalTarget:
 
     def local_path(self, rel: str) -> Path | None:
         """``rel`` under the root, resolved; ``None`` if it escapes the root (a symlink)."""
-        path = self._abs(rel).resolve()
-        return path if path.is_relative_to(self.root.resolve()) else None
+        real = self._inside(self._abs(rel))
+        return Path(real) if real is not None else None
 
     def read_metas(self, rel: str, *, pattern: str = META_GLOB) -> list[dict]:
         base, pattern = self._abs(rel), check_glob(pattern)
         if not base.is_dir():
             return []
-        metas = []
+        metas, seen = [], set()
         for path in base.glob(pattern):
             sub = path.relative_to(base).as_posix()
             if any(part.startswith(".") for part in sub.split("/")):
                 continue  # work in progress (a replacement being applied), like ssh's glob
+            real = self._inside(path)
+            if real is None:
+                continue  # a symlink out of the root: not the reader's problem
+            seen.add(real)
             try:
-                metas.append(json.loads(self.read_text(f"{rel}/{sub}")))
+                st = os.stat(real)
+                stamp = (st.st_mtime_ns, st.st_size)
+                cached = self._metas.get(real)
+                if cached is None or cached[0] != stamp:
+                    with open(real, encoding="utf-8") as f:
+                        cached = (stamp, json.load(f))
+                    with self._metas_lock:
+                        self._metas[real] = cached
+                metas.append(copy.deepcopy(cached[1]))
             except (OSError, ValueError):
-                continue  # half-written, or a symlink out of the root: not the reader's problem
+                continue  # half-written or gone: not the reader's problem
+        with self._metas_lock:  # forget what this folder no longer holds
+            prefix = self._inside(base)
+            if prefix is not None:
+                for gone in [
+                    k for k in self._metas if k.startswith(prefix + os.sep) and k not in seen
+                ]:
+                    del self._metas[gone]
         return metas
 
 
